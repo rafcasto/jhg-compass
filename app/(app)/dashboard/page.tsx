@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Cell } from "recharts";
-import { Users, Briefcase, Coffee, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useAccess } from "@/lib/firestore/access";
 import { useLiveCollection, useLiveDoc, paths } from "@/lib/firestore/db";
@@ -17,6 +17,7 @@ import {
 
 const PERIODS: Period[] = ["day", "week", "month"];
 const UNIT: Record<Period, string> = { day: "today", week: "this week", month: "this month" };
+const MEETING_CATS = ["pleasure_interview", "info_interview", "job_interview"];
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -34,16 +35,9 @@ export default function Dashboard() {
 
   const rY = rangeYmd(period, anchor);
   const rM = rangeMs(period, anchor);
-  const inMs = (v: any) => { const t = tsMs(v); return t >= rM.start && t <= rM.end; };
+  // Count freshly-created items immediately: a pending serverTimestamp reads as 0.
+  const inP = (v: any) => { const t = tsMs(v); return t === 0 ? true : t >= rM.start && t <= rM.end; };
 
-  // ---- period-scoped CRM stats ----
-  const contactsN = contacts.filter((c) => inMs(c.createdAt)).length;
-  const periodInteractions = interactions.filter((i) => inMs(i.occurredAt ?? i.createdAt));
-  const interactionsN = periodInteractions.length;
-  const interviewsN = periodInteractions.filter((i) => i.type === "job_interview").length;
-  const offersN = opps.filter((o) => inMs(o.createdAt) && (o.stage === "offer" || o.stage === "accepted")).length;
-
-  // ---- targets vs actual (period) ----
   const actualOf = (id: string) => logs.filter((l) => l.categoryId === id && inRange(l.loggedOn, rY)).reduce((a, l) => a + (l.count ?? 1), 0);
   const targetOf = (id: string) => scaleTarget(userTargets[id] ?? DEFAULT_WEEKLY_TARGETS[id] ?? 0, period, anchor);
   const agg = (ids: string[]) => ids.reduce((s, id) => ({ a: s.a + actualOf(id), t: s.t + targetOf(id) }), { a: 0, t: 0 });
@@ -52,6 +46,14 @@ export default function Dashboard() {
   const hidden = agg(HIDDEN_CATEGORIES.map((c) => c.id));
   const visible = agg(VISIBLE_CATEGORIES.map((c) => c.id));
   const onTrack = CATEGORIES.filter((c) => actualOf(c.id) >= targetOf(c.id) && targetOf(c.id) > 0).length;
+
+  // ---- funnel metrics: tracker activity logs (+ CRM where relevant) ----
+  const crmInPeriod = interactions.filter((i) => inP(i.occurredAt ?? i.createdAt));
+  const activitiesN = overall.a;
+  const contactsN = contacts.filter((c) => inP(c.createdAt)).length;
+  const interactionsN = MEETING_CATS.reduce((s, id) => s + actualOf(id), 0) + crmInPeriod.length;
+  const interviewsN = actualOf("job_interview") + crmInPeriod.filter((i) => i.type === "job_interview").length;
+  const offersN = opps.filter((o) => inP(o.createdAt) && (o.stage === "offer" || o.stage === "accepted")).length;
 
   // ---- trailing 6-period trend ----
   const buckets = useMemo(() => {
@@ -88,13 +90,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat icon={Users} label="Contacts added" value={contactsN} />
-        <Stat icon={Coffee} label="Interactions" value={interactionsN} />
-        <Stat icon={MessageSquare} label="Job interviews" value={interviewsN} />
-        <Stat icon={Briefcase} label="Offers" value={offersN} />
-      </div>
-
       {/* RAG goals vs actual */}
       <section className="card p-5 space-y-4">
         <div className="flex items-center justify-between">
@@ -127,15 +122,18 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* NO → YES funnel — now holds the headline metrics (period-scoped) */}
       <section className="card p-5">
-        <h3 className="text-base mb-3">The NO → YES funnel · {UNIT[period]}</h3>
+        <h3 className="text-base mb-1">The NO → YES funnel · {UNIT[period]}</h3>
         <p className="text-sm text-jh-mute mb-4">
           It takes <strong className="text-jh-ink">{NOS_PER_YES.min}–{NOS_PER_YES.max} NOs to earn 1 YES.</strong> Every rejection is progress.
         </p>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <Mini label="Activities" value={overall.a} />
-          <Mini label="Job interviews" value={interviewsN} />
-          <Mini label="Offers" value={offersN} />
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+          <Metric label="Activities" value={activitiesN} />
+          <Metric label="Contacts added" value={contactsN} />
+          <Metric label="Interactions" value={interactionsN} />
+          <Metric label="Job interviews" value={interviewsN} />
+          <Metric label="Offers" value={offersN} />
         </div>
       </section>
     </div>
@@ -165,20 +163,11 @@ function bucketLabel(period: Period, anchor: Date): string {
   if (period === "month") return anchor.toLocaleDateString(undefined, { month: "short" });
   return rangeYmd("week", anchor).start.slice(5);
 }
-function Stat({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
+function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="card p-4">
-      <Icon className="h-5 w-5 text-jh-red mb-2" />
+    <div className="rounded-[10px] bg-jh-mist py-4 px-2">
       <div className="font-display font-extrabold text-2xl text-jh-ink">{value}</div>
-      <div className="text-xs text-jh-mute">{label}</div>
-    </div>
-  );
-}
-function Mini({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-[10px] bg-jh-mist py-4">
-      <div className="font-display font-extrabold text-2xl text-jh-ink">{value}</div>
-      <div className="text-xs text-jh-mute">{label}</div>
+      <div className="text-xs text-jh-mute mt-0.5">{label}</div>
     </div>
   );
 }
