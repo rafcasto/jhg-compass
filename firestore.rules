@@ -1,0 +1,41 @@
+rules_version = '2';
+// JobHacker Compass — Firestore security rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function isAdmin() { return isSignedIn() && request.auth.token.admin == true; }
+
+    // ---- per-user data: profile + all CRM/tracker/settings subcollections ----
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+      match /{sub=**} { allow read, write: if isOwner(uid); }
+    }
+
+    // ---- access grants: owner reads own; writes Admin SDK only ----
+    match /accessGrants/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ---- admin config: signed-in read; admin write ----
+    match /config/{doc} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---- shared events: anyone signed-in can read & post; owner/admin can edit/delete ----
+    match /events/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.createdBy == request.auth.uid || isAdmin());
+    }
+
+    // ---- registration links: server-only (Admin SDK) ----
+    match /registrationLinks/{token} { allow read, write: if false; }
+
+    // default deny
+    match /{document=**} { allow read, write: if false; }
+  }
+}

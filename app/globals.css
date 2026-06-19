@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== JobHackers.Global fonts (local, from /public/fonts) ===== */
+@font-face { font-family: "Roboto"; font-weight: 400; font-display: swap; src: url("/fonts/Roboto-Regular.ttf") format("truetype"); }
+@font-face { font-family: "Roboto"; font-weight: 500; font-display: swap; src: url("/fonts/Roboto-Medium.ttf") format("truetype"); }
+@font-face { font-family: "Roboto"; font-weight: 600; font-display: swap; src: url("/fonts/Roboto-Medium.ttf") format("truetype"); }
+@font-face { font-family: "Roboto"; font-weight: 700; font-display: swap; src: url("/fonts/Roboto-Bold.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-weight: 400; font-display: swap; src: url("/fonts/Poppins-Regular.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-weight: 500; font-display: swap; src: url("/fonts/Poppins-Medium.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-weight: 600; font-display: swap; src: url("/fonts/Poppins-SemiBold.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-weight: 700; font-display: swap; src: url("/fonts/Poppins-Bold.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-weight: 800; font-display: swap; src: url("/fonts/Poppins-ExtraBold.ttf") format("truetype"); }
+
+:root {
+  --jh-red: #c2001f; --jh-red-hover: #8a0016; --jh-ink: #191c27;
+  --jh-red-soft: #f6e0e3; --jh-blue-grey: #e2ebfb;
+  --jh-paper: #fafafa; --jh-mist: #f3f5fa; --jh-line: #e6e8ef; --jh-line-2: #d4d8e2;
+  --jh-mute: #6b7280; --jh-mute-2: #9aa0ad;
+  --rb-red:#c2001f; --rb-orange:#f08a1c; --rb-yellow:#f5d000;
+  --rb-green-light:#6bbf6b; --rb-green-dark:#2f7a3a; --rb-blue:#0033cc; --rb-violet:#7a1ec2;
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body { @apply bg-jh-paper text-jh-ink font-body; margin: 0; }
+  h1,h2,h3,h4,h5,h6 { @apply font-display text-jh-ink; letter-spacing: -0.01em; margin: 0; }
+  h1 { @apply text-3xl md:text-4xl font-bold; }
+  h2 { @apply text-2xl md:text-3xl font-semibold; }
+  h3 { @apply text-xl font-semibold; }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 font-display font-semibold rounded-[10px] px-5 py-3 text-[15px] leading-none transition-all duration-200; }
+  .btn-primary { @apply btn bg-jh-red text-white shadow-cta hover:bg-jh-red-hover hover:-translate-y-px; }
+  .btn-secondary { @apply btn bg-white text-jh-ink border-[1.5px] border-jh-ink hover:bg-jh-ink hover:text-white; }
+  .btn-ghost { @apply btn bg-transparent text-jh-red hover:text-jh-red-hover px-2; }
+  .card { @apply bg-white border border-jh-line rounded-lg shadow-jh-1; }
+  .field { @apply w-full rounded-[10px] border border-jh-line-2 bg-white px-4 py-3 text-jh-ink font-body text-[15px] outline-none focus:border-jh-red focus:ring-2 focus:ring-jh-red/15 transition; }
+  .label { @apply block font-display font-semibold text-sm text-jh-ink mb-1.5; }
+  .eyebrow { @apply font-display font-semibold text-[13px] tracking-[0.08em] uppercase text-jh-red; }
+  .pill { @apply inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-semibold; }
+  .pill-hidden { @apply pill bg-jh-red-soft text-jh-red; }
+  .pill-visible { @apply pill bg-jh-blue-grey text-rb-blue; }
+}

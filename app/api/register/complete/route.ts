@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from "next/server";
+import { completeRegistration } from "@/lib/server/registration";
+import { logEvent, TAGS } from "@/lib/events";
+
+export const runtime = "nodejs";
+
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  const { token, email, password, firstName } = body ?? {};
+  if (!token || !email || !password) {
+    return NextResponse.json({ ok: false, error: "missing_fields" }, { status: 400 });
+  }
+  if (String(password).length < 6) {
+    return NextResponse.json({ ok: false, error: "weak_password" }, { status: 400 });
+  }
+
+  const result = await completeRegistration(token, email, password, firstName);
+  if (!result.ok) {
+    const status = result.error === "expired" || result.error === "used" ? 410 : 400;
+    return NextResponse.json(result, { status });
+  }
+
+  await logEvent({
+    firebaseUid: result.uid, email, firstName, stage: "activation",
+    tag: TAGS.REGISTRATION, source: "registration_link",
+  });
+  await logEvent({
+    firebaseUid: result.uid, email, stage: "activation",
+    tag: TAGS.GRANT_CREATED, source: "registration_link",
+  });
+
+  return NextResponse.json({ ok: true });
+}

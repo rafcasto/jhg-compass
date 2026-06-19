@@ -1,0 +1,12 @@
+{
+  "name": "JobHacker Compass",
+  "short_name": "Compass",
+  "description": "Track your job-search activity across the hidden & visible job market.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#c2001f",
+  "icons": [
+    { "src": "/assets/logo-hand.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
