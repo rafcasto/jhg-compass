@@ -22,11 +22,11 @@ export async function POST(req: NextRequest) {
 
   await logEvent({
     firebaseUid: result.uid, email, firstName, stage: "activation",
-    tag: TAGS.REGISTRATION, source: "registration_link",
+    key: TAGS.REGISTRATION, source: "registration_link",
   });
   await logEvent({
     firebaseUid: result.uid, email, stage: "activation",
-    tag: TAGS.GRANT_CREATED, source: "registration_link",
+    key: TAGS.GRANT_CREATED, source: "registration_link",
   });
 
   return NextResponse.json({ ok: true });

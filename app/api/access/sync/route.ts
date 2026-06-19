@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const grant = await syncGrant(decoded.uid);
 
     if (grant?.status === "active" && grant.startsAt && Date.now() - grant.startsAt < 5000) {
-      await logEvent({ firebaseUid: decoded.uid, email: before.email, stage: "activation", tag: TAGS.GRANT_REDEEMED });
+      await logEvent({ firebaseUid: decoded.uid, email: before.email, stage: "activation", key: TAGS.GRANT_REDEEMED });
     }
     return NextResponse.json({ ok: true, status: grant?.status ?? null });
   } catch (e: any) {

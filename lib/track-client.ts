@@ -1,12 +1,13 @@
 "use client";
 
 import { auth } from "./firebase/client";
+import type { EventKey } from "./tags";
 
 type Stage = "acquisition" | "activation" | "retention";
 
-// Fire-and-forget client event → /api/track → Supabase compass_events.
+// Fire-and-forget client event → /api/track → Supabase (jobhackers_leads).
 export async function track(
-  tag: string,
+  event: EventKey,
   opts: { stage?: Stage; source?: string; props?: Record<string, unknown> } = {}
 ): Promise<void> {
   try {
@@ -17,8 +18,8 @@ export async function track(
       headers: { "Content-Type": "application/json" },
       keepalive: true,
       body: JSON.stringify({
-        tag,
-        stage: opts.stage ?? "retention",
+        event,
+        stage: opts.stage,
         source: opts.source ?? "tracker",
         props: opts.props,
         uid: user?.uid,

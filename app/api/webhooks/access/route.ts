@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     await logEvent({
       firebaseUid: uid, email: body.email, stage: "activation",
-      tag: TAGS.GRANT_CREATED, source: body.source ?? "tracker",
+      key: TAGS.GRANT_CREATED, source: body.source ?? "tracker",
       props: { plan: grant.plan, durationDays: grant.durationDays, redeemBy: grant.redeemBy },
     });
 

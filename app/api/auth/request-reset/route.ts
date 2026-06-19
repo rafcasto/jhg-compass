@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await sendPasswordEmail(email, "reset");
-    await logEvent({ email, stage: "retention", tag: TAGS.PASSWORD_RESET });
+    await logEvent({ email, stage: "retention", key: TAGS.PASSWORD_RESET });
   } catch (e) {
     console.error("request-reset:", e);
     // Surface a 500 so the client can fall back to Firebase's built-in email.
