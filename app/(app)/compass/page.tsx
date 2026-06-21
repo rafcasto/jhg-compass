@@ -45,7 +45,7 @@ export default function CompassPage() {
       <div className="relative overflow-hidden rounded-lg bg-jh-ink text-white p-7">
         <CompassIcon className="absolute -right-8 -bottom-8 h-48 w-48 text-white/5" strokeWidth={1} />
         <div className="relative">
-          <span className="eyebrow text-white/60">The formula</span>
+          <span className="eyebrow text-white/60">Your Goal Statement</span>
           <p className="mt-2 font-display font-semibold text-xl leading-snug"><CompassSentence c={editing ? draft : profile?.compass ?? {}} /></p>
         </div>
       </div>
