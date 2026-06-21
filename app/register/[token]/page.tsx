@@ -13,7 +13,6 @@ export default function RegisterPage() {
   const [reason, setReason] = useState<string>();
   const [lockedEmail, setLockedEmail] = useState<string | null>(null);
 
-  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,7 +34,7 @@ export default function RegisterPage() {
     try {
       const res = await fetch("/api/register/complete", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email, password, firstName }),
+        body: JSON.stringify({ token, email, password }),
       });
       const d = await res.json();
       if (!res.ok || !d.ok) {
@@ -81,8 +80,6 @@ export default function RegisterPage() {
           <p className="text-jh-mute text-sm mt-1">You've been invited — 90 days of access await.</p>
         </div>
         <form onSubmit={submit} className="card p-6 space-y-4">
-          <div><label className="label">First name</label>
-            <input className="field" value={firstName} onChange={(e) => setFirstName(e.target.value)} /></div>
           <div><label className="label">Email</label>
             <input type="email" required className="field" value={email} disabled={!!lockedEmail}
               onChange={(e) => setEmail(e.target.value)} /></div>
@@ -90,7 +87,7 @@ export default function RegisterPage() {
             <input type="password" required minLength={6} className="field" value={password}
               onChange={(e) => setPassword(e.target.value)} /></div>
           {err && <p className="text-sm text-jh-red">{err}</p>}
-          <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Creating your account…" : "Create account & start"}</button>
+          <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Creating account…" : "Create Account"}</button>
         </form>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Compass, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import CountrySelect from "@/components/CountrySelect";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
 import {
   HIDDEN_CATEGORIES, VISIBLE_CATEGORIES, DEFAULT_WEEKLY_TARGETS,
@@ -97,7 +98,10 @@ export default function OnboardingPage() {
           <Card title="Welcome aboard 👋" subtitle="Let's set up your Compass. First, the basics.">
             <Field label="First name" value={firstName} onChange={setFirstName} />
             <Field label="Last name" value={lastName} onChange={setLastName} />
-            <Field label="Country" value={country} onChange={setCountry} placeholder="e.g. United Kingdom" />
+            <div>
+              <label className="label">Country</label>
+              <CountrySelect value={country} onChange={setCountry} />
+            </div>
             <Nav onNext={() => setStep(1)} nextDisabled={!step1Valid} />
           </Card>
         )}
