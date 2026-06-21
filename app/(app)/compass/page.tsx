@@ -10,10 +10,10 @@ const COMPANY_TYPES = ["startup", "small", "mid-size", "large"] as const;
 
 function buildSentence(c: CompassFormula) {
   const title = c.jobTitle?.trim() || "________";
-  const industry = c.industry?.trim() ? ` in the ${c.industry.trim()} industry` : "";
-  const geo = c.geography?.trim() ? `, based in ${c.geography.trim()}` : "";
-  const company = c.companyType?.trim() ? `, at a ${c.companyType.trim()} company` : "";
-  return `In the next 60–90 days, I will land a fulfilling job as a ${title}${industry}${geo}${company}.`;
+  const industry = c.industry?.trim() || "________";
+  const salary = c.targetSalary?.trim() || "________";
+  const location = c.geography?.trim() || "________";
+  return `In 60 days from now, I'm an outstanding ${title} who adds value for my employer ABC, in the ${industry}. I'm making $/year ${salary}. I'm located in ${location} and enjoy with flexible working arrangements.`;
 }
 
 export default function CompassPage() {

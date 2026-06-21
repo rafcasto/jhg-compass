@@ -13,22 +13,27 @@ import {
 import type { ActivityLog } from "@/lib/types";
 import {
   type Period, rangeYmd, shift, periodLabel, scaleTarget, toWeekly, inRange, ymd,
-  rag, RAG_BAR, RAG_TEXT,
 } from "@/lib/period";
-import { Iceberg } from "@/components/icons";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
-const PERIODS: Period[] = ["day", "week", "month"];
-const UNIT: Record<Period, string> = { day: "day", week: "week", month: "month" };
+// Design tokens lifted from the handoff (JobHackers design system).
+const C = {
+  red: "#c2001f", ink: "#191c27", green: "#2f7a3a",
+  mute: "#6b7280", muteLight: "#9aa0ad", slash: "#c5c9d2", disabled: "#d4d8e2",
+  track: "#e3e9f4", line: "#eef0f5", circle: "#e6e8ef",
+  toggleBg: "#f3f5fa", bannerBlue: "#e2ebfb", bannerRed: "#fbe3e6", pillRed: "#f6e0e3",
+};
 
-type RagStatus = ReturnType<typeof rag>;
+const PERIODS: Period[] = ["day", "week", "month"];
 
 export default function PerformancePage() {
   const { user } = useAuth();
   const uid = user?.uid;
   const [period, setPeriod] = useState<Period>("day");
   const [anchor, setAnchor] = useState(() => new Date());
+  const [editAll, setEditAll] = useState(false);
+  const [editRows, setEditRows] = useState<Record<string, boolean>>({});
 
   const { data: logs } = useLiveCollection<ActivityLog>(uid, paths.activityLogs, "createdAt");
   const { data: targetDoc } = useLiveDoc<{ targets: Record<string, number> }>(uid ? paths.settingsTargets(uid) : null);
@@ -62,138 +67,197 @@ export default function PerformancePage() {
     else await deleteRecord(uid, "activityLogs", latest.id);
     track(TAGS.UNLOG_ACTIVITY, { props: { categoryId: catId, period } });
   }
+  // Edit the goal for the CURRENT period; stored as one weekly base so day/week/month all reflect it.
   async function setGoal(catId: string, enteredForPeriod: number) {
     if (!uid) return;
-    const weekly = toWeekly(enteredForPeriod, period, anchor);
+    const weekly = toWeekly(Math.max(0, enteredForPeriod), period, anchor);
     await setDoc(paths.settingsTargets(uid), { targets: { ...userTargets, [catId]: weekly } }, { merge: true });
     track(TAGS.SET_TARGET, { props: { categoryId: catId, period, value: enteredForPeriod } });
   }
 
+  function toggleEditAll() {
+    setEditAll((prev) => { if (prev) setEditRows({}); return !prev; });
+  }
+  const startEdit = (id: string) => setEditRows((r) => ({ ...r, [id]: true }));
+  const finishRow = (id: string) => setEditRows((r) => { const n = { ...r }; delete n[id]; return n; });
+
+  const rowProps = { editAll, editRows, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow };
+
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-md space-y-5">
+      {/* header */}
       <div>
-        <span className="eyebrow">Success predictors</span>
-        <h1 className="mt-1">Performance</h1>
-        <p className="text-jh-mute mt-1 text-sm">
-          Success isn&apos;t luck — it&apos;s a set of activities. Log what you do per{" "}
-          <strong className="text-jh-ink">{UNIT[period]}</strong> and track actual vs target.
-        </p>
-      </div>
-
-      {/* Iceberg explainer */}
-      <div className="card p-4 flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-jh-blue-grey text-jh-ink">
-          <Iceberg className="h-6 w-6" />
+        <div className="font-display font-semibold uppercase" style={{ fontSize: 11, letterSpacing: ".09em", color: C.red }}>
+          Success Predictors
         </div>
-        <p className="text-sm text-jh-mute leading-relaxed">
-          Spend <strong className="text-jh-ink">{EFFORT_SPLIT.visible}% above the waterline</strong> (the visible job
-          market) and <strong className="text-jh-ink">{EFFORT_SPLIT.hidden}% below it</strong> (the hidden job market).
-          The single biggest driver of success: <strong className="text-jh-ink">contacting &amp; meeting people</strong>.
-        </p>
-      </div>
+        <div className="flex items-center justify-between mt-0.5">
+          <h1 className="font-display font-bold" style={{ fontSize: 27, letterSpacing: "-.02em", color: C.ink }}>Performance</h1>
+          <button onClick={toggleEditAll}
+            className="font-display font-semibold rounded-full transition"
+            style={editAll
+              ? { fontSize: 12.5, padding: "8px 15px", background: C.red, color: "#fff", border: `1.5px solid ${C.red}` }
+              : { fontSize: 12.5, padding: "8px 15px", background: "#fff", color: C.ink, border: `1.5px solid ${C.disabled}` }}>
+            {editAll ? "Done" : "Edit goals"}
+          </button>
+        </div>
 
-      {/* period toggle + nav */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex rounded-pill bg-jh-mist p-1 self-start">
+        {/* period toggle */}
+        <div className="flex gap-1 rounded-full p-1 mt-4" style={{ background: C.toggleBg }}>
           {PERIODS.map((p) => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`rounded-pill px-4 py-1.5 text-sm font-display font-semibold capitalize transition ${period === p ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute"}`}>{p}</button>
+              className="flex-1 text-center font-display font-semibold capitalize rounded-full"
+              style={period === p
+                ? { fontSize: 13.5, padding: "8px 0", background: "#fff", color: C.ink, boxShadow: "0 1px 2px rgba(25,28,39,.08)" }
+                : { fontSize: 13.5, padding: "8px 0", color: C.muteLight }}>
+              {p}
+            </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setAnchor(shift(period, anchor, -1))} className="rounded-full p-2 hover:bg-jh-mist"><ChevronLeft className="h-5 w-5" /></button>
-          <span className="font-display font-semibold min-w-36 text-center">{periodLabel(period, anchor)}</span>
-          <button onClick={() => setAnchor(shift(period, anchor, 1))} className="rounded-full p-2 hover:bg-jh-mist"><ChevronRight className="h-5 w-5" /></button>
+
+        {/* date nav */}
+        <div className="flex items-center justify-center gap-6 mt-4 mb-1">
+          <button onClick={() => setAnchor(shift(period, anchor, -1))} aria-label="Previous"><ChevronLeft className="h-5 w-5" style={{ color: C.muteLight }} /></button>
+          <span className="font-display font-semibold" style={{ fontSize: 16, color: C.ink }}>{periodLabel(period, anchor)}</span>
+          <button onClick={() => setAnchor(shift(period, anchor, 1))} aria-label="Next"><ChevronRight className="h-5 w-5" style={{ color: C.muteLight }} /></button>
         </div>
       </div>
 
-      <CategoryGroup title="🌊 Above the waterline — Visible job market" subtitle={`≤${EFFORT_SPLIT.visible}% of your effort`} cats={VISIBLE_CATEGORIES}
-        actuals={actuals} periodTarget={periodTarget} unit={UNIT[period]}
-        onAdd={add} onRemove={remove} onGoal={setGoal} accent="blue" />
-      <CategoryGroup title="🧊 Below the waterline — Hidden job market" subtitle={`~${EFFORT_SPLIT.hidden}% of your effort · where the jobs really are`} cats={HIDDEN_CATEGORIES}
-        actuals={actuals} periodTarget={periodTarget} unit={UNIT[period]}
-        onAdd={add} onRemove={remove} onGoal={setGoal} accent="red" />
+      {/* Above the waterline — visible */}
+      <section>
+        <Banner emoji="🌊" main="Above the waterline" sub="— Visible job market"
+          subtitle={`Drives ~${EFFORT_SPLIT.visible}% of your success`} bg={C.bannerBlue} />
+        <Rows cats={VISIBLE_CATEGORIES} {...rowProps} />
+      </section>
 
-      {/* legend */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 justify-center text-xs text-jh-mute pt-1">
-        <Legend cls="bg-rb-green-dark" label="On / above goal" />
-        <Legend cls="bg-rb-orange" label="Halfway" />
-        <Legend cls="bg-jh-red" label="Behind" />
-        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-[3px] rounded bg-jh-ink" /> Target</span>
+      {/* Below the waterline — hidden */}
+      <section>
+        <Banner emoji="🧊" main="Below the waterline" sub="— Hidden job market"
+          subtitle={`Drives ~${EFFORT_SPLIT.hidden}% of your success`} bg={C.bannerRed} />
+        <Rows cats={HIDDEN_CATEGORIES} {...rowProps} />
+      </section>
+
+      <p className="text-center italic" style={{ fontSize: 12.5, color: C.muteLight }}>
+        Tap + / − to log today. Tap <span className="not-italic font-semibold" style={{ color: C.mute }}>Edit goals</span> to set targets.
+      </p>
+    </div>
+  );
+}
+
+function Banner({ emoji, main, sub, subtitle, bg }: { emoji: string; main: string; sub: string; subtitle: string; bg: string }) {
+  return (
+    <div className="rounded-2xl flex items-center gap-3" style={{ background: bg, padding: "15px 18px" }}>
+      <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
+      <div>
+        <div className="font-display font-bold" style={{ fontSize: 16, lineHeight: 1.2, color: C.ink }}>
+          {main} <span className="font-semibold" style={{ color: C.mute }}>{sub}</span>
+        </div>
+        <div style={{ fontSize: 13, color: C.mute, marginTop: 2 }}>{subtitle}</div>
       </div>
     </div>
   );
 }
 
-function Legend({ cls, label }: { cls: string; label: string }) {
-  return <span className="inline-flex items-center gap-1.5"><span className={`h-2.5 w-2.5 rounded-full ${cls}`} /> {label}</span>;
+interface RowProps {
+  cats: ActivityCategory[];
+  editAll: boolean;
+  editRows: Record<string, boolean>;
+  periodTarget: (id: string) => number;
+  actuals: Record<string, number>;
+  add: (id: string) => void;
+  remove: (id: string) => void;
+  setGoal: (id: string, v: number) => void;
+  startEdit: (id: string) => void;
+  finishRow: (id: string) => void;
 }
 
-// Bullet ("bowling") chart — Actual vs Target. The coloured bar is the actual value,
-// the grey bands are qualitative ranges relative to target, and the dark tick is the
-// target. Full-width and stacked → mobile-first; scales cleanly on desktop.
-function Bullet({ a, t, status }: { a: number; t: number; status: RagStatus }) {
-  const max = Math.max(t * 1.4, a, 1);
-  const p = (v: number) => `${Math.min(100, (v / max) * 100)}%`;
+function Rows({ cats, editAll, editRows, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow }: RowProps) {
   return (
-    <div className="relative h-5 w-full rounded-[6px] bg-jh-mist overflow-hidden">
-      {/* qualitative bands: lighter as you approach target */}
-      {t > 0 && <div className="absolute inset-y-0 left-0 bg-jh-blue-grey/50" style={{ width: p(t * 0.9) }} />}
-      {t > 0 && <div className="absolute inset-y-0 left-0 bg-jh-blue-grey" style={{ width: p(t * 0.5) }} />}
-      {/* actual value bar */}
-      <div className={`absolute left-0 top-1/2 -translate-y-1/2 h-2 rounded-pill ${RAG_BAR[status]}`} style={{ width: p(a) }} />
-      {/* target marker */}
-      {t > 0 && <div className="absolute inset-y-0 w-[3px] bg-jh-ink rounded" style={{ left: p(t) }} />}
+    <div>
+      {cats.map((c) => {
+        const a = actuals[c.id] ?? 0;
+        const t = periodTarget(c.id);
+        const hasGoal = t > 0;
+        const done = hasGoal && a >= t;
+        const editing = editAll || !!editRows[c.id];
+        const perRowEdit = !editAll && !!editRows[c.id];
+
+        const actualColor = done ? C.green : hasGoal ? C.red : C.slash;
+        const targetText = hasGoal || editing ? String(t) : "—";
+        const targetColor = hasGoal || editing ? C.ink : C.slash;
+        const incColor = editing ? C.ink : done ? C.green : C.red;
+        const incShadow = editing ? "rgba(25,28,39,.20)" : "rgba(194,0,31,.28)";
+        const decColor = editing ? (t > 0 ? C.mute : C.disabled) : (a > 0 ? C.mute : C.disabled);
+        const onDec = () => (editing ? setGoal(c.id, t - 1) : remove(c.id));
+        const onInc = () => (editing ? setGoal(c.id, t + 1) : add(c.id));
+
+        return (
+          <div key={c.id} className="flex gap-4 items-start" style={{ padding: "18px 0", borderBottom: `1px solid ${C.line}` }}>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-semibold" style={{ fontSize: 15, lineHeight: 1.3, color: C.ink }}>{c.label}</div>
+
+              {hasGoal && !editing && <div style={{ marginTop: 13 }}><Bar a={a} t={t} done={done} /></div>}
+
+              {!hasGoal && !editing && (
+                <button onClick={() => startEdit(c.id)}
+                  className="inline-flex items-center gap-1 font-display font-semibold rounded-full"
+                  style={{ marginTop: 11, fontSize: 12.5, color: C.red, background: C.pillRed, padding: "6px 12px" }}>
+                  <Plus className="h-3.5 w-3.5" /> Set a daily goal
+                </button>
+              )}
+
+              {editing && <div className="italic" style={{ marginTop: 11, fontSize: 12.5, color: C.muteLight }}>Set your daily target →</div>}
+            </div>
+
+            <div className="flex-none" style={{ width: 156 }}>
+              <div className="grid items-center" style={{ gridTemplateColumns: "1fr 16px 1fr" }}>
+                <Label>Actual</Label>
+                <div />
+                <Label>Target</Label>
+                <div className="text-center font-display font-bold" style={{ fontSize: 24, marginTop: 3, color: actualColor }}>{a}</div>
+                <div className="text-center font-display font-light" style={{ fontSize: 22, marginTop: 3, color: C.slash }}>/</div>
+                <div className="text-center font-display font-bold" style={{ fontSize: 24, marginTop: 3, color: targetColor }}>{targetText}</div>
+              </div>
+
+              <div className="flex justify-end items-center" style={{ gap: 11, marginTop: 12 }}>
+                {perRowEdit && (
+                  <button onClick={() => finishRow(c.id)} className="font-display font-semibold" style={{ fontSize: 12.5, color: C.red }}>Done</button>
+                )}
+                <button onClick={onDec} className="grid place-items-center rounded-full"
+                  style={{ width: 36, height: 36, border: `1.5px solid ${C.circle}`, background: "#fff", color: decColor }}>
+                  <Minus className="h-5 w-5" />
+                </button>
+                <button onClick={onInc} className="grid place-items-center rounded-full text-white"
+                  style={{ width: 36, height: 36, background: incColor, boxShadow: `0 4px 12px ${incShadow}` }}>
+                  <Plus className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function CategoryGroup({
-  title, subtitle, cats, actuals, periodTarget, unit, onAdd, onRemove, onGoal, accent,
-}: {
-  title: string; subtitle: string; cats: ActivityCategory[];
-  actuals: Record<string, number>; periodTarget: (id: string) => number; unit: string;
-  onAdd: (id: string) => void; onRemove: (id: string) => void; onGoal: (id: string, v: number) => void;
-  accent: "red" | "blue";
-}) {
+function Label({ children }: { children: React.ReactNode }) {
   return (
-    <section className="card overflow-hidden">
-      <div className={`px-4 py-3 ${accent === "red" ? "bg-jh-red-soft" : "bg-jh-blue-grey"}`}>
-        <h3 className="text-base">{title}</h3>
-        <p className="text-xs text-jh-mute">{subtitle}</p>
-      </div>
-      <ul className="divide-y divide-jh-line">
-        {cats.map((c) => {
-          const a = actuals[c.id] ?? 0;
-          const t = periodTarget(c.id);
-          const status = rag(a, t);
-          return (
-            <li key={c.id} className="flex items-center gap-3 px-4 py-3">
-              <span className="text-xl shrink-0">{c.emoji}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-body font-semibold text-jh-ink leading-snug">{c.label}</p>
-                {/* bullet (bowling) chart */}
-                <div className="mt-1.5 flex items-center gap-2">
-                  <div className="flex-1"><Bullet a={a} t={t} status={status} /></div>
-                  <span className={`text-xs font-display font-bold tabular-nums ${RAG_TEXT[status]}`}>{a}/{t}</span>
-                </div>
-                <label className="mt-1 flex items-center gap-1 text-xs text-jh-mute">
-                  Goal /{unit}:
-                  <input type="number" min={0} value={t}
-                    onChange={(e) => onGoal(c.id, Number(e.target.value))}
-                    className="w-12 rounded border border-jh-line px-1 py-0.5 text-center text-jh-ink" />
-                </label>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button onClick={() => onRemove(c.id)} disabled={a === 0}
-                  className="grid h-8 w-8 place-items-center rounded-full border border-jh-line text-jh-mute hover:bg-jh-mist disabled:opacity-30"><Minus className="h-4 w-4" /></button>
-                <span className="w-7 text-center font-display font-bold text-lg text-jh-ink">{a}</span>
-                <button onClick={() => onAdd(c.id)} className="grid h-8 w-8 place-items-center rounded-full bg-jh-red text-white hover:bg-jh-red-hover"><Plus className="h-4 w-4" /></button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+    <div className="text-center font-display font-semibold uppercase" style={{ fontSize: 10.5, letterSpacing: ".07em", color: C.muteLight }}>
+      {children}
+    </div>
+  );
+}
+
+// Bullet bar: track + value fill + target tick. Matches the handoff exactly.
+function Bar({ a, t, done }: { a: number; t: number; done: boolean }) {
+  const maxScale = Math.max(Math.ceil(t * 1.6), a, 4);
+  const fillPct = Math.min(a / maxScale, 1) * 100;
+  const tickPct = Math.min(t / maxScale, 1) * 100;
+  const color = done ? C.green : C.red;
+  return (
+    <div className="relative" style={{ height: 22 }}>
+      <div className="absolute rounded-full" style={{ top: 5, left: 0, right: 0, height: 12, background: C.track }} />
+      <div className="absolute rounded-full" style={{ top: 5, left: 0, height: 12, width: `${fillPct}%`, background: color, transition: "width .45s cubic-bezier(.2,.7,.2,1)" }} />
+      <div className="absolute" style={{ top: 0, left: `${tickPct}%`, transform: "translateX(-50%)", width: 3, height: 22, background: C.ink, borderRadius: 2 }} title={`Target ${t}`} />
+    </div>
   );
 }
