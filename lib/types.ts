@@ -27,6 +27,8 @@ export interface CompassFormula {
   industry?: string;
   geography?: string;
   companyType?: string; // startup / small / mid-size / large
+  targetSalary?: string; // expected / target compensation
+  minSalary?: string;    // minimum acceptable — the deal-breaker
 }
 
 export interface Profile {
