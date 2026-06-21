@@ -48,7 +48,7 @@ export default function RegisterPage() {
       }
       await signInWithEmailAndPassword(auth, email, password);
       // keep the button disabled while we navigate — avoids a re-enable flash
-      router.replace("/dashboard");
+      router.replace("/compass");
     } catch (e: any) {
       setErr(e?.message ?? "Something went wrong.");
       setBusy(false); // only re-enable on failure
