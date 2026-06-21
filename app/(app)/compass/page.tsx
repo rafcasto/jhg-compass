@@ -1,20 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Compass as CompassIcon, Pencil, Check, X } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
 import type { CompassFormula, Profile } from "@/lib/types";
+import CompassSentence from "@/components/CompassSentence";
 
 const COMPANY_TYPES = ["startup", "small", "mid-size", "large"] as const;
-
-function buildSentence(c: CompassFormula) {
-  const title = c.jobTitle?.trim() || "________";
-  const industry = c.industry?.trim() || "________";
-  const salary = c.targetSalary?.trim() || "________";
-  const location = c.geography?.trim() || "________";
-  return `In 60 days from now, I'm an outstanding ${title} who adds value for my employer ABC, in the ${industry}. I'm making $/year ${salary}. I'm located in ${location} and enjoy with flexible working arrangements.`;
-}
 
 export default function CompassPage() {
   const { user } = useAuth();
@@ -28,8 +21,6 @@ export default function CompassPage() {
   useEffect(() => {
     if (profile?.compass && !editing) setDraft(profile.compass);
   }, [profile, editing]);
-
-  const sentence = useMemo(() => buildSentence(editing ? draft : profile?.compass ?? {}), [editing, draft, profile]);
 
   async function save() {
     if (!uid) return;
@@ -55,7 +46,7 @@ export default function CompassPage() {
         <CompassIcon className="absolute -right-8 -bottom-8 h-48 w-48 text-white/5" strokeWidth={1} />
         <div className="relative">
           <span className="eyebrow text-white/60">The formula</span>
-          <p className="mt-2 font-display font-semibold text-xl leading-snug">{sentence}</p>
+          <p className="mt-2 font-display font-semibold text-xl leading-snug"><CompassSentence c={editing ? draft : profile?.compass ?? {}} /></p>
         </div>
       </div>
 
