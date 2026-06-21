@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Compass, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import CountrySelect from "@/components/CountrySelect";
+import CompassSentence from "@/components/CompassSentence";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
 import {
   HIDDEN_CATEGORIES, VISIBLE_CATEGORIES, DEFAULT_WEEKLY_TARGETS,
@@ -59,7 +60,6 @@ export default function OnboardingPage() {
     setTargets((t) => (Object.keys(t).length ? t : { ...DEFAULT_WEEKLY_TARGETS, ...(targetDoc?.targets ?? {}) }));
   }, [targetDoc]);
 
-  const sentence = useMemo(() => buildSentence(compass), [compass]);
   const step1Valid = firstName.trim() && lastName.trim() && country.trim();
   const step2Valid = compass.jobTitle?.trim();
 
@@ -107,7 +107,7 @@ export default function OnboardingPage() {
         )}
 
         {step === 1 && (
-          <CompassCard sentence={sentence}>
+          <CompassCard sentence={<CompassSentence c={compass} />}>
             <p className="text-sm text-jh-mute mb-4">
               Your Compass keeps you pointed at the right target. Fill in the blanks — be specific.
             </p>
@@ -154,14 +154,6 @@ export default function OnboardingPage() {
   );
 }
 
-function buildSentence(c: CompassFormula) {
-  const title = c.jobTitle?.trim() || "________";
-  const industry = c.industry?.trim() || "________";
-  const salary = c.targetSalary?.trim() || "________";
-  const location = c.geography?.trim() || "________";
-  return `In 60 days from now, I'm an outstanding ${title} who adds value for my employer ABC, in the ${industry}. I'm making $/year ${salary}. I'm located in ${location} and enjoy with flexible working arrangements.`;
-}
-
 function Stepper({ step }: { step: number }) {
   return (
     <div className="flex items-center gap-2">
@@ -184,7 +176,7 @@ function Card({ title, subtitle, children }: { title: string; subtitle?: string;
   );
 }
 
-function CompassCard({ sentence, children }: { sentence: string; children: React.ReactNode }) {
+function CompassCard({ sentence, children }: { sentence: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
       {/* Compass-branded formula recap with a faint compass icon behind it */}
