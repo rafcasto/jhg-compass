@@ -18,8 +18,6 @@ export const paths = {
   settingsTargets: (uid: string) => doc(db, "users", uid, "settings", "targets"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
-  // shared
-  events: () => collection(db, "events"),
 };
 
 // ---- generic live collection hook ----
@@ -80,9 +78,6 @@ export async function deleteRecord(
   id: string
 ) {
   return deleteDoc(doc(db, "users", uid, sub, id));
-}
-export async function deleteShared(col: "events", id: string) {
-  return deleteDoc(doc(db, col, id));
 }
 
 export { serverTimestamp, setDoc, doc, deleteDoc };

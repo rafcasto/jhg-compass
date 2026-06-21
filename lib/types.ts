@@ -8,16 +8,35 @@ export type InteractionType =
   | "information_interview" | "job_interview" | "thank_you_note"
   | "networking_event" | "personal_branding" | "application" | "headhunter" | "other";
 
+// Kanban pipeline stages (req 4.3).
 export type OpportunityStage =
-  | "researching" | "contacted" | "interviewing" | "offer" | "accepted" | "rejected" | "closed";
+  | "wishlist" | "applied" | "interview" | "offer" | "rejected";
 
 export type GrantStatus = "pending" | "active" | "expired" | "revoked";
+
+// A timestamped note entry — keeps a record of conversations on both
+// contacts and opportunities (req 4).
+export interface NoteEntry {
+  at: number;
+  text: string;
+}
+
+// The user's Compass — a refined recap of the job-search formula (req 3.2).
+export interface CompassFormula {
+  jobTitle?: string;    // function / title
+  industry?: string;
+  geography?: string;
+  companyType?: string; // startup / small / mid-size / large
+}
 
 export interface Profile {
   email: string;
   firstName?: string;
   lastName?: string;
+  country?: string;
   archetype?: string;
+  compass?: CompassFormula;
+  onboardedAt?: number;
   createdAt?: number;
 }
 
@@ -34,6 +53,7 @@ export interface Contact {
   hasReferral?: boolean;
   status?: string;
   notes?: string;
+  log?: NoteEntry[];
   lastContactedAt?: number;
   createdAt?: number;
 }
@@ -52,7 +72,7 @@ export interface Interaction {
 
 export interface Opportunity {
   id: string;
-  contactId?: string;
+  contactIds?: string[];   // attached contacts (req 4.4)
   company: string;
   role?: string;
   market: Market;
@@ -60,6 +80,7 @@ export interface Opportunity {
   source?: string;
   url?: string;
   notes?: string;
+  log?: NoteEntry[];       // conversation record (req 4)
   createdAt?: number;
 }
 
@@ -70,22 +91,6 @@ export interface ActivityLog {
   loggedOn: string; // YYYY-MM-DD
   count: number;
   notes?: string;
-  createdAt?: number;
-}
-
-// Shared networking event / meetup that admins & users can post and browse.
-export interface EventItem {
-  id: string;
-  name: string;
-  location?: string;
-  city?: string;
-  country?: string;
-  date: string;   // YYYY-MM-DD
-  time?: string;  // HH:mm
-  url?: string;
-  notes?: string;
-  createdBy: string;
-  createdByName?: string;
   createdAt?: number;
 }
 
@@ -107,4 +112,12 @@ export interface AdminConfig {
   paywallCtaUrl: string;
   pwResetSubject: string;
   pwResetBody: string;
+  // Email verification template (req 2) — admin-editable.
+  emailVerifySubject: string;
+  emailVerifyBody: string;
+  // Coaching modal copy (Q1) — admin-editable.
+  coachingTitle: string;
+  coachingBody: string;
+  coachingCtaLabel: string;
+  coachingCtaUrl: string;
 }

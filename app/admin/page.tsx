@@ -43,7 +43,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-2 font-display font-bold text-lg"><Settings className="h-5 w-5" /> Compass Admin</div>
           <div className="flex items-center gap-5 text-sm">
             <span className="text-white/70 hidden sm:inline">{user?.email}</span>
-            <Link href="/dashboard" className="inline-flex items-center gap-1 underline underline-offset-2">View site <ExternalLink className="h-3.5 w-3.5" /></Link>
+            <Link href="/compass" className="inline-flex items-center gap-1 underline underline-offset-2">View site <ExternalLink className="h-3.5 w-3.5" /></Link>
             <button onClick={() => signOut()} className="font-semibold">Sign out</button>
           </div>
         </div>
@@ -251,6 +251,12 @@ const FIELDS: { key: keyof AdminConfig; label: string; textarea?: boolean }[] = 
   { key: "paywallCtaUrl", label: "Paywall — CTA URL" },
   { key: "pwResetSubject", label: "Password email — subject" },
   { key: "pwResetBody", label: "Password email — body", textarea: true },
+  { key: "emailVerifySubject", label: "Email verification — subject" },
+  { key: "emailVerifyBody", label: "Email verification — body", textarea: true },
+  { key: "coachingTitle", label: "Coaching — title" },
+  { key: "coachingBody", label: "Coaching — body", textarea: true },
+  { key: "coachingCtaLabel", label: "Coaching — CTA label" },
+  { key: "coachingCtaUrl", label: "Coaching — CTA URL" },
 ];
 function ConfigForm() {
   const [cfg, setCfg] = useState<Partial<AdminConfig>>({});
@@ -268,7 +274,7 @@ function ConfigForm() {
 
   return (
     <form onSubmit={save} className="card p-6 space-y-4 max-w-2xl">
-      <h2 className="text-xl">Paywall &amp; email copy</h2>
+      <h2 className="text-xl">Paywall, email &amp; coaching copy</h2>
       {FIELDS.map((f) => (
         <div key={f.key}>
           <label className="label">{f.label}</label>

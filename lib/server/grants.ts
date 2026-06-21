@@ -12,6 +12,14 @@ export const DEFAULT_ADMIN_CONFIG: AdminConfig = {
   paywallCtaUrl: "https://jobhackers.global",
   pwResetSubject: "Set your JobHacker Compass password",
   pwResetBody: "Click the button below to set your password and start tracking.",
+  emailVerifySubject: "Verify your email — JobHacker Compass",
+  emailVerifyBody:
+    "Welcome aboard! Confirm your email address to unlock your JobHacker Compass and start your job search the smart way.",
+  coachingTitle: "Work with a JobHackers coach",
+  coachingBody:
+    "Accelerate your search with 1:1 guidance. A coach will help you sharpen your Compass, open doors in the hidden job market, and keep you accountable.",
+  coachingCtaLabel: "Book a coaching call",
+  coachingCtaUrl: "https://jobhackers.global",
 };
 
 export async function getAdminConfig(): Promise<AdminConfig> {

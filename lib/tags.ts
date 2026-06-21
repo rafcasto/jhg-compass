@@ -12,6 +12,8 @@ export interface EventDef {
 
 export const EVENT_DEFAULTS = {
   REGISTRATION:    { tag: "EVENT->REGISTRATION->TRACKER",     stage: "activation", label: "Registration" },
+  EMAIL_VERIFIED:  { tag: "EVENT->EMAIL_VERIFIED->TRACKER",   stage: "activation", label: "Email verified" },
+  ONBOARDED:       { tag: "EVENT->ONBOARDED->TRACKER",        stage: "activation", label: "Onboarding complete" },
   LOGIN:           { tag: "EVENT->LOGIN->TRACKER",            stage: "retention",  label: "Login" },
   LOGOUT:          { tag: "EVENT->LOGOUT->TRACKER",           stage: "retention",  label: "Logout" },
   PASSWORD_RESET:  { tag: "EVENT->PASSWORD_RESET->TRACKER",   stage: "retention",  label: "Password reset" },
@@ -22,7 +24,7 @@ export const EVENT_DEFAULTS = {
   LOG_INTERACTION: { tag: "EVENT->LOG_INTERACTION->TRACKER",  stage: "retention",  label: "Log interaction" },
   ADD_OPPORTUNITY: { tag: "EVENT->ADD_OPPORTUNITY->TRACKER",  stage: "retention",  label: "Add opportunity" },
   STAGE_CHANGE:    { tag: "EVENT->OPPORTUNITY_STAGE->TRACKER",stage: "retention",  label: "Opportunity stage change" },
-  ADD_EVENT:       { tag: "EVENT->ADD_EVENT->TRACKER",        stage: "retention",  label: "Post community event" },
+  COACHING_OPEN:   { tag: "EVENT->COACHING_OPEN->TRACKER",    stage: "retention",  label: "Coaching opened" },
   PAYWALL_HIT:     { tag: "EVENT->PAYWALL_HIT->TRACKER",      stage: "retention",  label: "Paywall shown" },
   GRANT_CREATED:   { tag: "EVENT->GRANT_CREATED->TRACKER",    stage: "activation", label: "Access granted" },
   GRANT_REDEEMED:  { tag: "EVENT->GRANT_REDEEMED->TRACKER",   stage: "activation", label: "Access redeemed" },

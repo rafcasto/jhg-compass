@@ -1,19 +1,39 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { confirmPasswordReset } from "firebase/auth";
+import { confirmPasswordReset, applyActionCode } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 
 // Landing page for the Firebase action link emailed via Resend (?oobCode=...).
-function SetPasswordInner() {
+// Handles both password actions (resetPassword/recoverEmail) and email verification
+// (mode=verifyEmail) since the Firebase console action URL is shared across modes.
+function ActionHandlerInner() {
   const params = useSearchParams();
   const router = useRouter();
   const oobCode = params.get("oobCode");
+  const mode = params.get("mode");
+
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [verifying, setVerifying] = useState(mode === "verifyEmail");
+
+  // Email verification: apply the code automatically on load.
+  useEffect(() => {
+    if (mode !== "verifyEmail") return;
+    if (!oobCode) { setErr("Invalid or expired link."); setVerifying(false); return; }
+    applyActionCode(auth, oobCode)
+      .then(async () => {
+        // refresh the local session so emailVerified flips to true
+        if (auth.currentUser) await auth.currentUser.reload().catch(() => {});
+        setDone(true);
+        setTimeout(() => router.replace("/login"), 1600);
+      })
+      .catch((e: any) => setErr(e?.message?.replace("Firebase:", "").trim() ?? "Could not verify email."))
+      .finally(() => setVerifying(false));
+  }, [mode, oobCode, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +48,21 @@ function SetPasswordInner() {
     } finally { setBusy(false); }
   }
 
+  // ---- Email verification view ----
+  if (mode === "verifyEmail") {
+    return (
+      <div className="min-h-screen grid place-items-center px-4">
+        <div className="card p-8 w-full max-w-sm text-center space-y-3">
+          <h1 className="text-2xl">Email verification</h1>
+          {verifying && <p className="text-jh-mute animate-pulse">Verifying your email…</p>}
+          {done && <p className="text-rb-green-dark text-sm">Email verified! Redirecting to sign in…</p>}
+          {err && <p className="text-sm text-jh-red">{err}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Password set / reset view ----
   return (
     <div className="min-h-screen grid place-items-center px-4">
       <form onSubmit={submit} className="card p-6 w-full max-w-sm space-y-4">
@@ -52,7 +87,7 @@ function SetPasswordInner() {
 export default function SetPasswordPage() {
   return (
     <Suspense fallback={<div className="min-h-screen grid place-items-center text-jh-mute">Loading…</div>}>
-      <SetPasswordInner />
+      <ActionHandlerInner />
     </Suspense>
   );
 }

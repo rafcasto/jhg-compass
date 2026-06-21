@@ -20,14 +20,13 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   // As soon as a session exists, leave the login screen.
   useEffect(() => {
-    if (!loading && user) router.replace("/dashboard");
+    if (!loading && user) router.replace("/compass");
   }, [user, loading, router]);
 
   // While auth is resolving or a session already exists, show a redirect state
@@ -48,14 +47,17 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, email, password);
         track(TAGS.LOGIN, { stage: "retention" });
       } else {
+        // Self-serve sign-up (req 2): email + password only. The user is then
+        // blocked by the email-verification gate, and completes their name during
+        // onboarding (req 3). No access is granted here — that's separate.
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await setDoc(doc(db, "users", cred.user.uid), {
-          email, firstName: firstName || null, createdAt: serverTimestamp(),
+          email, createdAt: serverTimestamp(),
         });
-        track(TAGS.REGISTRATION, { stage: "activation", props: { firstName } });
+        track(TAGS.REGISTRATION, { stage: "activation" });
       }
       // Keep the button disabled — the auth-state effect above handles the redirect.
-      router.replace("/dashboard");
+      router.replace("/compass");
     } catch (e: any) {
       setErr(e?.message?.replace("Firebase:", "").trim() ?? "Something went wrong.");
       setBusy(false); // only re-enable on failure
@@ -90,12 +92,6 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={submit} className="card p-6 space-y-4">
-          {mode === "signup" && (
-            <div>
-              <label className="label">First name</label>
-              <input className="field" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            </div>
-          )}
           <div>
             <label className="label">Email</label>
             <input type="email" required className="field" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -105,11 +101,17 @@ export default function LoginPage() {
             <input type="password" required minLength={6} className="field" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
 
+          {mode === "signup" && (
+            <p className="text-xs text-jh-mute">
+              We&apos;ll email you a verification link. Confirm it to set up your Compass.
+            </p>
+          )}
+
           {err && <p className="text-sm text-jh-red">{err}</p>}
           {msg && <p className="text-sm text-rb-green-dark">{msg}</p>}
 
           <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
-            {busy ? "Signing in…" : mode === "signin" ? "Sign in" : "Create account"}
+            {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
           </button>
 
           <div className="flex items-center justify-between text-sm pt-1">
