@@ -20,7 +20,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: "/compass", label: "Compass", icon: Compass },
   { href: "/performance", label: "Performance", icon: Iceberg },
-  { href: "/tracker", label: "Tracker", icon: Columns3 },
+  { href: "/tracker", label: "Progress", icon: Columns3 },
   { action: "coaching", label: "Coaching", icon: GraduationCap },
 ];
 

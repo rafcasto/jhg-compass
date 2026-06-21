@@ -61,7 +61,7 @@ export default function TrackerPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><span className="eyebrow">Pipeline</span><h1 className="mt-1">Tracker</h1></div>
+        <div><span className="eyebrow">Pipeline</span><h1 className="mt-1">Progress</h1></div>
         <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> Add job</button>
       </div>
       <p className="text-jh-mute text-sm -mt-2">
