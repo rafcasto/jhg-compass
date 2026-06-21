@@ -3,19 +3,28 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Compass, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { Compass, ArrowRight, ArrowLeft, Check, Plus, Minus } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import CountrySelect from "@/components/CountrySelect";
 import CompassSentence from "@/components/CompassSentence";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
 import {
-  HIDDEN_CATEGORIES, VISIBLE_CATEGORIES, DEFAULT_WEEKLY_TARGETS,
+  HIDDEN_CATEGORIES, VISIBLE_CATEGORIES, EFFORT_SPLIT, DEFAULT_WEEKLY_TARGETS,
+  type ActivityCategory,
 } from "@/lib/categories";
+import { scaleTarget, toWeekly } from "@/lib/period";
 import type { CompassFormula, Profile } from "@/lib/types";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
 const COMPANY_TYPES = ["startup", "small", "mid-size", "large"] as const;
+
+// Design tokens shared with the Performance tab (JobHackers design system).
+const C = {
+  ink: "#191c27", mute: "#6b7280", muteLight: "#9aa0ad", slash: "#c5c9d2",
+  disabled: "#d4d8e2", line: "#eef0f5", circle: "#e6e8ef",
+  bannerBlue: "#e2ebfb", bannerRed: "#fbe3e6",
+};
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -36,7 +45,7 @@ export default function OnboardingPage() {
   // Step 2 — compass formula
   const [compass, setCompass] = useState<CompassFormula>({});
 
-  // Step 3 — weekly targets
+  // Step 3 — targets (stored as a canonical WEEKLY base; edited here per day)
   const [targets, setTargets] = useState<Record<string, number>>({});
 
   // Route guards + prefill from any existing profile.
@@ -59,6 +68,11 @@ export default function OnboardingPage() {
   useEffect(() => {
     setTargets((t) => (Object.keys(t).length ? t : { ...DEFAULT_WEEKLY_TARGETS, ...(targetDoc?.targets ?? {}) }));
   }, [targetDoc]);
+
+  // Per-day view of the stored weekly target (day conversion ignores the anchor).
+  const daily = (id: string) => scaleTarget(targets[id] ?? 0, "day", new Date());
+  const setDaily = (id: string, d: number) =>
+    setTargets((t) => ({ ...t, [id]: toWeekly(Math.max(0, d), "day", new Date()) }));
 
   const step1Valid = firstName.trim() && lastName.trim() && country.trim();
   const step2Valid = compass.jobTitle?.trim();
@@ -109,13 +123,13 @@ export default function OnboardingPage() {
         {step === 1 && (
           <CompassCard sentence={<CompassSentence c={compass} />}>
             <p className="text-sm text-jh-mute mb-4">
-              Your Compass keeps you pointed at the right target. Fill in the blanks — be specific.
+              Your goal statement keeps you pointed at the right target. Fill in the blanks — be specific.
             </p>
             <Field label="Job title / function" value={compass.jobTitle ?? ""}
               onChange={(v) => setCompass((c) => ({ ...c, jobTitle: v }))} placeholder="e.g. Product Marketing Manager" />
             <Field label="Industry" value={compass.industry ?? ""}
               onChange={(v) => setCompass((c) => ({ ...c, industry: v }))} placeholder="e.g. FinTech" />
-            <Field label="Geography" value={compass.geography ?? ""}
+            <Field label="Location" value={compass.geography ?? ""}
               onChange={(v) => setCompass((c) => ({ ...c, geography: v }))} placeholder="e.g. London or remote-EU" />
             <div>
               <label className="label">Type of company</label>
@@ -140,14 +154,23 @@ export default function OnboardingPage() {
         )}
 
         {step === 2 && (
-          <Card title="Set your weekly targets 🎯"
-            subtitle="How much will you do each week? You can fine-tune these any time in Performance.">
-            <TargetGroup title="🧊 Hidden market — below the waterline" cats={HIDDEN_CATEGORIES} targets={targets} setTargets={setTargets} />
-            <TargetGroup title="🌊 Visible market — above the waterline" cats={VISIBLE_CATEGORIES} targets={targets} setTargets={setTargets} />
+          <div className="space-y-4">
+            <div className="card p-6">
+              <h1 className="text-2xl">Set your daily targets 🎯</h1>
+              <p className="text-jh-mute text-sm mt-1">How much will you do each day? You can fine-tune these any time in Performance.</p>
+            </div>
+
+            <TargetSection emoji="👀" main="Hidden Job Market"
+              subtitle={`Contributes to ~${EFFORT_SPLIT.hidden}% of your success`} bg={C.bannerRed}
+              cats={HIDDEN_CATEGORIES} daily={daily} setDaily={setDaily} />
+            <TargetSection emoji="✅" main="Visible Job Market"
+              subtitle={`Contributes to ~${EFFORT_SPLIT.visible}% of your success`} bg={C.bannerBlue}
+              cats={VISIBLE_CATEGORIES} daily={daily} setDaily={setDaily} />
+
             <Nav onBack={() => setStep(1)}
               onNext={finish} nextLabel={busy ? "Setting up…" : "Finish & enter Compass"}
               nextDisabled={busy} nextIcon={<Check className="h-4 w-4" />} />
-          </Card>
+          </div>
         )}
       </div>
     </div>
@@ -179,11 +202,11 @@ function Card({ title, subtitle, children }: { title: string; subtitle?: string;
 function CompassCard({ sentence, children }: { sentence: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      {/* Compass-branded formula recap with a faint compass icon behind it */}
+      {/* Goal-statement recap with a faint compass icon behind it */}
       <div className="relative overflow-hidden rounded-lg bg-jh-ink text-white p-6">
         <Compass className="absolute -right-6 -bottom-6 h-40 w-40 text-white/5" strokeWidth={1} />
         <div className="relative">
-          <span className="eyebrow text-white/60">Your Compass</span>
+          <span className="eyebrow text-white/60">Your Goal Statement</span>
           <p className="mt-2 font-display font-semibold text-lg leading-snug">{sentence}</p>
         </div>
       </div>
@@ -202,28 +225,46 @@ function Field({ label, value, onChange, placeholder }:
   );
 }
 
-function TargetGroup({ title, cats, targets, setTargets }: {
-  title: string;
-  cats: typeof HIDDEN_CATEGORIES;
-  targets: Record<string, number>;
-  setTargets: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+function TargetSection({ emoji, main, subtitle, bg, cats, daily, setDaily }: {
+  emoji: string; main: string; subtitle: string; bg: string;
+  cats: ActivityCategory[];
+  daily: (id: string) => number;
+  setDaily: (id: string, d: number) => void;
 }) {
   return (
-    <div>
-      <h3 className="text-sm font-display font-semibold text-jh-ink mb-2">{title}</h3>
-      <ul className="space-y-2">
-        {cats.map((c) => (
-          <li key={c.id} className="flex items-center gap-3">
-            <span className="text-lg shrink-0">{c.emoji}</span>
-            <span className="text-sm text-jh-ink flex-1 leading-snug">{c.label}</span>
-            <input type="number" min={0}
-              value={targets[c.id] ?? 0}
-              onChange={(e) => setTargets((t) => ({ ...t, [c.id]: Math.max(0, Number(e.target.value)) }))}
-              className="w-16 rounded-[8px] border border-jh-line px-2 py-1 text-center text-jh-ink" />
-            <span className="text-[11px] text-jh-mute w-10">/ wk</span>
-          </li>
-        ))}
-      </ul>
+    <section className="card overflow-hidden">
+      <div className="flex items-center gap-3" style={{ background: bg, padding: "15px 18px" }}>
+        <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
+        <div>
+          <div className="font-display font-bold" style={{ fontSize: 16, lineHeight: 1.2, color: C.ink }}>{main}</div>
+          <div style={{ fontSize: 13, color: C.mute, marginTop: 2 }}>{subtitle}</div>
+        </div>
+      </div>
+      <div className="px-5">
+        {cats.map((c) => <TargetRow key={c.id} label={c.label} value={daily(c.id)} onChange={(d) => setDaily(c.id, d)} />)}
+      </div>
+    </section>
+  );
+}
+
+function TargetRow({ label, value, onChange }: { label: string; value: number; onChange: (d: number) => void }) {
+  return (
+    <div className="flex gap-4 items-center" style={{ padding: "14px 0", borderBottom: `1px solid ${C.line}` }}>
+      <div className="flex-1 min-w-0 font-display font-semibold" style={{ fontSize: 15, lineHeight: 1.3, color: C.ink }}>{label}</div>
+      <div className="flex-none text-center">
+        <div className="font-display font-semibold uppercase" style={{ fontSize: 10.5, letterSpacing: ".07em", color: C.muteLight }}>Per day</div>
+        <div className="flex items-center justify-end" style={{ gap: 11, marginTop: 6 }}>
+          <button type="button" onClick={() => onChange(value - 1)} className="grid place-items-center rounded-full"
+            style={{ width: 36, height: 36, border: `1.5px solid ${C.circle}`, background: "#fff", color: value > 0 ? C.mute : C.disabled }}>
+            <Minus className="h-5 w-5" />
+          </button>
+          <span className="font-display font-bold" style={{ fontSize: 24, color: value > 0 ? C.ink : C.slash, width: 24, textAlign: "center" }}>{value}</span>
+          <button type="button" onClick={() => onChange(value + 1)} className="grid place-items-center rounded-full text-white"
+            style={{ width: 36, height: 36, background: C.ink, boxShadow: "0 4px 12px rgba(25,28,39,.20)" }}>
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
