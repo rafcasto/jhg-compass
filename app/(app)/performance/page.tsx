@@ -97,7 +97,7 @@ export default function PerformancePage() {
             style={editAll
               ? { fontSize: 12.5, padding: "8px 15px", background: C.red, color: "#fff", border: `1.5px solid ${C.red}` }
               : { fontSize: 12.5, padding: "8px 15px", background: "#fff", color: C.ink, border: `1.5px solid ${C.disabled}` }}>
-            {editAll ? "Done" : "Edit goals"}
+            {editAll ? "Done" : "Edit targets"}
           </button>
         </div>
 
@@ -122,34 +122,34 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* Above the waterline — visible */}
+      {/* Hidden job market — the bulk of success (top) */}
       <section>
-        <Banner emoji="🌊" main="Above the waterline" sub="— Visible job market"
-          subtitle={`Drives ~${EFFORT_SPLIT.visible}% of your success`} bg={C.bannerBlue} />
-        <Rows cats={VISIBLE_CATEGORIES} {...rowProps} />
-      </section>
-
-      {/* Below the waterline — hidden */}
-      <section>
-        <Banner emoji="🧊" main="Below the waterline" sub="— Hidden job market"
-          subtitle={`Drives ~${EFFORT_SPLIT.hidden}% of your success`} bg={C.bannerRed} />
+        <Banner emoji="👀" main="Hidden Job Market"
+          subtitle={`Contributes to ~${EFFORT_SPLIT.hidden}% of your success`} bg={C.bannerRed} />
         <Rows cats={HIDDEN_CATEGORIES} {...rowProps} />
       </section>
 
+      {/* Visible job market (bottom) */}
+      <section>
+        <Banner emoji="✅" main="Visible Job Market"
+          subtitle={`Contributes to ~${EFFORT_SPLIT.visible}% of your success`} bg={C.bannerBlue} />
+        <Rows cats={VISIBLE_CATEGORIES} {...rowProps} />
+      </section>
+
       <p className="text-center italic" style={{ fontSize: 12.5, color: C.muteLight }}>
-        Tap + / − to log today. Tap <span className="not-italic font-semibold" style={{ color: C.mute }}>Edit goals</span> to set targets.
+        Tap + / − to log today. Tap <span className="not-italic font-semibold" style={{ color: C.mute }}>Edit targets</span> to set them.
       </p>
     </div>
   );
 }
 
-function Banner({ emoji, main, sub, subtitle, bg }: { emoji: string; main: string; sub: string; subtitle: string; bg: string }) {
+function Banner({ emoji, main, sub, subtitle, bg }: { emoji: string; main: string; sub?: string; subtitle: string; bg: string }) {
   return (
     <div className="rounded-2xl flex items-center gap-3" style={{ background: bg, padding: "15px 18px" }}>
       <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
       <div>
         <div className="font-display font-bold" style={{ fontSize: 16, lineHeight: 1.2, color: C.ink }}>
-          {main} <span className="font-semibold" style={{ color: C.mute }}>{sub}</span>
+          {main}{sub ? <> <span className="font-semibold" style={{ color: C.mute }}>{sub}</span></> : null}
         </div>
         <div style={{ fontSize: 13, color: C.mute, marginTop: 2 }}>{subtitle}</div>
       </div>
