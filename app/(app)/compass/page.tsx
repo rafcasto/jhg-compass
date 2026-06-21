@@ -72,6 +72,16 @@ export default function CompassPage() {
               {COMPANY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
+          <div>
+            <label className="label">Compensation</label>
+            <div className="grid grid-cols-2 gap-3">
+              <input className="field" placeholder="Target salary" value={draft.targetSalary ?? ""}
+                onChange={(e) => setDraft((c) => ({ ...c, targetSalary: e.target.value }))} />
+              <input className="field" placeholder="Minimum (deal-breaker)" value={draft.minSalary ?? ""}
+                onChange={(e) => setDraft((c) => ({ ...c, minSalary: e.target.value }))} />
+            </div>
+            <p className="text-[11px] text-jh-mute mt-1">Target = what you&apos;re aiming for. Minimum = the lowest you&apos;d accept.</p>
+          </div>
           <div className="flex items-center gap-3 pt-1">
             <button onClick={() => setEditing(false)} className="btn-ghost"><X className="h-4 w-4" /> Cancel</button>
             <button onClick={save} disabled={busy || !draft.jobTitle?.trim()} className="btn-primary flex-1 disabled:opacity-50">
@@ -80,12 +90,15 @@ export default function CompassPage() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Detail label="Job title / function" value={profile?.compass?.jobTitle} />
-          <Detail label="Industry" value={profile?.compass?.industry} />
-          <Detail label="Geography" value={profile?.compass?.geography} />
-          <Detail label="Type of company" value={profile?.compass?.companyType} />
-        </div>
+        <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Detail label="Job title / function" value={profile?.compass?.jobTitle} />
+            <Detail label="Industry" value={profile?.compass?.industry} />
+            <Detail label="Geography" value={profile?.compass?.geography} />
+            <Detail label="Type of company" value={profile?.compass?.companyType} />
+          </div>
+          <CompCard target={profile?.compass?.targetSalary} min={profile?.compass?.minSalary} />
+        </>
       )}
     </div>
   );
@@ -106,6 +119,24 @@ function Detail({ label, value }: { label: string; value?: string }) {
     <div className="card p-4">
       <p className="text-xs text-jh-mute">{label}</p>
       <p className="mt-1 font-display font-semibold text-jh-ink capitalize">{value || "—"}</p>
+    </div>
+  );
+}
+
+function CompCard({ target, min }: { target?: string; min?: string }) {
+  return (
+    <div className="card p-5">
+      <p className="text-xs text-jh-mute mb-3">Compensation</p>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-jh-mute-2">Target salary</p>
+          <p className="mt-1 font-display font-extrabold text-xl text-rb-green-dark">{target || "—"}</p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-jh-mute-2">Minimum · deal-breaker</p>
+          <p className="mt-1 font-display font-extrabold text-xl text-jh-red">{min || "—"}</p>
+        </div>
+      </div>
     </div>
   );
 }

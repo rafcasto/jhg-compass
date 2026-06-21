@@ -125,6 +125,16 @@ export default function OnboardingPage() {
                 {COMPANY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
+            <div>
+              <label className="label">Compensation</label>
+              <div className="grid grid-cols-2 gap-3">
+                <input className="field" placeholder="Target salary" value={compass.targetSalary ?? ""}
+                  onChange={(e) => setCompass((c) => ({ ...c, targetSalary: e.target.value }))} />
+                <input className="field" placeholder="Minimum (deal-breaker)" value={compass.minSalary ?? ""}
+                  onChange={(e) => setCompass((c) => ({ ...c, minSalary: e.target.value }))} />
+              </div>
+              <p className="text-[11px] text-jh-mute mt-1">Target = what you&apos;re aiming for. Minimum = the lowest you&apos;d accept.</p>
+            </div>
             <Nav onBack={() => setStep(0)} onNext={() => setStep(2)} nextDisabled={!step2Valid} />
           </CompassCard>
         )}

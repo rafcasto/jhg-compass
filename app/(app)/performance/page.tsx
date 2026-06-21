@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Minus, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import {
   paths, createDoc, updateRecord, deleteRecord, setDoc, useLiveCollection, useLiveDoc,
@@ -22,8 +22,7 @@ import { TAGS } from "@/lib/tags";
 const PERIODS: Period[] = ["day", "week", "month"];
 const UNIT: Record<Period, string> = { day: "day", week: "week", month: "month" };
 
-// Activities that are fundamentally "contacting & meeting people" — the key driver.
-const MEETING_CATS = ["outreach_referral", "outreach_cold", "pleasure_interview", "info_interview", "job_interview"];
+type RagStatus = ReturnType<typeof rag>;
 
 export default function PerformancePage() {
   const { user } = useAuth();
@@ -44,13 +43,6 @@ export default function PerformancePage() {
     for (const l of logs) if (inRange(l.loggedOn, range)) acc[l.categoryId] = (acc[l.categoryId] ?? 0) + (l.count ?? 1);
     return acc;
   }, [logs, range]);
-
-  const sum = (cats: ActivityCategory[], pick: (id: string) => number) => cats.reduce((s, c) => s + pick(c.id), 0);
-  const hiddenA = sum(HIDDEN_CATEGORIES, (id) => actuals[id] ?? 0);
-  const visibleA = sum(VISIBLE_CATEGORIES, (id) => actuals[id] ?? 0);
-  const total = hiddenA + visibleA;
-  const hiddenPct = total ? Math.round((hiddenA / total) * 100) : 0;
-  const meetingCount = MEETING_CATS.reduce((s, id) => s + (actuals[id] ?? 0), 0);
 
   const todayKey = ymd(new Date());
   const logOn = period === "day" ? range.start : inRange(todayKey, range) ? todayKey : range.end;
@@ -84,7 +76,7 @@ export default function PerformancePage() {
         <h1 className="mt-1">Performance</h1>
         <p className="text-jh-mute mt-1 text-sm">
           Success isn&apos;t luck — it&apos;s a set of activities. Log what you do per{" "}
-          <strong className="text-jh-ink">{UNIT[period]}</strong> and watch the iceberg.
+          <strong className="text-jh-ink">{UNIT[period]}</strong> and track actual vs target.
         </p>
       </div>
 
@@ -115,28 +107,6 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* People-met highlight (the key driver) + waterline balance */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="card p-4 sm:col-span-1 flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-full bg-jh-red-soft text-jh-red"><Users className="h-6 w-6" /></div>
-          <div>
-            <div className="font-display font-extrabold text-2xl text-jh-ink leading-none">{meetingCount}</div>
-            <div className="text-xs text-jh-mute mt-1">people contacted / met this {UNIT[period]}</div>
-          </div>
-        </div>
-        <div className="card p-4 sm:col-span-2">
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-rb-blue font-semibold">Above water · Visible {100 - hiddenPct}%</span>
-            <span className="text-jh-red font-semibold">Below water · Hidden {hiddenPct}%</span>
-          </div>
-          <div className="h-2.5 rounded-pill bg-jh-blue-grey overflow-hidden flex">
-            <div className="bg-rb-blue h-full" style={{ width: `${100 - hiddenPct}%` }} />
-            <div className="bg-jh-red h-full" style={{ width: `${hiddenPct}%` }} />
-          </div>
-          <p className="text-[11px] text-jh-mute mt-1">Target {EFFORT_SPLIT.visible}% / {EFFORT_SPLIT.hidden}% · {total} activities this {UNIT[period]}.</p>
-        </div>
-      </div>
-
       <CategoryGroup title="🌊 Above the waterline — Visible job market" subtitle={`≤${EFFORT_SPLIT.visible}% of your effort`} cats={VISIBLE_CATEGORIES}
         actuals={actuals} periodTarget={periodTarget} unit={UNIT[period]}
         onAdd={add} onRemove={remove} onGoal={setGoal} accent="blue" />
@@ -144,10 +114,12 @@ export default function PerformancePage() {
         actuals={actuals} periodTarget={periodTarget} unit={UNIT[period]}
         onAdd={add} onRemove={remove} onGoal={setGoal} accent="red" />
 
-      <div className="flex items-center gap-4 justify-center text-xs text-jh-mute pt-1">
+      {/* legend */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 justify-center text-xs text-jh-mute pt-1">
         <Legend cls="bg-rb-green-dark" label="On / above goal" />
         <Legend cls="bg-rb-orange" label="Halfway" />
         <Legend cls="bg-jh-red" label="Behind" />
+        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-[3px] rounded bg-jh-ink" /> Target</span>
       </div>
     </div>
   );
@@ -155,6 +127,25 @@ export default function PerformancePage() {
 
 function Legend({ cls, label }: { cls: string; label: string }) {
   return <span className="inline-flex items-center gap-1.5"><span className={`h-2.5 w-2.5 rounded-full ${cls}`} /> {label}</span>;
+}
+
+// Bullet ("bowling") chart — Actual vs Target. The coloured bar is the actual value,
+// the grey bands are qualitative ranges relative to target, and the dark tick is the
+// target. Full-width and stacked → mobile-first; scales cleanly on desktop.
+function Bullet({ a, t, status }: { a: number; t: number; status: RagStatus }) {
+  const max = Math.max(t * 1.4, a, 1);
+  const p = (v: number) => `${Math.min(100, (v / max) * 100)}%`;
+  return (
+    <div className="relative h-5 w-full rounded-[6px] bg-jh-mist overflow-hidden">
+      {/* qualitative bands: lighter as you approach target */}
+      {t > 0 && <div className="absolute inset-y-0 left-0 bg-jh-blue-grey/50" style={{ width: p(t * 0.9) }} />}
+      {t > 0 && <div className="absolute inset-y-0 left-0 bg-jh-blue-grey" style={{ width: p(t * 0.5) }} />}
+      {/* actual value bar */}
+      <div className={`absolute left-0 top-1/2 -translate-y-1/2 h-2 rounded-pill ${RAG_BAR[status]}`} style={{ width: p(a) }} />
+      {/* target marker */}
+      {t > 0 && <div className="absolute inset-y-0 w-[3px] bg-jh-ink rounded" style={{ left: p(t) }} />}
+    </div>
+  );
 }
 
 function CategoryGroup({
@@ -176,17 +167,15 @@ function CategoryGroup({
           const a = actuals[c.id] ?? 0;
           const t = periodTarget(c.id);
           const status = rag(a, t);
-          const pct = t > 0 ? Math.min(100, Math.round((a / t) * 100)) : a > 0 ? 100 : 0;
           return (
             <li key={c.id} className="flex items-center gap-3 px-4 py-3">
               <span className="text-xl shrink-0">{c.emoji}</span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-body font-semibold text-jh-ink leading-snug">{c.label}</p>
+                {/* bullet (bowling) chart */}
                 <div className="mt-1.5 flex items-center gap-2">
-                  <div className="h-2 flex-1 rounded-pill bg-jh-mist overflow-hidden">
-                    <div className={`h-full rounded-pill ${RAG_BAR[status]}`} style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className={`text-xs font-display font-bold ${RAG_TEXT[status]}`}>{a}/{t}</span>
+                  <div className="flex-1"><Bullet a={a} t={t} status={status} /></div>
+                  <span className={`text-xs font-display font-bold tabular-nums ${RAG_TEXT[status]}`}>{a}/{t}</span>
                 </div>
                 <label className="mt-1 flex items-center gap-1 text-xs text-jh-mute">
                   Goal /{unit}:
