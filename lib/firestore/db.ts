@@ -18,6 +18,7 @@ export const paths = {
   settingsTargets: (uid: string) => doc(db, "users", uid, "settings", "targets"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
+  content: () => doc(db, "config", "content"),
 };
 
 // ---- generic live collection hook ----

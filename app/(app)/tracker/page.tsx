@@ -8,17 +8,19 @@ import { useAuth } from "@/components/AuthProvider";
 import {
   useLiveCollection, paths, createDoc, updateRecord, deleteRecord,
 } from "@/lib/firestore/db";
+import { useContent } from "@/lib/firestore/content";
 import type { Contact, NoteEntry, Opportunity, OpportunityStage } from "@/lib/types";
 import type { Market } from "@/lib/categories";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
-const STAGES: { key: OpportunityStage; label: string; dot: string }[] = [
-  { key: "wishlist",  label: "Wishlist",  dot: "bg-jh-mute" },
-  { key: "applied",   label: "Applied",   dot: "bg-rb-blue" },
-  { key: "interview", label: "Interview", dot: "bg-rb-orange" },
-  { key: "offer",     label: "Offer",     dot: "bg-rb-green-dark" },
-  { key: "rejected",  label: "Rejected",  dot: "bg-jh-red" },
+// Stage columns — labels are admin-editable via content (tracker.stage.*).
+const STAGES: { key: OpportunityStage; tkey: string; dot: string }[] = [
+  { key: "wishlist",  tkey: "tracker.stage.wishlist",  dot: "bg-jh-mute" },
+  { key: "applied",   tkey: "tracker.stage.applied",   dot: "bg-rb-blue" },
+  { key: "interview", tkey: "tracker.stage.interview", dot: "bg-rb-orange" },
+  { key: "offer",     tkey: "tracker.stage.offer",     dot: "bg-rb-green-dark" },
+  { key: "rejected",  tkey: "tracker.stage.rejected",  dot: "bg-jh-red" },
 ];
 
 // Map any legacy stage to the new kanban columns.
@@ -37,6 +39,7 @@ function normalizeStage(s: string | undefined): OpportunityStage {
 export default function TrackerPage() {
   const { user } = useAuth();
   const uid = user?.uid;
+  const { t } = useContent();
   const { data: opps } = useLiveCollection<Opportunity>(uid, paths.opportunities);
   const { data: contacts } = useLiveCollection<Contact>(uid, paths.contacts);
   const [adding, setAdding] = useState(false);
@@ -61,12 +64,10 @@ export default function TrackerPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><span className="eyebrow">Pipeline</span><h1 className="mt-1">Progress</h1></div>
-        <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> Add job</button>
+        <div><span className="eyebrow">{t("tracker.eyebrow")}</span><h1 className="mt-1">{t("tracker.title")}</h1></div>
+        <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("tracker.addJob")}</button>
       </div>
-      <p className="text-jh-mute text-sm -mt-2">
-        Every role you&apos;re chasing, in one board. Drag cards across stages — or use the menu on mobile.
-      </p>
+      <p className="text-jh-mute text-sm -mt-2">{t("tracker.intro")}</p>
 
       {/* Board: horizontal scroll on mobile, 5 columns on desktop */}
       <div className="flex gap-3 overflow-x-auto md:overflow-visible pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
@@ -81,7 +82,7 @@ export default function TrackerPage() {
                 ${dragOver === s.key ? "border-jh-red bg-jh-red-soft/40" : "border-jh-line bg-jh-mist/50"}`}>
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-jh-line">
                 <span className="flex items-center gap-2 font-display font-semibold text-sm text-jh-ink">
-                  <span className={`h-2 w-2 rounded-full ${s.dot}`} /> {s.label}
+                  <span className={`h-2 w-2 rounded-full ${s.dot}`} /> {t(s.tkey)}
                 </span>
                 <span className="text-xs text-jh-mute font-semibold">{cards.length}</span>
               </div>
@@ -90,7 +91,7 @@ export default function TrackerPage() {
                   <Card key={o.id} o={o} contacts={contacts}
                     onOpen={() => setOpenId(o.id)} onMove={(st) => move(o.id, st)} />
                 ))}
-                {cards.length === 0 && <p className="text-center text-xs text-jh-mute-2 py-4">Drop jobs here</p>}
+                {cards.length === 0 && <p className="text-center text-xs text-jh-mute-2 py-4">{t("tracker.dropHere")}</p>}
               </div>
             </div>
           );
@@ -106,6 +107,7 @@ export default function TrackerPage() {
 function Card({ o, contacts, onOpen, onMove }: {
   o: Opportunity; contacts: Contact[]; onOpen: () => void; onMove: (s: OpportunityStage) => void;
 }) {
+  const { t } = useContent();
   const attached = (o.contactIds ?? []).length;
   const notes = (o.log ?? []).length;
   return (
@@ -115,7 +117,7 @@ function Card({ o, contacts, onOpen, onMove }: {
       <div className="flex items-start gap-2" onClick={onOpen}>
         <GripVertical className="h-4 w-4 text-jh-mute-2 mt-0.5 shrink-0 hidden md:block" />
         <div className="min-w-0 flex-1">
-          <p className="font-display font-semibold text-jh-ink text-sm leading-snug truncate">{o.role || "Role"}</p>
+          <p className="font-display font-semibold text-jh-ink text-sm leading-snug truncate">{o.role || t("tracker.roleFallback")}</p>
           <p className="text-xs text-jh-mute truncate">{o.company}</p>
         </div>
         <span className={o.market === "hidden" ? "pill-hidden shrink-0" : "pill-visible shrink-0"}>{o.market}</span>
@@ -128,7 +130,7 @@ function Card({ o, contacts, onOpen, onMove }: {
       <select value={normalizeStage(o.stage)} onChange={(e) => onMove(e.target.value as OpportunityStage)}
         onClick={(e) => e.stopPropagation()}
         className="mt-2 w-full rounded-[8px] border border-jh-line bg-jh-mist/60 px-2 py-1 text-xs text-jh-ink md:hidden">
-        {STAGES.map((s) => <option key={s.key} value={s.key}>Move to: {s.label}</option>)}
+        {STAGES.map((s) => <option key={s.key} value={s.key}>{t("tracker.moveTo")} {t(s.tkey)}</option>)}
       </select>
     </div>
   );
@@ -136,6 +138,7 @@ function Card({ o, contacts, onOpen, onMove }: {
 
 /* ---------------- Add opportunity ---------------- */
 function AddOpportunity({ uid, onClose }: { uid: string; onClose: () => void }) {
+  const { t } = useContent();
   const [f, setF] = useState({ company: "", role: "", market: "hidden" as Market, source: "", url: "" });
   const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
   const [busy, setBusy] = useState(false);
@@ -150,21 +153,21 @@ function AddOpportunity({ uid, onClose }: { uid: string; onClose: () => void }) 
   }
 
   return (
-    <Sheet title="Add job opportunity" onClose={onClose}>
+    <Sheet title={t("tracker.addTitle")} onClose={onClose}>
       <form onSubmit={save} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Company</label><input className="field" value={f.company} onChange={(e) => set("company", e.target.value)} required /></div>
-          <div><label className="label">Role</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.company")}</label><input className="field" value={f.company} onChange={(e) => set("company", e.target.value)} required /></div>
+          <div><label className="label">{t("tracker.f.role")}</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Market</label>
+          <div><label className="label">{t("tracker.f.market")}</label>
             <select className="field" value={f.market} onChange={(e) => set("market", e.target.value)}>
-              <option value="hidden">Hidden</option><option value="visible">Visible</option>
+              <option value="hidden">{t("tracker.f.hidden")}</option><option value="visible">{t("tracker.f.visible")}</option>
             </select></div>
-          <div><label className="label">Source</label><input className="field" value={f.source} onChange={(e) => set("source", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.source")}</label><input className="field" value={f.source} onChange={(e) => set("source", e.target.value)} /></div>
         </div>
-        <div><label className="label">Link</label><input className="field" value={f.url} onChange={(e) => set("url", e.target.value)} /></div>
-        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Adding…" : "Add to Wishlist"}</button>
+        <div><label className="label">{t("tracker.f.link")}</label><input className="field" value={f.url} onChange={(e) => set("url", e.target.value)} /></div>
+        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Adding…" : t("tracker.addSubmit")}</button>
       </form>
     </Sheet>
   );
@@ -174,6 +177,7 @@ function AddOpportunity({ uid, onClose }: { uid: string; onClose: () => void }) 
 function DetailModal({ uid, opp, contacts, onClose }: {
   uid: string; opp: Opportunity; contacts: Contact[]; onClose: () => void;
 }) {
+  const { t } = useContent();
   const [note, setNote] = useState("");
   const [pickId, setPickId] = useState("");
   const [creating, setCreating] = useState(false);
@@ -204,41 +208,41 @@ function DetailModal({ uid, opp, contacts, onClose }: {
   }
 
   return (
-    <Sheet title={`${opp.role || "Role"} · ${opp.company}`} onClose={onClose} wide>
+    <Sheet title={`${opp.role || t("tracker.roleFallback")} · ${opp.company}`} onClose={onClose} wide>
       <div className="space-y-5">
         <div className="flex items-center gap-2">
           <span className={opp.market === "hidden" ? "pill-hidden" : "pill-visible"}>{opp.market}</span>
-          {opp.url && <a href={opp.url} target="_blank" rel="noreferrer" className="link inline-flex items-center gap-1 text-sm">Job link <ExternalLink className="h-3.5 w-3.5" /></a>}
-          <button onClick={removeOpp} className="ml-auto text-jh-mute hover:text-jh-red inline-flex items-center gap-1 text-sm"><Trash2 className="h-4 w-4" /> Delete</button>
+          {opp.url && <a href={opp.url} target="_blank" rel="noreferrer" className="link inline-flex items-center gap-1 text-sm">{t("tracker.jobLink")} <ExternalLink className="h-3.5 w-3.5" /></a>}
+          <button onClick={removeOpp} className="ml-auto text-jh-mute hover:text-jh-red inline-flex items-center gap-1 text-sm"><Trash2 className="h-4 w-4" /> {t("tracker.delete")}</button>
         </div>
 
         {/* Attached contacts */}
         <section>
-          <h3 className="text-sm font-display font-semibold text-jh-ink mb-2">Contacts</h3>
+          <h3 className="text-sm font-display font-semibold text-jh-ink mb-2">{t("tracker.contacts")}</h3>
           <div className="space-y-2">
             {attached.map((c) => (
               <ContactRow key={c.id} uid={uid} c={c} onDetach={() => detach(c.id)} />
             ))}
-            {attached.length === 0 && <p className="text-xs text-jh-mute">No contacts attached yet. Add the people who can open doors here.</p>}
+            {attached.length === 0 && <p className="text-xs text-jh-mute">{t("tracker.contactsEmpty")}</p>}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {available.length > 0 && (
               <select value={pickId} onChange={(e) => attach(e.target.value)} className="field py-2 w-auto text-sm flex-1 min-w-40">
-                <option value="">Attach existing contact…</option>
+                <option value="">{t("tracker.attachContact")}</option>
                 {available.map((c) => <option key={c.id} value={c.id}>{c.fullName}{c.company ? ` · ${c.company}` : ""}</option>)}
               </select>
             )}
-            <button onClick={() => setCreating(true)} className="btn-secondary text-sm"><Plus className="h-4 w-4" /> New contact</button>
+            <button onClick={() => setCreating(true)} className="btn-secondary text-sm"><Plus className="h-4 w-4" /> {t("tracker.newContact")}</button>
           </div>
         </section>
 
         {/* Conversation log */}
         <section>
-          <h3 className="text-sm font-display font-semibold text-jh-ink mb-2">Conversation notes</h3>
+          <h3 className="text-sm font-display font-semibold text-jh-ink mb-2">{t("tracker.notes")}</h3>
           <div className="flex gap-2">
-            <input className="field" placeholder="Log a call, email, update…" value={note}
+            <input className="field" placeholder={t("tracker.notePlaceholder")} value={note}
               onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNote(); } }} />
-            <button onClick={addNote} className="btn-primary shrink-0">Add</button>
+            <button onClick={addNote} className="btn-primary shrink-0">{t("tracker.addNote")}</button>
           </div>
           <ul className="mt-3 space-y-2">
             {log.map((n, i) => (
@@ -247,7 +251,7 @@ function DetailModal({ uid, opp, contacts, onClose }: {
                 <p className="text-[11px] text-jh-mute-2 mt-1">{fmt(n.at)}</p>
               </li>
             ))}
-            {log.length === 0 && <li className="text-xs text-jh-mute">No notes yet.</li>}
+            {log.length === 0 && <li className="text-xs text-jh-mute">{t("tracker.noNotes")}</li>}
           </ul>
         </section>
       </div>
@@ -259,6 +263,7 @@ function DetailModal({ uid, opp, contacts, onClose }: {
 }
 
 function ContactRow({ uid, c, onDetach }: { uid: string; c: Contact; onDetach: () => void }) {
+  const { t } = useContent();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const log = [...(c.log ?? [])].sort((a, b) => b.at - a.at);
@@ -285,9 +290,9 @@ function ContactRow({ uid, c, onDetach }: { uid: string; c: Contact; onDetach: (
       {open && (
         <div className="mt-2 border-t border-jh-line pt-2">
           <div className="flex gap-2">
-            <input className="field py-1.5 text-sm" placeholder="Note about this person…" value={note}
+            <input className="field py-1.5 text-sm" placeholder={t("tracker.notePlaceholder")} value={note}
               onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNote(); } }} />
-            <button onClick={addNote} className="btn-secondary text-sm shrink-0">Add</button>
+            <button onClick={addNote} className="btn-secondary text-sm shrink-0">{t("tracker.addNote")}</button>
           </div>
           <ul className="mt-2 space-y-1.5">
             {log.map((n, i) => (
@@ -303,6 +308,7 @@ function ContactRow({ uid, c, onDetach }: { uid: string; c: Contact; onDetach: (
 function CreateContact({ uid, onClose, onCreated }: {
   uid: string; onClose: () => void; onCreated: (id: string) => void;
 }) {
+  const { t } = useContent();
   const [f, setF] = useState({ fullName: "", company: "", role: "", market: "hidden" as Market, email: "", linkedinUrl: "" });
   const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
   const [busy, setBusy] = useState(false);
@@ -319,22 +325,22 @@ function CreateContact({ uid, onClose, onCreated }: {
   }
 
   return (
-    <Sheet title="New contact" onClose={onClose}>
+    <Sheet title={t("tracker.newContactTitle")} onClose={onClose}>
       <form onSubmit={save} className="space-y-3">
-        <div><label className="label">Full name</label><input className="field" value={f.fullName} onChange={(e) => set("fullName", e.target.value)} required /></div>
+        <div><label className="label">{t("tracker.f.fullName")}</label><input className="field" value={f.fullName} onChange={(e) => set("fullName", e.target.value)} required /></div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Company</label><input className="field" value={f.company} onChange={(e) => set("company", e.target.value)} /></div>
-          <div><label className="label">Role</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.company")}</label><input className="field" value={f.company} onChange={(e) => set("company", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.role")}</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Market</label>
+          <div><label className="label">{t("tracker.f.market")}</label>
             <select className="field" value={f.market} onChange={(e) => set("market", e.target.value)}>
-              <option value="hidden">Hidden</option><option value="visible">Visible</option>
+              <option value="hidden">{t("tracker.f.hidden")}</option><option value="visible">{t("tracker.f.visible")}</option>
             </select></div>
-          <div><label className="label">Email</label><input className="field" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.email")}</label><input className="field" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
         </div>
-        <div><label className="label">LinkedIn URL</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
-        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Saving…" : "Create & attach"}</button>
+        <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Saving…" : t("tracker.createAttach")}</button>
       </form>
     </Sheet>
   );

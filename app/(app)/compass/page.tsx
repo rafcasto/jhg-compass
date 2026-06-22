@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Compass as CompassIcon, Pencil, Check, X } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
+import { useContent } from "@/lib/firestore/content";
 import type { CompassFormula, Profile } from "@/lib/types";
 import CompassSentence from "@/components/CompassSentence";
 
@@ -12,6 +13,7 @@ const COMPANY_TYPES = ["startup", "small", "mid-size", "large"] as const;
 export default function CompassPage() {
   const { user } = useAuth();
   const uid = user?.uid;
+  const { t } = useContent();
   const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
 
   const [editing, setEditing] = useState(false);
@@ -33,7 +35,7 @@ export default function CompassPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><span className="eyebrow">Your north star</span><h1 className="mt-1">Compass</h1></div>
+        <div><span className="eyebrow">{t("compass.eyebrow")}</span><h1 className="mt-1">{t("compass.title")}</h1></div>
         {!editing && (
           <button onClick={() => { setDraft(profile?.compass ?? {}); setEditing(true); }} className="btn-secondary">
             <Pencil className="h-4 w-4" /> Edit
@@ -45,14 +47,14 @@ export default function CompassPage() {
       <div className="relative overflow-hidden rounded-lg bg-jh-ink text-white p-7">
         <CompassIcon className="absolute -right-8 -bottom-8 h-48 w-48 text-white/5" strokeWidth={1} />
         <div className="relative">
-          <span className="eyebrow text-white/60">Your Goal Statement</span>
+          <span className="eyebrow text-white/60">{t("compass.goalEyebrow")}</span>
           <p className="mt-2 font-display font-semibold text-xl leading-snug"><CompassSentence c={editing ? draft : profile?.compass ?? {}} /></p>
         </div>
       </div>
 
       {editing ? (
         <div className="card p-6 space-y-4">
-          <p className="text-sm text-jh-mute">Refine your target. Be specific — clarity drives action.</p>
+          <p className="text-sm text-jh-mute">{t("compass.editIntro")}</p>
           <Field label="Job title / function" value={draft.jobTitle ?? ""} onChange={(v) => setDraft((c) => ({ ...c, jobTitle: v }))} placeholder="e.g. Product Marketing Manager" />
           <Field label="Industry" value={draft.industry ?? ""} onChange={(v) => setDraft((c) => ({ ...c, industry: v }))} placeholder="e.g. FinTech" />
           <Field label="Geography" value={draft.geography ?? ""} onChange={(v) => setDraft((c) => ({ ...c, geography: v }))} placeholder="e.g. London or remote-EU" />
@@ -71,7 +73,7 @@ export default function CompassPage() {
               <input className="field" placeholder="Minimum (deal-breaker)" value={draft.minSalary ?? ""}
                 onChange={(e) => setDraft((c) => ({ ...c, minSalary: e.target.value }))} />
             </div>
-            <p className="text-[11px] text-jh-mute mt-1">Target = what you&apos;re aiming for. Minimum = the lowest you&apos;d accept.</p>
+            <p className="text-[11px] text-jh-mute mt-1">{t("compass.salaryHelp")}</p>
           </div>
           <div className="flex items-center gap-3 pt-1">
             <button onClick={() => setEditing(false)} className="btn-ghost"><X className="h-4 w-4" /> Cancel</button>
@@ -88,7 +90,8 @@ export default function CompassPage() {
             <Detail label="Geography" value={profile?.compass?.geography} />
             <Detail label="Type of company" value={profile?.compass?.companyType} />
           </div>
-          <CompCard target={profile?.compass?.targetSalary} min={profile?.compass?.minSalary} />
+          <CompCard target={profile?.compass?.targetSalary} min={profile?.compass?.minSalary}
+            targetLabel={t("compass.compTarget")} minLabel={t("compass.compMin")} />
         </>
       )}
     </div>
@@ -114,17 +117,17 @@ function Detail({ label, value }: { label: string; value?: string }) {
   );
 }
 
-function CompCard({ target, min }: { target?: string; min?: string }) {
+function CompCard({ target, min, targetLabel, minLabel }: { target?: string; min?: string; targetLabel: string; minLabel: string }) {
   return (
     <div className="card p-5">
       <p className="text-xs text-jh-mute mb-3">Compensation</p>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-jh-mute-2">Target salary</p>
+          <p className="text-[11px] uppercase tracking-wide text-jh-mute-2">{targetLabel}</p>
           <p className="mt-1 font-display font-extrabold text-xl text-rb-green-dark">{target || "—"}</p>
         </div>
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-jh-mute-2">Minimum · deal-breaker</p>
+          <p className="text-[11px] uppercase tracking-wide text-jh-mute-2">{minLabel}</p>
           <p className="mt-1 font-display font-extrabold text-xl text-jh-red">{min || "—"}</p>
         </div>
       </div>

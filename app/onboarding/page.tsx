@@ -8,12 +8,10 @@ import { useAuth } from "@/components/AuthProvider";
 import CountrySelect from "@/components/CountrySelect";
 import CompassSentence from "@/components/CompassSentence";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
-import {
-  HIDDEN_CATEGORIES, VISIBLE_CATEGORIES, EFFORT_SPLIT, DEFAULT_WEEKLY_TARGETS,
-  type ActivityCategory,
-} from "@/lib/categories";
+import { useContent } from "@/lib/firestore/content";
+import { fillTemplate } from "@/lib/content";
 import { scaleTarget, toWeekly } from "@/lib/period";
-import type { CompassFormula, Profile } from "@/lib/types";
+import type { Activity, CompassFormula, Profile } from "@/lib/types";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
@@ -29,6 +27,8 @@ const C = {
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, loading, emailVerified } = useAuth();
+  const content = useContent();
+  const { t, hidden, visible, weeklyTargets, effortSplit } = content;
   const { data: profile, loading: profileLoading } =
     useLiveDoc<Profile>(user ? paths.profile(user.uid) : null);
   const { data: targetDoc } =
@@ -66,8 +66,8 @@ export default function OnboardingPage() {
   }, [profile, router]);
 
   useEffect(() => {
-    setTargets((t) => (Object.keys(t).length ? t : { ...DEFAULT_WEEKLY_TARGETS, ...(targetDoc?.targets ?? {}) }));
-  }, [targetDoc]);
+    setTargets((t) => (Object.keys(t).length ? t : { ...weeklyTargets, ...(targetDoc?.targets ?? {}) }));
+  }, [targetDoc, weeklyTargets]);
 
   // Per-day view of the stored weekly target (day conversion ignores the anchor).
   const daily = (id: string) => scaleTarget(targets[id] ?? 0, "day", new Date());
@@ -109,11 +109,11 @@ export default function OnboardingPage() {
         </div>
 
         {step === 0 && (
-          <Card title="Welcome aboard 👋" subtitle="Let's set up your Compass. First, the basics.">
-            <Field label="First name" value={firstName} onChange={setFirstName} />
-            <Field label="Last name" value={lastName} onChange={setLastName} />
+          <Card title={t("onb.welcomeTitle")} subtitle={t("onb.welcomeSubtitle")}>
+            <Field label={t("onb.firstName")} value={firstName} onChange={setFirstName} />
+            <Field label={t("onb.lastName")} value={lastName} onChange={setLastName} />
             <div>
-              <label className="label">Country</label>
+              <label className="label">{t("onb.country")}</label>
               <CountrySelect value={country} onChange={setCountry} />
             </div>
             <Nav onNext={() => setStep(1)} nextDisabled={!step1Valid} />
@@ -121,10 +121,8 @@ export default function OnboardingPage() {
         )}
 
         {step === 1 && (
-          <CompassCard sentence={<CompassSentence c={compass} />}>
-            <p className="text-sm text-jh-mute mb-4">
-              Your goal statement keeps you pointed at the right target. Fill in the blanks — be specific.
-            </p>
+          <CompassCard sentence={<CompassSentence c={compass} />} eyebrow={t("onb.goalEyebrow")}>
+            <p className="text-sm text-jh-mute mb-4">{t("onb.goalIntro")}</p>
             <Field label="Job title / function" value={compass.jobTitle ?? ""}
               onChange={(v) => setCompass((c) => ({ ...c, jobTitle: v }))} placeholder="e.g. Product Marketing Manager" />
             <Field label="Industry" value={compass.industry ?? ""}
@@ -147,7 +145,7 @@ export default function OnboardingPage() {
                 <input className="field" placeholder="Minimum (deal-breaker)" value={compass.minSalary ?? ""}
                   onChange={(e) => setCompass((c) => ({ ...c, minSalary: e.target.value }))} />
               </div>
-              <p className="text-[11px] text-jh-mute mt-1">Target = what you&apos;re aiming for. Minimum = the lowest you&apos;d accept.</p>
+              <p className="text-[11px] text-jh-mute mt-1">{t("onb.salaryHelp")}</p>
             </div>
             <Nav onBack={() => setStep(0)} onNext={() => setStep(2)} nextDisabled={!step2Valid} />
           </CompassCard>
@@ -156,19 +154,19 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div className="space-y-4">
             <div className="card p-6">
-              <h1 className="text-2xl">Set your daily targets 🎯</h1>
-              <p className="text-jh-mute text-sm mt-1">How much will you do each day? You can fine-tune these any time in Performance.</p>
+              <h1 className="text-2xl">{t("onb.targetsTitle")}</h1>
+              <p className="text-jh-mute text-sm mt-1">{t("onb.targetsSubtitle")}</p>
             </div>
 
-            <TargetSection emoji="👀" main="Hidden Job Market"
-              subtitle={`Contributes to ~${EFFORT_SPLIT.hidden}% of your success`} bg={C.bannerRed}
-              cats={HIDDEN_CATEGORIES} daily={daily} setDaily={setDaily} />
-            <TargetSection emoji="✅" main="Visible Job Market"
-              subtitle={`Contributes to ~${EFFORT_SPLIT.visible}% of your success`} bg={C.bannerBlue}
-              cats={VISIBLE_CATEGORIES} daily={daily} setDaily={setDaily} />
+            <TargetSection emoji={t("perf.hiddenEmoji")} main={t("perf.hiddenTitle")}
+              subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} bg={C.bannerRed}
+              cats={hidden} perDayLabel={t("onb.perDay")} daily={daily} setDaily={setDaily} />
+            <TargetSection emoji={t("perf.visibleEmoji")} main={t("perf.visibleTitle")}
+              subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} bg={C.bannerBlue}
+              cats={visible} perDayLabel={t("onb.perDay")} daily={daily} setDaily={setDaily} />
 
             <Nav onBack={() => setStep(1)}
-              onNext={finish} nextLabel={busy ? "Setting up…" : "Finish & enter Compass"}
+              onNext={finish} nextLabel={busy ? "Setting up…" : t("onb.finish")}
               nextDisabled={busy} nextIcon={<Check className="h-4 w-4" />} />
           </div>
         )}
@@ -199,14 +197,14 @@ function Card({ title, subtitle, children }: { title: string; subtitle?: string;
   );
 }
 
-function CompassCard({ sentence, children }: { sentence: React.ReactNode; children: React.ReactNode }) {
+function CompassCard({ sentence, eyebrow, children }: { sentence: React.ReactNode; eyebrow: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
       {/* Goal-statement recap with a faint compass icon behind it */}
       <div className="relative overflow-hidden rounded-lg bg-jh-ink text-white p-6">
         <Compass className="absolute -right-6 -bottom-6 h-40 w-40 text-white/5" strokeWidth={1} />
         <div className="relative">
-          <span className="eyebrow text-white/60">Your Goal Statement</span>
+          <span className="eyebrow text-white/60">{eyebrow}</span>
           <p className="mt-2 font-display font-semibold text-lg leading-snug">{sentence}</p>
         </div>
       </div>
@@ -225,9 +223,9 @@ function Field({ label, value, onChange, placeholder }:
   );
 }
 
-function TargetSection({ emoji, main, subtitle, bg, cats, daily, setDaily }: {
+function TargetSection({ emoji, main, subtitle, bg, cats, perDayLabel, daily, setDaily }: {
   emoji: string; main: string; subtitle: string; bg: string;
-  cats: ActivityCategory[];
+  cats: Activity[]; perDayLabel: string;
   daily: (id: string) => number;
   setDaily: (id: string, d: number) => void;
 }) {
@@ -241,18 +239,18 @@ function TargetSection({ emoji, main, subtitle, bg, cats, daily, setDaily }: {
         </div>
       </div>
       <div className="px-5">
-        {cats.map((c) => <TargetRow key={c.id} label={c.label} value={daily(c.id)} onChange={(d) => setDaily(c.id, d)} />)}
+        {cats.map((c) => <TargetRow key={c.id} label={c.label} perDayLabel={perDayLabel} value={daily(c.id)} onChange={(d) => setDaily(c.id, d)} />)}
       </div>
     </section>
   );
 }
 
-function TargetRow({ label, value, onChange }: { label: string; value: number; onChange: (d: number) => void }) {
+function TargetRow({ label, perDayLabel, value, onChange }: { label: string; perDayLabel: string; value: number; onChange: (d: number) => void }) {
   return (
     <div className="flex gap-4 items-center" style={{ padding: "14px 0", borderBottom: `1px solid ${C.line}` }}>
       <div className="flex-1 min-w-0 font-display font-semibold" style={{ fontSize: 15, lineHeight: 1.3, color: C.ink }}>{label}</div>
       <div className="flex-none text-center">
-        <div className="font-display font-semibold uppercase" style={{ fontSize: 10.5, letterSpacing: ".07em", color: C.muteLight }}>Per day</div>
+        <div className="font-display font-semibold uppercase" style={{ fontSize: 10.5, letterSpacing: ".07em", color: C.muteLight }}>{perDayLabel}</div>
         <div className="flex items-center justify-end" style={{ gap: 11, marginTop: 6 }}>
           <button type="button" onClick={() => onChange(value - 1)} className="grid place-items-center rounded-full"
             style={{ width: 36, height: 36, border: `1.5px solid ${C.circle}`, background: "#fff", color: value > 0 ? C.mute : C.disabled }}>

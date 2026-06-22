@@ -6,11 +6,9 @@ import { useAuth } from "@/components/AuthProvider";
 import {
   paths, createDoc, updateRecord, deleteRecord, setDoc, useLiveCollection, useLiveDoc,
 } from "@/lib/firestore/db";
-import {
-  HIDDEN_CATEGORIES, VISIBLE_CATEGORIES, EFFORT_SPLIT,
-  DEFAULT_WEEKLY_TARGETS, type ActivityCategory,
-} from "@/lib/categories";
-import type { ActivityLog } from "@/lib/types";
+import { useContent } from "@/lib/firestore/content";
+import { fillTemplate } from "@/lib/content";
+import type { Activity, ActivityLog } from "@/lib/types";
 import {
   type Period, rangeYmd, shift, periodLabel, scaleTarget, toWeekly, inRange, ymd,
 } from "@/lib/period";
@@ -30,6 +28,8 @@ const PERIODS: Period[] = ["day", "week", "month"];
 export default function PerformancePage() {
   const { user } = useAuth();
   const uid = user?.uid;
+  const content = useContent();
+  const { t, hidden, visible, weeklyTargets, effortSplit } = content;
   const [period, setPeriod] = useState<Period>("day");
   const [anchor, setAnchor] = useState(() => new Date());
   const [editAll, setEditAll] = useState(false);
@@ -40,7 +40,7 @@ export default function PerformancePage() {
   const userTargets = targetDoc?.targets ?? {};
 
   const range = rangeYmd(period, anchor);
-  const weeklyTarget = (id: string) => userTargets[id] ?? DEFAULT_WEEKLY_TARGETS[id] ?? 0;
+  const weeklyTarget = (id: string) => userTargets[id] ?? weeklyTargets[id] ?? 0;
   const periodTarget = (id: string) => scaleTarget(weeklyTarget(id), period, anchor);
 
   const actuals = useMemo(() => {
@@ -81,23 +81,27 @@ export default function PerformancePage() {
   const startEdit = (id: string) => setEditRows((r) => ({ ...r, [id]: true }));
   const finishRow = (id: string) => setEditRows((r) => { const n = { ...r }; delete n[id]; return n; });
 
-  const rowProps = { editAll, editRows, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow };
+  const rowProps = {
+    editAll, editRows, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow,
+    actualLabel: t("perf.actual"), targetLabel: t("perf.target"),
+    setGoalLabel: t("perf.setGoal"), setTargetHint: t("perf.setTargetHint"),
+  };
 
   return (
     <div className="mx-auto max-w-md space-y-5">
       {/* header */}
       <div>
         <div className="font-display font-semibold uppercase" style={{ fontSize: 11, letterSpacing: ".09em", color: C.red }}>
-          Success Predictors
+          {t("perf.eyebrow")}
         </div>
         <div className="flex items-center justify-between mt-0.5">
-          <h1 className="font-display font-bold" style={{ fontSize: 27, letterSpacing: "-.02em", color: C.ink }}>Performance</h1>
+          <h1 className="font-display font-bold" style={{ fontSize: 27, letterSpacing: "-.02em", color: C.ink }}>{t("perf.title")}</h1>
           <button onClick={toggleEditAll}
             className="font-display font-semibold rounded-full transition"
             style={editAll
               ? { fontSize: 12.5, padding: "8px 15px", background: C.red, color: "#fff", border: `1.5px solid ${C.red}` }
               : { fontSize: 12.5, padding: "8px 15px", background: "#fff", color: C.ink, border: `1.5px solid ${C.disabled}` }}>
-            {editAll ? "Done" : "Edit targets"}
+            {editAll ? t("perf.done") : t("perf.editTargets")}
           </button>
         </div>
 
@@ -124,20 +128,20 @@ export default function PerformancePage() {
 
       {/* Hidden job market — the bulk of success (top) */}
       <section>
-        <Banner emoji="👀" main="Hidden Job Market"
-          subtitle={`Contributes to ~${EFFORT_SPLIT.hidden}% of your success`} bg={C.bannerRed} />
-        <Rows cats={HIDDEN_CATEGORIES} {...rowProps} />
+        <Banner emoji={t("perf.hiddenEmoji")} main={t("perf.hiddenTitle")}
+          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} bg={C.bannerRed} />
+        <Rows cats={hidden} {...rowProps} />
       </section>
 
       {/* Visible job market (bottom) */}
       <section>
-        <Banner emoji="✅" main="Visible Job Market"
-          subtitle={`Contributes to ~${EFFORT_SPLIT.visible}% of your success`} bg={C.bannerBlue} />
-        <Rows cats={VISIBLE_CATEGORIES} {...rowProps} />
+        <Banner emoji={t("perf.visibleEmoji")} main={t("perf.visibleTitle")}
+          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} bg={C.bannerBlue} />
+        <Rows cats={visible} {...rowProps} />
       </section>
 
       <p className="text-center italic" style={{ fontSize: 12.5, color: C.muteLight }}>
-        Tap + / − to log today. Tap <span className="not-italic font-semibold" style={{ color: C.mute }}>Edit targets</span> to set them.
+        {t("perf.footer")}
       </p>
     </div>
   );
@@ -158,7 +162,7 @@ function Banner({ emoji, main, sub, subtitle, bg }: { emoji: string; main: strin
 }
 
 interface RowProps {
-  cats: ActivityCategory[];
+  cats: Activity[];
   editAll: boolean;
   editRows: Record<string, boolean>;
   periodTarget: (id: string) => number;
@@ -168,9 +172,13 @@ interface RowProps {
   setGoal: (id: string, v: number) => void;
   startEdit: (id: string) => void;
   finishRow: (id: string) => void;
+  actualLabel: string;
+  targetLabel: string;
+  setGoalLabel: string;
+  setTargetHint: string;
 }
 
-function Rows({ cats, editAll, editRows, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow }: RowProps) {
+function Rows({ cats, editAll, editRows, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow, actualLabel, targetLabel, setGoalLabel, setTargetHint }: RowProps) {
   return (
     <div>
       {cats.map((c) => {
@@ -201,18 +209,18 @@ function Rows({ cats, editAll, editRows, periodTarget, actuals, add, remove, set
                 <button onClick={() => startEdit(c.id)}
                   className="inline-flex items-center gap-1 font-display font-semibold rounded-full"
                   style={{ marginTop: 11, fontSize: 12.5, color: C.red, background: C.pillRed, padding: "6px 12px" }}>
-                  <Plus className="h-3.5 w-3.5" /> Set a daily goal
+                  <Plus className="h-3.5 w-3.5" /> {setGoalLabel}
                 </button>
               )}
 
-              {editing && <div className="italic" style={{ marginTop: 11, fontSize: 12.5, color: C.muteLight }}>Set your daily target →</div>}
+              {editing && <div className="italic" style={{ marginTop: 11, fontSize: 12.5, color: C.muteLight }}>{setTargetHint}</div>}
             </div>
 
             <div className="flex-none" style={{ width: 156 }}>
               <div className="grid items-center" style={{ gridTemplateColumns: "1fr 16px 1fr" }}>
-                <Label>Actual</Label>
+                <Label>{actualLabel}</Label>
                 <div />
-                <Label>Target</Label>
+                <Label>{targetLabel}</Label>
                 <div className="text-center font-display font-bold" style={{ fontSize: 24, marginTop: 3, color: actualColor }}>{a}</div>
                 <div className="text-center font-display font-light" style={{ fontSize: 22, marginTop: 3, color: C.slash }}>/</div>
                 <div className="text-center font-display font-bold" style={{ fontSize: 24, marginTop: 3, color: targetColor }}>{targetText}</div>

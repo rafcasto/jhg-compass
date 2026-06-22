@@ -19,7 +19,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ---- admin config: signed-in read; admin write ----
+    // ---- editable UI content: public read (just presentational copy, no secrets)
+    //      so the signed-out auth screens reflect admin edits too; admin write only ----
+    match /config/content {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---- admin config (paywall/email copy): signed-in read; admin write ----
     match /config/{doc} {
       allow read: if isSignedIn();
       allow write: if isAdmin();

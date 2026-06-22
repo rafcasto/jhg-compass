@@ -5,10 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
+import { useContent } from "@/lib/firestore/content";
 
 export default function RegisterPage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
+  const { t } = useContent();
   const [state, setState] = useState<"checking" | "ok" | "invalid">("checking");
   const [reason, setReason] = useState<string>();
   const [lockedEmail, setLockedEmail] = useState<string | null>(null);
@@ -55,17 +57,17 @@ export default function RegisterPage() {
   }
 
   if (state === "checking")
-    return <div className="min-h-screen grid place-items-center text-jh-mute animate-pulse">Checking your invite…</div>;
+    return <div className="min-h-screen grid place-items-center text-jh-mute animate-pulse">{t("auth.register.checking")}</div>;
 
   if (state === "invalid") {
-    const msg = reason === "expired" ? "This registration link has expired."
-      : reason === "used" ? "This registration link has already been used."
-      : "This registration link is invalid.";
+    const msg = reason === "expired" ? t("auth.register.invalidExpired")
+      : reason === "used" ? t("auth.register.invalidUsed")
+      : t("auth.register.invalidDefault");
     return (
       <div className="min-h-screen grid place-items-center px-4 text-center">
         <div className="card p-8 max-w-sm">
-          <h1 className="text-2xl mb-2">Link unavailable</h1>
-          <p className="text-jh-mute">{msg} Ask your JobHackers admin for a fresh invite.</p>
+          <h1 className="text-2xl mb-2">{t("auth.register.invalidTitle")}</h1>
+          <p className="text-jh-mute">{msg} {t("auth.register.invalidHelp")}</p>
         </div>
       </div>
     );
@@ -76,18 +78,18 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
           <Image src="/assets/logo-jobhackers.png" alt="JobHackers" width={150} height={40} className="mb-3" />
-          <h1 className="text-2xl">Create your <span className="text-jh-red">Compass</span></h1>
-          <p className="text-jh-mute text-sm mt-1">You've been invited — 90 days of access await.</p>
+          <h1 className="text-2xl">{t("auth.register.brand")} <span className="text-jh-red">{t("auth.register.brandAccent")}</span></h1>
+          <p className="text-jh-mute text-sm mt-1">{t("auth.register.subtitle")}</p>
         </div>
         <form onSubmit={submit} className="card p-6 space-y-4">
-          <div><label className="label">Email</label>
+          <div><label className="label">{t("auth.shared.email")}</label>
             <input type="email" required className="field" value={email} disabled={!!lockedEmail}
               onChange={(e) => setEmail(e.target.value)} /></div>
-          <div><label className="label">Choose a password</label>
+          <div><label className="label">{t("auth.register.passwordLabel")}</label>
             <input type="password" required minLength={6} className="field" value={password}
               onChange={(e) => setPassword(e.target.value)} /></div>
           {err && <p className="text-sm text-jh-red">{err}</p>}
-          <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Creating account…" : "Create Account"}</button>
+          <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? t("auth.register.busy") : t("auth.register.submit")}</button>
         </form>
       </div>
     </div>
