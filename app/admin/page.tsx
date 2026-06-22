@@ -8,8 +8,11 @@ import { useAuth } from "@/components/AuthProvider";
 import { auth } from "@/lib/firebase/client";
 import type { AdminConfig, Activity, ContentConfig } from "@/lib/types";
 import { DEFAULT_CONTENT, TEXT_FIELDS, newActivityId } from "@/lib/content";
+import {
+  DEFAULT_FUNNEL, type FunnelConfig, type QuizQuestion, type QuizOption,
+} from "@/lib/funnel";
 
-const TABS = ["Dashboard", "Registration links", "Content", "Event tracking"] as const;
+const TABS = ["Dashboard", "Registration links", "Content", "Funnel", "Event tracking"] as const;
 type Tab = (typeof TABS)[number];
 
 // Paywall / email / coaching copy (stored separately in config/admin) — now edited
@@ -83,6 +86,7 @@ export default function AdminPage() {
         {tab === "Dashboard" && <DashboardTab />}
         {tab === "Registration links" && <RegistrationLinks />}
         {tab === "Content" && <ContentTab />}
+        {tab === "Funnel" && <FunnelTab />}
         {tab === "Event tracking" && <EventTracking />}
       </main>
     </div>
@@ -323,6 +327,233 @@ function ActivityList({ title, items, market, onChange, onRemove, onAdd }: {
           <Plus className="h-4 w-4" /> Add activity
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ---------------- Funnel (public landing / quiz / thank-you + invite link) ---------------- */
+const ARCHETYPES = ["", "Job Seeker", "Career Changer", "Promotion Seeker", "Unclassified"];
+const FIT_GATES = ["", "qualified", "below-icp"];
+const FLAGS = ["", "ai-anxious", "vip-signal", "below-icp", "manual-review"];
+
+function FunnelTab() {
+  const [f, setF] = useState<FunnelConfig | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => { authedFetch("/api/admin/funnel").then((r) => r.json()).then((d) => d.ok && setF(d.funnel)); }, []);
+
+  function touched() { setSaved(false); }
+  function setLanding<K extends keyof FunnelConfig["landing"]>(key: K, value: FunnelConfig["landing"][K]) {
+    setF((c) => ({ ...(c as FunnelConfig), landing: { ...(c as FunnelConfig).landing, [key]: value } })); touched();
+  }
+  function setLead<K extends keyof FunnelConfig["lead"]>(key: K, value: FunnelConfig["lead"][K]) {
+    setF((c) => ({ ...(c as FunnelConfig), lead: { ...(c as FunnelConfig).lead, [key]: value } })); touched();
+  }
+  function setQuizMeta<K extends keyof FunnelConfig["quiz"]>(key: K, value: FunnelConfig["quiz"][K]) {
+    setF((c) => ({ ...(c as FunnelConfig), quiz: { ...(c as FunnelConfig).quiz, [key]: value } })); touched();
+  }
+  function setInviteUrl(v: string) { setF((c) => ({ ...(c as FunnelConfig), inviteUrl: v })); touched(); }
+
+  function updateQuestion(qi: number, patch: Partial<QuizQuestion>) {
+    setF((c) => {
+      const cfg = c as FunnelConfig;
+      const questions = cfg.quiz.questions.map((q, i) => (i === qi ? { ...q, ...patch } : q));
+      return { ...cfg, quiz: { ...cfg.quiz, questions } };
+    }); touched();
+  }
+  function updateOption(qi: number, oi: number, patch: Partial<QuizOption>) {
+    setF((c) => {
+      const cfg = c as FunnelConfig;
+      const questions = cfg.quiz.questions.map((q, i) => {
+        if (i !== qi || !q.options) return q;
+        const options = q.options.map((o, j) => (j === oi ? { ...o, ...patch } : o));
+        return { ...q, options };
+      });
+      return { ...cfg, quiz: { ...cfg.quiz, questions } };
+    }); touched();
+  }
+
+  async function save() {
+    if (!f) return;
+    setBusy(true); setSaved(false);
+    const r = await authedFetch("/api/admin/funnel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ funnel: f }) });
+    if (r.ok) { setF((await r.json()).funnel); setSaved(true); }
+    setBusy(false);
+  }
+  function resetDefaults() {
+    if (confirm("Reset the landing, quiz and thank-you content to the built-in defaults? Applied when you Save.")) {
+      setF(structuredClone(DEFAULT_FUNNEL)); setSaved(false);
+    }
+  }
+
+  if (!f) return <p className="text-jh-mute animate-pulse">Loading funnel…</p>;
+
+  const num = (v: string) => (v === "" ? undefined : Math.max(0, +v));
+
+  return (
+    <div className="space-y-8 max-w-4xl">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl">Acquisition funnel</h2>
+          <p className="text-jh-mute text-sm mt-1">Edit the public landing page, the quiz questions &amp; scoring, the thank-you page, and the invitation link. Changes go live on the public pages the moment you save.</p>
+        </div>
+        <button onClick={resetDefaults} className="btn-secondary text-xs px-3 py-2 whitespace-nowrap">Reset to defaults</button>
+      </div>
+
+      {/* ---- Invitation link ---- */}
+      <section className="card p-5 space-y-3">
+        <h3 className="font-display font-bold text-jh-ink">Invitation link</h3>
+        <p className="text-jh-mute text-sm">Where the thank-you button sends people. We append <code className="font-mono text-xs">?firstName=&amp;lastName=&amp;email=</code> so they don’t re-type their details.</p>
+        <input className="field" value={f.inviteUrl} onChange={(e) => setInviteUrl(e.target.value)} placeholder="https://…" />
+      </section>
+
+      {/* ---- Landing ---- */}
+      <section className="space-y-4">
+        <h3 className="font-display font-bold text-jh-ink">Landing page</h3>
+        <div className="card p-5 grid sm:grid-cols-2 gap-4">
+          <Field label="Brand name" value={f.landing.brandName} onChange={(v) => setLanding("brandName", v)} />
+          <Field label="Brand accent" value={f.landing.brandAccent} onChange={(v) => setLanding("brandAccent", v)} />
+          <Field label="Eyebrow" value={f.landing.eyebrow} onChange={(v) => setLanding("eyebrow", v)} />
+          <Field label="Hero CTA label" value={f.landing.ctaLabel} onChange={(v) => setLanding("ctaLabel", v)} />
+          <Field label="Headline" value={f.landing.h1} onChange={(v) => setLanding("h1", v)} />
+          <Field label="Headline accent (red)" value={f.landing.h1accent} onChange={(v) => setLanding("h1accent", v)} />
+          <Field className="sm:col-span-2" textarea label="Lede" value={f.landing.lede} onChange={(v) => setLanding("lede", v)} />
+          <Field label="CTA fine print" value={f.landing.ctaFine} onChange={(v) => setLanding("ctaFine", v)} />
+          <Field label="Proof line" value={f.landing.proof} onChange={(v) => setLanding("proof", v)} />
+          <Field label="Section 2 — eyebrow" value={f.landing.s2eyebrow} onChange={(v) => setLanding("s2eyebrow", v)} />
+          <Field label="Section 2 — title" value={f.landing.s2title} onChange={(v) => setLanding("s2title", v)} />
+          <Field label="Section 2 — accent (red)" value={f.landing.s2accent} onChange={(v) => setLanding("s2accent", v)} />
+          <Field className="sm:col-span-2" textarea label="Section 2 — big line" value={f.landing.s2bigline} onChange={(v) => setLanding("s2bigline", v)} />
+          <Field label="Section 3 — eyebrow" value={f.landing.s3eyebrow} onChange={(v) => setLanding("s3eyebrow", v)} />
+          <Field label="Section 3 — title" value={f.landing.s3title} onChange={(v) => setLanding("s3title", v)} />
+          <Field label="Section 3 — accent (red)" value={f.landing.s3accent} onChange={(v) => setLanding("s3accent", v)} />
+          <Field label="Section 3 — CTA label" value={f.landing.s3ctaLabel} onChange={(v) => setLanding("s3ctaLabel", v)} />
+          <Field className="sm:col-span-2" label="Section 3 — note" value={f.landing.s3note} onChange={(v) => setLanding("s3note", v)} />
+          <Field label="Footer" value={f.landing.footer} onChange={(v) => setLanding("footer", v)} />
+          <Field label="Tagline" value={f.landing.tagline} onChange={(v) => setLanding("tagline", v)} />
+        </div>
+
+        {/* capabilities */}
+        <div className="card p-5 space-y-3">
+          <p className="font-display font-semibold text-jh-ink">Capability cards</p>
+          {f.landing.capabilities.map((c, i) => (
+            <div key={i} className="grid grid-cols-[3rem_1fr] sm:grid-cols-[3rem_1fr_2fr] gap-2 items-start">
+              <input className="field py-2 text-center" value={c.emoji} onChange={(e) => { const caps = [...f.landing.capabilities]; caps[i] = { ...c, emoji: e.target.value }; setLanding("capabilities", caps); }} />
+              <input className="field py-2 text-sm" value={c.title} onChange={(e) => { const caps = [...f.landing.capabilities]; caps[i] = { ...c, title: e.target.value }; setLanding("capabilities", caps); }} placeholder="Title" />
+              <input className="field py-2 text-sm" value={c.body} onChange={(e) => { const caps = [...f.landing.capabilities]; caps[i] = { ...c, body: e.target.value }; setLanding("capabilities", caps); }} placeholder="Description" />
+            </div>
+          ))}
+        </div>
+
+        {/* steps */}
+        <div className="card p-5 space-y-3">
+          <p className="font-display font-semibold text-jh-ink">“How it works” steps</p>
+          {f.landing.steps.map((s, i) => (
+            <div key={i} className="grid grid-cols-[3rem_1fr] gap-2 items-start">
+              <input className="field py-2 text-center" value={s.n} onChange={(e) => { const st = [...f.landing.steps]; st[i] = { ...s, n: e.target.value }; setLanding("steps", st); }} />
+              <input className="field py-2 text-sm" value={s.text} onChange={(e) => { const st = [...f.landing.steps]; st[i] = { ...s, text: e.target.value }; setLanding("steps", st); }} placeholder="Step text" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---- Quiz ---- */}
+      <section className="space-y-4">
+        <div>
+          <h3 className="font-display font-bold text-jh-ink">Quiz</h3>
+          <p className="text-jh-mute text-sm">Edit each question, its options, and the per-option scoring. Q1 sets the archetype; Q2 + Q5 readiness points sum to 0–6; Q4 is the fit gate; Q3 routes the message. The open question is never scored.</p>
+        </div>
+        <div className="card p-5 grid sm:grid-cols-2 gap-4">
+          <Field label="Intro" value={f.quiz.intro} onChange={(v) => setQuizMeta("intro", v)} />
+          <Field label="Sub" value={f.quiz.sub} onChange={(v) => setQuizMeta("sub", v)} />
+          <Field className="sm:col-span-2" label="Footer note" value={f.quiz.footerNote} onChange={(v) => setQuizMeta("footerNote", v)} />
+        </div>
+
+        {f.quiz.questions.map((q, qi) => (
+          <div key={q.id} className="card p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="font-display font-semibold text-jh-ink">{q.id.toUpperCase()} · {q.kind === "text" ? "Open text (unscored)" : "Multiple choice"}</p>
+              {q.kind === "choice" && (
+                <label className="flex items-center gap-2 text-xs text-jh-mute">
+                  <input type="checkbox" checked={!!q.allowOther} onChange={(e) => updateQuestion(qi, { allowOther: e.target.checked })} />
+                  Allow free text on “Something else”
+                </label>
+              )}
+            </div>
+            <Field label="Prompt" value={q.prompt} onChange={(v) => updateQuestion(qi, { prompt: v })} />
+            <Field label="Sub" value={q.sub ?? ""} onChange={(v) => updateQuestion(qi, { sub: v })} />
+
+            {q.kind === "text" && (
+              <Field label="Placeholder" value={q.placeholder ?? ""} onChange={(v) => updateQuestion(qi, { placeholder: v })} />
+            )}
+
+            {q.kind === "choice" && q.options && (
+              <div className="space-y-2">
+                <div className="hidden sm:grid grid-cols-[1fr_4.5rem_8rem_6rem_8rem_2rem] gap-2 text-[11px] text-jh-mute-2 font-semibold px-1">
+                  <span>Label</span><span>Readiness</span><span>Archetype</span><span>Fit gate</span><span>Flag</span><span>Other</span>
+                </div>
+                {q.options.map((o, oi) => (
+                  <div key={o.id} className="grid sm:grid-cols-[1fr_4.5rem_8rem_6rem_8rem_2rem] grid-cols-2 gap-2 items-center">
+                    <input className="field py-2 text-sm" value={o.label} onChange={(e) => updateOption(qi, oi, { label: e.target.value })} placeholder="Option label" />
+                    <input className="field py-2 text-sm" type="number" min={0} value={o.readiness ?? ""} onChange={(e) => updateOption(qi, oi, { readiness: num(e.target.value) })} placeholder="pts" />
+                    <select className="field py-2 text-sm" value={o.archetype ?? ""} onChange={(e) => updateOption(qi, oi, { archetype: (e.target.value || undefined) as any })}>
+                      {ARCHETYPES.map((a) => <option key={a} value={a}>{a || "—"}</option>)}
+                    </select>
+                    <select className="field py-2 text-sm" value={o.fitGate ?? ""} onChange={(e) => updateOption(qi, oi, { fitGate: (e.target.value || undefined) as any })}>
+                      {FIT_GATES.map((a) => <option key={a} value={a}>{a || "—"}</option>)}
+                    </select>
+                    <select className="field py-2 text-sm" value={o.flag ?? ""} onChange={(e) => updateOption(qi, oi, { flag: (e.target.value || undefined) as any })}>
+                      {FLAGS.map((a) => <option key={a} value={a}>{a || "—"}</option>)}
+                    </select>
+                    <label className="grid place-items-center" title="Marks this as the “Something else” option">
+                      <input type="checkbox" checked={!!o.isOther} onChange={(e) => updateOption(qi, oi, { isOther: e.target.checked })} />
+                    </label>
+                    {o.obstacle !== undefined && (
+                      <input className="field py-2 text-sm sm:col-span-6" value={o.obstacle} onChange={(e) => updateOption(qi, oi, { obstacle: e.target.value })} placeholder="Obstacle routing label (Q3)" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </section>
+
+      {/* ---- Thank-you ---- */}
+      <section className="space-y-4">
+        <h3 className="font-display font-bold text-jh-ink">Thank-you page</h3>
+        <div className="card p-5 grid sm:grid-cols-2 gap-4">
+          <Field label="Eyebrow" value={f.lead.eyebrow} onChange={(v) => setLead("eyebrow", v)} />
+          <Field label="Title" value={f.lead.title} onChange={(v) => setLead("title", v)} />
+          <Field className="sm:col-span-2" textarea label="Body" value={f.lead.body} onChange={(v) => setLead("body", v)} />
+          <Field label="First-name label" value={f.lead.firstNameLabel} onChange={(v) => setLead("firstNameLabel", v)} />
+          <Field label="Last-name label" value={f.lead.lastNameLabel} onChange={(v) => setLead("lastNameLabel", v)} />
+          <Field label="Email label" value={f.lead.emailLabel} onChange={(v) => setLead("emailLabel", v)} />
+          <Field label="CTA label" value={f.lead.ctaLabel} onChange={(v) => setLead("ctaLabel", v)} />
+          <Field label="Fine print" value={f.lead.fine} onChange={(v) => setLead("fine", v)} />
+          <Field label="Tagline" value={f.lead.tagline} onChange={(v) => setLead("tagline", v)} />
+        </div>
+      </section>
+
+      {/* sticky save */}
+      <div className="sticky bottom-0 -mx-5 px-5 py-3 bg-jh-paper/90 backdrop-blur border-t border-jh-line flex items-center gap-3">
+        <button onClick={save} disabled={busy} className="btn-primary disabled:opacity-60">{busy ? "Saving…" : "Save funnel"}</button>
+        {saved && <span className="text-sm text-rb-green-dark">Saved ✓ — live now</span>}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value, onChange, textarea, className }: {
+  label: string; value: string; onChange: (v: string) => void; textarea?: boolean; className?: string;
+}) {
+  return (
+    <div className={className}>
+      <label className="label">{label}</label>
+      {textarea
+        ? <textarea className="field min-h-20" value={value} onChange={(e) => onChange(e.target.value)} />
+        : <input className="field" value={value} onChange={(e) => onChange(e.target.value)} />}
     </div>
   );
 }
