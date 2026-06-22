@@ -26,6 +26,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ---- public acquisition funnel (landing / quiz / thank-you copy + questions):
+    //      public read so the signed-out funnel pages reflect admin edits; admin write ----
+    match /config/funnel {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // ---- admin config (paywall/email copy): signed-in read; admin write ----
     match /config/{doc} {
       allow read: if isSignedIn();
