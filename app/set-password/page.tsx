@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { confirmPasswordReset, applyActionCode } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
+import { useContent } from "@/lib/firestore/content";
 
 // Landing page for the Firebase action link emailed via Resend (?oobCode=...).
 // Handles both password actions (resetPassword/recoverEmail) and email verification
@@ -11,6 +12,7 @@ import { auth } from "@/lib/firebase/client";
 function ActionHandlerInner() {
   const params = useSearchParams();
   const router = useRouter();
+  const { t } = useContent();
   const oobCode = params.get("oobCode");
   const mode = params.get("mode");
 
@@ -53,9 +55,9 @@ function ActionHandlerInner() {
     return (
       <div className="min-h-screen grid place-items-center px-4">
         <div className="card p-8 w-full max-w-sm text-center space-y-3">
-          <h1 className="text-2xl">Email verification</h1>
-          {verifying && <p className="text-jh-mute animate-pulse">Verifying your email…</p>}
-          {done && <p className="text-rb-green-dark text-sm">Email verified! Redirecting to sign in…</p>}
+          <h1 className="text-2xl">{t("auth.verifyLink.title")}</h1>
+          {verifying && <p className="text-jh-mute animate-pulse">{t("auth.verifyLink.verifying")}</p>}
+          {done && <p className="text-rb-green-dark text-sm">{t("auth.verifyLink.done")}</p>}
           {err && <p className="text-sm text-jh-red">{err}</p>}
         </div>
       </div>
@@ -66,17 +68,17 @@ function ActionHandlerInner() {
   return (
     <div className="min-h-screen grid place-items-center px-4">
       <form onSubmit={submit} className="card p-6 w-full max-w-sm space-y-4">
-        <h1 className="text-2xl">Set your password</h1>
+        <h1 className="text-2xl">{t("auth.setpw.title")}</h1>
         {done ? (
-          <p className="text-rb-green-dark text-sm">Password set! Redirecting to sign in…</p>
+          <p className="text-rb-green-dark text-sm">{t("auth.setpw.done")}</p>
         ) : (
           <>
             <div>
-              <label className="label">New password</label>
+              <label className="label">{t("auth.setpw.label")}</label>
               <input type="password" minLength={6} required className="field" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             {err && <p className="text-sm text-jh-red">{err}</p>}
-            <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "…" : "Set password"}</button>
+            <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "…" : t("auth.setpw.submit")}</button>
           </>
         )}
       </form>

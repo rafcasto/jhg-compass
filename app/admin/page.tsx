@@ -3,13 +3,31 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Settings, Copy, Check, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { Settings, Copy, Check, Link as LinkIcon, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { auth } from "@/lib/firebase/client";
-import type { AdminConfig } from "@/lib/types";
+import type { AdminConfig, Activity, ContentConfig } from "@/lib/types";
+import { DEFAULT_CONTENT, TEXT_FIELDS, newActivityId } from "@/lib/content";
 
-const TABS = ["Dashboard", "Registration links", "Paywall & email", "Event tracking"] as const;
+const TABS = ["Dashboard", "Registration links", "Content", "Event tracking"] as const;
 type Tab = (typeof TABS)[number];
+
+// Paywall / email / coaching copy (stored separately in config/admin) — now edited
+// inside the Content tab alongside all other static text.
+const CONFIG_FIELDS: { key: keyof AdminConfig; label: string; textarea?: boolean }[] = [
+  { key: "paywallTitle", label: "Paywall — title" },
+  { key: "paywallBody", label: "Paywall — body", textarea: true },
+  { key: "paywallCtaLabel", label: "Paywall — CTA label" },
+  { key: "paywallCtaUrl", label: "Paywall — CTA URL" },
+  { key: "pwResetSubject", label: "Password email — subject" },
+  { key: "pwResetBody", label: "Password email — body", textarea: true },
+  { key: "emailVerifySubject", label: "Email verification — subject" },
+  { key: "emailVerifyBody", label: "Email verification — body", textarea: true },
+  { key: "coachingTitle", label: "Coaching — title" },
+  { key: "coachingBody", label: "Coaching — body", textarea: true },
+  { key: "coachingCtaLabel", label: "Coaching — CTA label" },
+  { key: "coachingCtaUrl", label: "Coaching — CTA URL" },
+];
 
 async function token() { return auth.currentUser!.getIdToken(); }
 async function authedFetch(url: string, init: RequestInit = {}) {
@@ -64,7 +82,7 @@ export default function AdminPage() {
       <main className="mx-auto max-w-6xl px-5 py-6">
         {tab === "Dashboard" && <DashboardTab />}
         {tab === "Registration links" && <RegistrationLinks />}
-        {tab === "Paywall & email" && <ConfigForm />}
+        {tab === "Content" && <ContentTab />}
         {tab === "Event tracking" && <EventTracking />}
       </main>
     </div>
@@ -120,6 +138,191 @@ function StatCard({ value, label }: { value: number; label: string }) {
     <div className="card p-5">
       <div className="font-display font-extrabold text-3xl text-jh-ink">{value ?? 0}</div>
       <div className="text-sm text-jh-mute mt-1">{label}</div>
+    </div>
+  );
+}
+
+/* ---------------- Content (static text + activities + paywall/email copy) ---------------- */
+function ContentTab() {
+  const [cfg, setCfg] = useState<ContentConfig | null>(null);
+  const [adminCfg, setAdminCfg] = useState<Partial<AdminConfig>>({});
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    authedFetch("/api/admin/content").then((r) => r.json()).then((d) => d.ok && setCfg(d.content));
+    authedFetch("/api/admin/config").then((r) => r.json()).then((d) => d.ok && setAdminCfg(d.config));
+  }, []);
+
+  function patch(p: Partial<ContentConfig>) { setCfg((c) => ({ ...(c as ContentConfig), ...p })); setSaved(false); }
+  function setText(key: string, value: string) {
+    setCfg((c) => ({ ...(c as ContentConfig), text: { ...(c as ContentConfig).text, [key]: value } }));
+    setSaved(false);
+  }
+  function setAdmin(key: keyof AdminConfig, value: string) { setAdminCfg((a) => ({ ...a, [key]: value })); setSaved(false); }
+  function setEffort(market: "hidden" | "visible", value: number) {
+    patch({ effortSplit: { ...(cfg as ContentConfig).effortSplit, [market]: value } });
+  }
+
+  function updateActivity(id: string, p: Partial<Activity>) {
+    patch({ activities: (cfg as ContentConfig).activities.map((a) => (a.id === id ? { ...a, ...p } : a)) });
+  }
+  function removeActivity(id: string) {
+    patch({ activities: (cfg as ContentConfig).activities.filter((a) => a.id !== id) });
+  }
+  function addActivity(market: "hidden" | "visible") {
+    const a: Activity = { id: newActivityId(""), market, emoji: "•", label: "New activity", defaultWeekly: 1 };
+    patch({ activities: [...(cfg as ContentConfig).activities, a] });
+  }
+
+  async function save() {
+    if (!cfg) return;
+    setBusy(true); setSaved(false);
+    const [rContent, rConfig] = await Promise.all([
+      authedFetch("/api/admin/content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: cfg }) }),
+      authedFetch("/api/admin/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(adminCfg) }),
+    ]);
+    if (rContent.ok) setCfg((await rContent.json()).content);
+    if (rConfig.ok) setAdminCfg((await rConfig.json()).config);
+    if (rContent.ok && rConfig.ok) setSaved(true);
+    setBusy(false);
+  }
+  function resetDefaults() {
+    if (confirm("Reset the text & activity lists to the built-in defaults? (Paywall/email copy is left as-is.) Applied when you Save.")) {
+      setCfg(structuredClone(DEFAULT_CONTENT)); setSaved(false);
+    }
+  }
+
+  if (!cfg) return <p className="text-jh-mute animate-pulse">Loading content…</p>;
+
+  const hidden = cfg.activities.filter((a) => a.market === "hidden");
+  const visible = cfg.activities.filter((a) => a.market === "visible");
+
+  // Group text fields preserving catalogue order.
+  const groups: { name: string; fields: typeof TEXT_FIELDS }[] = [];
+  for (const f of TEXT_FIELDS) {
+    let g = groups.find((x) => x.name === f.group);
+    if (!g) { g = { name: f.group, fields: [] }; groups.push(g); }
+    g.fields.push(f);
+  }
+
+  return (
+    <div className="space-y-8 max-w-4xl">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl">App content</h2>
+          <p className="text-jh-mute text-sm mt-1">Edit every static label, the job-market activity lists, and the paywall / email / coaching copy. Changes go live across the app and onboarding the moment you save.</p>
+        </div>
+        <button onClick={resetDefaults} className="btn-secondary text-xs px-3 py-2 whitespace-nowrap">Reset to defaults</button>
+      </div>
+
+      {/* ---- Activities ---- */}
+      <section className="space-y-4">
+        <div>
+          <h3 className="font-display font-bold text-jh-ink">Job-market activities</h3>
+          <p className="text-jh-mute text-sm">Add or remove the activities shown on Performance and in onboarding. “Default / wk” is the suggested weekly target until a user changes it.</p>
+        </div>
+
+        <div className="card p-4 grid grid-cols-2 gap-4 max-w-md">
+          <div>
+            <label className="label">Hidden — % of success</label>
+            <input type="number" min={0} max={100} className="field" value={cfg.effortSplit.hidden}
+              onChange={(e) => setEffort("hidden", +e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Visible — % of success</label>
+            <input type="number" min={0} max={100} className="field" value={cfg.effortSplit.visible}
+              onChange={(e) => setEffort("visible", +e.target.value)} />
+          </div>
+        </div>
+
+        <ActivityList title="👀 Hidden Job Market" items={hidden} market="hidden"
+          onChange={updateActivity} onRemove={removeActivity} onAdd={() => addActivity("hidden")} />
+        <ActivityList title="✅ Visible Job Market" items={visible} market="visible"
+          onChange={updateActivity} onRemove={removeActivity} onAdd={() => addActivity("visible")} />
+      </section>
+
+      {/* ---- Static text ---- */}
+      <section className="space-y-5">
+        <h3 className="font-display font-bold text-jh-ink">Static text</h3>
+        {groups.map((g) => (
+          <div key={g.name} className="card p-5 space-y-4">
+            <p className="font-display font-semibold text-jh-ink">{g.name}</p>
+            {g.fields.map((f) => (
+              <div key={f.key}>
+                <label className="label">{f.label}</label>
+                {f.textarea
+                  ? <textarea className="field min-h-20" value={cfg.text[f.key] ?? ""} onChange={(e) => setText(f.key, e.target.value)} />
+                  : <input className="field" value={cfg.text[f.key] ?? ""} onChange={(e) => setText(f.key, e.target.value)} />}
+                {f.help && <p className="text-[11px] text-jh-mute mt-1">{f.help}</p>}
+              </div>
+            ))}
+          </div>
+        ))}
+      </section>
+
+      {/* ---- Paywall, email & coaching copy ---- */}
+      <section className="space-y-5">
+        <div>
+          <h3 className="font-display font-bold text-jh-ink">Paywall, email &amp; coaching</h3>
+          <p className="text-jh-mute text-sm">Copy for the expired-access paywall, transactional emails, and the coaching upsell modal.</p>
+        </div>
+        <div className="card p-5 space-y-4">
+          {CONFIG_FIELDS.map((f) => (
+            <div key={f.key}>
+              <label className="label">{f.label}</label>
+              {f.textarea
+                ? <textarea className="field min-h-24" value={(adminCfg[f.key] as string) ?? ""} onChange={(e) => setAdmin(f.key, e.target.value)} />
+                : <input className="field" value={(adminCfg[f.key] as string) ?? ""} onChange={(e) => setAdmin(f.key, e.target.value)} />}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* sticky save */}
+      <div className="sticky bottom-0 -mx-5 px-5 py-3 bg-jh-paper/90 backdrop-blur border-t border-jh-line flex items-center gap-3">
+        <button onClick={save} disabled={busy} className="btn-primary disabled:opacity-60">{busy ? "Saving…" : "Save content"}</button>
+        {saved && <span className="text-sm text-rb-green-dark">Saved ✓ — live now</span>}
+      </div>
+    </div>
+  );
+}
+
+function ActivityList({ title, items, market, onChange, onRemove, onAdd }: {
+  title: string;
+  items: Activity[];
+  market: "hidden" | "visible";
+  onChange: (id: string, p: Partial<Activity>) => void;
+  onRemove: (id: string) => void;
+  onAdd: () => void;
+}) {
+  return (
+    <div className="card overflow-hidden">
+      <div className="px-4 py-3 border-b border-jh-line font-display font-semibold text-jh-ink text-sm">{title}</div>
+      <div className="divide-y divide-jh-line">
+        {items.map((a) => (
+          <div key={a.id} className="flex items-center gap-2 px-3 py-2.5">
+            <input value={a.emoji} onChange={(e) => onChange(a.id, { emoji: e.target.value })}
+              className="field py-2 text-center w-12 shrink-0" aria-label="Emoji" />
+            <input value={a.label} onChange={(e) => onChange(a.id, { label: e.target.value })}
+              className="field py-2 flex-1 text-sm" placeholder="Activity label" />
+            <div className="shrink-0 w-24">
+              <input type="number" min={0} value={a.defaultWeekly}
+                onChange={(e) => onChange(a.id, { defaultWeekly: Math.max(0, +e.target.value) })}
+                className="field py-2 text-sm" aria-label="Default weekly target" title="Default weekly target" />
+            </div>
+            <button onClick={() => onRemove(a.id)} className="shrink-0 grid place-items-center h-9 w-9 rounded-[10px] text-jh-mute hover:text-jh-red hover:bg-jh-red-soft" aria-label="Remove activity">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+        {items.length === 0 && <div className="px-4 py-6 text-center text-jh-mute text-sm">No activities yet.</div>}
+      </div>
+      <div className="px-3 py-3 border-t border-jh-line">
+        <button onClick={onAdd} className="btn-secondary text-xs px-3 py-2 inline-flex items-center gap-1">
+          <Plus className="h-4 w-4" /> Add activity
+        </button>
+      </div>
     </div>
   );
 }
@@ -240,53 +443,5 @@ function RegistrationLinks() {
         </ul>
       )}
     </div>
-  );
-}
-
-/* ---------------- Paywall & email ---------------- */
-const FIELDS: { key: keyof AdminConfig; label: string; textarea?: boolean }[] = [
-  { key: "paywallTitle", label: "Paywall — title" },
-  { key: "paywallBody", label: "Paywall — body", textarea: true },
-  { key: "paywallCtaLabel", label: "Paywall — CTA label" },
-  { key: "paywallCtaUrl", label: "Paywall — CTA URL" },
-  { key: "pwResetSubject", label: "Password email — subject" },
-  { key: "pwResetBody", label: "Password email — body", textarea: true },
-  { key: "emailVerifySubject", label: "Email verification — subject" },
-  { key: "emailVerifyBody", label: "Email verification — body", textarea: true },
-  { key: "coachingTitle", label: "Coaching — title" },
-  { key: "coachingBody", label: "Coaching — body", textarea: true },
-  { key: "coachingCtaLabel", label: "Coaching — CTA label" },
-  { key: "coachingCtaUrl", label: "Coaching — CTA URL" },
-];
-function ConfigForm() {
-  const [cfg, setCfg] = useState<Partial<AdminConfig>>({});
-  const [saved, setSaved] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => { authedFetch("/api/admin/config").then((r) => r.json()).then((d) => d.ok && setCfg(d.config)); }, []);
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true); setSaved(false);
-    const res = await authedFetch("/api/admin/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cfg) });
-    if (res.ok) { setCfg((await res.json()).config); setSaved(true); }
-    setBusy(false);
-  }
-
-  return (
-    <form onSubmit={save} className="card p-6 space-y-4 max-w-2xl">
-      <h2 className="text-xl">Paywall, email &amp; coaching copy</h2>
-      {FIELDS.map((f) => (
-        <div key={f.key}>
-          <label className="label">{f.label}</label>
-          {f.textarea
-            ? <textarea className="field min-h-24" value={(cfg[f.key] as string) ?? ""} onChange={(e) => setCfg({ ...cfg, [f.key]: e.target.value })} />
-            : <input className="field" value={(cfg[f.key] as string) ?? ""} onChange={(e) => setCfg({ ...cfg, [f.key]: e.target.value })} />}
-        </div>
-      ))}
-      <div className="flex items-center gap-3">
-        <button disabled={busy} className="btn-primary disabled:opacity-60">{busy ? "Saving…" : "Save changes"}</button>
-        {saved && <span className="text-sm text-rb-green-dark">Saved ✓</span>}
-      </div>
-    </form>
   );
 }

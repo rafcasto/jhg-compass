@@ -123,3 +123,25 @@ export interface AdminConfig {
   coachingCtaLabel: string;
   coachingCtaUrl: string;
 }
+
+// An editable activity in the Performance tab / onboarding.
+// Extends the static ActivityCategory with a per-activity default weekly target,
+// so the whole taxonomy can live in admin-editable content.
+export interface Activity {
+  id: string;
+  market: Market;
+  emoji: string;
+  label: string;
+  defaultWeekly: number; // sensible weekly target used until the user sets their own
+}
+
+// Admin-editable content for the whole app: static copy + the activity taxonomy.
+// Stored at config/content and live-read by every page (Performance, onboarding, Compass).
+export interface ContentConfig {
+  // Effort-split percentages shown on the Hidden / Visible banners.
+  effortSplit: { hidden: number; visible: number };
+  // The full activity list (both markets); admin can add / remove / reorder.
+  activities: Activity[];
+  // All editable static strings, keyed (see lib/content.ts for the catalogue).
+  text: Record<string, string>;
+}

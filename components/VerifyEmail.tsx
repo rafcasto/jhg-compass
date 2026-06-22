@@ -5,12 +5,14 @@ import { MailCheck, RefreshCw } from "lucide-react";
 import { updateEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useAuth } from "@/components/AuthProvider";
+import { useContent } from "@/lib/firestore/content";
 import { paths, setDoc } from "@/lib/firestore/db";
 
 // Full-screen gate shown after sign-up until the user verifies their email (req 2).
 // Lets them resend the verification email and fix a wrong email address.
 export default function VerifyEmail() {
   const { user, reloadUser, signOut } = useAuth();
+  const { t } = useContent();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -47,7 +49,7 @@ export default function VerifyEmail() {
     await reloadUser();
     setChecking(false);
     if (auth.currentUser && !auth.currentUser.emailVerified) {
-      setErr("Not verified yet — click the link in your email, then try again.");
+      setErr(t("auth.verify.notVerified"));
     }
   }
 
@@ -83,37 +85,37 @@ export default function VerifyEmail() {
         <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-full bg-jh-red-soft">
           <MailCheck className="h-7 w-7 text-jh-red" />
         </div>
-        <h2 className="mb-2">Verify your email</h2>
-        <p className="text-jh-mute mb-1">We sent a verification link to</p>
+        <h2 className="mb-2">{t("auth.verify.title")}</h2>
+        <p className="text-jh-mute mb-1">{t("auth.verify.sentTo")}</p>
         <p className="font-display font-semibold text-jh-ink mb-6 break-all">{user?.email}</p>
 
-        {sent && <p className="text-sm text-rb-green-dark mb-4">Verification email sent ✓</p>}
+        {sent && <p className="text-sm text-rb-green-dark mb-4">{t("auth.verify.sentOk")}</p>}
         {err && <p className="text-sm text-jh-red mb-4">{err}</p>}
 
         <button onClick={checkVerified} disabled={checking} className="btn-primary w-full disabled:opacity-60">
-          <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} /> I&apos;ve verified — continue
+          <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} /> {t("auth.verify.continue")}
         </button>
 
         <button onClick={() => resend()} disabled={sending} className="btn-secondary mt-3 w-full text-sm disabled:opacity-60">
-          {sending ? "Sending…" : "Resend verification email"}
+          {sending ? t("auth.verify.sending") : t("auth.verify.resend")}
         </button>
 
         {!editing ? (
           <button onClick={() => { setEditing(true); setNewEmail(user?.email ?? ""); }} className="link mt-4 text-sm">
-            Wrong email? Change it
+            {t("auth.verify.wrongEmail")}
           </button>
         ) : (
           <form onSubmit={saveEmail} className="mt-4 space-y-2 text-left">
-            <label className="label">New email address</label>
+            <label className="label">{t("auth.verify.newEmailLabel")}</label>
             <input type="email" required className="field" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
             <div className="flex gap-2">
-              <button type="submit" className="btn-primary flex-1 text-sm">Update &amp; resend</button>
-              <button type="button" onClick={() => setEditing(false)} className="btn-ghost flex-1 text-sm">Cancel</button>
+              <button type="submit" className="btn-primary flex-1 text-sm">{t("auth.verify.updateResend")}</button>
+              <button type="button" onClick={() => setEditing(false)} className="btn-ghost flex-1 text-sm">{t("auth.verify.cancel")}</button>
             </div>
           </form>
         )}
 
-        <button onClick={() => signOut()} className="btn-ghost mt-4 w-full text-sm">Sign out</button>
+        <button onClick={() => signOut()} className="btn-ghost mt-4 w-full text-sm">{t("auth.verify.signOut")}</button>
       </div>
     </div>
   );

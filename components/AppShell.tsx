@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Compass, Columns3, GraduationCap, Shield, LogOut, type LucideProps } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import { useContent } from "@/lib/firestore/content";
 import { Iceberg } from "@/components/icons";
 import CoachingModal from "@/components/CoachingModal";
 
@@ -16,18 +17,20 @@ type NavItem = {
   action?: "coaching";
 };
 
-// Four tabs (req 4): Compass · Performance (iceberg) · Tracker (kanban) · Coaching (modal).
-const NAV: NavItem[] = [
-  { href: "/compass", label: "Compass", icon: Compass },
-  { href: "/performance", label: "Performance", icon: Iceberg },
-  { href: "/tracker", label: "Progress", icon: Columns3 },
-  { action: "coaching", label: "Coaching", icon: GraduationCap },
-];
-
 export default function AppShell({ children, daysLeft }: { children: React.ReactNode; daysLeft: number | null }) {
   const pathname = usePathname();
   const { signOut, isAdmin } = useAuth();
+  const { t } = useContent();
   const [coaching, setCoaching] = useState(false);
+
+  // Four tabs (req 4): Compass · Performance (iceberg) · Tracker (kanban) · Coaching (modal).
+  // Labels are admin-editable via content.
+  const NAV: NavItem[] = [
+    { href: "/compass", label: t("nav.compass"), icon: Compass },
+    { href: "/performance", label: t("nav.performance"), icon: Iceberg },
+    { href: "/tracker", label: t("nav.tracker"), icon: Columns3 },
+    { action: "coaching", label: t("nav.coaching"), icon: GraduationCap },
+  ];
 
   const nav: NavItem[] = isAdmin ? [...NAV, { href: "/admin", label: "Admin", icon: Shield }] : NAV;
 
