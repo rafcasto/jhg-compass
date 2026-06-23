@@ -7,8 +7,9 @@ import { useAuth } from "@/components/AuthProvider";
 import { useFunnel } from "@/lib/firestore/funnel";
 import type { CountdownConfig } from "@/lib/funnel";
 
-// Public marketing landing — the first page visitors hit. Logged-in users are
-// bounced straight to their Compass. All copy is admin-editable (config/funnel).
+// Public marketing landing — a single-viewport split hero: everything the visitor
+// needs (value prop, what-you-get, CTA, countdown, proof + the product) sits above
+// the fold, no scrolling required. Logged-in users are bounced to /compass.
 export default function Home() {
   const { user, loading } = useAuth();
   const { funnel } = useFunnel();
@@ -29,105 +30,88 @@ export default function Home() {
       <style>{CSS}</style>
       <div className="cl-topbar" />
 
-      <div className="cl-container">
-        <div className="cl-head">
+      <div className="cl-stage">
+        <header className="cl-head">
           <div className="cl-head__tag"><span className="cl-dot" />{L.headTag}</div>
           <div className="cl-head__logo"><span className="cl-m">🧭</span>{L.brandName} <span>{L.brandAccent}</span></div>
-        </div>
-      </div>
+        </header>
 
-      {/* HERO */}
-      <div className="cl-container">
-        <div className="cl-hero">
-          <h1 className="cl-hero__h1">{L.heroH1} <span className="cl-accent">{L.heroH1Accent}</span></h1>
-          <p className="cl-hero__sub">{L.heroSub}</p>
-          <Link className="cl-cta" href="/quiz">{L.ctaLabel}</Link>
-          <Countdown config={funnel.countdown} label={L.countdownLabel} />
-          <div className="cl-proofrow">{L.proofrow}</div>
-        </div>
-      </div>
+        <div className="cl-hero2">
+          {/* ---- Left: persuasion + CTA ---- */}
+          <div className="cl-copy">
+            <h1 className="cl-h1">{L.heroH1} <span className="cl-accent">{L.heroH1Accent}</span></h1>
+            <p className="cl-sub">{L.heroSub}</p>
 
-      {/* PRODUCT PEEK */}
-      <div className="cl-section">
-        <div className="cl-container">
-          <div className="cl-peek">
+            <div className="cl-getlabel">{L.getEyebrow}</div>
+            <ul className="cl-bullets">
+              {L.cards.map((c, i) => (
+                <li className="cl-bullet" key={i}>
+                  <span className="cl-bullet__i">✓</span>
+                  <span><b>{c.title}</b></span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="cl-actions">
+              <Link className="cl-cta" href="/quiz">{L.ctaLabel}</Link>
+              <Countdown config={funnel.countdown} label={L.countdownLabel} />
+            </div>
+            <div className="cl-proofrow">{L.proofrow}</div>
+          </div>
+
+          {/* ---- Right: product (iPhone — Performance screen) ---- */}
+          <div className="cl-visual">
             <div className="cl-phone" aria-hidden="true">
               <div className="cl-phone__screen">
                 <div className="cl-phone__island" />
-                <div className="cl-scr-eyebrow">Success Predictors</div>
-                <div className="cl-scr-title">Performance</div>
-                <div className="cl-mbanner cl-mbanner--hidden">
-                  <span>👀</span>
-                  <div><div className="cl-mbanner__t">Hidden Job Market</div><div className="cl-mbanner__s">~80% of your success</div></div>
+                <div className="cl-ps-head">
+                  <div>
+                    <div className="cl-ps-eyebrow">Performance</div>
+                    <div className="cl-ps-title">Success Predictors</div>
+                  </div>
+                  <div className="cl-ps-edit">Edit targets</div>
                 </div>
-                <div className="cl-amrow">
-                  <div className="cl-amrow__t">Research target companies</div>
-                  <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;1</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
+                <div className="cl-ps-seg">
+                  <span className="cl-ps-seg__on">Day</span><span>Week</span><span>Month</span>
                 </div>
-                <div className="cl-amrow">
-                  <div className="cl-amrow__t">Contact prospects — referrals</div>
-                  <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;1</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
+                <div className="cl-ps-date">‹&nbsp;&nbsp;Tue 23 Jun&nbsp;&nbsp;›</div>
+                <div className="cl-ps-banner">
+                  <span className="cl-ps-banner__e">👀</span>
+                  <div><div className="cl-ps-banner__t">Hidden Job Market</div><div className="cl-ps-banner__s">Contributes to ~80% of your success</div></div>
                 </div>
-                <div className="cl-amrow">
-                  <div className="cl-amrow__t">Information interviews</div>
-                  <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;2</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
-                </div>
-                <div className="cl-amrow">
-                  <div className="cl-amrow__t">Thank-you notes</div>
-                  <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;1</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
-                </div>
-                <div className="cl-mbanner cl-mbanner--visible">
-                  <span>✅</span>
-                  <div><div className="cl-mbanner__t">Visible Job Market</div><div className="cl-mbanner__s">~20% of your success</div></div>
-                </div>
-                <div className="cl-amrow">
-                  <div className="cl-amrow__t">Apply to relevant roles</div>
-                  <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;2</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
-                </div>
+                {PHONE_ROWS.map((r, i) => (
+                  <div className="cl-ps-row" key={i}>
+                    <div className="cl-ps-row__l">
+                      <div className="cl-ps-row__t">{r.label}</div>
+                      <div className="cl-ps-bar"><i style={{ left: r.pct }} /></div>
+                    </div>
+                    <div className="cl-ps-row__r">
+                      <div className="cl-ps-metrics">
+                        <div className="cl-ps-metric"><span>Actual</span><b className="cl-ps-red">0</b></div>
+                        <div className="cl-ps-slash">/</div>
+                        <div className="cl-ps-metric"><span>Target</span><b>{r.target}</b></div>
+                      </div>
+                      <div className="cl-ps-step"><i className="cl-ps-minus">−</i><i className="cl-ps-plus">+</i></div>
+                    </div>
+                  </div>
+                ))}
                 <div className="cl-phone__home" />
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* WHAT YOU GET */}
-      <div className="cl-section cl-section--tint">
-        <div className="cl-container">
-          <span className="cl-eyebrow">{L.getEyebrow}</span>
-          <h2 className="cl-sec-title">{L.getTitlePre} <span className="cl-accent">{L.getTitleAccent}</span> {L.getTitlePost}</h2>
-          <div className="cl-learn">
-            {L.cards.map((c, i) => (
-              <div className="cl-lcard" key={i}>
-                <div className="cl-lcard__part">{c.part}</div>
-                <div className="cl-lcard__t">{c.title}</div>
-                <div className="cl-lcard__d">{c.body}</div>
-              </div>
-            ))}
-          </div>
-          <div className="cl-cta-block"><Link className="cl-cta" href="/quiz">{L.ctaLabel}</Link></div>
-        </div>
-      </div>
-
-      {/* CLOSING */}
-      <div className="cl-section">
-        <div className="cl-container">
-          <div className="cl-closing">
-            <h2 className="cl-closing__h">{L.closingTitle}</h2>
-            <p className="cl-closing__sub">{L.closingSub}</p>
-            <Countdown config={funnel.countdown} label={L.countdownLabel} />
-            <Link className="cl-cta" href="/quiz">{L.ctaLabel}</Link>
-            <p className="cl-note">{L.closingNote}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="cl-foot">
-        {L.footer}<br />{L.tagline}
+        <footer className="cl-foot2"><b>{L.footer}</b> · {L.tagline}</footer>
       </div>
     </main>
   );
 }
+
+const PHONE_ROWS = [
+  { label: "Research & read target industry / top-10 companies", target: 1, pct: "16%" },
+  { label: "Research interesting profiles at target companies", target: 1, pct: "10%" },
+  { label: "Contact prospects — with referrals", target: 1, pct: "20%" },
+];
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
 
@@ -171,83 +155,95 @@ function Countdown({ config, label }: { config: CountdownConfig; label: string }
 }
 
 const CSS = `
-.cl-root{font-family:"Roboto","Helvetica Neue",Arial,sans-serif;color:#3a3f4d;background:#fff;-webkit-font-smoothing:antialiased;}
-.cl-root h1,.cl-root h2{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;color:#191c27;margin:0;letter-spacing:-.02em;text-wrap:balance;}
-.cl-root p{margin:0;line-height:1.6;color:#3a3f4d;}
+.cl-root{font-family:"Roboto","Helvetica Neue",Arial,sans-serif;color:#3a3f4d;background:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+.cl-root h1{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;color:#191c27;margin:0;letter-spacing:-.02em;text-wrap:balance;}
 .cl-accent{color:#c2001f;}
 .cl-topbar{height:5px;background:#c2001f;}
-.cl-container{max-width:760px;margin:0 auto;padding:0 24px;}
-.cl-section{padding:60px 0;}
-.cl-section--tint{background:#f5f6fa;}
-.cl-head{display:flex;align-items:center;justify-content:space-between;padding:18px 0;}
+
+.cl-stage{min-height:calc(100vh - 5px);max-width:1140px;margin:0 auto;padding:0 32px;display:flex;flex-direction:column;}
+.cl-head{display:flex;align-items:center;justify-content:space-between;padding:16px 0;}
 .cl-head__tag{font-family:"Poppins",Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#c2001f;display:flex;align-items:center;gap:8px;}
 .cl-dot{width:8px;height:8px;border-radius:99px;background:#c2001f;}
 .cl-head__logo{display:flex;align-items:center;gap:9px;font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:14px;color:#191c27;}
 .cl-head__logo .cl-m{width:30px;height:30px;border-radius:9px;background:#c2001f;color:#fff;display:grid;place-items:center;font-size:16px;}
 .cl-head__logo span{color:#c2001f;}
-.cl-hero{max-width:640px;margin:0 auto;text-align:center;padding:64px 0 8px;}
-.cl-hero__h1{font-family:"Poppins",Arial,sans-serif;font-size:44px;font-weight:700;line-height:1.2;letter-spacing:-.03em;color:#191c27;margin:0 0 22px;}
-.cl-hero__sub{font-size:17px;line-height:1.62;color:#6b7280;margin:0 auto 30px;max-width:30em;text-wrap:balance;}
-.cl-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em;color:#fff;background:#c2001f;border:0;border-radius:99px;padding:17px 34px;text-decoration:none;cursor:pointer;box-shadow:0 10px 26px rgba(194,0,31,.3);transition:all .22s cubic-bezier(.2,.7,.2,1);text-transform:uppercase;}
-.cl-hero .cl-cta{margin-top:8px;}
+
+.cl-hero2{flex:1;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:18px 0;}
+
+.cl-copy{max-width:30em;}
+.cl-h1{font-family:"Poppins",Arial,sans-serif;font-size:40px;font-weight:700;line-height:1.16;letter-spacing:-.03em;color:#191c27;margin:0 0 16px;}
+.cl-sub{font-size:16px;line-height:1.6;color:#6b7280;margin:0 0 22px;}
+.cl-getlabel{font-family:"Poppins",Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#c2001f;margin-bottom:12px;}
+.cl-bullets{list-style:none;margin:0 0 26px;padding:0;display:grid;gap:11px;}
+.cl-bullet{display:flex;align-items:flex-start;gap:11px;font-size:15.5px;line-height:1.35;color:#3a3f4d;}
+.cl-bullet b{color:#191c27;font-weight:600;}
+.cl-bullet__i{flex:0 0 auto;width:22px;height:22px;border-radius:99px;background:#f6e0e3;color:#c2001f;display:grid;place-items:center;font-size:11px;font-weight:700;margin-top:1px;}
+
+.cl-actions{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.cl-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em;color:#fff;background:#c2001f;border:0;border-radius:99px;padding:17px 32px;text-decoration:none;cursor:pointer;box-shadow:0 10px 26px rgba(194,0,31,.3);transition:all .22s cubic-bezier(.2,.7,.2,1);text-transform:uppercase;white-space:nowrap;}
 .cl-cta:hover{background:#8a0016;transform:translateY(-2px);box-shadow:0 14px 32px rgba(194,0,31,.36);}
-.cl-cd-wrap{margin:36px 0 26px;}
-.cl-cd-label{font-family:"Poppins",Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#9aa0ad;margin-bottom:14px;}
-.cl-countdown{display:flex;gap:10px;justify-content:center;align-items:center;}
-.cl-cd{position:relative;background:#fff;border:1px solid #e9ebf1;border-radius:13px;width:72px;padding:14px 0 11px;text-align:center;box-shadow:0 6px 18px rgba(25,28,39,.08);overflow:hidden;}
-.cl-cd::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#e9ebf1;opacity:.7;}
-.cl-cd b{font-family:"Poppins",Arial,sans-serif;font-size:30px;font-weight:700;color:#191c27;display:block;line-height:1;font-variant-numeric:tabular-nums;position:relative;z-index:1;}
-.cl-cd span{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9aa0ad;margin-top:8px;display:block;}
-.cl-cd-sep{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:22px;color:#d4d8e2;}
-.cl-proofrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;font-size:13px;color:#6b7280;}
-.cl-peek{display:flex;justify-content:center;margin-top:8px;}
+
+.cl-cd-label{font-family:"Poppins",Arial,sans-serif;font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#9aa0ad;margin-bottom:7px;}
+.cl-countdown{display:flex;gap:7px;align-items:center;}
+.cl-cd{position:relative;background:#fff;border:1px solid #e9ebf1;border-radius:10px;width:46px;padding:8px 0 6px;text-align:center;box-shadow:0 5px 14px rgba(25,28,39,.07);}
+.cl-cd b{font-family:"Poppins",Arial,sans-serif;font-size:20px;font-weight:700;color:#191c27;display:block;line-height:1;font-variant-numeric:tabular-nums;}
+.cl-cd span{font-size:7px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9aa0ad;margin-top:5px;display:block;}
+.cl-cd-sep{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:15px;color:#d4d8e2;}
+.cl-proofrow{margin-top:20px;font-size:12.5px;color:#6b7280;}
+
+.cl-foot2{padding:14px 0;border-top:1px solid #eef0f5;text-align:center;font-size:12px;color:#9aa0ad;}
+.cl-foot2 b{color:#6b7280;font-weight:600;}
+
+/* ---- iPhone ---- */
+.cl-visual{display:flex;justify-content:center;align-items:center;}
 .cl-phone{width:268px;border-radius:50px;background:#191c27;padding:13px;box-shadow:0 34px 72px rgba(25,28,39,.34);position:relative;}
-.cl-phone__screen{position:relative;background:#fff;border-radius:38px;padding:44px 16px 26px;overflow:hidden;text-align:left;min-height:540px;}
+.cl-phone__screen{position:relative;background:#fafafa;border-radius:38px;padding:44px 15px 22px;overflow:hidden;text-align:left;min-height:530px;}
 .cl-phone__island{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:88px;height:26px;border-radius:99px;background:#191c27;z-index:3;}
-.cl-phone__home{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:112px;height:5px;border-radius:99px;background:#191c27;opacity:.22;}
-.cl-scr-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:8px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#c2001f;}
-.cl-scr-title{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:18px;color:#191c27;margin-bottom:13px;}
-.cl-mbanner{display:flex;align-items:center;gap:8px;border-radius:11px;padding:9px 11px;}
-.cl-mbanner--hidden{background:#f6e0e3;}
-.cl-mbanner--visible{background:#e2ebfb;margin-top:11px;}
-.cl-mbanner__t{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:11px;color:#191c27;line-height:1.1;}
-.cl-mbanner__s{font-size:8.5px;color:#6b7280;}
-.cl-amrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 2px;border-bottom:1px solid #e9ebf1;}
-.cl-amrow__t{font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:10.5px;color:#191c27;line-height:1.25;max-width:118px;}
-.cl-amrow__r{display:flex;align-items:center;gap:9px;}
-.cl-amrow__nums{font-family:"Poppins",Arial,sans-serif;font-size:13px;font-weight:700;color:#191c27;white-space:nowrap;}
-.cl-amrow__nums b{color:#c2001f;}.cl-amrow__nums span{color:#9aa0ad;font-weight:600;}
-.cl-pm{display:flex;gap:6px;}
-.cl-pm i{width:20px;height:20px;border-radius:99px;display:grid;place-items:center;font-size:12px;font-weight:700;line-height:1;font-style:normal;}
-.cl-pm .cl-minus{border:1.5px solid #d4d8e2;color:#9aa0ad;background:#fff;}
-.cl-pm .cl-plus{background:#c2001f;color:#fff;box-shadow:0 3px 9px rgba(194,0,31,.36);}
-.cl-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#c2001f;display:block;text-align:center;margin-bottom:14px;}
-.cl-sec-title{font-family:"Poppins",Arial,sans-serif;font-size:32px;font-weight:700;line-height:1.28;letter-spacing:-.02em;text-align:center;margin:0 auto 44px;max-width:18em;}
-.cl-learn{max-width:640px;margin:0 auto;display:grid;gap:18px;}
-.cl-lcard{background:#fff;border:1px solid #e9ebf1;border-radius:18px;padding:26px 28px;box-shadow:0 6px 20px rgba(25,28,39,.05);}
-.cl-lcard__part{font-family:"Poppins",Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c2001f;margin-bottom:10px;}
-.cl-lcard__t{font-family:"Poppins",Arial,sans-serif;font-size:19px;font-weight:600;color:#191c27;margin:0 0 8px;}
-.cl-lcard__d{font-size:15px;line-height:1.55;color:#6b7280;}
-.cl-cta-block{text-align:center;margin-top:40px;}
-.cl-mentors{max-width:640px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px;}
-.cl-mentor{background:#fff;border:1px solid #e9ebf1;border-radius:18px;padding:26px 24px;box-shadow:0 6px 20px rgba(25,28,39,.05);}
-.cl-mentor__av{width:60px;height:60px;border-radius:99px;background:#f6e0e3;color:#c2001f;font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:20px;display:grid;place-items:center;margin-bottom:16px;}
-.cl-mentor__photo{width:60px;height:60px;border-radius:99px;object-fit:cover;display:block;margin-bottom:16px;background:#f6e0e3;}
-.cl-mentor__name{font-family:"Poppins",Arial,sans-serif;font-size:17px;font-weight:600;color:#191c27;}
-.cl-mentor__role{font-family:"Poppins",Arial,sans-serif;font-size:13px;font-weight:500;color:#c2001f;margin-bottom:12px;}
-.cl-mentor__bio{font-size:13.5px;line-height:1.55;color:#6b7280;}
-.cl-seen{text-align:center;margin-top:30px;font-size:12px;color:#9aa0ad;font-family:"Poppins",Arial,sans-serif;letter-spacing:.04em;}
-.cl-closing{text-align:center;max-width:540px;margin:0 auto;}
-.cl-closing__h{font-family:"Poppins",Arial,sans-serif;font-size:30px;font-weight:700;line-height:1.22;letter-spacing:-.02em;margin:0 0 12px;}
-.cl-closing__sub{font-style:italic;font-size:16px;color:#6b7280;margin:0 0 28px;}
-.cl-note{margin-top:18px;font-size:13px;color:#9aa0ad;}
-.cl-foot{background:#191c27;color:rgba(255,255,255,.55);text-align:center;padding:34px 24px;font-size:12.5px;line-height:1.9;}
-@media (max-width:680px){
-  .cl-hero__h1{font-size:33px;}
-  .cl-sec-title{font-size:25px;}
-  .cl-closing__h{font-size:24px;}
-  .cl-cd{width:64px;}
-  .cl-cd b{font-size:25px;}
-  .cl-mentors{grid-template-columns:1fr;}
+.cl-phone__home{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);width:110px;height:5px;border-radius:99px;background:#191c27;opacity:.22;}
+
+.cl-ps-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px;}
+.cl-ps-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:7px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c2001f;}
+.cl-ps-title{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:16px;color:#191c27;letter-spacing:-.02em;line-height:1.05;margin-top:3px;}
+.cl-ps-edit{flex:0 0 auto;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:8px;color:#191c27;border:1px solid #d4d8e2;border-radius:99px;padding:6px 9px;background:#fff;}
+.cl-ps-seg{display:flex;background:#eef0f5;border-radius:10px;padding:3px;margin-bottom:11px;}
+.cl-ps-seg span{flex:1;text-align:center;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:9px;color:#9aa0ad;padding:6px 0;border-radius:8px;}
+.cl-ps-seg__on{background:#fff;color:#191c27 !important;box-shadow:0 1px 3px rgba(25,28,39,.14);}
+.cl-ps-date{text-align:center;font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:10px;color:#191c27;margin-bottom:11px;}
+.cl-ps-banner{display:flex;align-items:center;gap:7px;background:#fbe3e6;border-radius:12px;padding:9px 11px;margin-bottom:2px;}
+.cl-ps-banner__e{font-size:13px;}
+.cl-ps-banner__t{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:10.5px;color:#191c27;line-height:1.1;}
+.cl-ps-banner__s{font-size:7.5px;color:#6b7280;margin-top:1px;}
+.cl-ps-row{display:flex;gap:10px;align-items:center;padding:11px 1px;border-bottom:1px solid #eef0f5;}
+.cl-ps-row__l{flex:1;min-width:0;}
+.cl-ps-row__t{font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:10px;line-height:1.25;color:#191c27;}
+.cl-ps-bar{margin-top:9px;height:6px;border-radius:99px;background:#e7ebf3;position:relative;}
+.cl-ps-bar i{position:absolute;top:50%;transform:translate(-50%,-50%);width:3px;height:13px;border-radius:2px;background:#191c27;}
+.cl-ps-row__r{flex:0 0 auto;width:88px;}
+.cl-ps-metrics{display:flex;justify-content:center;align-items:flex-end;gap:7px;}
+.cl-ps-metric{display:flex;flex-direction:column;align-items:center;}
+.cl-ps-metric span{font-family:"Poppins",Arial,sans-serif;font-size:6.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#9aa0ad;margin-bottom:1px;}
+.cl-ps-metric b{font-family:"Poppins",Arial,sans-serif;font-size:15px;font-weight:700;color:#191c27;line-height:1;}
+.cl-ps-red{color:#c2001f !important;}
+.cl-ps-slash{color:#c5c9d2;font-size:13px;font-weight:600;}
+.cl-ps-step{display:flex;justify-content:center;gap:9px;margin-top:7px;}
+.cl-ps-step i{width:19px;height:19px;border-radius:99px;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;line-height:1;}
+.cl-ps-minus{border:1.5px solid #e6e8ef;color:#9aa0ad;background:#fff;}
+.cl-ps-plus{background:#c2001f;color:#fff;box-shadow:0 2px 7px rgba(194,0,31,.36);}
+
+/* ---- responsive: stack on tablet/mobile (scroll is fine here) ---- */
+@media (max-width:900px){
+  .cl-hero2{grid-template-columns:1fr;gap:36px;justify-items:center;text-align:center;padding:28px 0;}
+  .cl-copy{max-width:34em;}
+  .cl-h1{font-size:34px;}
+  .cl-getlabel,.cl-bullets{text-align:left;}
+  .cl-bullets{display:inline-grid;}
+  .cl-actions{justify-content:center;}
+  .cl-cd-label{text-align:center;}
+  .cl-visual{order:-1;}
+}
+@media (max-width:480px){
+  .cl-stage{padding:0 20px;}
+  .cl-h1{font-size:29px;}
+  .cl-head__tag{font-size:10px;}
 }
 `;
