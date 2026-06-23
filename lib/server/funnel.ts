@@ -8,10 +8,12 @@ export async function getFunnel(): Promise<FunnelConfig> {
   return mergeFunnel(snap.exists ? (snap.data() as Partial<FunnelConfig>) : null);
 }
 
-// Persist a full funnel config (the admin editor sends the whole object).
+// Persist a full funnel config. We normalise through mergeFunnel (drops any
+// legacy/removed keys) and OVERWRITE the doc (no merge) so stale fields are
+// physically removed from Firestore rather than lingering.
 export async function saveFunnel(funnel: Partial<FunnelConfig>, updatedBy?: string) {
+  const clean = mergeFunnel(funnel);
   await adminDb().doc("config/funnel").set(
-    { ...funnel, updatedBy: updatedBy ?? null, updatedAt: Date.now() },
-    { merge: true }
+    { ...clean, updatedBy: updatedBy ?? null, updatedAt: Date.now() }
   );
 }
