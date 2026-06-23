@@ -75,7 +75,8 @@ export async function completeRegistration(
   token: string,
   email: string,
   password: string,
-  firstName?: string
+  firstName?: string,
+  lastName?: string
 ): Promise<CompleteResult> {
   const v = await validateLink(token);
   if (!v.valid) return { ok: false, error: v.reason ?? "invalid" };
@@ -89,16 +90,20 @@ export async function completeRegistration(
   const days = v.accessDurationDays ?? 90;
 
   // create or update the user with the chosen password
+  const displayName = [firstName, lastName].filter(Boolean).join(" ") || undefined;
   let user;
   try {
     user = await auth.getUserByEmail(email);
-    user = await auth.updateUser(user.uid, { password, emailVerified: true, displayName: firstName });
+    user = await auth.updateUser(user.uid, { password, emailVerified: true, displayName });
   } catch {
-    user = await auth.createUser({ email, password, emailVerified: true, displayName: firstName });
+    user = await auth.createUser({ email, password, emailVerified: true, displayName });
   }
 
-  // profile + 90-day active grant
-  await db.doc(`users/${user.uid}`).set({ email, firstName: firstName ?? null, createdAt: now }, { merge: true });
+  // profile (first + last name carry through to onboarding) + 90-day active grant
+  await db.doc(`users/${user.uid}`).set(
+    { email, firstName: firstName ?? null, lastName: lastName ?? null, createdAt: now },
+    { merge: true }
+  );
   await db.doc(`accessGrants/${user.uid}`).set(
     {
       email, plan: "3_month", durationDays: days, status: "active",

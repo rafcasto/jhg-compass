@@ -190,8 +190,8 @@ export const DEFAULT_FUNNEL: FunnelConfig = {
     mentorsTitle: "Built on 30 years of",
     mentorsTitleAccent: "real placements",
     mentors: [
-      { initials: "DP", name: "David Perry", role: "Recruiter & Author", photo: "/assets/mentor-david.jpg", bio: "30+ years recruiting. Co-founder of Perry-Martel International. Author of Guerrilla Marketing for Job Hunters and Hiring Greatness." },
-      { initials: "LS", name: "Laurent Simon", role: "Co-founder & Author", photo: "/assets/mentor-laurent.jpg", bio: "20+ years across Europe & APAC. Co-founder of Digital Pathways. Author of Harnessing Digital Disruption and The AI Dojo Experiment." },
+      { initials: "DP", name: "David Perry", role: "Recruiter & Author", photo: "/assets/mentor-david.png", bio: "30+ years recruiting. Co-founder of Perry-Martel International. Author of Guerrilla Marketing for Job Hunters and Hiring Greatness." },
+      { initials: "LS", name: "Laurent Simon", role: "Co-founder & Author", photo: "/assets/mentor-laurent.png", bio: "20+ years across Europe & APAC. Co-founder of Digital Pathways. Author of Harnessing Digital Disruption and The AI Dojo Experiment." },
     ],
     seen: "As seen on   Forbes · Fortune · New York Times · WSJ · INSEAD · MSNBC",
     closingTitle: "Don't leave your next job to luck.",

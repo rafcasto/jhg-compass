@@ -161,8 +161,8 @@ export default function QuizPage() {
             <p className="cq-lede">{D.lede}</p>
             <form onSubmit={startQuiz}>
               <div className="cq-field-row">
-                <div className="cq-field"><label>{D.firstNameLabel}</label><input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Alex" required autoComplete="given-name" /></div>
-                <div className="cq-field"><label>{D.lastNameLabel}</label><input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Rivera" required autoComplete="family-name" /></div>
+                <div className="cq-field"><label>{D.firstNameLabel}</label><input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Your first name" required autoComplete="given-name" /></div>
+                <div className="cq-field"><label>{D.lastNameLabel}</label><input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Your last name" required autoComplete="family-name" /></div>
               </div>
               <div className="cq-field"><label>{D.emailLabel}</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" required autoComplete="email" /></div>
               {error && <p className="cq-error">{error}</p>}

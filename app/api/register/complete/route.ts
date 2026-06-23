@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const { token, email, password, firstName } = body ?? {};
+  const { token, email, password, firstName, lastName } = body ?? {};
   if (!token || !email || !password) {
     return NextResponse.json({ ok: false, error: "missing_fields" }, { status: 400 });
   }
@@ -14,14 +14,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "weak_password" }, { status: 400 });
   }
 
-  const result = await completeRegistration(token, email, password, firstName);
+  const result = await completeRegistration(token, email, password, firstName, lastName);
   if (!result.ok) {
     const status = result.error === "expired" || result.error === "used" ? 410 : 400;
     return NextResponse.json(result, { status });
   }
 
   await logEvent({
-    firebaseUid: result.uid, email, firstName, stage: "activation",
+    firebaseUid: result.uid, email, firstName, lastName, stage: "activation",
     key: TAGS.REGISTRATION, source: "registration_link",
   });
   await logEvent({
