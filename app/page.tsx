@@ -199,10 +199,11 @@ const CSS = `
 .cl-head__logo{display:flex;align-items:center;gap:9px;font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:14px;color:#191c27;}
 .cl-head__logo .cl-m{width:30px;height:30px;border-radius:9px;background:#c2001f;color:#fff;display:grid;place-items:center;font-size:16px;}
 .cl-head__logo span{color:#c2001f;}
-.cl-hero{max-width:640px;margin:0 auto;text-align:center;padding:34px 0 8px;}
-.cl-hero__h1{font-family:"Poppins",Arial,sans-serif;font-size:44px;font-weight:700;line-height:1.1;letter-spacing:-.03em;color:#191c27;margin:0 0 20px;}
+.cl-hero{max-width:640px;margin:0 auto;text-align:center;padding:64px 0 8px;}
+.cl-hero__h1{font-family:"Poppins",Arial,sans-serif;font-size:44px;font-weight:700;line-height:1.2;letter-spacing:-.03em;color:#191c27;margin:0 0 22px;}
 .cl-hero__sub{font-size:17px;line-height:1.62;color:#6b7280;margin:0 auto 30px;max-width:30em;text-wrap:balance;}
 .cl-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em;color:#fff;background:#c2001f;border:0;border-radius:99px;padding:17px 34px;text-decoration:none;cursor:pointer;box-shadow:0 10px 26px rgba(194,0,31,.3);transition:all .22s cubic-bezier(.2,.7,.2,1);text-transform:uppercase;}
+.cl-hero .cl-cta{margin-top:8px;}
 .cl-cta:hover{background:#8a0016;transform:translateY(-2px);box-shadow:0 14px 32px rgba(194,0,31,.36);}
 .cl-cd-wrap{margin:36px 0 26px;}
 .cl-cd-label{font-family:"Poppins",Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#9aa0ad;margin-bottom:14px;}
@@ -234,7 +235,7 @@ const CSS = `
 .cl-pm .cl-minus{border:1.5px solid #d4d8e2;color:#9aa0ad;background:#fff;}
 .cl-pm .cl-plus{background:#c2001f;color:#fff;box-shadow:0 3px 9px rgba(194,0,31,.36);}
 .cl-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#c2001f;display:block;text-align:center;margin-bottom:14px;}
-.cl-sec-title{font-family:"Poppins",Arial,sans-serif;font-size:32px;font-weight:700;line-height:1.15;letter-spacing:-.025em;text-align:center;margin:0 auto 40px;max-width:18em;}
+.cl-sec-title{font-family:"Poppins",Arial,sans-serif;font-size:32px;font-weight:700;line-height:1.28;letter-spacing:-.02em;text-align:center;margin:0 auto 44px;max-width:18em;}
 .cl-learn{max-width:640px;margin:0 auto;display:grid;gap:18px;}
 .cl-lcard{background:#fff;border:1px solid #e9ebf1;border-radius:18px;padding:26px 28px;box-shadow:0 6px 20px rgba(25,28,39,.05);}
 .cl-lcard__part{font-family:"Poppins",Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c2001f;margin-bottom:10px;}
@@ -250,7 +251,7 @@ const CSS = `
 .cl-mentor__bio{font-size:13.5px;line-height:1.55;color:#6b7280;}
 .cl-seen{text-align:center;margin-top:30px;font-size:12px;color:#9aa0ad;font-family:"Poppins",Arial,sans-serif;letter-spacing:.04em;}
 .cl-closing{text-align:center;max-width:540px;margin:0 auto;}
-.cl-closing__h{font-family:"Poppins",Arial,sans-serif;font-size:30px;font-weight:700;letter-spacing:-.025em;margin:0 0 12px;}
+.cl-closing__h{font-family:"Poppins",Arial,sans-serif;font-size:30px;font-weight:700;line-height:1.22;letter-spacing:-.02em;margin:0 0 12px;}
 .cl-closing__sub{font-style:italic;font-size:16px;color:#6b7280;margin:0 0 28px;}
 .cl-note{margin-top:18px;font-size:13px;color:#9aa0ad;}
 .cl-foot{background:#191c27;color:rgba(255,255,255,.55);text-align:center;padding:34px 24px;font-size:12.5px;line-height:1.9;}
