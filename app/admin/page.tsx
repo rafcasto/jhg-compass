@@ -331,7 +331,7 @@ function ActivityList({ title, items, market, onChange, onRemove, onAdd }: {
   );
 }
 
-/* ---------------- Funnel (public landing / quiz / thank-you + invite link) ---------------- */
+/* ---------------- Funnel (landing / details / quiz / thank-you / expired + registration link) ---------------- */
 const ARCHETYPES = ["", "Job Seeker", "Career Changer", "Promotion Seeker", "Unclassified"];
 const FIT_GATES = ["", "qualified", "below-icp"];
 const FLAGS = ["", "ai-anxious", "vip-signal", "below-icp", "manual-review"];
@@ -347,31 +347,37 @@ function FunnelTab() {
   function setLanding<K extends keyof FunnelConfig["landing"]>(key: K, value: FunnelConfig["landing"][K]) {
     setF((c) => ({ ...(c as FunnelConfig), landing: { ...(c as FunnelConfig).landing, [key]: value } })); touched();
   }
+  function setDetails<K extends keyof FunnelConfig["details"]>(key: K, value: FunnelConfig["details"][K]) {
+    setF((c) => ({ ...(c as FunnelConfig), details: { ...(c as FunnelConfig).details, [key]: value } })); touched();
+  }
   function setLead<K extends keyof FunnelConfig["lead"]>(key: K, value: FunnelConfig["lead"][K]) {
     setF((c) => ({ ...(c as FunnelConfig), lead: { ...(c as FunnelConfig).lead, [key]: value } })); touched();
+  }
+  function setExpired<K extends keyof FunnelConfig["expired"]>(key: K, value: FunnelConfig["expired"][K]) {
+    setF((c) => ({ ...(c as FunnelConfig), expired: { ...(c as FunnelConfig).expired, [key]: value } })); touched();
+  }
+  function setBlocked<K extends keyof FunnelConfig["blocked"]>(key: K, value: FunnelConfig["blocked"][K]) {
+    setF((c) => ({ ...(c as FunnelConfig), blocked: { ...(c as FunnelConfig).blocked, [key]: value } })); touched();
+  }
+  function setCountdown<K extends keyof FunnelConfig["countdown"]>(key: K, value: FunnelConfig["countdown"][K]) {
+    setF((c) => ({ ...(c as FunnelConfig), countdown: { ...(c as FunnelConfig).countdown, [key]: value } })); touched();
   }
   function setQuizMeta<K extends keyof FunnelConfig["quiz"]>(key: K, value: FunnelConfig["quiz"][K]) {
     setF((c) => ({ ...(c as FunnelConfig), quiz: { ...(c as FunnelConfig).quiz, [key]: value } })); touched();
   }
   function setInviteUrl(v: string) { setF((c) => ({ ...(c as FunnelConfig), inviteUrl: v })); touched(); }
 
+  function setCard(i: number, patch: Partial<FunnelConfig["landing"]["cards"][number]>) {
+    setF((c) => { const cfg = c as FunnelConfig; const cards = cfg.landing.cards.map((x, j) => (j === i ? { ...x, ...patch } : x)); return { ...cfg, landing: { ...cfg.landing, cards } }; }); touched();
+  }
+  function setMentor(i: number, patch: Partial<FunnelConfig["landing"]["mentors"][number]>) {
+    setF((c) => { const cfg = c as FunnelConfig; const mentors = cfg.landing.mentors.map((x, j) => (j === i ? { ...x, ...patch } : x)); return { ...cfg, landing: { ...cfg.landing, mentors } }; }); touched();
+  }
   function updateQuestion(qi: number, patch: Partial<QuizQuestion>) {
-    setF((c) => {
-      const cfg = c as FunnelConfig;
-      const questions = cfg.quiz.questions.map((q, i) => (i === qi ? { ...q, ...patch } : q));
-      return { ...cfg, quiz: { ...cfg.quiz, questions } };
-    }); touched();
+    setF((c) => { const cfg = c as FunnelConfig; const questions = cfg.quiz.questions.map((q, i) => (i === qi ? { ...q, ...patch } : q)); return { ...cfg, quiz: { ...cfg.quiz, questions } }; }); touched();
   }
   function updateOption(qi: number, oi: number, patch: Partial<QuizOption>) {
-    setF((c) => {
-      const cfg = c as FunnelConfig;
-      const questions = cfg.quiz.questions.map((q, i) => {
-        if (i !== qi || !q.options) return q;
-        const options = q.options.map((o, j) => (j === oi ? { ...o, ...patch } : o));
-        return { ...q, options };
-      });
-      return { ...cfg, quiz: { ...cfg.quiz, questions } };
-    }); touched();
+    setF((c) => { const cfg = c as FunnelConfig; const questions = cfg.quiz.questions.map((q, i) => { if (i !== qi || !q.options) return q; const options = q.options.map((o, j) => (j === oi ? { ...o, ...patch } : o)); return { ...q, options }; }); return { ...cfg, quiz: { ...cfg.quiz, questions } }; }); touched();
   }
 
   async function save() {
@@ -382,7 +388,7 @@ function FunnelTab() {
     setBusy(false);
   }
   function resetDefaults() {
-    if (confirm("Reset the landing, quiz and thank-you content to the built-in defaults? Applied when you Save.")) {
+    if (confirm("Reset the whole funnel (landing, details, quiz, thank-you, expired) to the built-in defaults? Applied when you Save.")) {
       setF(structuredClone(DEFAULT_FUNNEL)); setSaved(false);
     }
   }
@@ -396,65 +402,111 @@ function FunnelTab() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl">Acquisition funnel</h2>
-          <p className="text-jh-mute text-sm mt-1">Edit the public landing page, the quiz questions &amp; scoring, the thank-you page, and the invitation link. Changes go live on the public pages the moment you save.</p>
+          <p className="text-jh-mute text-sm mt-1">Edit the landing page, the details form, the quiz &amp; scoring, the thank-you page, the registration link, and the expired-link experience. Changes go live on the public pages the moment you save.</p>
         </div>
         <button onClick={resetDefaults} className="btn-secondary text-xs px-3 py-2 whitespace-nowrap">Reset to defaults</button>
       </div>
 
-      {/* ---- Invitation link ---- */}
+      {/* ---- Registration link ---- */}
       <section className="card p-5 space-y-3">
-        <h3 className="font-display font-bold text-jh-ink">Invitation link</h3>
-        <p className="text-jh-mute text-sm">Where the thank-you button sends people. We append <code className="font-mono text-xs">?firstName=&amp;lastName=&amp;email=</code> so they don’t re-type their details.</p>
-        <input className="field" value={f.inviteUrl} onChange={(e) => setInviteUrl(e.target.value)} placeholder="https://…" />
+        <h3 className="font-display font-bold text-jh-ink">Registration link</h3>
+        <p className="text-jh-mute text-sm">Where the thank-you button continues to. We append <code className="font-mono text-xs">?firstName=&amp;lastName=&amp;email=</code> so people don’t re-type their details. Use a time-boxed <code className="font-mono text-xs">/register/&lt;token&gt;</code> link — when it expires, visitors see the expired-link experience below.</p>
+        <input className="field" value={f.inviteUrl} onChange={(e) => setInviteUrl(e.target.value)} placeholder="https://…/register/…" />
+      </section>
+
+      {/* ---- Countdown ---- */}
+      <section className="card p-5 space-y-3">
+        <h3 className="font-display font-bold text-jh-ink">Countdown timer</h3>
+        <p className="text-jh-mute text-sm">Shown on the landing page. <strong>Evergreen</strong> = a per-visitor timer that persists across reloads; <strong>Fixed</strong> = one shared deadline for everyone.</p>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div>
+            <label className="label">Mode</label>
+            <select className="field" value={f.countdown.mode} onChange={(e) => setCountdown("mode", e.target.value as "fixed" | "evergreen")}>
+              <option value="evergreen">evergreen</option>
+              <option value="fixed">fixed</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Evergreen hours</label>
+            <input type="number" min={1} className="field" value={f.countdown.hours} onChange={(e) => setCountdown("hours", Math.max(1, +e.target.value))} />
+          </div>
+          <Field label="Fixed deadline (ISO)" value={f.countdown.deadline} onChange={(v) => setCountdown("deadline", v)} />
+        </div>
       </section>
 
       {/* ---- Landing ---- */}
       <section className="space-y-4">
         <h3 className="font-display font-bold text-jh-ink">Landing page</h3>
         <div className="card p-5 grid sm:grid-cols-2 gap-4">
+          <Field label="Header tag" value={f.landing.headTag} onChange={(v) => setLanding("headTag", v)} />
+          <Field label="CTA label" value={f.landing.ctaLabel} onChange={(v) => setLanding("ctaLabel", v)} />
           <Field label="Brand name" value={f.landing.brandName} onChange={(v) => setLanding("brandName", v)} />
           <Field label="Brand accent" value={f.landing.brandAccent} onChange={(v) => setLanding("brandAccent", v)} />
-          <Field label="Eyebrow" value={f.landing.eyebrow} onChange={(v) => setLanding("eyebrow", v)} />
-          <Field label="Hero CTA label" value={f.landing.ctaLabel} onChange={(v) => setLanding("ctaLabel", v)} />
-          <Field label="Headline" value={f.landing.h1} onChange={(v) => setLanding("h1", v)} />
-          <Field label="Headline accent (red)" value={f.landing.h1accent} onChange={(v) => setLanding("h1accent", v)} />
-          <Field className="sm:col-span-2" textarea label="Lede" value={f.landing.lede} onChange={(v) => setLanding("lede", v)} />
-          <Field label="CTA fine print" value={f.landing.ctaFine} onChange={(v) => setLanding("ctaFine", v)} />
-          <Field label="Proof line" value={f.landing.proof} onChange={(v) => setLanding("proof", v)} />
-          <Field label="Section 2 — eyebrow" value={f.landing.s2eyebrow} onChange={(v) => setLanding("s2eyebrow", v)} />
-          <Field label="Section 2 — title" value={f.landing.s2title} onChange={(v) => setLanding("s2title", v)} />
-          <Field label="Section 2 — accent (red)" value={f.landing.s2accent} onChange={(v) => setLanding("s2accent", v)} />
-          <Field className="sm:col-span-2" textarea label="Section 2 — big line" value={f.landing.s2bigline} onChange={(v) => setLanding("s2bigline", v)} />
-          <Field label="Section 3 — eyebrow" value={f.landing.s3eyebrow} onChange={(v) => setLanding("s3eyebrow", v)} />
-          <Field label="Section 3 — title" value={f.landing.s3title} onChange={(v) => setLanding("s3title", v)} />
-          <Field label="Section 3 — accent (red)" value={f.landing.s3accent} onChange={(v) => setLanding("s3accent", v)} />
-          <Field label="Section 3 — CTA label" value={f.landing.s3ctaLabel} onChange={(v) => setLanding("s3ctaLabel", v)} />
-          <Field className="sm:col-span-2" label="Section 3 — note" value={f.landing.s3note} onChange={(v) => setLanding("s3note", v)} />
+          <Field label="Hero headline" value={f.landing.heroH1} onChange={(v) => setLanding("heroH1", v)} />
+          <Field label="Hero headline accent (red)" value={f.landing.heroH1Accent} onChange={(v) => setLanding("heroH1Accent", v)} />
+          <Field className="sm:col-span-2" textarea label="Hero sub" value={f.landing.heroSub} onChange={(v) => setLanding("heroSub", v)} />
+          <Field label="Countdown label" value={f.landing.countdownLabel} onChange={(v) => setLanding("countdownLabel", v)} />
+          <Field label="Proof row" value={f.landing.proofrow} onChange={(v) => setLanding("proofrow", v)} />
+          <Field label="“What you get” eyebrow" value={f.landing.getEyebrow} onChange={(v) => setLanding("getEyebrow", v)} />
+          <Field label="Section title — pre" value={f.landing.getTitlePre} onChange={(v) => setLanding("getTitlePre", v)} />
+          <Field label="Section title — accent (red)" value={f.landing.getTitleAccent} onChange={(v) => setLanding("getTitleAccent", v)} />
+          <Field label="Section title — post" value={f.landing.getTitlePost} onChange={(v) => setLanding("getTitlePost", v)} />
+          <Field label="Mentors eyebrow" value={f.landing.mentorsEyebrow} onChange={(v) => setLanding("mentorsEyebrow", v)} />
+          <Field label="Mentors title" value={f.landing.mentorsTitle} onChange={(v) => setLanding("mentorsTitle", v)} />
+          <Field label="Mentors title accent (red)" value={f.landing.mentorsTitleAccent} onChange={(v) => setLanding("mentorsTitleAccent", v)} />
+          <Field className="sm:col-span-2" label="“As seen on” line" value={f.landing.seen} onChange={(v) => setLanding("seen", v)} />
+          <Field label="Closing title" value={f.landing.closingTitle} onChange={(v) => setLanding("closingTitle", v)} />
+          <Field label="Closing sub" value={f.landing.closingSub} onChange={(v) => setLanding("closingSub", v)} />
+          <Field label="Closing note" value={f.landing.closingNote} onChange={(v) => setLanding("closingNote", v)} />
           <Field label="Footer" value={f.landing.footer} onChange={(v) => setLanding("footer", v)} />
           <Field label="Tagline" value={f.landing.tagline} onChange={(v) => setLanding("tagline", v)} />
         </div>
 
-        {/* capabilities */}
+        {/* what-you-get cards */}
         <div className="card p-5 space-y-3">
-          <p className="font-display font-semibold text-jh-ink">Capability cards</p>
-          {f.landing.capabilities.map((c, i) => (
-            <div key={i} className="grid grid-cols-[3rem_1fr] sm:grid-cols-[3rem_1fr_2fr] gap-2 items-start">
-              <input className="field py-2 text-center" value={c.emoji} onChange={(e) => { const caps = [...f.landing.capabilities]; caps[i] = { ...c, emoji: e.target.value }; setLanding("capabilities", caps); }} />
-              <input className="field py-2 text-sm" value={c.title} onChange={(e) => { const caps = [...f.landing.capabilities]; caps[i] = { ...c, title: e.target.value }; setLanding("capabilities", caps); }} placeholder="Title" />
-              <input className="field py-2 text-sm" value={c.body} onChange={(e) => { const caps = [...f.landing.capabilities]; caps[i] = { ...c, body: e.target.value }; setLanding("capabilities", caps); }} placeholder="Description" />
+          <p className="font-display font-semibold text-jh-ink">“What you get” cards</p>
+          {f.landing.cards.map((c, i) => (
+            <div key={i} className="grid sm:grid-cols-[6rem_1fr] gap-2 items-start border-b border-jh-line pb-3 last:border-0 last:pb-0">
+              <input className="field py-2 text-sm" value={c.part} onChange={(e) => setCard(i, { part: e.target.value })} placeholder="Part 01" />
+              <div className="space-y-2">
+                <input className="field py-2 text-sm" value={c.title} onChange={(e) => setCard(i, { title: e.target.value })} placeholder="Title" />
+                <textarea className="field py-2 text-sm min-h-16" value={c.body} onChange={(e) => setCard(i, { body: e.target.value })} placeholder="Description" />
+              </div>
             </div>
           ))}
         </div>
 
-        {/* steps */}
+        {/* mentors */}
         <div className="card p-5 space-y-3">
-          <p className="font-display font-semibold text-jh-ink">“How it works” steps</p>
-          {f.landing.steps.map((s, i) => (
-            <div key={i} className="grid grid-cols-[3rem_1fr] gap-2 items-start">
-              <input className="field py-2 text-center" value={s.n} onChange={(e) => { const st = [...f.landing.steps]; st[i] = { ...s, n: e.target.value }; setLanding("steps", st); }} />
-              <input className="field py-2 text-sm" value={s.text} onChange={(e) => { const st = [...f.landing.steps]; st[i] = { ...s, text: e.target.value }; setLanding("steps", st); }} placeholder="Step text" />
+          <p className="font-display font-semibold text-jh-ink">Mentors</p>
+          {f.landing.mentors.map((m, i) => (
+            <div key={i} className="grid sm:grid-cols-[4rem_1fr] gap-2 items-start border-b border-jh-line pb-3 last:border-0 last:pb-0">
+              <input className="field py-2 text-center text-sm" value={m.initials} onChange={(e) => setMentor(i, { initials: e.target.value })} placeholder="DP" />
+              <div className="space-y-2">
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <input className="field py-2 text-sm" value={m.name} onChange={(e) => setMentor(i, { name: e.target.value })} placeholder="Name" />
+                  <input className="field py-2 text-sm" value={m.role} onChange={(e) => setMentor(i, { role: e.target.value })} placeholder="Role" />
+                </div>
+                <input className="field py-2 text-sm" value={m.photo ?? ""} onChange={(e) => setMentor(i, { photo: e.target.value })} placeholder="Photo URL (e.g. /assets/mentor-david.jpg) — blank shows initials" />
+                <textarea className="field py-2 text-sm min-h-16" value={m.bio} onChange={(e) => setMentor(i, { bio: e.target.value })} placeholder="Bio" />
+              </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ---- Details form (before the quiz) ---- */}
+      <section className="space-y-4">
+        <h3 className="font-display font-bold text-jh-ink">Details form (before the quiz)</h3>
+        <div className="card p-5 grid sm:grid-cols-2 gap-4">
+          <Field label="Eyebrow" value={f.details.eyebrow} onChange={(v) => setDetails("eyebrow", v)} />
+          <Field label="Title" value={f.details.title} onChange={(v) => setDetails("title", v)} />
+          <Field className="sm:col-span-2" textarea label="Lede" value={f.details.lede} onChange={(v) => setDetails("lede", v)} />
+          <Field label="First-name label" value={f.details.firstNameLabel} onChange={(v) => setDetails("firstNameLabel", v)} />
+          <Field label="Last-name label" value={f.details.lastNameLabel} onChange={(v) => setDetails("lastNameLabel", v)} />
+          <Field label="Email label" value={f.details.emailLabel} onChange={(v) => setDetails("emailLabel", v)} />
+          <Field label="Submit button" value={f.details.submitLabel} onChange={(v) => setDetails("submitLabel", v)} />
+          <Field className="sm:col-span-2" label="Consent line" value={f.details.consent} onChange={(v) => setDetails("consent", v)} />
         </div>
       </section>
 
@@ -464,10 +516,8 @@ function FunnelTab() {
           <h3 className="font-display font-bold text-jh-ink">Quiz</h3>
           <p className="text-jh-mute text-sm">Edit each question, its options, and the per-option scoring. Q1 sets the archetype; Q2 + Q5 readiness points sum to 0–6; Q4 is the fit gate; Q3 routes the message. The open question is never scored.</p>
         </div>
-        <div className="card p-5 grid sm:grid-cols-2 gap-4">
-          <Field label="Intro" value={f.quiz.intro} onChange={(v) => setQuizMeta("intro", v)} />
-          <Field label="Sub" value={f.quiz.sub} onChange={(v) => setQuizMeta("sub", v)} />
-          <Field className="sm:col-span-2" label="Footer note" value={f.quiz.footerNote} onChange={(v) => setQuizMeta("footerNote", v)} />
+        <div className="card p-5">
+          <Field label="Footer note" value={f.quiz.footerNote} onChange={(v) => setQuizMeta("footerNote", v)} />
         </div>
 
         {f.quiz.questions.map((q, qi) => (
@@ -482,7 +532,6 @@ function FunnelTab() {
               )}
             </div>
             <Field label="Prompt" value={q.prompt} onChange={(v) => updateQuestion(qi, { prompt: v })} />
-            <Field label="Sub" value={q.sub ?? ""} onChange={(v) => updateQuestion(qi, { sub: v })} />
 
             {q.kind === "text" && (
               <Field label="Placeholder" value={q.placeholder ?? ""} onChange={(v) => updateQuestion(qi, { placeholder: v })} />
@@ -527,12 +576,38 @@ function FunnelTab() {
           <Field label="Eyebrow" value={f.lead.eyebrow} onChange={(v) => setLead("eyebrow", v)} />
           <Field label="Title" value={f.lead.title} onChange={(v) => setLead("title", v)} />
           <Field className="sm:col-span-2" textarea label="Body" value={f.lead.body} onChange={(v) => setLead("body", v)} />
-          <Field label="First-name label" value={f.lead.firstNameLabel} onChange={(v) => setLead("firstNameLabel", v)} />
-          <Field label="Last-name label" value={f.lead.lastNameLabel} onChange={(v) => setLead("lastNameLabel", v)} />
-          <Field label="Email label" value={f.lead.emailLabel} onChange={(v) => setLead("emailLabel", v)} />
           <Field label="CTA label" value={f.lead.ctaLabel} onChange={(v) => setLead("ctaLabel", v)} />
           <Field label="Fine print" value={f.lead.fine} onChange={(v) => setLead("fine", v)} />
           <Field label="Tagline" value={f.lead.tagline} onChange={(v) => setLead("tagline", v)} />
+        </div>
+      </section>
+
+      {/* ---- Expired-link experience ---- */}
+      <section className="space-y-4">
+        <div>
+          <h3 className="font-display font-bold text-jh-ink">Expired-link experience</h3>
+          <p className="text-jh-mute text-sm">Shown when a registration link has expired — invites people to your next meetup for a fresh invite.</p>
+        </div>
+        <div className="card p-5 grid sm:grid-cols-2 gap-4">
+          <Field label="Eyebrow" value={f.expired.eyebrow} onChange={(v) => setExpired("eyebrow", v)} />
+          <Field label="Title" value={f.expired.title} onChange={(v) => setExpired("title", v)} />
+          <Field className="sm:col-span-2" textarea label="Body" value={f.expired.body} onChange={(v) => setExpired("body", v)} />
+          <Field label="CTA label" value={f.expired.ctaLabel} onChange={(v) => setExpired("ctaLabel", v)} />
+          <Field label="Meetup URL" value={f.expired.meetupUrl} onChange={(v) => setExpired("meetupUrl", v)} />
+        </div>
+      </section>
+
+      {/* ---- Already-done / registered screen ---- */}
+      <section className="space-y-4">
+        <div>
+          <h3 className="font-display font-bold text-jh-ink">“Already done” screen</h3>
+          <p className="text-jh-mute text-sm">Shown when someone who already completed the quiz, or is already registered in Compass, tries to take it again.</p>
+        </div>
+        <div className="card p-5 grid sm:grid-cols-2 gap-4">
+          <Field label="Title" value={f.blocked.title} onChange={(v) => setBlocked("title", v)} />
+          <Field label="CTA label" value={f.blocked.ctaLabel} onChange={(v) => setBlocked("ctaLabel", v)} />
+          <Field className="sm:col-span-2" textarea label="Body" value={f.blocked.body} onChange={(v) => setBlocked("body", v)} />
+          <Field label="CTA link" value={f.blocked.ctaHref} onChange={(v) => setBlocked("ctaHref", v)} />
         </div>
       </section>
 

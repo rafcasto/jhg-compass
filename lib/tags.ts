@@ -11,6 +11,7 @@ export interface EventDef {
 }
 
 export const EVENT_DEFAULTS = {
+  QUIZ_START:      { tag: "EVENT->QUIZ_START->TRACKER",       stage: "acquisition", label: "Quiz started" },
   QUIZ_COMPLETE:   { tag: "EVENT->QUIZ_COMPLETE->TRACKER",    stage: "acquisition", label: "Quiz completed" },
   REGISTRATION:    { tag: "EVENT->REGISTRATION->TRACKER",     stage: "activation", label: "Registration" },
   EMAIL_VERIFIED:  { tag: "EVENT->EMAIL_VERIFIED->TRACKER",   stage: "activation", label: "Email verified" },
