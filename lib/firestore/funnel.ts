@@ -15,9 +15,9 @@ import { DEFAULT_FUNNEL, mergeFunnel, type FunnelConfig } from "@/lib/funnel";
 //   2) onSnapshot(config/funnel) — best-effort live updates, used only when the
 //      public read rule is in place. If it's denied, the error handler is a no-op
 //      and the API value stands.
-export function useFunnel(): { loading: boolean; funnel: FunnelConfig } {
-  const [funnel, setFunnel] = useState<FunnelConfig>(DEFAULT_FUNNEL);
-  const [loading, setLoading] = useState(true);
+export function useFunnel(initial?: FunnelConfig): { loading: boolean; funnel: FunnelConfig } {
+  const [funnel, setFunnel] = useState<FunnelConfig>(initial ?? DEFAULT_FUNNEL);
+  const [loading, setLoading] = useState(!initial);
 
   useEffect(() => {
     let active = true;
