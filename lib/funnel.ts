@@ -1,22 +1,17 @@
-// Single source of truth for the public acquisition funnel (landing → quiz → thank-you).
+// Single source of truth for the public acquisition funnel:
+//   landing → details (name/email) → quiz → thank-you → registration link
+//   (with an expired-link experience that points to the next meetup).
 //
-// Everything here is admin-editable and lives in the config/funnel Firestore document:
-//   1) landing  — all marketing copy on the landing page
-//   2) quiz      — the questions, their options, AND the per-option scoring metadata
-//   3) lead      — the thank-you page copy + lead-form labels
-//   4) inviteUrl — the single admin-updatable invitation link the CTA redirects to
-//
-// This module is pure (no client/server-only imports) so it can be shared by the
-// client hook (lib/firestore/funnel.ts), the server helpers (lib/server/funnel.ts),
-// and the scoring engine (lib/funnel-scoring.ts).
+// Everything here is admin-editable and lives in the config/funnel Firestore
+// document. This module is pure (no client/server-only imports) so it can be
+// shared by the client hook (lib/firestore/funnel.ts), the server helpers
+// (lib/server/funnel.ts) and the scoring engine (lib/funnel-scoring.ts).
 
 // ---- scoring vocabulary (from resources/lead-scoring-quiz.md) ----
 export type Archetype = "Job Seeker" | "Career Changer" | "Promotion Seeker" | "Unclassified";
 export type FitGate = "qualified" | "below-icp";
 export type FunnelFlag = "ai-anxious" | "vip-signal" | "below-icp" | "manual-review";
 
-// One answer choice. The optional scoring fields drive the engine; an admin can
-// retune them in the Funnel tab without touching code.
 export interface QuizOption {
   id: string;
   label: string;
@@ -32,227 +27,246 @@ export interface QuizQuestion {
   id: string;                 // q1 … q6
   kind: "choice" | "text";
   prompt: string;
-  sub?: string;
-  // choice questions
-  allowOther?: boolean;       // show a free-text box when the isOther option is picked
-  options?: QuizOption[];
-  // text questions (Q6)
-  placeholder?: string;
+  sub?: string;               // legacy — no longer rendered
+  allowOther?: boolean;       // free-text box when the isOther option is picked
+  options?: QuizOption[];     // choice questions
+  placeholder?: string;       // text questions (Q6)
   required?: boolean;
 }
 
-export interface LandingCapability { emoji: string; title: string; body: string; }
-export interface LandingStep { n: string; text: string; }
+export interface LandingCard { part: string; title: string; body: string; }
+export interface Mentor { initials: string; name: string; role: string; bio: string; photo?: string; }
+export interface CountdownConfig { mode: "fixed" | "evergreen"; deadline: string; hours: number; }
 
 export interface FunnelConfig {
   landing: {
+    headTag: string;
     brandName: string;
     brandAccent: string;
-    eyebrow: string;
-    h1: string;
-    h1accent: string;
-    lede: string;
+    heroH1: string;
+    heroH1Accent: string;
+    heroSub: string;
     ctaLabel: string;
-    ctaFine: string;
-    proof: string;
-    s2eyebrow: string;
-    s2title: string;
-    s2accent: string;
-    s2bigline: string;
-    capabilities: LandingCapability[];
-    s3eyebrow: string;
-    s3title: string;
-    s3accent: string;
-    steps: LandingStep[];
-    s3ctaLabel: string;
-    s3note: string;
+    countdownLabel: string;
+    proofrow: string;
+    getEyebrow: string;
+    getTitlePre: string;
+    getTitleAccent: string;
+    getTitlePost: string;
+    cards: LandingCard[];
+    mentorsEyebrow: string;
+    mentorsTitle: string;
+    mentorsTitleAccent: string;
+    mentors: Mentor[];
+    seen: string;
+    closingTitle: string;
+    closingSub: string;
+    closingNote: string;
     footer: string;
     tagline: string;
   };
+  countdown: CountdownConfig;
+  // Personal details captured BEFORE the quiz (design from quiz.html).
+  details: {
+    eyebrow: string;
+    title: string;
+    lede: string;
+    firstNameLabel: string;
+    lastNameLabel: string;
+    emailLabel: string;
+    submitLabel: string;
+    consent: string;
+  };
   quiz: {
-    intro: string;
-    sub: string;
     footerNote: string;
     questions: QuizQuestion[];
   };
+  // Thank-you page (design from thank-you.html) — CTA continues to registration.
   lead: {
     eyebrow: string;
     title: string;
     body: string;
-    firstNameLabel: string;
-    lastNameLabel: string;
-    emailLabel: string;
     ctaLabel: string;
     fine: string;
     tagline: string;
   };
-  // The single admin-updatable invitation link the thank-you CTA redirects to.
+  // The registration link the thank-you CTA continues to (admin-updatable).
   inviteUrl: string;
+  // Expired-link experience — shown when the registration link has expired.
+  expired: {
+    eyebrow: string;
+    title: string;
+    body: string;
+    ctaLabel: string;
+    meetupUrl: string;
+  };
+  // Shown when someone who already finished the quiz / is registered tries again.
+  blocked: {
+    title: string;
+    body: string;
+    ctaLabel: string;
+    ctaHref: string;
+  };
 }
 
-// ---- default funnel (ports the static prototypes + the scoring spec) ----
+const DEFAULT_QUESTIONS: QuizQuestion[] = [
+  {
+    id: "q1", kind: "choice", prompt: "What best describes you right now?", allowOther: true,
+    options: [
+      { id: "lost_job", label: "Lost my job, need one fast", archetype: "Job Seeker" },
+      { id: "promotion", label: "Employed, want a promotion/raise", archetype: "Promotion Seeker" },
+      { id: "wrong_role", label: "Employed but in the wrong role, want to change direction", archetype: "Career Changer" },
+      { id: "ai_worried", label: "Worried AI will disrupt my career", archetype: "Career Changer", flag: "ai-anxious" },
+      { id: "other", label: "Something else", archetype: "Unclassified", flag: "manual-review", isOther: true },
+    ],
+  },
+  {
+    id: "q2", kind: "choice", prompt: "When do you want to be in your new (or next) role?",
+    options: [
+      { id: "lt_60", label: "Within 60 days or sooner", readiness: 3 },
+      { id: "2_3mo", label: "2–3 months", readiness: 2 },
+      { id: "4_6mo", label: "4–6 months", readiness: 1 },
+      { id: "exploring", label: "Just exploring, no timeline", readiness: 0 },
+    ],
+  },
+  {
+    id: "q3", kind: "choice", prompt: "Where are you getting stuck?", allowOther: true,
+    options: [
+      { id: "value", label: "Showcasing my value", obstacle: "value" },
+      { id: "referrals", label: "Getting referrals", obstacle: "referrals" },
+      { id: "interviews", label: "Getting interviews", obstacle: "interviews" },
+      { id: "negotiation", label: "Negotiating compensation", obstacle: "negotiation" },
+      { id: "other", label: "Something else", obstacle: "other", flag: "manual-review", isOther: true },
+    ],
+  },
+  {
+    id: "q4", kind: "choice", prompt: "How many years of professional experience do you have?",
+    options: [
+      { id: "under_3", label: "Under 3", fitGate: "below-icp", flag: "below-icp" },
+      { id: "3_5", label: "3–5", fitGate: "qualified" },
+      { id: "5_10", label: "5–10", fitGate: "qualified" },
+      { id: "10_15", label: "10–15", fitGate: "qualified" },
+      { id: "15_plus", label: "15+", fitGate: "qualified" },
+    ],
+  },
+  {
+    id: "q5", kind: "choice", prompt: "What have you already done about it?",
+    options: [
+      { id: "paid_course", label: "Paid for a Job Hunting course before", readiness: 3 },
+      { id: "paid_coach", label: "Paid for a Job Hunting coach / Outplacement before", readiness: 3, flag: "vip-signal" },
+      { id: "diy", label: "Lots of DIY effort, no results", readiness: 2 },
+      { id: "tweaks", label: "A few small tweaks", readiness: 1 },
+      { id: "nothing", label: "Nothing yet", readiness: 0 },
+    ],
+  },
+  {
+    id: "q6", kind: "text", prompt: "Anything else you want us to know?",
+    placeholder: "Type your answer… (optional)", required: false,
+  },
+];
+
 export const DEFAULT_FUNNEL: FunnelConfig = {
   landing: {
+    headTag: "Free for JobHackers members",
     brandName: "JobHacker",
     brandAccent: "Compass",
-    eyebrow: "The hidden-job-market command center",
-    h1: "Land the job",
-    h1accent: "hiding in plain sight.",
-    lede:
-      "AI broke the job board. Compass helps you work the hidden job market like a pro — track the right activities, manage every lead, and always know your next move.",
-    ctaLabel: "Find My Job-Search Blind Spot →",
-    ctaFine: "2-minute quiz. No credit card.",
-    proof: "3,000+ professionals coached · 70–80% of roles never advertised",
-    s2eyebrow: "Why it works",
-    s2title: "Job searching feels like darts in the dark.",
-    s2accent: "Compass turns it into a system.",
-    s2bigline:
-      "It takes roughly 7–9 NOs to get 1 YES. Compass makes those NOs visible — so you keep swinging instead of quitting one conversation too early.",
-    capabilities: [
-      { emoji: "📊", title: "Track the success predictors", body: "Actual vs. Target on the activities that matter — 80% hidden market, 20% visible." },
-      { emoji: "🗂️", title: "Run every role in one pipeline", body: "Drag each job from Wishlist to Offer. No more lost follow-ups." },
-      { emoji: "🎯", title: "See your NO → YES funnel", body: "One dashboard shows your balance, your momentum, and your next move." },
+    heroH1: "Run Your Entire Job Search From One Dashboard",
+    heroH1Accent: "(Free For The Next 90 Days)",
+    heroSub:
+      "Compass runs the Job Hacking method you already learned — set your targets, track the activities that win, and work every lead in one pipeline. Free for members who claim it before the window closes.",
+    ctaLabel: "Claim My 90 Days →",
+    countdownLabel: "Free access closes in",
+    proofrow: "3,000+ JobHackers coached · 7-step proven method · 90 days free",
+    getEyebrow: "What you get",
+    getTitlePre: "Everything inside your",
+    getTitleAccent: "(free)",
+    getTitlePost: "90 days…",
+    cards: [
+      { part: "Part 01", title: "Set your goal statement", body: "Lock in the role, level, and salary you're aiming at. Every target and activity in Compass points back to this one north star — so your effort always has a direction." },
+      { part: "Part 02", title: "Track actual vs. target", body: "Log the activities that actually win — 80% hidden market, 20% visible — and watch Actual vs. Target update as you go. The success predictors, finally made visible." },
+      { part: "Part 03", title: "Work your pipeline", body: "Every role in one board, Wishlist to Offer. Record each opportunity and interaction so no warm lead ever goes cold and your follow-ups never slip." },
     ],
-    s3eyebrow: "How it works",
-    s3title: "Your next role isn't on a job board.",
-    s3accent: "It's one conversation away.",
-    steps: [
-      { n: "1", text: "Set your daily targets across the hidden and visible job markets." },
-      { n: "2", text: "Log as you go — tap + after every call, application, or thank-you note." },
-      { n: "3", text: "Watch your dashboard each week, adjust, and repeat until you land the offer." },
+    mentorsEyebrow: "Your JobHacking mentors",
+    mentorsTitle: "Built on 30 years of",
+    mentorsTitleAccent: "real placements",
+    mentors: [
+      { initials: "DP", name: "David Perry", role: "Recruiter & Author", photo: "/assets/mentor-david.jpg", bio: "30+ years recruiting. Co-founder of Perry-Martel International. Author of Guerrilla Marketing for Job Hunters and Hiring Greatness." },
+      { initials: "LS", name: "Laurent Simon", role: "Co-founder & Author", photo: "/assets/mentor-laurent.jpg", bio: "20+ years across Europe & APAC. Co-founder of Digital Pathways. Author of Harnessing Digital Disruption and The AI Dojo Experiment." },
     ],
-    s3ctaLabel: "Get Started With Compass →",
-    s3note: "Built on the system 3,000+ professionals used to crack the hidden job market.",
+    seen: "As seen on   Forbes · Fortune · New York Times · WSJ · INSEAD · MSNBC",
+    closingTitle: "Don't leave your next job to luck.",
+    closingSub: "Free for 90 days — the window closes 48 hours after the event.",
+    closingNote: "Members only · 2-minute setup · no credit card.",
     footer: "© 2026 JobHackers.Global · JobHacker Compass",
     tagline: "Get a job you love, at the salary you deserve. In 60 days, or less.",
   },
-  quiz: {
-    intro: "Let's find your job-search blind spot.",
-    sub: "Six quick questions — then your Compass.",
-    footerNote: "🔒 2 minutes · No credit card",
-    questions: [
-      {
-        id: "q1",
-        kind: "choice",
-        prompt: "What best describes you right now?",
-        sub: "This points your Compass at the right plan.",
-        allowOther: true,
-        options: [
-          { id: "lost_job", label: "Lost my job, need one fast", archetype: "Job Seeker" },
-          { id: "promotion", label: "Employed, want a promotion/raise", archetype: "Promotion Seeker" },
-          { id: "wrong_role", label: "Employed but in the wrong role, want to change direction", archetype: "Career Changer" },
-          { id: "ai_worried", label: "Worried AI will disrupt my career", archetype: "Career Changer", flag: "ai-anxious" },
-          { id: "other", label: "Something else", archetype: "Unclassified", flag: "manual-review", isOther: true },
-        ],
-      },
-      {
-        id: "q2",
-        kind: "choice",
-        prompt: "When do you want to be in your new (or next) role?",
-        sub: "Be honest about your timeline.",
-        options: [
-          { id: "lt_60", label: "Within 60 days or sooner", readiness: 3 },
-          { id: "2_3mo", label: "2–3 months", readiness: 2 },
-          { id: "4_6mo", label: "4–6 months", readiness: 1 },
-          { id: "exploring", label: "Just exploring, no timeline", readiness: 0 },
-        ],
-      },
-      {
-        id: "q3",
-        kind: "choice",
-        prompt: "Where are you getting stuck?",
-        sub: "Pick the one that stings most.",
-        allowOther: true,
-        options: [
-          { id: "value", label: "Showcasing my value", obstacle: "value" },
-          { id: "referrals", label: "Getting referrals", obstacle: "referrals" },
-          { id: "interviews", label: "Getting interviews", obstacle: "interviews" },
-          { id: "negotiation", label: "Negotiating compensation", obstacle: "negotiation" },
-          { id: "other", label: "Something else", obstacle: "other", flag: "manual-review", isOther: true },
-        ],
-      },
-      {
-        id: "q4",
-        kind: "choice",
-        prompt: "How many years of professional experience do you have?",
-        options: [
-          { id: "under_3", label: "Under 3", fitGate: "below-icp", flag: "below-icp" },
-          { id: "3_5", label: "3–5", fitGate: "qualified" },
-          { id: "5_10", label: "5–10", fitGate: "qualified" },
-          { id: "10_15", label: "10–15", fitGate: "qualified" },
-          { id: "15_plus", label: "15+", fitGate: "qualified" },
-        ],
-      },
-      {
-        id: "q5",
-        kind: "choice",
-        prompt: "What have you already done about it?",
-        sub: "What you've tried tells us where to start.",
-        options: [
-          { id: "paid_course", label: "Paid for a Job Hunting course before", readiness: 3 },
-          { id: "paid_coach", label: "Paid for a Job Hunting coach / Outplacement before", readiness: 3, flag: "vip-signal" },
-          { id: "diy", label: "Lots of DIY effort, no results", readiness: 2 },
-          { id: "tweaks", label: "A few small tweaks", readiness: 1 },
-          { id: "nothing", label: "Nothing yet", readiness: 0 },
-        ],
-      },
-      {
-        id: "q6",
-        kind: "text",
-        prompt: "Anything else you want us to know?",
-        sub: "Optional — tell us anything that helps us help you.",
-        placeholder: "Type your answer… (optional)",
-        required: false,
-      },
-    ],
-  },
-  lead: {
-    eyebrow: "Almost there",
-    title: "Your Compass is ready.",
-    body: "Enter your details and we'll send you straight to your JobHacker Compass.",
+  countdown: { mode: "evergreen", deadline: "2026-07-15T23:59:00-04:00", hours: 48 },
+  details: {
+    eyebrow: "Members only · 90 days free",
+    title: "Claim your free 90 days of Compass.",
+    lede: "Enter your details and we'll start your Compass registration. It only takes a minute.",
     firstNameLabel: "First name",
     lastNameLabel: "Last name",
     emailLabel: "Email",
-    ctaLabel: "Get Started With Compass →",
-    fine: "Land the job hiding in plain sight. In 60 days, or less.",
+    submitLabel: "Claim My 90 Days →",
+    consent: "Free for JobHackers members · closes 48 hours after the event.",
+  },
+  quiz: {
+    footerNote: "🔒 2 minutes · No credit card",
+    questions: DEFAULT_QUESTIONS,
+  },
+  lead: {
+    eyebrow: "One step left",
+    title: "You're almost in. Let's finish setting up Compass.",
+    body: "Complete your Compass registration to activate your free 90 days. It only takes a minute.",
+    ctaLabel: "Complete My Registration →",
+    fine: "Finish within 48 hours of the event to lock in your free 90 days.",
     tagline: "© 2026 JobHackers.Global · JobHacker Compass",
   },
   inviteUrl: "https://jobhackers.global",
+  expired: {
+    eyebrow: "This link has expired",
+    title: "Your free-access window has closed.",
+    body: "The registration link for this offer is no longer active. The good news: we run these regularly — join our next live meetup and you'll get a fresh invite.",
+    ctaLabel: "Join our next meetup event →",
+    meetupUrl: "https://www.meetup.com/job-hackers-global",
+  },
+  blocked: {
+    title: "You've already claimed your Compass.",
+    body: "Looks like you've already completed this — sign in to pick up right where you left off.",
+    ctaLabel: "Sign in →",
+    ctaHref: "/login",
+  },
 };
 
 // ---- merge helpers (defaults <- stored overrides) ----
-// Scalars and nested copy merge shallowly; arrays (capabilities / steps / questions)
-// fully replace the defaults when present, so admins can add/remove items.
+// Scalars/copy merge shallowly; arrays (cards / mentors / questions) fully replace
+// the defaults when present, so admins can add/remove items.
 export function mergeFunnel(stored?: Partial<FunnelConfig> | null): FunnelConfig {
   const s = stored ?? {};
   return {
     landing: {
       ...DEFAULT_FUNNEL.landing,
       ...(s.landing ?? {}),
-      capabilities:
-        Array.isArray(s.landing?.capabilities) && s.landing!.capabilities.length
-          ? s.landing!.capabilities
-          : DEFAULT_FUNNEL.landing.capabilities,
-      steps:
-        Array.isArray(s.landing?.steps) && s.landing!.steps.length
-          ? s.landing!.steps
-          : DEFAULT_FUNNEL.landing.steps,
+      cards: Array.isArray(s.landing?.cards) && s.landing!.cards.length ? s.landing!.cards : DEFAULT_FUNNEL.landing.cards,
+      mentors: Array.isArray(s.landing?.mentors) && s.landing!.mentors.length ? s.landing!.mentors : DEFAULT_FUNNEL.landing.mentors,
     },
+    countdown: { ...DEFAULT_FUNNEL.countdown, ...(s.countdown ?? {}) },
+    details: { ...DEFAULT_FUNNEL.details, ...(s.details ?? {}) },
     quiz: {
       ...DEFAULT_FUNNEL.quiz,
       ...(s.quiz ?? {}),
-      questions:
-        Array.isArray(s.quiz?.questions) && s.quiz!.questions.length
-          ? s.quiz!.questions
-          : DEFAULT_FUNNEL.quiz.questions,
+      questions: Array.isArray(s.quiz?.questions) && s.quiz!.questions.length ? s.quiz!.questions : DEFAULT_FUNNEL.quiz.questions,
     },
     lead: { ...DEFAULT_FUNNEL.lead, ...(s.lead ?? {}) },
     inviteUrl: s.inviteUrl ?? DEFAULT_FUNNEL.inviteUrl,
+    expired: { ...DEFAULT_FUNNEL.expired, ...(s.expired ?? {}) },
+    blocked: { ...DEFAULT_FUNNEL.blocked, ...(s.blocked ?? {}) },
   };
 }
 
-// Build the invite redirect URL with the lead's identity as query strings, so the
-// destination page can prefill name + email without re-asking.
+// Build the registration redirect URL with the lead's identity as query strings,
+// so the destination page can prefill name + email without re-asking.
 export function buildInviteUrl(
   base: string,
   lead: { firstName?: string; lastName?: string; email?: string }
@@ -264,7 +278,6 @@ export function buildInviteUrl(
     if (lead.email) url.searchParams.set("email", lead.email);
     return url.toString();
   } catch {
-    // base wasn't an absolute URL — fall back to a manual query string
     const q = new URLSearchParams();
     if (lead.firstName) q.set("firstName", lead.firstName);
     if (lead.lastName) q.set("lastName", lead.lastName);

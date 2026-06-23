@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Compass, Columns3, GraduationCap, Shield, LogOut, type LucideProps } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useContent } from "@/lib/firestore/content";
+import { track } from "@/lib/track-client";
 import { Iceberg } from "@/components/icons";
 import CoachingModal from "@/components/CoachingModal";
 
@@ -22,6 +23,16 @@ export default function AppShell({ children, daysLeft }: { children: React.React
   const { signOut, isAdmin } = useAuth();
   const { t } = useContent();
   const [coaching, setCoaching] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  // Record the LOGOUT event (while still authenticated) then sign out — the
+  // (app) layout redirects to /login once the user becomes null.
+  async function handleLogout() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try { await track("LOGOUT", { stage: "retention", source: "compass" }); } catch {}
+    await signOut();
+  }
 
   // Four tabs (req 4): Compass · Performance (iceberg) · Tracker (kanban) · Coaching (modal).
   // Labels are admin-editable via content.
@@ -51,6 +62,18 @@ export default function AppShell({ children, daysLeft }: { children: React.React
 
   return (
     <div className="min-h-screen md:flex">
+      {/* ---- Mobile top header (logout lives here on mobile) ---- */}
+      <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-14 px-4 bg-white border-b border-jh-line">
+        <div className="flex items-center gap-2">
+          <Image src="/assets/logo-hand.png" alt="JobHackers" width={26} height={26} />
+          <span className="font-display font-bold text-jh-ink text-sm">Compass</span>
+        </div>
+        <button onClick={handleLogout} disabled={signingOut}
+          className="flex items-center gap-1.5 font-display font-semibold text-sm text-jh-mute hover:text-jh-red disabled:opacity-50">
+          <LogOut className="h-5 w-5" /> {signingOut ? "Signing out…" : "Sign out"}
+        </button>
+      </header>
+
       {/* ---- Desktop sidebar ---- */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-jh-line p-5">
         <div className="flex items-center gap-2 mb-8">
@@ -65,8 +88,9 @@ export default function AppShell({ children, daysLeft }: { children: React.React
             <span className="font-semibold text-jh-ink">{daysLeft} days</span> of access left
           </div>
         )}
-        <button onClick={() => signOut()} className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 font-display font-semibold text-sm text-jh-mute hover:text-jh-red">
-          <LogOut className="h-5 w-5" /> Sign out
+        <button onClick={handleLogout} disabled={signingOut}
+          className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 font-display font-semibold text-sm text-jh-mute hover:text-jh-red disabled:opacity-50">
+          <LogOut className="h-5 w-5" /> {signingOut ? "Signing out…" : "Sign out"}
         </button>
       </aside>
 
