@@ -186,7 +186,7 @@ function Countdown({ config, label }: { config: CountdownConfig; label: string }
 
 const CSS = `
 .cl-root{font-family:"Roboto","Helvetica Neue",Arial,sans-serif;color:#3a3f4d;background:#fff;-webkit-font-smoothing:antialiased;}
-.cl-root h1,.cl-root h2{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;color:#191c27;margin:0;letter-spacing:-.02em;}
+.cl-root h1,.cl-root h2{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;color:#191c27;margin:0;letter-spacing:-.02em;text-wrap:balance;}
 .cl-root p{margin:0;line-height:1.6;color:#3a3f4d;}
 .cl-accent{color:#c2001f;}
 .cl-topbar{height:5px;background:#c2001f;}
@@ -201,7 +201,7 @@ const CSS = `
 .cl-head__logo span{color:#c2001f;}
 .cl-hero{max-width:640px;margin:0 auto;text-align:center;padding:34px 0 8px;}
 .cl-hero__h1{font-family:"Poppins",Arial,sans-serif;font-size:44px;font-weight:700;line-height:1.1;letter-spacing:-.03em;color:#191c27;margin:0 0 20px;}
-.cl-hero__sub{font-size:17px;line-height:1.62;color:#6b7280;margin:0 auto 30px;max-width:30em;}
+.cl-hero__sub{font-size:17px;line-height:1.62;color:#6b7280;margin:0 auto 30px;max-width:30em;text-wrap:balance;}
 .cl-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em;color:#fff;background:#c2001f;border:0;border-radius:99px;padding:17px 34px;text-decoration:none;cursor:pointer;box-shadow:0 10px 26px rgba(194,0,31,.3);transition:all .22s cubic-bezier(.2,.7,.2,1);text-transform:uppercase;}
 .cl-cta:hover{background:#8a0016;transform:translateY(-2px);box-shadow:0 14px 32px rgba(194,0,31,.36);}
 .cl-cd-wrap{margin:36px 0 26px;}
@@ -241,7 +241,7 @@ const CSS = `
 .cl-lcard__t{font-family:"Poppins",Arial,sans-serif;font-size:19px;font-weight:600;color:#191c27;margin:0 0 8px;}
 .cl-lcard__d{font-size:15px;line-height:1.55;color:#6b7280;}
 .cl-cta-block{text-align:center;margin-top:40px;}
-.cl-mentors{max-width:660px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.cl-mentors{max-width:640px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px;}
 .cl-mentor{background:#fff;border:1px solid #e9ebf1;border-radius:18px;padding:26px 24px;box-shadow:0 6px 20px rgba(25,28,39,.05);}
 .cl-mentor__av{width:60px;height:60px;border-radius:99px;background:#f6e0e3;color:#c2001f;font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:20px;display:grid;place-items:center;margin-bottom:16px;}
 .cl-mentor__photo{width:60px;height:60px;border-radius:99px;object-fit:cover;display:block;margin-bottom:16px;background:#f6e0e3;}

@@ -18,6 +18,8 @@ export default function RegisterPage() {
   const [lockedEmail, setLockedEmail] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -28,6 +30,10 @@ export default function RegisterPage() {
     const sp = new URLSearchParams(window.location.search);
     const qEmail = sp.get("email");
     if (qEmail && !email) setEmail(qEmail);
+    const qFirst = sp.get("firstName");
+    const qLast = sp.get("lastName");
+    if (qFirst) setFirstName(qFirst);
+    if (qLast) setLastName(qLast);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -47,7 +53,7 @@ export default function RegisterPage() {
     try {
       const res = await fetch("/api/register/complete", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email, password }),
+        body: JSON.stringify({ token, email, password, firstName, lastName }),
       });
       const d = await res.json();
       if (!res.ok || !d.ok) {
