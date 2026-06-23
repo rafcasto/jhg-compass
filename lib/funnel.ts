@@ -216,25 +216,43 @@ export const DEFAULT_FUNNEL: FunnelConfig = {
 // ---- merge helpers (defaults <- stored overrides) ----
 // Scalars/copy merge shallowly; arrays (cards / mentors / questions) fully replace
 // the defaults when present, so admins can add/remove items.
+// Copy ONLY the keys that exist on `defaults` from `stored` — so legacy/removed
+// fields stored in Firestore (e.g. old mentors / closing copy) are dropped rather
+// than carried around forever.
+function pick<T extends Record<string, any>>(defaults: T, stored: any): T {
+  const out: T = { ...defaults };
+  if (stored && typeof stored === "object") {
+    for (const k of Object.keys(defaults)) {
+      if (stored[k] !== undefined) (out as any)[k] = stored[k];
+    }
+  }
+  return out;
+}
+
 export function mergeFunnel(stored?: Partial<FunnelConfig> | null): FunnelConfig {
   const s = stored ?? {};
+
+  const landing = pick(DEFAULT_FUNNEL.landing, s.landing);
+  landing.cards =
+    Array.isArray(s.landing?.cards) && s.landing!.cards.length
+      ? s.landing!.cards.map((c: any) => ({ title: c?.title ?? "" }))
+      : DEFAULT_FUNNEL.landing.cards;
+
+  const quiz = pick(DEFAULT_FUNNEL.quiz, s.quiz);
+  quiz.questions =
+    Array.isArray(s.quiz?.questions) && s.quiz!.questions.length
+      ? s.quiz!.questions
+      : DEFAULT_FUNNEL.quiz.questions;
+
   return {
-    landing: {
-      ...DEFAULT_FUNNEL.landing,
-      ...(s.landing ?? {}),
-      cards: Array.isArray(s.landing?.cards) && s.landing!.cards.length ? s.landing!.cards : DEFAULT_FUNNEL.landing.cards,
-    },
-    countdown: { ...DEFAULT_FUNNEL.countdown, ...(s.countdown ?? {}) },
-    details: { ...DEFAULT_FUNNEL.details, ...(s.details ?? {}) },
-    quiz: {
-      ...DEFAULT_FUNNEL.quiz,
-      ...(s.quiz ?? {}),
-      questions: Array.isArray(s.quiz?.questions) && s.quiz!.questions.length ? s.quiz!.questions : DEFAULT_FUNNEL.quiz.questions,
-    },
-    lead: { ...DEFAULT_FUNNEL.lead, ...(s.lead ?? {}) },
+    landing,
+    countdown: pick(DEFAULT_FUNNEL.countdown, s.countdown),
+    details: pick(DEFAULT_FUNNEL.details, s.details),
+    quiz,
+    lead: pick(DEFAULT_FUNNEL.lead, s.lead),
     inviteUrl: s.inviteUrl ?? DEFAULT_FUNNEL.inviteUrl,
-    expired: { ...DEFAULT_FUNNEL.expired, ...(s.expired ?? {}) },
-    blocked: { ...DEFAULT_FUNNEL.blocked, ...(s.blocked ?? {}) },
+    expired: pick(DEFAULT_FUNNEL.expired, s.expired),
+    blocked: pick(DEFAULT_FUNNEL.blocked, s.blocked),
   };
 }
 
