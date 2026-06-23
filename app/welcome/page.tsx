@@ -68,7 +68,7 @@ const CSS = `
 .ct-brand__name span{color:#c2001f;}
 .ct-check{width:58px;height:58px;border-radius:99px;background:#f6e0e3;color:#c2001f;display:grid;place-items:center;font-size:27px;margin:0 auto 22px;}
 .ct-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#c2001f;display:block;margin-bottom:12px;}
-.ct-h1{font-size:30px;font-weight:700;line-height:1.16;margin-bottom:14px;}
+.ct-h1{font-size:30px;font-weight:700;line-height:1.22;margin-bottom:14px;}
 .ct-lede{font-size:16.5px;line-height:1.6;color:#3a3f4d;margin:0 auto 30px;max-width:30em;}
 .ct-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:#fff;background:#c2001f;border:0;border-radius:99px;padding:18px;text-decoration:none;cursor:pointer;box-shadow:0 10px 26px rgba(194,0,31,.3);transition:all .22s cubic-bezier(.2,.7,.2,1);}
 .ct-cta:hover{background:#8a0016;transform:translateY(-2px);box-shadow:0 14px 32px rgba(194,0,31,.36);}
