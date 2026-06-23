@@ -53,6 +53,7 @@ export default function Home() {
           <div className="cl-peek">
             <div className="cl-phone" aria-hidden="true">
               <div className="cl-phone__screen">
+                <div className="cl-phone__island" />
                 <div className="cl-scr-eyebrow">Success Predictors</div>
                 <div className="cl-scr-title">Performance</div>
                 <div className="cl-mbanner cl-mbanner--hidden">
@@ -67,10 +68,23 @@ export default function Home() {
                   <div className="cl-amrow__t">Contact prospects — referrals</div>
                   <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;1</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
                 </div>
+                <div className="cl-amrow">
+                  <div className="cl-amrow__t">Information interviews</div>
+                  <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;2</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
+                </div>
+                <div className="cl-amrow">
+                  <div className="cl-amrow__t">Thank-you notes</div>
+                  <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;1</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
+                </div>
                 <div className="cl-mbanner cl-mbanner--visible">
                   <span>✅</span>
                   <div><div className="cl-mbanner__t">Visible Job Market</div><div className="cl-mbanner__s">~20% of your success</div></div>
                 </div>
+                <div className="cl-amrow">
+                  <div className="cl-amrow__t">Apply to relevant roles</div>
+                  <div className="cl-amrow__r"><div className="cl-amrow__nums"><b>0</b><span>&nbsp;/&nbsp;2</span></div><div className="cl-pm"><i className="cl-minus">−</i><i className="cl-plus">+</i></div></div>
+                </div>
+                <div className="cl-phone__home" />
               </div>
             </div>
           </div>
@@ -95,27 +109,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* MENTORS */}
-      <div className="cl-section">
-        <div className="cl-container">
-          <span className="cl-eyebrow">{L.mentorsEyebrow}</span>
-          <h2 className="cl-sec-title">{L.mentorsTitle} <span className="cl-accent">{L.mentorsTitleAccent}</span></h2>
-          <div className="cl-mentors">
-            {L.mentors.map((m, i) => (
-              <div className="cl-mentor" key={i}>
-                <MentorAvatar m={m} />
-                <div className="cl-mentor__name">{m.name}</div>
-                <div className="cl-mentor__role">{m.role}</div>
-                <div className="cl-mentor__bio">{m.bio}</div>
-              </div>
-            ))}
-          </div>
-          <div className="cl-seen">{L.seen}</div>
-        </div>
-      </div>
-
       {/* CLOSING */}
-      <div className="cl-section cl-section--tint">
+      <div className="cl-section">
         <div className="cl-container">
           <div className="cl-closing">
             <h2 className="cl-closing__h">{L.closingTitle}</h2>
@@ -132,15 +127,6 @@ export default function Home() {
       </div>
     </main>
   );
-}
-
-function MentorAvatar({ m }: { m: { initials: string; name: string; photo?: string } }) {
-  const [err, setErr] = useState(false);
-  if (m.photo && !err) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img className="cl-mentor__photo" src={m.photo} alt={m.name} onError={() => setErr(true)} />;
-  }
-  return <div className="cl-mentor__av">{m.initials}</div>;
 }
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
@@ -215,9 +201,10 @@ const CSS = `
 .cl-cd-sep{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:22px;color:#d4d8e2;}
 .cl-proofrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;font-size:13px;color:#6b7280;}
 .cl-peek{display:flex;justify-content:center;margin-top:8px;}
-.cl-phone{width:248px;border-radius:36px;background:#191c27;padding:12px;box-shadow:0 28px 60px rgba(25,28,39,.28);position:relative;}
-.cl-phone::before{content:"";position:absolute;top:15px;left:50%;transform:translateX(-50%);width:74px;height:6px;border-radius:99px;background:rgba(255,255,255,.18);}
-.cl-phone__screen{background:#fff;border-radius:26px;padding:26px 16px 16px;overflow:hidden;text-align:left;}
+.cl-phone{width:268px;border-radius:50px;background:#191c27;padding:13px;box-shadow:0 34px 72px rgba(25,28,39,.34);position:relative;}
+.cl-phone__screen{position:relative;background:#fff;border-radius:38px;padding:44px 16px 26px;overflow:hidden;text-align:left;min-height:540px;}
+.cl-phone__island{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:88px;height:26px;border-radius:99px;background:#191c27;z-index:3;}
+.cl-phone__home{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:112px;height:5px;border-radius:99px;background:#191c27;opacity:.22;}
 .cl-scr-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:8px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#c2001f;}
 .cl-scr-title{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:18px;color:#191c27;margin-bottom:13px;}
 .cl-mbanner{display:flex;align-items:center;gap:8px;border-radius:11px;padding:9px 11px;}
