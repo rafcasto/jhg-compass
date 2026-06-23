@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Settings, Copy, Check, Link as LinkIcon, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { Copy, Check, Link as LinkIcon, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { auth } from "@/lib/firebase/client";
 import type { AdminConfig, Activity, ContentConfig } from "@/lib/types";
@@ -57,15 +57,22 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-jh-paper">
-      {/* dark header */}
-      <header className="bg-jh-ink text-white">
+    <div className="admin-scope min-h-screen bg-jh-paper">
+      <style>{`.admin-scope .btn-primary,.admin-scope .btn-secondary{border-radius:9999px;}`}</style>
+      {/* red brand bar — matches the funnel / landing */}
+      <div className="h-[5px] bg-jh-red" />
+      {/* light branded header */}
+      <header className="bg-white border-b border-jh-line">
         <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-display font-bold text-lg"><Settings className="h-5 w-5" /> Compass Admin</div>
+          <div className="flex items-center gap-2.5">
+            <span className="grid place-items-center h-8 w-8 rounded-[9px] bg-jh-red text-white text-base shadow-cta">🧭</span>
+            <span className="font-display font-bold text-jh-ink">JobHacker <span className="text-jh-red">Compass</span></span>
+            <span className="ml-1.5 hidden sm:inline font-display font-semibold text-[11px] uppercase tracking-[.12em] text-jh-mute">Admin</span>
+          </div>
           <div className="flex items-center gap-5 text-sm">
-            <span className="text-white/70 hidden sm:inline">{user?.email}</span>
-            <Link href="/compass" className="inline-flex items-center gap-1 underline underline-offset-2">View site <ExternalLink className="h-3.5 w-3.5" /></Link>
-            <button onClick={() => signOut()} className="font-semibold">Sign out</button>
+            <span className="text-jh-mute hidden sm:inline">{user?.email}</span>
+            <Link href="/compass" className="inline-flex items-center gap-1 text-jh-ink hover:text-jh-red underline underline-offset-2">View site <ExternalLink className="h-3.5 w-3.5" /></Link>
+            <button onClick={() => signOut()} className="font-display font-semibold text-jh-ink hover:text-jh-red">Sign out</button>
           </div>
         </div>
       </header>
@@ -370,9 +377,6 @@ function FunnelTab() {
   function setCard(i: number, patch: Partial<FunnelConfig["landing"]["cards"][number]>) {
     setF((c) => { const cfg = c as FunnelConfig; const cards = cfg.landing.cards.map((x, j) => (j === i ? { ...x, ...patch } : x)); return { ...cfg, landing: { ...cfg.landing, cards } }; }); touched();
   }
-  function setMentor(i: number, patch: Partial<FunnelConfig["landing"]["mentors"][number]>) {
-    setF((c) => { const cfg = c as FunnelConfig; const mentors = cfg.landing.mentors.map((x, j) => (j === i ? { ...x, ...patch } : x)); return { ...cfg, landing: { ...cfg.landing, mentors } }; }); touched();
-  }
   function updateQuestion(qi: number, patch: Partial<QuizQuestion>) {
     setF((c) => { const cfg = c as FunnelConfig; const questions = cfg.quiz.questions.map((q, i) => (i === qi ? { ...q, ...patch } : q)); return { ...cfg, quiz: { ...cfg.quiz, questions } }; }); touched();
   }
@@ -448,49 +452,15 @@ function FunnelTab() {
           <Field label="Countdown label" value={f.landing.countdownLabel} onChange={(v) => setLanding("countdownLabel", v)} />
           <Field label="Proof row" value={f.landing.proofrow} onChange={(v) => setLanding("proofrow", v)} />
           <Field label="“What you get” eyebrow" value={f.landing.getEyebrow} onChange={(v) => setLanding("getEyebrow", v)} />
-          <Field label="Section title — pre" value={f.landing.getTitlePre} onChange={(v) => setLanding("getTitlePre", v)} />
-          <Field label="Section title — accent (red)" value={f.landing.getTitleAccent} onChange={(v) => setLanding("getTitleAccent", v)} />
-          <Field label="Section title — post" value={f.landing.getTitlePost} onChange={(v) => setLanding("getTitlePost", v)} />
-          <Field label="Mentors eyebrow" value={f.landing.mentorsEyebrow} onChange={(v) => setLanding("mentorsEyebrow", v)} />
-          <Field label="Mentors title" value={f.landing.mentorsTitle} onChange={(v) => setLanding("mentorsTitle", v)} />
-          <Field label="Mentors title accent (red)" value={f.landing.mentorsTitleAccent} onChange={(v) => setLanding("mentorsTitleAccent", v)} />
-          <Field className="sm:col-span-2" label="“As seen on” line" value={f.landing.seen} onChange={(v) => setLanding("seen", v)} />
-          <Field label="Closing title" value={f.landing.closingTitle} onChange={(v) => setLanding("closingTitle", v)} />
-          <Field label="Closing sub" value={f.landing.closingSub} onChange={(v) => setLanding("closingSub", v)} />
-          <Field label="Closing note" value={f.landing.closingNote} onChange={(v) => setLanding("closingNote", v)} />
           <Field label="Footer" value={f.landing.footer} onChange={(v) => setLanding("footer", v)} />
           <Field label="Tagline" value={f.landing.tagline} onChange={(v) => setLanding("tagline", v)} />
         </div>
 
-        {/* what-you-get cards */}
+        {/* what-you-get bullets */}
         <div className="card p-5 space-y-3">
-          <p className="font-display font-semibold text-jh-ink">“What you get” cards</p>
+          <p className="font-display font-semibold text-jh-ink">“What you get” bullets</p>
           {f.landing.cards.map((c, i) => (
-            <div key={i} className="grid sm:grid-cols-[6rem_1fr] gap-2 items-start border-b border-jh-line pb-3 last:border-0 last:pb-0">
-              <input className="field py-2 text-sm" value={c.part} onChange={(e) => setCard(i, { part: e.target.value })} placeholder="Part 01" />
-              <div className="space-y-2">
-                <input className="field py-2 text-sm" value={c.title} onChange={(e) => setCard(i, { title: e.target.value })} placeholder="Title" />
-                <textarea className="field py-2 text-sm min-h-16" value={c.body} onChange={(e) => setCard(i, { body: e.target.value })} placeholder="Description" />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* mentors */}
-        <div className="card p-5 space-y-3">
-          <p className="font-display font-semibold text-jh-ink">Mentors</p>
-          {f.landing.mentors.map((m, i) => (
-            <div key={i} className="grid sm:grid-cols-[4rem_1fr] gap-2 items-start border-b border-jh-line pb-3 last:border-0 last:pb-0">
-              <input className="field py-2 text-center text-sm" value={m.initials} onChange={(e) => setMentor(i, { initials: e.target.value })} placeholder="DP" />
-              <div className="space-y-2">
-                <div className="grid sm:grid-cols-2 gap-2">
-                  <input className="field py-2 text-sm" value={m.name} onChange={(e) => setMentor(i, { name: e.target.value })} placeholder="Name" />
-                  <input className="field py-2 text-sm" value={m.role} onChange={(e) => setMentor(i, { role: e.target.value })} placeholder="Role" />
-                </div>
-                <input className="field py-2 text-sm" value={m.photo ?? ""} onChange={(e) => setMentor(i, { photo: e.target.value })} placeholder="Photo URL (e.g. /assets/mentor-david.jpg) — blank shows initials" />
-                <textarea className="field py-2 text-sm min-h-16" value={m.bio} onChange={(e) => setMentor(i, { bio: e.target.value })} placeholder="Bio" />
-              </div>
-            </div>
+            <input key={i} className="field py-2 text-sm" value={c.title} onChange={(e) => setCard(i, { title: e.target.value })} placeholder="Bullet text" />
           ))}
         </div>
       </section>

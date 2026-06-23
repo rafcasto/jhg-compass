@@ -34,8 +34,7 @@ export interface QuizQuestion {
   required?: boolean;
 }
 
-export interface LandingCard { part: string; title: string; body: string; }
-export interface Mentor { initials: string; name: string; role: string; bio: string; photo?: string; }
+export interface LandingCard { title: string; }
 export interface CountdownConfig { mode: "fixed" | "evergreen"; deadline: string; hours: number; }
 
 export interface FunnelConfig {
@@ -50,18 +49,7 @@ export interface FunnelConfig {
     countdownLabel: string;
     proofrow: string;
     getEyebrow: string;
-    getTitlePre: string;
-    getTitleAccent: string;
-    getTitlePost: string;
     cards: LandingCard[];
-    mentorsEyebrow: string;
-    mentorsTitle: string;
-    mentorsTitleAccent: string;
-    mentors: Mentor[];
-    seen: string;
-    closingTitle: string;
-    closingSub: string;
-    closingNote: string;
     footer: string;
     tagline: string;
   };
@@ -178,25 +166,11 @@ export const DEFAULT_FUNNEL: FunnelConfig = {
     countdownLabel: "Free access closes in",
     proofrow: "3,000+ JobHackers coached · 7-step proven method · 90 days free",
     getEyebrow: "What you get",
-    getTitlePre: "Everything inside your",
-    getTitleAccent: "(free)",
-    getTitlePost: "90 days…",
     cards: [
-      { part: "Part 01", title: "Set your goal statement", body: "Lock in the role, level, and salary you're aiming at. Every target and activity in Compass points back to this one north star — so your effort always has a direction." },
-      { part: "Part 02", title: "Track actual vs. target", body: "Log the activities that actually win — 80% hidden market, 20% visible — and watch Actual vs. Target update as you go. The success predictors, finally made visible." },
-      { part: "Part 03", title: "Work your pipeline", body: "Every role in one board, Wishlist to Offer. Record each opportunity and interaction so no warm lead ever goes cold and your follow-ups never slip." },
+      { title: "Set your goal statement" },
+      { title: "Track actual vs. target" },
+      { title: "Work your pipeline" },
     ],
-    mentorsEyebrow: "Your JobHacking mentors",
-    mentorsTitle: "Built on 30 years of",
-    mentorsTitleAccent: "real placements",
-    mentors: [
-      { initials: "DP", name: "David Perry", role: "Recruiter & Author", photo: "/assets/mentor-david.png", bio: "30+ years recruiting. Co-founder of Perry-Martel International. Author of Guerrilla Marketing for Job Hunters and Hiring Greatness." },
-      { initials: "LS", name: "Laurent Simon", role: "Co-founder & Author", photo: "/assets/mentor-laurent.png", bio: "20+ years across Europe & APAC. Co-founder of Digital Pathways. Author of Harnessing Digital Disruption and The AI Dojo Experiment." },
-    ],
-    seen: "As seen on   Forbes · Fortune · New York Times · WSJ · INSEAD · MSNBC",
-    closingTitle: "Don't leave your next job to luck.",
-    closingSub: "Free for 90 days — the window closes 48 hours after the event.",
-    closingNote: "Members only · 2-minute setup · no credit card.",
     footer: "© 2026 JobHackers.Global · JobHacker Compass",
     tagline: "Get a job you love, at the salary you deserve. In 60 days, or less.",
   },
@@ -249,7 +223,6 @@ export function mergeFunnel(stored?: Partial<FunnelConfig> | null): FunnelConfig
       ...DEFAULT_FUNNEL.landing,
       ...(s.landing ?? {}),
       cards: Array.isArray(s.landing?.cards) && s.landing!.cards.length ? s.landing!.cards : DEFAULT_FUNNEL.landing.cards,
-      mentors: Array.isArray(s.landing?.mentors) && s.landing!.mentors.length ? s.landing!.mentors : DEFAULT_FUNNEL.landing.mentors,
     },
     countdown: { ...DEFAULT_FUNNEL.countdown, ...(s.countdown ?? {}) },
     details: { ...DEFAULT_FUNNEL.details, ...(s.details ?? {}) },
