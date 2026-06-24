@@ -170,9 +170,15 @@ type Analytics = {
   obstacle: { label: string; count: number }[];
   timeseries: { day: string; count: number }[];
   openResponses: { name: string; email: string; q6: string; other: Record<string, string>; created_at: string | null }[];
+  questionMeta: { id: string; prompt: string; kind: string }[];
+  responses: {
+    name: string; email: string; archetype: string; score: number | null; grade: string;
+    fit: string; created_at: string | null;
+    answers: Record<string, string>; q6: string; other: Record<string, string>;
+  }[];
 };
 
-const DASHBOARDS = ["Quiz answers", "Archetypes", "Readiness & fit", "Completions over time", "Open responses"] as const;
+const DASHBOARDS = ["Quiz answers", "Questions & answers", "Archetypes", "Readiness & fit", "Completions over time", "Open responses"] as const;
 type Dashboard = (typeof DASHBOARDS)[number];
 
 // Brand-aligned palette for charts.
@@ -215,6 +221,7 @@ function AnalyticsTab() {
       ) : (
         <>
           {view === "Quiz answers" && <QuizAnswersDash data={data} />}
+          {view === "Questions & answers" && <ResponsesDash data={data} />}
           {view === "Archetypes" && <ArchetypesDash data={data} />}
           {view === "Readiness & fit" && <ReadinessFitDash data={data} />}
           {view === "Completions over time" && <TimeseriesDash data={data} />}
@@ -290,6 +297,113 @@ function QuizAnswersDash({ data }: { data: Analytics }) {
           <HBar rows={q.options} color={CHART_COLORS[i % CHART_COLORS.length]} />
         </ChartCard>
       ))}
+    </div>
+  );
+}
+
+function ResponsesDash({ data }: { data: Analytics }) {
+  const [sortKey, setSortKey] = useState<"score" | "fit">("score");
+  const [dir, setDir] = useState<"desc" | "asc">("desc");
+  const [open, setOpen] = useState<number | null>(null);
+
+  // qualified ranks above below-icp; unknown last.
+  const fitRank = (f: string) => (f === "qualified" ? 2 : f === "below-icp" ? 1 : 0);
+
+  const rows = [...data.responses].sort((a, b) => {
+    let d = 0;
+    if (sortKey === "score") d = (a.score ?? -1) - (b.score ?? -1);
+    else d = fitRank(a.fit) - fitRank(b.fit);
+    if (d === 0) d = (a.score ?? -1) - (b.score ?? -1); // tie-break on score
+    return dir === "desc" ? -d : d;
+  });
+
+  // Only the choice (scored) questions carry per-option answers.
+  const choiceQs = data.questionMeta.filter((q) => q.kind === "choice");
+  const openQ = data.questionMeta.find((q) => q.kind === "text");
+
+  const fitPill = (f: string) =>
+    f === "qualified" ? "bg-rb-green-light/20 text-rb-green-dark"
+    : f === "below-icp" ? "bg-jh-red-soft text-jh-red"
+    : "bg-jh-mist text-jh-mute";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label className="label">Sort by</label>
+          <select className="field w-auto" value={sortKey} onChange={(e) => setSortKey(e.target.value as "score" | "fit")}>
+            <option value="score">Readiness score</option>
+            <option value="fit">Fit</option>
+          </select>
+        </div>
+        <div>
+          <label className="label">Order</label>
+          <select className="field w-auto" value={dir} onChange={(e) => setDir(e.target.value as "desc" | "asc")}>
+            <option value="desc">High → low</option>
+            <option value="asc">Low → high</option>
+          </select>
+        </div>
+        <p className="text-sm text-jh-mute ml-auto self-center">{rows.length} respondents</p>
+      </div>
+
+      <div className="space-y-3">
+        {rows.map((r, i) => {
+          const isOpen = open === i;
+          const others = Object.entries(r.other || {}).filter(([, v]) => (v as string)?.trim());
+          return (
+            <div key={i} className="card overflow-hidden">
+              <button
+                onClick={() => setOpen(isOpen ? null : i)}
+                className="w-full flex flex-wrap items-center gap-3 px-4 py-3 text-left hover:bg-jh-paper/60 transition">
+                <div className="min-w-0 flex-1">
+                  <p className="font-display font-semibold text-jh-ink truncate">{r.name}</p>
+                  <p className="text-xs text-jh-mute truncate">{r.email}</p>
+                </div>
+                <span className="pill bg-jh-mist text-jh-ink capitalize">{r.archetype}</span>
+                <span className={`pill ${fitPill(r.fit)} capitalize`}>{r.fit}</span>
+                <span className="pill bg-jh-mist text-jh-ink" title="Readiness score (0–6)">
+                  Score {r.score ?? "—"}
+                </span>
+                {r.grade && r.grade !== "—" && <span className="pill bg-jh-mist text-jh-ink">{r.grade}</span>}
+                <span className="text-jh-mute text-xs tabular-nums">{isOpen ? "▲" : "▼"}</span>
+              </button>
+
+              {isOpen && (
+                <div className="border-t border-jh-line px-4 py-4 space-y-3 bg-jh-paper/40">
+                  {choiceQs.map((q) => (
+                    <div key={q.id} className="grid sm:grid-cols-[1fr_1.2fr] gap-1 sm:gap-3">
+                      <p className="text-sm text-jh-mute">
+                        <span className="font-mono text-[11px] text-jh-mute-2">{q.id.toUpperCase()}</span> {q.prompt}
+                      </p>
+                      <p className="text-sm font-medium text-jh-ink">{r.answers[q.id] ?? "—"}</p>
+                    </div>
+                  ))}
+                  {openQ && (
+                    <div className="grid sm:grid-cols-[1fr_1.2fr] gap-1 sm:gap-3">
+                      <p className="text-sm text-jh-mute">
+                        <span className="font-mono text-[11px] text-jh-mute-2">{openQ.id.toUpperCase()}</span> {openQ.prompt}
+                      </p>
+                      <p className="text-sm font-medium text-jh-ink whitespace-pre-wrap">{r.q6 || "—"}</p>
+                    </div>
+                  )}
+                  {others.map(([k, v]) => (
+                    <div key={k} className="grid sm:grid-cols-[1fr_1.2fr] gap-1 sm:gap-3">
+                      <p className="text-sm text-jh-mute">
+                        <span className="font-mono text-[11px] text-jh-mute-2">{k.toUpperCase()}</span> “Something else”
+                      </p>
+                      <p className="text-sm font-medium text-jh-ink">{v as string}</p>
+                    </div>
+                  ))}
+                  {r.created_at && (
+                    <p className="text-xs text-jh-mute-2 pt-1">Completed {new Date(r.created_at).toLocaleString()}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {rows.length === 0 && <div className="card p-10 text-center text-jh-mute">No respondents yet.</div>}
+      </div>
     </div>
   );
 }

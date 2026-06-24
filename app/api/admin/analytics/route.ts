@@ -65,6 +65,12 @@ export async function GET(req: NextRequest) {
     return q?.options?.find((o) => o.id === oid)?.label ?? oid;
   };
 
+  // Ordered question metadata (id + prompt) for rendering per-respondent Q&A.
+  // Includes the open-text question (e.g. Q6) so it can be shown alongside the
+  // scored answers.
+  const allQ = funnel?.quiz?.questions ?? [];
+  const questionMeta = allQ.map((q) => ({ id: q.id, prompt: q.prompt, kind: q.kind }));
+
   // ---- Per-question answer distributions (preserves option order) ----
   const questionBreakdowns = questions.map((q) => {
     const counts: Record<string, number> = {};
@@ -89,6 +95,12 @@ export async function GET(req: NextRequest) {
   const obstacle: Record<string, number> = {};
   const byDay: Record<string, number> = {};
   const openResponses: { name: string; email: string; q6: string; other: Record<string, string>; created_at: string | null }[] = [];
+  const responses: {
+    name: string; email: string; archetype: string; score: number | null; grade: string;
+    fit: string; created_at: string | null;
+    answers: Record<string, string>; // qid -> answer label (choice questions)
+    q6: string; other: Record<string, string>;
+  }[] = [];
 
   for (const lead of leads) {
     inc(archetype, lead.archetype ?? "Unclassified");
@@ -108,6 +120,25 @@ export async function GET(req: NextRequest) {
     const q6 = (qa.q6 ?? "").trim();
     const other = qa.otherText ?? {};
     const hasOther = Object.values(other).some((v) => (v as string)?.trim());
+
+    // Full per-respondent record: every choice answer mapped to its label.
+    const answers: Record<string, string> = {};
+    for (const q of questions) {
+      const oid = qa.answers?.[q.id];
+      if (oid) answers[q.id] = labelFor(q.id, oid);
+    }
+    responses.push({
+      name: [lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—",
+      email: lead.email,
+      archetype: lead.archetype ?? "Unclassified",
+      score: typeof lead.score === "number" ? lead.score : null,
+      grade: lead.grade ?? "—",
+      fit: qa.fit ?? "—",
+      created_at: lead.created_at,
+      answers,
+      q6,
+      other,
+    });
     if (q6 || hasOther) {
       openResponses.push({
         name: [lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—",
@@ -143,5 +174,7 @@ export async function GET(req: NextRequest) {
     obstacle: toRows(obstacle),
     timeseries,
     openResponses: openResponses.slice(0, 200),
+    questionMeta,
+    responses,
   });
 }
