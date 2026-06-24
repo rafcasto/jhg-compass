@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Copy, Check, Link as LinkIcon, ExternalLink, Plus, Trash2 } from "lucide-react";
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
+  PieChart, Pie, Cell, LineChart, Line,
+} from "recharts";
 import { useAuth } from "@/components/AuthProvider";
 import { auth } from "@/lib/firebase/client";
 import type { AdminConfig, Activity, ContentConfig } from "@/lib/types";
@@ -12,7 +16,7 @@ import {
   DEFAULT_FUNNEL, type FunnelConfig, type QuizQuestion, type QuizOption,
 } from "@/lib/funnel";
 
-const TABS = ["Dashboard", "Registration links", "Content", "Funnel", "Event tracking"] as const;
+const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Funnel", "Event tracking"] as const;
 type Tab = (typeof TABS)[number];
 
 // Paywall / email / coaching copy (stored separately in config/admin) — now edited
@@ -91,6 +95,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-6xl px-5 py-6">
         {tab === "Dashboard" && <DashboardTab />}
+        {tab === "Analytics" && <AnalyticsTab />}
         {tab === "Registration links" && <RegistrationLinks />}
         {tab === "Content" && <ContentTab />}
         {tab === "Funnel" && <FunnelTab />}
@@ -149,6 +154,234 @@ function StatCard({ value, label }: { value: number; label: string }) {
     <div className="card p-5">
       <div className="font-display font-extrabold text-3xl text-jh-ink">{value ?? 0}</div>
       <div className="text-sm text-jh-mute mt-1">{label}</div>
+    </div>
+  );
+}
+
+/* ---------------- Analytics (quiz answers + switchable dashboards) ---------------- */
+type Analytics = {
+  total: number;
+  questionBreakdowns: { id: string; prompt: string; options: { label: string; count: number }[] }[];
+  archetype: { label: string; count: number }[];
+  grade: { label: string; count: number }[];
+  fit: { label: string; count: number }[];
+  readiness: { label: string; count: number }[];
+  flags: { label: string; count: number }[];
+  obstacle: { label: string; count: number }[];
+  timeseries: { day: string; count: number }[];
+  openResponses: { name: string; email: string; q6: string; other: Record<string, string>; created_at: string | null }[];
+};
+
+const DASHBOARDS = ["Quiz answers", "Archetypes", "Readiness & fit", "Completions over time", "Open responses"] as const;
+type Dashboard = (typeof DASHBOARDS)[number];
+
+// Brand-aligned palette for charts.
+const CHART_COLORS = ["#E11D2E", "#0F172A", "#2563EB", "#0EA5E9", "#16A34A", "#EAB308", "#9333EA", "#F97316"];
+
+function AnalyticsTab() {
+  const [data, setData] = useState<Analytics | null>(null);
+  const [err, setErr] = useState(false);
+  const [view, setView] = useState<Dashboard>("Quiz answers");
+
+  useEffect(() => {
+    authedFetch("/api/admin/analytics")
+      .then((r) => r.json())
+      .then((d) => (d.ok ? setData(d) : setErr(true)))
+      .catch(() => setErr(true));
+  }, []);
+
+  if (err) return <p className="text-jh-red">Couldn’t load analytics. Try again.</p>;
+  if (!data) return <p className="text-jh-mute animate-pulse">Loading analytics…</p>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl">Quiz analytics</h2>
+          <p className="text-jh-mute text-sm mt-1">
+            {data.total} quiz {data.total === 1 ? "completion" : "completions"} captured. Switch dashboards to slice the data.
+          </p>
+        </div>
+        <div>
+          <label className="label">Dashboard</label>
+          <select className="field w-auto min-w-56" value={view} onChange={(e) => setView(e.target.value as Dashboard)}>
+            {DASHBOARDS.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {data.total === 0 ? (
+        <div className="card p-10 text-center text-jh-mute">No quiz completions yet.</div>
+      ) : (
+        <>
+          {view === "Quiz answers" && <QuizAnswersDash data={data} />}
+          {view === "Archetypes" && <ArchetypesDash data={data} />}
+          {view === "Readiness & fit" && <ReadinessFitDash data={data} />}
+          {view === "Completions over time" && <TimeseriesDash data={data} />}
+          {view === "Open responses" && <OpenResponsesDash data={data} />}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <div className="card p-5">
+      <p className="font-display font-semibold text-jh-ink">{title}</p>
+      {subtitle && <p className="text-xs text-jh-mute mb-3">{subtitle}</p>}
+      <div className="mt-3">{children}</div>
+    </div>
+  );
+}
+
+function HBar({ rows, color = CHART_COLORS[0] }: { rows: { label: string; count: number }[]; color?: string }) {
+  if (!rows.length) return <p className="text-sm text-jh-mute">No data.</p>;
+  const height = Math.max(120, rows.length * 42);
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+        <CartesianGrid horizontal={false} stroke="#EEE" />
+        <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+        <YAxis type="category" dataKey="label" width={180} tick={{ fontSize: 12 }} />
+        <Tooltip cursor={{ fill: "rgba(0,0,0,.04)" }} />
+        <Bar dataKey="count" fill={color} radius={[0, 4, 4, 0]} barSize={20} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+function Donut({ rows }: { rows: { label: string; count: number }[] }) {
+  if (!rows.length) return <p className="text-sm text-jh-mute">No data.</p>;
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <PieChart>
+        <Pie data={rows} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2}>
+          {rows.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+        </Pie>
+        <Tooltip />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
+function Legend({ rows }: { rows: { label: string; count: number }[] }) {
+  const total = rows.reduce((s, r) => s + r.count, 0) || 1;
+  return (
+    <ul className="mt-3 space-y-1.5">
+      {rows.map((r, i) => (
+        <li key={r.label} className="flex items-center gap-2 text-sm">
+          <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+          <span className="text-jh-ink flex-1 truncate">{r.label}</span>
+          <span className="text-jh-mute tabular-nums">{r.count} · {Math.round((r.count / total) * 100)}%</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function QuizAnswersDash({ data }: { data: Analytics }) {
+  if (!data.questionBreakdowns.length)
+    return <div className="card p-10 text-center text-jh-mute">No scored questions configured in the funnel.</div>;
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {data.questionBreakdowns.map((q, i) => (
+        <ChartCard key={q.id} title={`${q.id.toUpperCase()} · ${q.prompt}`} subtitle="Answer distribution">
+          <HBar rows={q.options} color={CHART_COLORS[i % CHART_COLORS.length]} />
+        </ChartCard>
+      ))}
+    </div>
+  );
+}
+
+function ArchetypesDash({ data }: { data: Analytics }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <ChartCard title="Archetype mix" subtitle="Who’s taking the quiz">
+        <Donut rows={data.archetype} />
+        <Legend rows={data.archetype} />
+      </ChartCard>
+      <ChartCard title="Top obstacles" subtitle="Message-routing label (Q3)">
+        <HBar rows={data.obstacle} color={CHART_COLORS[2]} />
+      </ChartCard>
+      {data.flags.length > 0 && (
+        <ChartCard title="Flags raised" subtitle="ai-anxious · vip-signal · below-icp · manual-review">
+          <HBar rows={data.flags} color={CHART_COLORS[6]} />
+        </ChartCard>
+      )}
+    </div>
+  );
+}
+
+function ReadinessFitDash({ data }: { data: Analytics }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <ChartCard title="Readiness score" subtitle="0–6 points (higher = warmer lead)">
+        <HBar rows={data.readiness.map((r) => ({ label: `${r.label} pts`, count: r.count }))} color={CHART_COLORS[0]} />
+      </ChartCard>
+      <ChartCard title="Fit gate" subtitle="qualified vs below-icp (Q4)">
+        <Donut rows={data.fit} />
+        <Legend rows={data.fit} />
+      </ChartCard>
+      <ChartCard title="Triage grade" subtitle="Computed lead grade">
+        <HBar rows={data.grade} color={CHART_COLORS[4]} />
+      </ChartCard>
+    </div>
+  );
+}
+
+function TimeseriesDash({ data }: { data: Analytics }) {
+  return (
+    <ChartCard title="Quiz completions over time" subtitle="Daily completed quizzes">
+      {data.timeseries.length === 0 ? (
+        <p className="text-sm text-jh-mute">No dated completions.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={data.timeseries} margin={{ left: 8, right: 24, top: 8, bottom: 4 }}>
+            <CartesianGrid stroke="#EEE" />
+            <XAxis dataKey="day" tick={{ fontSize: 11 }} tickFormatter={(d) => d.slice(5)} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+            <Tooltip />
+            <Line type="monotone" dataKey="count" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+    </ChartCard>
+  );
+}
+
+function OpenResponsesDash({ data }: { data: Analytics }) {
+  const rows = data.openResponses;
+  if (!rows.length) return <div className="card p-10 text-center text-jh-mute">No free-text answers yet.</div>;
+  return (
+    <div className="card overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-jh-mute border-b border-jh-line">
+            {["Name", "Email", "Open answer / “Something else”", "Date"].map((h) => (
+              <th key={h} className="font-semibold px-4 py-3 whitespace-nowrap">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => {
+            const others = Object.entries(r.other || {}).filter(([, v]) => (v as string)?.trim());
+            return (
+              <tr key={i} className="border-b border-jh-line last:border-0 align-top">
+                <td className="px-4 py-3 whitespace-nowrap">{r.name}</td>
+                <td className="px-4 py-3 text-jh-mute whitespace-nowrap">{r.email}</td>
+                <td className="px-4 py-3 text-jh-ink">
+                  {r.q6 && <p>{r.q6}</p>}
+                  {others.map(([k, v]) => (
+                    <p key={k} className="text-jh-mute text-xs mt-1"><span className="font-mono">{k}</span>: {v as string}</p>
+                  ))}
+                </td>
+                <td className="px-4 py-3 text-jh-mute whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleDateString() : ""}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
