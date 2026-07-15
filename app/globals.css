@@ -61,3 +61,5 @@ input[type="date"].field::-webkit-date-and-time-value {
 input[type="date"].field::-webkit-calendar-picker-indicator {
   margin-left: auto;
 }
+/* While empty, hide the native format text so the placeholder overlay shows through */
+input[type="date"].date-empty::-webkit-datetime-edit { color: transparent; }
