@@ -44,3 +44,20 @@
   .pill-hidden { @apply pill bg-jh-red-soft text-jh-red; }
   .pill-visible { @apply pill bg-jh-blue-grey text-rb-blue; }
 }
+
+/* ===== Normalize native date inputs so they match .field on mobile =====
+   iOS Safari ignores width:100% and renders date inputs shorter unless the
+   default appearance is reset — which left the reminder date field narrower
+   and misaligned versus the text input above it. */
+input[type="date"].field {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: calc(1.5em + 1.5rem + 2px); /* py-3 (1.5rem) + line-height + border */
+}
+input[type="date"].field::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+input[type="date"].field::-webkit-calendar-picker-indicator {
+  margin-left: auto;
+}
