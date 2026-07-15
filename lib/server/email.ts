@@ -19,6 +19,37 @@ function addressOf(from: string) {
   return (m ? m[1] : from).trim();
 }
 
+// Base URL of the deployed app, where our /set-password handler lives.
+// APP_URL overrides (custom domains); otherwise Vercel provides the production
+// domain automatically. Returns null when neither is set (e.g. local dev).
+function appBaseUrl(): string | null {
+  const explicit = process.env.APP_URL;
+  if (explicit) return explicit.replace(/\/+$/, "");
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercel) return `https://${vercel}`;
+  return null;
+}
+
+// Firebase mints action links that point at its default handler
+// (…firebaseapp.com/__/auth/action). Rewrite them to our own /set-password page
+// so users get the branded, design-system screen. The oobCode is all our page
+// needs — confirmPasswordReset/applyActionCode work from any authorized domain.
+function toAppActionLink(rawLink: string): string {
+  const base = appBaseUrl();
+  if (!base) return rawLink; // fall back to Firebase-hosted handler
+  try {
+    const src = new URL(rawLink);
+    const dest = new URL("/set-password", base);
+    for (const k of ["mode", "oobCode", "apiKey", "continueUrl", "lang"]) {
+      const v = src.searchParams.get(k);
+      if (v) dest.searchParams.set(k, v);
+    }
+    return dest.toString();
+  } catch {
+    return rawLink;
+  }
+}
+
 // Shared branded shell for transactional emails.
 function emailShell(intro: string, link: string, cta: string) {
   return `
@@ -34,11 +65,10 @@ function emailShell(intro: string, link: string, cta: string) {
 }
 
 // Sends a "set / reset your password" email via Resend using admin-editable copy (req 10.1).
-// Uses Firebase Admin to mint a secure action link. Reply-to matches the sender so
-// recipients can reply if needed.
+// Uses Firebase Admin to mint a secure action link, rewritten to our /set-password page.
 export async function sendPasswordEmail(email: string, mode: "set" | "reset" = "reset") {
   const cfg = await getAdminConfig();
-  const link = await adminAuth().generatePasswordResetLink(email);
+  const link = toAppActionLink(await adminAuth().generatePasswordResetLink(email));
 
   const cta = mode === "set" ? "Set my password" : "Reset my password";
 
@@ -56,7 +86,7 @@ export async function sendPasswordEmail(email: string, mode: "set" | "reset" = "
 // page (/set-password) applies the code (mode=verifyEmail).
 export async function sendVerificationEmail(email: string) {
   const cfg = await getAdminConfig();
-  const link = await adminAuth().generateEmailVerificationLink(email);
+  const link = toAppActionLink(await adminAuth().generateEmailVerificationLink(email));
 
   return resend().emails.send({
     from: FROM,
