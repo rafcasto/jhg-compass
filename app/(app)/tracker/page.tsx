@@ -200,6 +200,24 @@ function fmtDue(dueOn?: string) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+/* A date input that shows placeholder text when empty. Native date inputs render
+   blank on mobile; this overlays a click-through placeholder and hides the native
+   empty format text (via .date-empty) so taps still open the native picker. */
+function DateField({ value, onChange, className = "" }: { value: string; onChange: (v: string) => void; className?: string }) {
+  const { t } = useContent();
+  return (
+    <div className={`relative ${className}`}>
+      <input type="date" value={value} onChange={(e) => onChange(e.target.value)}
+        className={`field w-full ${value ? "" : "date-empty"}`} />
+      {!value && (
+        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-4 text-[15px] text-jh-mute-2">
+          {t("tracker.datePlaceholder")}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function RemindersView({ uid, reminders, opps }: { uid: string; reminders: Reminder[]; opps: Opportunity[] }) {
   const { t } = useContent();
   const today = todayStr();
@@ -314,7 +332,7 @@ function AddReminder({ uid, opps, onClose }: { uid: string; opps: Opportunity[];
           <input className="field" value={f.title} onChange={(e) => set("title", e.target.value)} autoFocus required /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">{t("reminders.f.due")}</label>
-            <input type="date" className="field" value={f.dueOn} onChange={(e) => set("dueOn", e.target.value)} /></div>
+            <DateField value={f.dueOn} onChange={(v) => set("dueOn", v)} /></div>
           <div><label className="label">{t("reminders.f.link")}</label>
             <select className="field" value={f.opportunityId} onChange={(e) => set("opportunityId", e.target.value)}>
               <option value="">{t("reminders.f.none")}</option>
@@ -613,7 +631,7 @@ function DetailModal({ uid, opp, contacts, reminders, onClose }: {
             <input className="field" placeholder={t("tracker.reminderPlaceholder")} value={rTitle}
               onChange={(e) => setRTitle(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addReminder(); } }} />
-            <input type="date" className="field sm:w-44" value={rDue} onChange={(e) => setRDue(e.target.value)} />
+            <DateField value={rDue} onChange={setRDue} className="sm:w-44" />
             <button onClick={addReminder} className="btn-primary shrink-0">{t("tracker.addReminderShort")}</button>
           </div>
           <ul className="mt-3 space-y-2">

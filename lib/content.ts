@@ -153,6 +153,7 @@ export const TEXT_FIELDS: TextField[] = [
   { group: "Progress (Tracker)", key: "tracker.reminderPlaceholder", label: "Job card — reminder input placeholder" },
   { group: "Progress (Tracker)", key: "tracker.addReminderShort", label: "Job card — add-reminder button" },
   { group: "Progress (Tracker)", key: "tracker.noReminders", label: "Job card — no-reminders text" },
+  { group: "Progress (Tracker)", key: "tracker.datePlaceholder", label: "Date input placeholder" },
 
   // ----- Navigation -----
   { group: "Navigation", key: "nav.compass", label: "Compass tab" },
@@ -323,6 +324,7 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "tracker.reminderPlaceholder": "Add a follow-up reminder…",
   "tracker.addReminderShort": "Add",
   "tracker.noReminders": "No reminders yet.",
+  "tracker.datePlaceholder": "Select a date",
 
   // Navigation
   "nav.compass": "Compass",
