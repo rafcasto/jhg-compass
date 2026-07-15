@@ -149,6 +149,11 @@ export const TEXT_FIELDS: TextField[] = [
   { group: "Progress (Tracker)", key: "contacts.addSubmit", label: "Contacts — add submit" },
   { group: "Progress (Tracker)", key: "contacts.empty", label: "Contacts — empty text", textarea: true },
 
+  // ----- Progress (Tracker) — reminders on a job card -----
+  { group: "Progress (Tracker)", key: "tracker.reminderPlaceholder", label: "Job card — reminder input placeholder" },
+  { group: "Progress (Tracker)", key: "tracker.addReminderShort", label: "Job card — add-reminder button" },
+  { group: "Progress (Tracker)", key: "tracker.noReminders", label: "Job card — no-reminders text" },
+
   // ----- Navigation -----
   { group: "Navigation", key: "nav.compass", label: "Compass tab" },
   { group: "Navigation", key: "nav.performance", label: "Performance tab" },
@@ -315,6 +320,9 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "contacts.addTitle": "Add contact",
   "contacts.addSubmit": "Add contact",
   "contacts.empty": "No contacts yet. Add the people who can open doors for you.",
+  "tracker.reminderPlaceholder": "Add a follow-up reminder…",
+  "tracker.addReminderShort": "Add",
+  "tracker.noReminders": "No reminders yet.",
 
   // Navigation
   "nav.compass": "Compass",
