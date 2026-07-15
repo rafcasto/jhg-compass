@@ -96,6 +96,19 @@ export interface ActivityLog {
   createdAt?: number;
 }
 
+// A follow-up reminder — a dated to-do, optionally linked to a job or contact.
+// Surfaced in the Progress tab's Reminders view.
+export interface Reminder {
+  id: string;
+  title: string;
+  dueOn?: string;          // YYYY-MM-DD (date the reminder is due)
+  done?: boolean;
+  opportunityId?: string;  // optional link to a job / opportunity
+  contactId?: string;      // optional link to a contact
+  notes?: string;
+  createdAt?: number;
+}
+
 export interface AccessGrant {
   email: string;
   plan: string;
