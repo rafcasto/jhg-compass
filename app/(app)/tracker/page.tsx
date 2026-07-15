@@ -10,7 +10,7 @@ import {
   useLiveCollection, paths, createDoc, updateRecord, deleteRecord,
 } from "@/lib/firestore/db";
 import { useContent } from "@/lib/firestore/content";
-import type { Contact, NoteEntry, Opportunity, OpportunityStage, Reminder } from "@/lib/types";
+import type { Contact, Opportunity, OpportunityStage, Reminder } from "@/lib/types";
 import type { Market } from "@/lib/categories";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
@@ -135,7 +135,7 @@ export default function TrackerPage() {
                 </div>
                 <div className="p-2 space-y-2 min-h-16">
                   {cards.map((o) => (
-                    <Card key={o.id} o={o} contacts={contacts}
+                    <Card key={o.id} o={o} contacts={contacts} reminders={reminders}
                       onOpen={() => setOpenId(o.id)} onMove={(st) => move(o.id, st)} />
                   ))}
                   {cards.length === 0 && <p className="text-center text-xs text-jh-mute-2 py-4">{t("tracker.dropHere")}</p>}
@@ -152,17 +152,17 @@ export default function TrackerPage() {
       {adding && <AddOpportunity uid={uid!} onClose={() => setAdding(false)} />}
       {addingReminder && <AddReminder uid={uid!} opps={opps} onClose={() => setAddingReminder(false)} />}
       {addingContact && <AddContactStandalone uid={uid!} onClose={() => setAddingContact(false)} />}
-      {openOpp && <DetailModal uid={uid!} opp={openOpp} contacts={contacts} onClose={() => setOpenId(null)} />}
+      {openOpp && <DetailModal uid={uid!} opp={openOpp} contacts={contacts} reminders={reminders} onClose={() => setOpenId(null)} />}
     </div>
   );
 }
 
-function Card({ o, contacts, onOpen, onMove }: {
-  o: Opportunity; contacts: Contact[]; onOpen: () => void; onMove: (s: OpportunityStage) => void;
+function Card({ o, contacts, reminders, onOpen, onMove }: {
+  o: Opportunity; contacts: Contact[]; reminders: Reminder[]; onOpen: () => void; onMove: (s: OpportunityStage) => void;
 }) {
   const { t } = useContent();
   const attached = (o.contactIds ?? []).length;
-  const notes = (o.log ?? []).length;
+  const openReminders = reminders.filter((r) => r.opportunityId === o.id && !r.done).length;
   return (
     <div draggable
       onDragStart={(e) => e.dataTransfer.setData("text/plain", o.id)}
@@ -177,7 +177,7 @@ function Card({ o, contacts, onOpen, onMove }: {
       </div>
       <div className="mt-2 flex items-center gap-3 text-xs text-jh-mute" onClick={onOpen}>
         {attached > 0 && <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {attached}</span>}
-        {notes > 0 && <span className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {notes}</span>}
+        {openReminders > 0 && <span className="inline-flex items-center gap-1"><Bell className="h-3.5 w-3.5" /> {openReminders}</span>}
       </div>
       {/* Mobile-friendly move control */}
       <select value={normalizeStage(o.stage)} onChange={(e) => onMove(e.target.value as OpportunityStage)}
@@ -189,7 +189,7 @@ function Card({ o, contacts, onOpen, onMove }: {
   );
 }
 
-/* ---------------- Reminders view ---------------- */
+/* ---------------- Reminders helpers ---------------- */
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -519,27 +519,31 @@ function EditOpportunity({ uid, opp, onClose }: { uid: string; opp: Opportunity;
 }
 
 /* ---------------- Detail modal ---------------- */
-function DetailModal({ uid, opp, contacts, onClose }: {
-  uid: string; opp: Opportunity; contacts: Contact[]; onClose: () => void;
+function DetailModal({ uid, opp, contacts, reminders, onClose }: {
+  uid: string; opp: Opportunity; contacts: Contact[]; reminders: Reminder[]; onClose: () => void;
 }) {
   const { t } = useContent();
-  const [note, setNote] = useState("");
   const [pickId, setPickId] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [rTitle, setRTitle] = useState("");
+  const [rDue, setRDue] = useState("");
+  const today = todayStr();
 
   const attachedIds = opp.contactIds ?? [];
   const attached = contacts.filter((c) => attachedIds.includes(c.id));
   const available = contacts.filter((c) => !attachedIds.includes(c.id));
-  const log = [...(opp.log ?? [])].sort((a, b) => b.at - a.at);
 
-  async function addNote() {
-    const text = note.trim();
-    if (!text) return;
-    const next: NoteEntry[] = [...(opp.log ?? []), { at: Date.now(), text }];
-    await updateRecord(uid, "opportunities", opp.id, { log: next });
-    setNote("");
-  }
+  // Reminders linked to this job — open first (by due date), completed last.
+  const jobReminders = useMemo(() => {
+    const list = reminders.filter((r) => r.opportunityId === opp.id);
+    list.sort((a, b) => {
+      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+      return (a.dueOn ?? "9999").localeCompare(b.dueOn ?? "9999");
+    });
+    return list;
+  }, [reminders, opp.id]);
+
   async function attach(cid: string) {
     if (!cid) return;
     await updateRecord(uid, "opportunities", opp.id, { contactIds: [...attachedIds, cid] });
@@ -551,6 +555,23 @@ function DetailModal({ uid, opp, contacts, onClose }: {
   async function removeOpp() {
     await deleteRecord(uid, "opportunities", opp.id);
     onClose();
+  }
+
+  async function addReminder() {
+    const title = rTitle.trim();
+    if (!title) return;
+    await createDoc(paths.reminders(uid), {
+      title, done: false, opportunityId: opp.id, ...(rDue ? { dueOn: rDue } : {}),
+    });
+    track(TAGS.ADD_REMINDER, { props: { linked: true, from: "job" } });
+    setRTitle(""); setRDue("");
+  }
+  async function toggleReminder(r: Reminder) {
+    await updateRecord(uid, "reminders", r.id, { done: !r.done });
+    if (!r.done) track(TAGS.REMINDER_DONE, { props: { id: r.id } });
+  }
+  async function removeReminder(r: Reminder) {
+    await deleteRecord(uid, "reminders", r.id);
   }
 
   return (
@@ -585,22 +606,40 @@ function DetailModal({ uid, opp, contacts, onClose }: {
           </div>
         </section>
 
-        {/* Conversation log */}
+        {/* Reminders — add follow-ups linked to this job (replaces conversation notes) */}
         <section>
-          <h3 className="text-sm font-display font-semibold text-jh-ink mb-2">{t("tracker.notes")}</h3>
-          <div className="flex gap-2">
-            <input className="field" placeholder={t("tracker.notePlaceholder")} value={note}
-              onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNote(); } }} />
-            <button onClick={addNote} className="btn-primary shrink-0">{t("tracker.addNote")}</button>
+          <h3 className="text-sm font-display font-semibold text-jh-ink mb-2">{t("reminders.title")}</h3>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input className="field" placeholder={t("tracker.reminderPlaceholder")} value={rTitle}
+              onChange={(e) => setRTitle(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addReminder(); } }} />
+            <input type="date" className="field sm:w-44" value={rDue} onChange={(e) => setRDue(e.target.value)} />
+            <button onClick={addReminder} className="btn-primary shrink-0">{t("tracker.addReminderShort")}</button>
           </div>
           <ul className="mt-3 space-y-2">
-            {log.map((n, i) => (
-              <li key={i} className="rounded-[10px] bg-jh-mist px-3 py-2">
-                <p className="text-sm text-jh-ink whitespace-pre-wrap">{n.text}</p>
-                <p className="text-[11px] text-jh-mute-2 mt-1">{fmt(n.at)}</p>
-              </li>
-            ))}
-            {log.length === 0 && <li className="text-xs text-jh-mute">{t("tracker.noNotes")}</li>}
+            {jobReminders.map((r) => {
+              const overdue = !r.done && !!r.dueOn && r.dueOn < today;
+              return (
+                <li key={r.id} className="flex items-start gap-3 rounded-[10px] bg-jh-mist px-3 py-2">
+                  <button onClick={() => toggleReminder(r)} aria-label="Toggle reminder"
+                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[6px] border-2 transition
+                      ${r.done ? "border-rb-green-dark bg-rb-green-dark text-white" : "border-jh-line hover:border-jh-red"}`}>
+                    {r.done && <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3"><path d="M4 10l4 4 8-8" /></svg>}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className={`font-display text-sm ${r.done ? "text-jh-mute line-through" : "text-jh-ink"}`}>{r.title}</p>
+                    {r.dueOn && (
+                      <p className={`mt-0.5 inline-flex items-center gap-1 text-[11px] ${overdue ? "text-jh-red font-semibold" : "text-jh-mute-2"}`}>
+                        {overdue ? <AlertCircle className="h-3 w-3" /> : <Calendar className="h-3 w-3" />}
+                        {overdue ? `${t("reminders.overdue")} · ${fmtDue(r.dueOn)}` : fmtDue(r.dueOn)}
+                      </p>
+                    )}
+                  </div>
+                  <button onClick={() => removeReminder(r)} className="text-jh-mute hover:text-jh-red shrink-0"><Trash2 className="h-4 w-4" /></button>
+                </li>
+              );
+            })}
+            {jobReminders.length === 0 && <li className="text-xs text-jh-mute">{t("tracker.noReminders")}</li>}
           </ul>
         </section>
       </div>
