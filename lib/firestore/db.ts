@@ -14,12 +14,15 @@ export const paths = {
   interactions: (uid: string) => collection(db, "users", uid, "interactions"),
   opportunities: (uid: string) => collection(db, "users", uid, "opportunities"),
   activityLogs: (uid: string) => collection(db, "users", uid, "activityLogs"),
+  reminders: (uid: string) => collection(db, "users", uid, "reminders"),
   profile: (uid: string) => doc(db, "users", uid),
   settingsTargets: (uid: string) => doc(db, "users", uid, "settings", "targets"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
   content: () => doc(db, "config", "content"),
 };
+
+type SubCollection = "contacts" | "interactions" | "opportunities" | "activityLogs" | "reminders";
 
 // ---- generic live collection hook ----
 export function useLiveCollection<T extends { id: string }>(
@@ -67,7 +70,7 @@ export async function createDoc(col: ReturnType<typeof collection>, data: Record
 }
 export async function updateRecord(
   uid: string,
-  sub: "contacts" | "interactions" | "opportunities" | "activityLogs",
+  sub: SubCollection,
   id: string,
   data: Record<string, unknown>
 ) {
@@ -75,7 +78,7 @@ export async function updateRecord(
 }
 export async function deleteRecord(
   uid: string,
-  sub: "contacts" | "interactions" | "opportunities" | "activityLogs",
+  sub: SubCollection,
   id: string
 ) {
   return deleteDoc(doc(db, "users", uid, sub, id));

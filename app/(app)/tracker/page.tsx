@@ -3,13 +3,14 @@
 import { useMemo, useState } from "react";
 import {
   Plus, X, ExternalLink, Trash2, Users, MessageSquare, Linkedin, Mail, GripVertical,
+  Pencil, Columns3, Bell, Calendar, AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import {
   useLiveCollection, paths, createDoc, updateRecord, deleteRecord,
 } from "@/lib/firestore/db";
 import { useContent } from "@/lib/firestore/content";
-import type { Contact, NoteEntry, Opportunity, OpportunityStage } from "@/lib/types";
+import type { Contact, NoteEntry, Opportunity, OpportunityStage, Reminder } from "@/lib/types";
 import type { Market } from "@/lib/categories";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
@@ -36,13 +37,18 @@ function normalizeStage(s: string | undefined): OpportunityStage {
   }
 }
 
+type View = "board" | "reminders";
+
 export default function TrackerPage() {
   const { user } = useAuth();
   const uid = user?.uid;
   const { t } = useContent();
   const { data: opps } = useLiveCollection<Opportunity>(uid, paths.opportunities);
   const { data: contacts } = useLiveCollection<Contact>(uid, paths.contacts);
+  const { data: reminders } = useLiveCollection<Reminder>(uid, paths.reminders);
+  const [view, setView] = useState<View>("board");
   const [adding, setAdding] = useState(false);
+  const [addingReminder, setAddingReminder] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<OpportunityStage | null>(null);
 
@@ -63,42 +69,77 @@ export default function TrackerPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div><span className="eyebrow">{t("tracker.eyebrow")}</span><h1 className="mt-1">{t("tracker.title")}</h1></div>
-        <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("tracker.addJob")}</button>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <span className="eyebrow">{t(view === "board" ? "tracker.eyebrow" : "reminders.eyebrow")}</span>
+          <h1 className="mt-1">{t(view === "board" ? "tracker.title" : "reminders.title")}</h1>
+        </div>
+        {view === "board" ? (
+          <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("tracker.addJob")}</button>
+        ) : (
+          <button onClick={() => setAddingReminder(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("reminders.add")}</button>
+        )}
       </div>
-      <p className="text-jh-mute text-sm -mt-2">{t("tracker.intro")}</p>
 
-      {/* Board: horizontal scroll on mobile, 5 columns on desktop */}
-      <div className="flex gap-3 overflow-x-auto md:overflow-visible pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
-        {STAGES.map((s) => {
-          const cards = byStage[s.key];
+      {/* View switch: Board (kanban) ↔ Reminders (list) */}
+      <div className="inline-flex rounded-[10px] border border-jh-line bg-jh-mist/50 p-1">
+        {([
+          { key: "board" as View, tkey: "tracker.view.board", Icon: Columns3 },
+          { key: "reminders" as View, tkey: "tracker.view.reminders", Icon: Bell },
+        ]).map(({ key, tkey, Icon }) => {
+          const active = view === key;
           return (
-            <div key={s.key}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(s.key); }}
-              onDragLeave={() => setDragOver((d) => (d === s.key ? null : d))}
-              onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); setDragOver(null); if (id) move(id, s.key); }}
-              className={`w-[80vw] max-w-[18rem] shrink-0 md:w-auto md:flex-1 md:max-w-none snap-start rounded-lg border transition
-                ${dragOver === s.key ? "border-jh-red bg-jh-red-soft/40" : "border-jh-line bg-jh-mist/50"}`}>
-              <div className="flex items-center justify-between px-3 py-2.5 border-b border-jh-line">
-                <span className="flex items-center gap-2 font-display font-semibold text-sm text-jh-ink">
-                  <span className={`h-2 w-2 rounded-full ${s.dot}`} /> {t(s.tkey)}
+            <button key={key} onClick={() => setView(key)}
+              className={`inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 font-display font-semibold text-sm transition
+                ${active ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}>
+              <Icon className="h-4 w-4" /> {t(tkey)}
+              {key === "reminders" && reminders.some((r) => !r.done) && (
+                <span className="ml-0.5 min-w-4 rounded-full bg-jh-red px-1 text-[10px] leading-4 text-white text-center">
+                  {reminders.filter((r) => !r.done).length}
                 </span>
-                <span className="text-xs text-jh-mute font-semibold">{cards.length}</span>
-              </div>
-              <div className="p-2 space-y-2 min-h-16">
-                {cards.map((o) => (
-                  <Card key={o.id} o={o} contacts={contacts}
-                    onOpen={() => setOpenId(o.id)} onMove={(st) => move(o.id, st)} />
-                ))}
-                {cards.length === 0 && <p className="text-center text-xs text-jh-mute-2 py-4">{t("tracker.dropHere")}</p>}
-              </div>
-            </div>
+              )}
+            </button>
           );
         })}
       </div>
 
+      <p className="text-jh-mute text-sm -mt-2">{t(view === "board" ? "tracker.intro" : "reminders.intro")}</p>
+
+      {view === "board" ? (
+        /* Board: horizontal scroll on mobile, 5 columns on desktop */
+        <div className="flex gap-3 overflow-x-auto md:overflow-visible pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
+          {STAGES.map((s) => {
+            const cards = byStage[s.key];
+            return (
+              <div key={s.key}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(s.key); }}
+                onDragLeave={() => setDragOver((d) => (d === s.key ? null : d))}
+                onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); setDragOver(null); if (id) move(id, s.key); }}
+                className={`w-[80vw] max-w-[18rem] shrink-0 md:w-auto md:flex-1 md:max-w-none snap-start rounded-lg border transition
+                  ${dragOver === s.key ? "border-jh-red bg-jh-red-soft/40" : "border-jh-line bg-jh-mist/50"}`}>
+                <div className="flex items-center justify-between px-3 py-2.5 border-b border-jh-line">
+                  <span className="flex items-center gap-2 font-display font-semibold text-sm text-jh-ink">
+                    <span className={`h-2 w-2 rounded-full ${s.dot}`} /> {t(s.tkey)}
+                  </span>
+                  <span className="text-xs text-jh-mute font-semibold">{cards.length}</span>
+                </div>
+                <div className="p-2 space-y-2 min-h-16">
+                  {cards.map((o) => (
+                    <Card key={o.id} o={o} contacts={contacts}
+                      onOpen={() => setOpenId(o.id)} onMove={(st) => move(o.id, st)} />
+                  ))}
+                  {cards.length === 0 && <p className="text-center text-xs text-jh-mute-2 py-4">{t("tracker.dropHere")}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <RemindersView uid={uid!} reminders={reminders} opps={opps} />
+      )}
+
       {adding && <AddOpportunity uid={uid!} onClose={() => setAdding(false)} />}
+      {addingReminder && <AddReminder uid={uid!} opps={opps} onClose={() => setAddingReminder(false)} />}
       {openOpp && <DetailModal uid={uid!} opp={openOpp} contacts={contacts} onClose={() => setOpenId(null)} />}
     </div>
   );
@@ -133,6 +174,144 @@ function Card({ o, contacts, onOpen, onMove }: {
         {STAGES.map((s) => <option key={s.key} value={s.key}>{t("tracker.moveTo")} {t(s.tkey)}</option>)}
       </select>
     </div>
+  );
+}
+
+/* ---------------- Reminders view ---------------- */
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function fmtDue(dueOn?: string) {
+  if (!dueOn) return null;
+  const d = new Date(`${dueOn}T00:00:00`);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function RemindersView({ uid, reminders, opps }: { uid: string; reminders: Reminder[]; opps: Opportunity[] }) {
+  const { t } = useContent();
+  const today = todayStr();
+
+  const { open, done } = useMemo(() => {
+    const o = reminders.filter((r) => !r.done);
+    const d = reminders.filter((r) => r.done);
+    // Open: earliest due first, undated last; Done: most recent first.
+    o.sort((a, b) => (a.dueOn ?? "9999").localeCompare(b.dueOn ?? "9999"));
+    d.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+    return { open: o, done: d };
+  }, [reminders]);
+
+  const oppLabel = (id?: string) => {
+    const o = id ? opps.find((x) => x.id === id) : undefined;
+    return o ? [o.role || t("tracker.roleFallback"), o.company].filter(Boolean).join(" · ") : null;
+  };
+
+  async function toggle(r: Reminder) {
+    await updateRecord(uid, "reminders", r.id, { done: !r.done });
+    if (!r.done) track(TAGS.REMINDER_DONE, { props: { id: r.id } });
+  }
+  async function remove(r: Reminder) {
+    await deleteRecord(uid, "reminders", r.id);
+  }
+
+  if (reminders.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-jh-line bg-jh-mist/40 p-8 text-center">
+        <Bell className="mx-auto h-6 w-6 text-jh-mute-2" />
+        <p className="mt-2 text-sm text-jh-mute whitespace-pre-wrap">{t("reminders.empty")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <ul className="space-y-2">
+        {open.map((r) => {
+          const overdue = !!r.dueOn && r.dueOn < today;
+          return (
+            <li key={r.id} className="flex items-start gap-3 rounded-[10px] border border-jh-line bg-white p-3 shadow-jh-1">
+              <button onClick={() => toggle(r)} aria-label="Mark done"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded-[6px] border-2 border-jh-line hover:border-jh-red transition" />
+              <div className="min-w-0 flex-1">
+                <p className="font-display font-semibold text-jh-ink text-sm leading-snug">{r.title}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className={`inline-flex items-center gap-1 ${overdue ? "text-jh-red font-semibold" : "text-jh-mute"}`}>
+                    {overdue ? <AlertCircle className="h-3.5 w-3.5" /> : <Calendar className="h-3.5 w-3.5" />}
+                    {r.dueOn ? (overdue ? `${t("reminders.overdue")} · ${fmtDue(r.dueOn)}` : fmtDue(r.dueOn)) : t("reminders.noDue")}
+                  </span>
+                  {oppLabel(r.opportunityId) && (
+                    <span className="inline-flex items-center gap-1 text-jh-mute truncate">
+                      <Users className="h-3.5 w-3.5 shrink-0" /> {oppLabel(r.opportunityId)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button onClick={() => remove(r)} className="text-jh-mute hover:text-jh-red shrink-0"><Trash2 className="h-4 w-4" /></button>
+            </li>
+          );
+        })}
+      </ul>
+
+      {done.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-display font-semibold uppercase tracking-wide text-jh-mute-2">{t("reminders.done")} · {done.length}</p>
+          <ul className="space-y-2">
+            {done.map((r) => (
+              <li key={r.id} className="flex items-start gap-3 rounded-[10px] border border-jh-line bg-jh-mist/40 p-3">
+                <button onClick={() => toggle(r)} aria-label="Mark not done"
+                  className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[6px] bg-rb-green-dark text-white">
+                  <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3"><path d="M4 10l4 4 8-8" /></svg>
+                </button>
+                <div className="min-w-0 flex-1">
+                  <p className="font-display text-sm text-jh-mute line-through">{r.title}</p>
+                </div>
+                <button onClick={() => remove(r)} className="text-jh-mute hover:text-jh-red shrink-0"><Trash2 className="h-4 w-4" /></button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddReminder({ uid, opps, onClose }: { uid: string; opps: Opportunity[]; onClose: () => void }) {
+  const { t } = useContent();
+  const [f, setF] = useState({ title: "", dueOn: "", opportunityId: "" });
+  const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!f.title.trim()) return;
+    setBusy(true);
+    await createDoc(paths.reminders(uid), {
+      title: f.title.trim(),
+      done: false,
+      ...(f.dueOn ? { dueOn: f.dueOn } : {}),
+      ...(f.opportunityId ? { opportunityId: f.opportunityId } : {}),
+    });
+    track(TAGS.ADD_REMINDER, { props: { linked: !!f.opportunityId } });
+    setBusy(false); onClose();
+  }
+
+  return (
+    <Sheet title={t("reminders.addTitle")} onClose={onClose}>
+      <form onSubmit={save} className="space-y-3">
+        <div><label className="label">{t("reminders.f.title")}</label>
+          <input className="field" value={f.title} onChange={(e) => set("title", e.target.value)} autoFocus required /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">{t("reminders.f.due")}</label>
+            <input type="date" className="field" value={f.dueOn} onChange={(e) => set("dueOn", e.target.value)} /></div>
+          <div><label className="label">{t("reminders.f.link")}</label>
+            <select className="field" value={f.opportunityId} onChange={(e) => set("opportunityId", e.target.value)}>
+              <option value="">{t("reminders.f.none")}</option>
+              {opps.map((o) => <option key={o.id} value={o.id}>{[o.role || t("tracker.roleFallback"), o.company].filter(Boolean).join(" · ")}</option>)}
+            </select></div>
+        </div>
+        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Adding…" : t("reminders.add")}</button>
+      </form>
+    </Sheet>
   );
 }
 
@@ -173,6 +352,51 @@ function AddOpportunity({ uid, onClose }: { uid: string; onClose: () => void }) 
   );
 }
 
+/* ---------------- Edit opportunity (update a job) ---------------- */
+function EditOpportunity({ uid, opp, onClose }: { uid: string; opp: Opportunity; onClose: () => void }) {
+  const { t } = useContent();
+  const [f, setF] = useState({
+    company: opp.company ?? "", role: opp.role ?? "",
+    market: (opp.market ?? "hidden") as Market, source: opp.source ?? "", url: opp.url ?? "",
+  });
+  const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!f.company.trim()) return;
+    setBusy(true);
+    await updateRecord(uid, "opportunities", opp.id, {
+      company: f.company.trim(), role: f.role, market: f.market, source: f.source, url: f.url,
+    });
+    track(TAGS.UPDATE_OPPORTUNITY, { props: { market: f.market } });
+    setBusy(false); onClose();
+  }
+
+  return (
+    <Sheet title={t("tracker.editJobTitle")} onClose={onClose}>
+      <form onSubmit={save} className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">{t("tracker.f.company")}</label><input className="field" value={f.company} onChange={(e) => set("company", e.target.value)} required /></div>
+          <div><label className="label">{t("tracker.f.role")}</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">{t("tracker.f.market")}</label>
+            <select className="field" value={f.market} onChange={(e) => set("market", e.target.value)}>
+              <option value="hidden">{t("tracker.f.hidden")}</option><option value="visible">{t("tracker.f.visible")}</option>
+            </select></div>
+          <div><label className="label">{t("tracker.f.source")}</label><input className="field" value={f.source} onChange={(e) => set("source", e.target.value)} /></div>
+        </div>
+        <div><label className="label">{t("tracker.f.link")}</label><input className="field" value={f.url} onChange={(e) => set("url", e.target.value)} /></div>
+        <div className="flex gap-2">
+          <button type="button" onClick={onClose} className="btn-secondary flex-1">{t("tracker.cancel")}</button>
+          <button type="submit" disabled={busy} className="btn-primary flex-1 disabled:opacity-60">{busy ? "Saving…" : t("tracker.save")}</button>
+        </div>
+      </form>
+    </Sheet>
+  );
+}
+
 /* ---------------- Detail modal ---------------- */
 function DetailModal({ uid, opp, contacts, onClose }: {
   uid: string; opp: Opportunity; contacts: Contact[]; onClose: () => void;
@@ -181,6 +405,7 @@ function DetailModal({ uid, opp, contacts, onClose }: {
   const [note, setNote] = useState("");
   const [pickId, setPickId] = useState("");
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const attachedIds = opp.contactIds ?? [];
   const attached = contacts.filter((c) => attachedIds.includes(c.id));
@@ -210,11 +435,14 @@ function DetailModal({ uid, opp, contacts, onClose }: {
   return (
     <Sheet title={`${opp.role || t("tracker.roleFallback")} · ${opp.company}`} onClose={onClose} wide>
       <div className="space-y-5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className={opp.market === "hidden" ? "pill-hidden" : "pill-visible"}>{opp.market}</span>
           {opp.url && <a href={opp.url} target="_blank" rel="noreferrer" className="link inline-flex items-center gap-1 text-sm">{t("tracker.jobLink")} <ExternalLink className="h-3.5 w-3.5" /></a>}
-          <button onClick={removeOpp} className="ml-auto text-jh-mute hover:text-jh-red inline-flex items-center gap-1 text-sm"><Trash2 className="h-4 w-4" /> {t("tracker.delete")}</button>
+          <button onClick={() => setEditing(true)} className="ml-auto text-jh-mute hover:text-jh-ink inline-flex items-center gap-1 text-sm"><Pencil className="h-4 w-4" /> {t("tracker.edit")}</button>
+          <button onClick={removeOpp} className="text-jh-mute hover:text-jh-red inline-flex items-center gap-1 text-sm"><Trash2 className="h-4 w-4" /> {t("tracker.delete")}</button>
         </div>
+
+        {opp.source && <p className="text-xs text-jh-mute -mt-2">{t("tracker.f.source")}: <span className="text-jh-ink">{opp.source}</span></p>}
 
         {/* Attached contacts */}
         <section>
@@ -256,6 +484,7 @@ function DetailModal({ uid, opp, contacts, onClose }: {
         </section>
       </div>
 
+      {editing && <EditOpportunity uid={uid} opp={opp} onClose={() => setEditing(false)} />}
       {creating && <CreateContact uid={uid} onClose={() => setCreating(false)}
         onCreated={(cid) => attach(cid)} />}
     </Sheet>
@@ -265,6 +494,7 @@ function DetailModal({ uid, opp, contacts, onClose }: {
 function ContactRow({ uid, c, onDetach }: { uid: string; c: Contact; onDetach: () => void }) {
   const { t } = useContent();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [note, setNote] = useState("");
   const log = [...(c.log ?? [])].sort((a, b) => b.at - a.at);
 
@@ -284,6 +514,7 @@ function ContactRow({ uid, c, onDetach }: { uid: string; c: Contact; onDetach: (
         </div>
         {c.linkedinUrl && <a href={c.linkedinUrl} target="_blank" rel="noreferrer" className="text-jh-mute"><Linkedin className="h-4 w-4" /></a>}
         {c.email && <a href={`mailto:${c.email}`} className="text-jh-mute"><Mail className="h-4 w-4" /></a>}
+        <button onClick={() => setEditing(true)} className="text-jh-mute hover:text-jh-ink" aria-label={t("tracker.edit")}><Pencil className="h-4 w-4" /></button>
         <button onClick={() => setOpen((o) => !o)} className="text-jh-mute hover:text-jh-ink"><MessageSquare className="h-4 w-4" /></button>
         <button onClick={onDetach} className="text-jh-mute hover:text-jh-red"><X className="h-4 w-4" /></button>
       </div>
@@ -301,7 +532,55 @@ function ContactRow({ uid, c, onDetach }: { uid: string; c: Contact; onDetach: (
           </ul>
         </div>
       )}
+      {editing && <EditContact uid={uid} c={c} onClose={() => setEditing(false)} />}
     </div>
+  );
+}
+
+/* ---------------- Edit contact (update a contact) ---------------- */
+function EditContact({ uid, c, onClose }: { uid: string; c: Contact; onClose: () => void }) {
+  const { t } = useContent();
+  const [f, setF] = useState({
+    fullName: c.fullName ?? "", company: c.company ?? "", role: c.role ?? "",
+    market: (c.market ?? "hidden") as Market, email: c.email ?? "", linkedinUrl: c.linkedinUrl ?? "",
+  });
+  const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!f.fullName.trim()) return;
+    setBusy(true);
+    await updateRecord(uid, "contacts", c.id, {
+      fullName: f.fullName.trim(), company: f.company, role: f.role,
+      market: f.market, email: f.email, linkedinUrl: f.linkedinUrl,
+    });
+    track(TAGS.UPDATE_CONTACT, { props: { market: f.market } });
+    setBusy(false); onClose();
+  }
+
+  return (
+    <Sheet title={t("tracker.editContactTitle")} onClose={onClose}>
+      <form onSubmit={save} className="space-y-3">
+        <div><label className="label">{t("tracker.f.fullName")}</label><input className="field" value={f.fullName} onChange={(e) => set("fullName", e.target.value)} required /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">{t("tracker.f.company")}</label><input className="field" value={f.company} onChange={(e) => set("company", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.role")}</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">{t("tracker.f.market")}</label>
+            <select className="field" value={f.market} onChange={(e) => set("market", e.target.value)}>
+              <option value="hidden">{t("tracker.f.hidden")}</option><option value="visible">{t("tracker.f.visible")}</option>
+            </select></div>
+          <div><label className="label">{t("tracker.f.email")}</label><input className="field" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+        </div>
+        <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        <div className="flex gap-2">
+          <button type="button" onClick={onClose} className="btn-secondary flex-1">{t("tracker.cancel")}</button>
+          <button type="submit" disabled={busy} className="btn-primary flex-1 disabled:opacity-60">{busy ? "Saving…" : t("tracker.save")}</button>
+        </div>
+      </form>
+    </Sheet>
   );
 }
 
