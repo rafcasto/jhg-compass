@@ -2,9 +2,46 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import { CheckCircle2 } from "lucide-react";
 import { confirmPasswordReset, applyActionCode } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useContent } from "@/lib/firestore/content";
+
+// Shared brand shell so these auth screens match /login (req 12: design system).
+function AuthShell({ children }: { children: React.ReactNode }) {
+  const { t } = useContent();
+  return (
+    <div className="min-h-screen grid place-items-center bg-jh-paper px-4">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-7">
+          <Image src="/assets/logo-jobhackers.png" alt="JobHackers" width={150} height={40} className="mb-4" />
+          <h1 className="text-2xl">{t("auth.login.brand")} <span className="text-jh-red">{t("auth.login.brandAccent")}</span></h1>
+          <p className="text-jh-mute text-sm mt-1">{t("auth.login.tagline")}</p>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// A success panel matching the login "reset sent" style.
+function SuccessCard({ title, body, cta, onContinue }: {
+  title: string; body: string; cta: string; onContinue: () => void;
+}) {
+  return (
+    <div className="card p-6 space-y-4 text-center">
+      <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-rb-green-dark/10">
+        <CheckCircle2 className="h-6 w-6 text-rb-green-dark" />
+      </div>
+      <div>
+        <h2 className="text-xl">{title}</h2>
+        <p className="text-sm text-jh-mute mt-1">{body}</p>
+      </div>
+      <button onClick={onContinue} className="btn-primary w-full">{cta}</button>
+    </div>
+  );
+}
 
 // Landing page for the Firebase action link emailed via Resend (?oobCode=...).
 // Handles both password actions (resetPassword/recoverEmail) and email verification
@@ -21,6 +58,8 @@ function ActionHandlerInner() {
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [verifying, setVerifying] = useState(mode === "verifyEmail");
+
+  const goLogin = () => router.replace("/login");
 
   // Email verification: apply the code automatically on load.
   useEffect(() => {
@@ -44,6 +83,7 @@ function ActionHandlerInner() {
     try {
       await confirmPasswordReset(auth, oobCode, password);
       setDone(true);
+      // Redirect to the login page once the password is set (auto + manual button).
       setTimeout(() => router.replace("/login"), 1500);
     } catch (e: any) {
       setErr(e?.message?.replace("Firebase:", "").trim() ?? "Could not set password.");
@@ -53,42 +93,59 @@ function ActionHandlerInner() {
   // ---- Email verification view ----
   if (mode === "verifyEmail") {
     return (
-      <div className="min-h-screen grid place-items-center px-4">
-        <div className="card p-8 w-full max-w-sm text-center space-y-3">
-          <h1 className="text-2xl">{t("auth.verifyLink.title")}</h1>
-          {verifying && <p className="text-jh-mute animate-pulse">{t("auth.verifyLink.verifying")}</p>}
-          {done && <p className="text-rb-green-dark text-sm">{t("auth.verifyLink.done")}</p>}
-          {err && <p className="text-sm text-jh-red">{err}</p>}
-        </div>
-      </div>
+      <AuthShell>
+        {done ? (
+          <SuccessCard
+            title={t("auth.verifyLink.title")}
+            body={t("auth.verifyLink.done")}
+            cta={t("auth.setpw.continue")}
+            onContinue={goLogin}
+          />
+        ) : (
+          <div className="card p-6 text-center space-y-3">
+            <h2 className="text-xl">{t("auth.verifyLink.title")}</h2>
+            {verifying && <p className="text-jh-mute text-sm animate-pulse">{t("auth.verifyLink.verifying")}</p>}
+            {err && <p className="text-sm text-jh-red">{err}</p>}
+          </div>
+        )}
+      </AuthShell>
     );
   }
 
   // ---- Password set / reset view ----
   return (
-    <div className="min-h-screen grid place-items-center px-4">
-      <form onSubmit={submit} className="card p-6 w-full max-w-sm space-y-4">
-        <h1 className="text-2xl">{t("auth.setpw.title")}</h1>
-        {done ? (
-          <p className="text-rb-green-dark text-sm">{t("auth.setpw.done")}</p>
-        ) : (
-          <>
-            <div>
-              <label className="label">{t("auth.setpw.label")}</label>
-              <input type="password" minLength={6} required className="field" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            {err && <p className="text-sm text-jh-red">{err}</p>}
-            <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "…" : t("auth.setpw.submit")}</button>
-          </>
-        )}
-      </form>
-    </div>
+    <AuthShell>
+      {done ? (
+        <SuccessCard
+          title={t("auth.setpw.doneTitle")}
+          body={t("auth.setpw.done")}
+          cta={t("auth.setpw.continue")}
+          onContinue={goLogin}
+        />
+      ) : (
+        <form onSubmit={submit} className="card p-6 space-y-4">
+          <div>
+            <h2 className="text-xl">{t("auth.setpw.title")}</h2>
+            <p className="text-sm text-jh-mute mt-1">{t("auth.setpw.body")}</p>
+          </div>
+          <div>
+            <label className="label">{t("auth.setpw.label")}</label>
+            <input type="password" minLength={6} required autoFocus className="field"
+              value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          {err && <p className="text-sm text-jh-red">{err}</p>}
+          <button disabled={busy} className="btn-primary w-full disabled:opacity-60">
+            {busy ? t("auth.login.busy") : t("auth.setpw.submit")}
+          </button>
+        </form>
+      )}
+    </AuthShell>
   );
 }
 
 export default function SetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen grid place-items-center text-jh-mute">Loading…</div>}>
+    <Suspense fallback={<div className="min-h-screen grid place-items-center bg-jh-paper text-jh-mute">Loading…</div>}>
       <ActionHandlerInner />
     </Suspense>
   );
