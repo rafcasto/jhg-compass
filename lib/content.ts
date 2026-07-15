@@ -178,6 +178,18 @@ export const TEXT_FIELDS: TextField[] = [
   { group: "Sign in / sign up", key: "auth.login.enterEmailFirst", label: "“Enter email first” error" },
   { group: "Sign in / sign up", key: "auth.login.redirecting", label: "Redirecting state" },
 
+  // ----- Forgot / reset password -----
+  { group: "Sign in / sign up", key: "auth.reset.title", label: "Reset — heading" },
+  { group: "Sign in / sign up", key: "auth.reset.body", label: "Reset — subtext", textarea: true },
+  { group: "Sign in / sign up", key: "auth.reset.send", label: "Reset — send button" },
+  { group: "Sign in / sign up", key: "auth.reset.back", label: "Reset — back to sign in" },
+  { group: "Sign in / sign up", key: "auth.reset.sentTitle", label: "Reset sent — heading" },
+  { group: "Sign in / sign up", key: "auth.reset.sentBody", label: "Reset sent — subtext", textarea: true },
+  { group: "Sign in / sign up", key: "auth.reset.fromLabel", label: "Reset sent — “sent from” label" },
+  { group: "Sign in / sign up", key: "auth.reset.fromAddress", label: "Reset sent — sender address shown" },
+  { group: "Sign in / sign up", key: "auth.reset.spamNote", label: "Reset sent — spam-folder note" },
+  { group: "Sign in / sign up", key: "auth.reset.resend", label: "Reset sent — resend link" },
+
   // ----- Auth: invite registration -----
   { group: "Invite registration", key: "auth.register.brand", label: "Heading — text" },
   { group: "Invite registration", key: "auth.register.brandAccent", label: "Heading — accent word (red)" },
@@ -348,6 +360,16 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "auth.login.resetSent": "Check your inbox for a password link.",
   "auth.login.enterEmailFirst": "Enter your email first.",
   "auth.login.redirecting": "Signing you in…",
+  "auth.reset.title": "Reset your password",
+  "auth.reset.body": "Enter your account email and we'll send you a link to set a new password.",
+  "auth.reset.send": "Send reset link",
+  "auth.reset.back": "Back to sign in",
+  "auth.reset.sentTitle": "Check your inbox",
+  "auth.reset.sentBody": "If an account exists for this email, a password reset link is on its way. It can take a minute to arrive.",
+  "auth.reset.fromLabel": "Sent from",
+  "auth.reset.fromAddress": "support@noreplay.jobhackers.global",
+  "auth.reset.spamNote": "Don't see it? Check your spam or junk folder.",
+  "auth.reset.resend": "Resend link",
 
   // Auth — invite registration
   "auth.register.brand": "Create your",
