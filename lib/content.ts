@@ -139,6 +139,16 @@ export const TEXT_FIELDS: TextField[] = [
   { group: "Progress (Tracker)", key: "reminders.f.link", label: "Reminders field — Linked job" },
   { group: "Progress (Tracker)", key: "reminders.f.none", label: "Reminders field — link none option" },
 
+  // ----- Progress (Tracker) — Contacts view -----
+  { group: "Progress (Tracker)", key: "tracker.view.contacts", label: "View toggle — Contacts" },
+  { group: "Progress (Tracker)", key: "contacts.eyebrow", label: "Contacts — eyebrow" },
+  { group: "Progress (Tracker)", key: "contacts.title", label: "Contacts — title" },
+  { group: "Progress (Tracker)", key: "contacts.intro", label: "Contacts — intro", textarea: true },
+  { group: "Progress (Tracker)", key: "contacts.add", label: "Contacts — “Add contact” button" },
+  { group: "Progress (Tracker)", key: "contacts.addTitle", label: "Contacts — add sheet title" },
+  { group: "Progress (Tracker)", key: "contacts.addSubmit", label: "Contacts — add submit" },
+  { group: "Progress (Tracker)", key: "contacts.empty", label: "Contacts — empty text", textarea: true },
+
   // ----- Navigation -----
   { group: "Navigation", key: "nav.compass", label: "Compass tab" },
   { group: "Navigation", key: "nav.performance", label: "Performance tab" },
@@ -297,6 +307,14 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "reminders.f.due": "Due date",
   "reminders.f.link": "Linked job (optional)",
   "reminders.f.none": "— None —",
+  "tracker.view.contacts": "Contacts",
+  "contacts.eyebrow": "Network",
+  "contacts.title": "Contacts",
+  "contacts.intro": "Everyone who can open a door — recruiters, referrals, hiring managers. Add, edit, and log every conversation.",
+  "contacts.add": "Add contact",
+  "contacts.addTitle": "Add contact",
+  "contacts.addSubmit": "Add contact",
+  "contacts.empty": "No contacts yet. Add the people who can open doors for you.",
 
   // Navigation
   "nav.compass": "Compass",

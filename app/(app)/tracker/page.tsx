@@ -37,7 +37,13 @@ function normalizeStage(s: string | undefined): OpportunityStage {
   }
 }
 
-type View = "board" | "reminders";
+type View = "board" | "reminders" | "contacts";
+
+const HEAD: Record<View, { eyebrow: string; title: string; intro: string }> = {
+  board:     { eyebrow: "tracker.eyebrow",   title: "tracker.title",   intro: "tracker.intro" },
+  reminders: { eyebrow: "reminders.eyebrow", title: "reminders.title", intro: "reminders.intro" },
+  contacts:  { eyebrow: "contacts.eyebrow",  title: "contacts.title",  intro: "contacts.intro" },
+};
 
 export default function TrackerPage() {
   const { user } = useAuth();
@@ -49,6 +55,7 @@ export default function TrackerPage() {
   const [view, setView] = useState<View>("board");
   const [adding, setAdding] = useState(false);
   const [addingReminder, setAddingReminder] = useState(false);
+  const [addingContact, setAddingContact] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<OpportunityStage | null>(null);
 
@@ -59,6 +66,7 @@ export default function TrackerPage() {
   }, [opps]);
 
   const openOpp = opps.find((o) => o.id === openId) ?? null;
+  const openReminders = reminders.filter((r) => !r.done).length;
 
   async function move(id: string, stage: OpportunityStage) {
     const o = opps.find((x) => x.id === id);
@@ -67,35 +75,37 @@ export default function TrackerPage() {
     track(TAGS.STAGE_CHANGE, { props: { id, stage } });
   }
 
+  const toggleItems: { key: View; tkey: string; Icon: typeof Columns3; badge?: { n: number; red?: boolean } }[] = [
+    { key: "board", tkey: "tracker.view.board", Icon: Columns3 },
+    { key: "reminders", tkey: "tracker.view.reminders", Icon: Bell, badge: openReminders > 0 ? { n: openReminders, red: true } : undefined },
+    { key: "contacts", tkey: "tracker.view.contacts", Icon: Users, badge: contacts.length > 0 ? { n: contacts.length } : undefined },
+  ];
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <span className="eyebrow">{t(view === "board" ? "tracker.eyebrow" : "reminders.eyebrow")}</span>
-          <h1 className="mt-1">{t(view === "board" ? "tracker.title" : "reminders.title")}</h1>
+          <span className="eyebrow">{t(HEAD[view].eyebrow)}</span>
+          <h1 className="mt-1">{t(HEAD[view].title)}</h1>
         </div>
-        {view === "board" ? (
-          <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("tracker.addJob")}</button>
-        ) : (
-          <button onClick={() => setAddingReminder(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("reminders.add")}</button>
-        )}
+        {view === "board" && <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("tracker.addJob")}</button>}
+        {view === "reminders" && <button onClick={() => setAddingReminder(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("reminders.add")}</button>}
+        {view === "contacts" && <button onClick={() => setAddingContact(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("contacts.add")}</button>}
       </div>
 
-      {/* View switch: Board (kanban) ↔ Reminders (list) */}
+      {/* View switch: Board (kanban) · Reminders (list) · Contacts (list) */}
       <div className="inline-flex rounded-[10px] border border-jh-line bg-jh-mist/50 p-1">
-        {([
-          { key: "board" as View, tkey: "tracker.view.board", Icon: Columns3 },
-          { key: "reminders" as View, tkey: "tracker.view.reminders", Icon: Bell },
-        ]).map(({ key, tkey, Icon }) => {
+        {toggleItems.map(({ key, tkey, Icon, badge }) => {
           const active = view === key;
           return (
             <button key={key} onClick={() => setView(key)}
               className={`inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 font-display font-semibold text-sm transition
                 ${active ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}>
               <Icon className="h-4 w-4" /> {t(tkey)}
-              {key === "reminders" && reminders.some((r) => !r.done) && (
-                <span className="ml-0.5 min-w-4 rounded-full bg-jh-red px-1 text-[10px] leading-4 text-white text-center">
-                  {reminders.filter((r) => !r.done).length}
+              {badge && (
+                <span className={`ml-0.5 min-w-4 rounded-full px-1 text-[10px] leading-4 text-center
+                  ${badge.red ? "bg-jh-red text-white" : "bg-jh-line text-jh-mute"}`}>
+                  {badge.n}
                 </span>
               )}
             </button>
@@ -103,9 +113,9 @@ export default function TrackerPage() {
         })}
       </div>
 
-      <p className="text-jh-mute text-sm -mt-2">{t(view === "board" ? "tracker.intro" : "reminders.intro")}</p>
+      <p className="text-jh-mute text-sm -mt-2">{t(HEAD[view].intro)}</p>
 
-      {view === "board" ? (
+      {view === "board" && (
         /* Board: horizontal scroll on mobile, 5 columns on desktop */
         <div className="flex gap-3 overflow-x-auto md:overflow-visible pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
           {STAGES.map((s) => {
@@ -134,12 +144,14 @@ export default function TrackerPage() {
             );
           })}
         </div>
-      ) : (
-        <RemindersView uid={uid!} reminders={reminders} opps={opps} />
       )}
+
+      {view === "reminders" && <RemindersView uid={uid!} reminders={reminders} opps={opps} />}
+      {view === "contacts" && <ContactsView uid={uid!} contacts={contacts} />}
 
       {adding && <AddOpportunity uid={uid!} onClose={() => setAdding(false)} />}
       {addingReminder && <AddReminder uid={uid!} opps={opps} onClose={() => setAddingReminder(false)} />}
+      {addingContact && <AddContactStandalone uid={uid!} onClose={() => setAddingContact(false)} />}
       {openOpp && <DetailModal uid={uid!} opp={openOpp} contacts={contacts} onClose={() => setOpenId(null)} />}
     </div>
   );
@@ -310,6 +322,115 @@ function AddReminder({ uid, opps, onClose }: { uid: string; opps: Opportunity[];
             </select></div>
         </div>
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Adding…" : t("reminders.add")}</button>
+      </form>
+    </Sheet>
+  );
+}
+
+/* ---------------- Contacts view ---------------- */
+function ContactsView({ uid, contacts }: { uid: string; contacts: Contact[] }) {
+  const { t } = useContent();
+  if (contacts.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-jh-line bg-jh-mist/40 p-8 text-center">
+        <Users className="mx-auto h-6 w-6 text-jh-mute-2" />
+        <p className="mt-2 text-sm text-jh-mute whitespace-pre-wrap">{t("contacts.empty")}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {contacts.map((c) => <ContactCard key={c.id} uid={uid} c={c} />)}
+    </div>
+  );
+}
+
+function ContactCard({ uid, c }: { uid: string; c: Contact }) {
+  const { t } = useContent();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [note, setNote] = useState("");
+  const log = [...(c.log ?? [])].sort((a, b) => b.at - a.at);
+
+  async function addNote() {
+    const text = note.trim();
+    if (!text) return;
+    await updateRecord(uid, "contacts", c.id, { log: [...(c.log ?? []), { at: Date.now(), text }] });
+    setNote("");
+  }
+  async function remove() {
+    await deleteRecord(uid, "contacts", c.id);
+  }
+
+  return (
+    <div className="rounded-[10px] border border-jh-line bg-white p-3 shadow-jh-1">
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="font-display font-semibold text-jh-ink text-sm truncate">{c.fullName}</p>
+          <p className="text-xs text-jh-mute truncate">{[c.role, c.company].filter(Boolean).join(" · ")}</p>
+        </div>
+        <span className={c.market === "hidden" ? "pill-hidden shrink-0 hidden sm:inline-flex" : "pill-visible shrink-0 hidden sm:inline-flex"}>{c.market}</span>
+        {c.linkedinUrl && <a href={c.linkedinUrl} target="_blank" rel="noreferrer" className="text-jh-mute hover:text-jh-ink"><Linkedin className="h-4 w-4" /></a>}
+        {c.email && <a href={`mailto:${c.email}`} className="text-jh-mute hover:text-jh-ink"><Mail className="h-4 w-4" /></a>}
+        <button onClick={() => setOpen((o) => !o)} className="relative text-jh-mute hover:text-jh-ink" aria-label={t("tracker.notes")}>
+          <MessageSquare className="h-4 w-4" />
+          {log.length > 0 && <span className="absolute -top-1.5 -right-1.5 min-w-3.5 rounded-full bg-jh-line px-0.5 text-[9px] leading-[14px] text-jh-mute text-center">{log.length}</span>}
+        </button>
+        <button onClick={() => setEditing(true)} className="text-jh-mute hover:text-jh-ink" aria-label={t("tracker.edit")}><Pencil className="h-4 w-4" /></button>
+        <button onClick={remove} className="text-jh-mute hover:text-jh-red" aria-label={t("tracker.delete")}><Trash2 className="h-4 w-4" /></button>
+      </div>
+      {open && (
+        <div className="mt-2 border-t border-jh-line pt-2">
+          <div className="flex gap-2">
+            <input className="field py-1.5 text-sm" placeholder={t("tracker.notePlaceholder")} value={note}
+              onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNote(); } }} />
+            <button onClick={addNote} className="btn-secondary text-sm shrink-0">{t("tracker.addNote")}</button>
+          </div>
+          <ul className="mt-2 space-y-1.5">
+            {log.map((n, i) => (
+              <li key={i} className="text-xs text-jh-ink"><span className="text-jh-mute-2">{fmt(n.at)} · </span>{n.text}</li>
+            ))}
+            {log.length === 0 && <li className="text-xs text-jh-mute">{t("tracker.noNotes")}</li>}
+          </ul>
+        </div>
+      )}
+      {editing && <EditContact uid={uid} c={c} onClose={() => setEditing(false)} />}
+    </div>
+  );
+}
+
+function AddContactStandalone({ uid, onClose }: { uid: string; onClose: () => void }) {
+  const { t } = useContent();
+  const [f, setF] = useState({ fullName: "", company: "", role: "", market: "hidden" as Market, email: "", linkedinUrl: "" });
+  const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!f.fullName.trim()) return;
+    setBusy(true);
+    await createDoc(paths.contacts(uid), { ...f, fullName: f.fullName.trim(), type: "prospect" });
+    track(TAGS.ADD_CONTACT, { props: { market: f.market } });
+    setBusy(false); onClose();
+  }
+
+  return (
+    <Sheet title={t("contacts.addTitle")} onClose={onClose}>
+      <form onSubmit={save} className="space-y-3">
+        <div><label className="label">{t("tracker.f.fullName")}</label><input className="field" value={f.fullName} onChange={(e) => set("fullName", e.target.value)} autoFocus required /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">{t("tracker.f.company")}</label><input className="field" value={f.company} onChange={(e) => set("company", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.role")}</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">{t("tracker.f.market")}</label>
+            <select className="field" value={f.market} onChange={(e) => set("market", e.target.value)}>
+              <option value="hidden">{t("tracker.f.hidden")}</option><option value="visible">{t("tracker.f.visible")}</option>
+            </select></div>
+          <div><label className="label">{t("tracker.f.email")}</label><input className="field" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+        </div>
+        <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Adding…" : t("contacts.addSubmit")}</button>
       </form>
     </Sheet>
   );
