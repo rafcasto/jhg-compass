@@ -9,6 +9,16 @@ function resend() {
   return new Resend(key);
 }
 
+// Single sender for all transactional mail (set via RESEND_FROM), e.g.
+// "JobHacker Compass Support <support@noreplay.jobhackers.global>".
+const FROM = process.env.RESEND_FROM ?? "JobHacker Compass <onboarding@resend.dev>";
+
+// Pull the bare address out of a "Name <email>" string (for reply-to).
+function addressOf(from: string) {
+  const m = from.match(/<([^>]+)>/);
+  return (m ? m[1] : from).trim();
+}
+
 // Shared branded shell for transactional emails.
 function emailShell(intro: string, link: string, cta: string) {
   return `
@@ -18,12 +28,14 @@ function emailShell(intro: string, link: string, cta: string) {
       <p style="margin:28px 0">
         <a href="${link}" style="background:#c2001f;color:#fff;text-decoration:none;font-family:Poppins,Arial;font-weight:600;padding:14px 26px;border-radius:10px;display:inline-block">${cta}</a>
       </p>
+      <p style="font-size:13px;color:#6b7280;line-height:1.6">This link expires after a short while for your security. If the button doesn't work, copy and paste this URL into your browser:<br><a href="${link}" style="color:#c2001f;word-break:break-all">${link}</a></p>
       <p style="font-size:13px;color:#6b7280">If you didn't request this, you can safely ignore this email.</p>
     </div>`;
 }
 
 // Sends a "set / reset your password" email via Resend using admin-editable copy (req 10.1).
-// Uses Firebase Admin to mint a secure action link.
+// Uses Firebase Admin to mint a secure action link. Reply-to matches the sender so
+// recipients can reply if needed.
 export async function sendPasswordEmail(email: string, mode: "set" | "reset" = "reset") {
   const cfg = await getAdminConfig();
   const link = await adminAuth().generatePasswordResetLink(email);
@@ -31,7 +43,8 @@ export async function sendPasswordEmail(email: string, mode: "set" | "reset" = "
   const cta = mode === "set" ? "Set my password" : "Reset my password";
 
   return resend().emails.send({
-    from: process.env.RESEND_FROM ?? "JobHacker Compass <onboarding@resend.dev>",
+    from: FROM,
+    replyTo: addressOf(FROM),
     to: email,
     subject: cfg.pwResetSubject,
     html: emailShell(cfg.pwResetBody, link, cta),
@@ -46,7 +59,8 @@ export async function sendVerificationEmail(email: string) {
   const link = await adminAuth().generateEmailVerificationLink(email);
 
   return resend().emails.send({
-    from: process.env.RESEND_FROM ?? "JobHacker Compass <onboarding@resend.dev>",
+    from: FROM,
+    replyTo: addressOf(FROM),
     to: email,
     subject: cfg.emailVerifySubject,
     html: emailShell(cfg.emailVerifyBody, link, "Verify my email"),

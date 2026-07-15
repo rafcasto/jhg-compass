@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Mail } from "lucide-react";
 import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
 } from "firebase/auth";
@@ -13,7 +14,7 @@ import { useContent } from "@/lib/firestore/content";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "reset";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
 
   // As soon as a session exists, leave the login screen.
   useEffect(() => {
@@ -39,6 +41,10 @@ export default function LoginPage() {
         <span className="animate-pulse font-display font-semibold">{t("auth.login.redirecting")}</span>
       </div>
     );
+  }
+
+  function switchMode(next: Mode) {
+    setMode(next); setErr(null); setMsg(null); setResetSent(false);
   }
 
   async function submit(e: React.FormEvent) {
@@ -66,17 +72,22 @@ export default function LoginPage() {
     }
   }
 
-  async function forgot() {
+  // Sends the reset link. Kept generic (no account enumeration) — the confirmation
+  // is shown whether or not the address has an account.
+  async function sendReset(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!email) return setErr(t("auth.login.enterEmailFirst"));
-    setBusy(true); setErr(null);
+    setBusy(true); setErr(null); setMsg(null);
     try {
       const res = await fetch("/api/auth/request-reset", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      // If the branded (Resend) email failed, fall back to Firebase's built-in one.
       if (!res.ok) await sendPasswordResetEmail(auth, email);
-      setMsg(t("auth.login.resetSent"));
       track(TAGS.PASSWORD_RESET, { stage: "retention" });
+      setResetSent(true);
+      setMsg(null);
     } catch (e: any) {
       setErr(e?.message ?? "Could not send reset email.");
     } finally {
@@ -93,36 +104,84 @@ export default function LoginPage() {
           <p className="text-jh-mute text-sm mt-1">{t("auth.login.tagline")}</p>
         </div>
 
-        <form onSubmit={submit} className="card p-6 space-y-4">
-          <div>
-            <label className="label">{t("auth.shared.email")}</label>
-            <input type="email" required className="field" value={email} onChange={(e) => setEmail(e.target.value)} />
+        {/* ---- Reset link sent: confirmation panel ---- */}
+        {resetSent ? (
+          <div className="card p-6 space-y-4 text-center">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-rb-green-dark/10">
+              <Mail className="h-6 w-6 text-rb-green-dark" />
+            </div>
+            <div>
+              <h2 className="text-xl">{t("auth.reset.sentTitle")}</h2>
+              <p className="text-sm text-jh-mute mt-1">{t("auth.reset.sentBody")}</p>
+            </div>
+            <div className="rounded-[10px] bg-jh-mist px-4 py-3 text-left text-sm">
+              <p className="font-display font-semibold text-jh-ink break-all">{email}</p>
+              <p className="text-xs text-jh-mute-2 mt-1">{t("auth.reset.fromLabel")} {t("auth.reset.fromAddress")}</p>
+            </div>
+            <p className="text-xs text-jh-mute">{t("auth.reset.spamNote")}</p>
+            {err && <p className="text-sm text-jh-red">{err}</p>}
+            <div className="flex items-center justify-center gap-4 text-sm pt-1">
+              <button type="button" className="link disabled:opacity-60" disabled={busy} onClick={() => sendReset()}>
+                {busy ? t("auth.login.busy") : t("auth.reset.resend")}
+              </button>
+              <span className="text-jh-line-2">·</span>
+              <button type="button" className="link" onClick={() => switchMode("signin")}>{t("auth.reset.back")}</button>
+            </div>
           </div>
-          <div>
-            <label className="label">{t("auth.login.password")}</label>
-            <input type="password" required minLength={6} className="field" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
 
-          {mode === "signup" && (
-            <p className="text-xs text-jh-mute">{t("auth.login.signupNote")}</p>
-          )}
-
-          {err && <p className="text-sm text-jh-red">{err}</p>}
-          {msg && <p className="text-sm text-rb-green-dark">{msg}</p>}
-
-          <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
-            {busy ? t("auth.login.busy") : mode === "signin" ? t("auth.login.signIn") : t("auth.login.createAccount")}
-          </button>
-
-          <div className="flex items-center justify-between text-sm pt-1">
-            <button type="button" className="link" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>
-              {mode === "signin" ? t("auth.login.toSignup") : t("auth.login.toSignin")}
+        /* ---- Forgot password: request a reset link ---- */
+        ) : mode === "reset" ? (
+          <form onSubmit={sendReset} className="card p-6 space-y-4">
+            <div>
+              <h2 className="text-xl">{t("auth.reset.title")}</h2>
+              <p className="text-sm text-jh-mute mt-1">{t("auth.reset.body")}</p>
+            </div>
+            <div>
+              <label className="label">{t("auth.shared.email")}</label>
+              <input type="email" required autoFocus className="field" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            {err && <p className="text-sm text-jh-red">{err}</p>}
+            <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+              {busy ? t("auth.login.busy") : t("auth.reset.send")}
             </button>
-            {mode === "signin" && (
-              <button type="button" className="link" onClick={forgot}>{t("auth.login.forgot")}</button>
+            <div className="text-center text-sm pt-1">
+              <button type="button" className="link" onClick={() => switchMode("signin")}>{t("auth.reset.back")}</button>
+            </div>
+          </form>
+
+        /* ---- Sign in / sign up ---- */
+        ) : (
+          <form onSubmit={submit} className="card p-6 space-y-4">
+            <div>
+              <label className="label">{t("auth.shared.email")}</label>
+              <input type="email" required className="field" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">{t("auth.login.password")}</label>
+              <input type="password" required minLength={6} className="field" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+
+            {mode === "signup" && (
+              <p className="text-xs text-jh-mute">{t("auth.login.signupNote")}</p>
             )}
-          </div>
-        </form>
+
+            {err && <p className="text-sm text-jh-red">{err}</p>}
+            {msg && <p className="text-sm text-rb-green-dark">{msg}</p>}
+
+            <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+              {busy ? t("auth.login.busy") : mode === "signin" ? t("auth.login.signIn") : t("auth.login.createAccount")}
+            </button>
+
+            <div className="flex items-center justify-between text-sm pt-1">
+              <button type="button" className="link" onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}>
+                {mode === "signin" ? t("auth.login.toSignup") : t("auth.login.toSignin")}
+              </button>
+              {mode === "signin" && (
+                <button type="button" className="link" onClick={() => switchMode("reset")}>{t("auth.login.forgot")}</button>
+              )}
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
