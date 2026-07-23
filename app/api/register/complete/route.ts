@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { completeRegistration } from "@/lib/server/registration";
+import { enrollInCompassSequence } from "@/lib/server/kit";
 import { logEvent, TAGS } from "@/lib/events";
 
 export const runtime = "nodejs";
@@ -28,6 +29,14 @@ export async function POST(req: NextRequest) {
     firebaseUid: result.uid, email, stage: "activation",
     key: TAGS.GRANT_CREATED, source: "registration_link",
   });
+
+  // Enroll the new registrant into the Compass onboarding email sequence.
+  // Best-effort side effect: a Kit failure must never fail the registration
+  // (the user already has an account + access at this point).
+  const kit = await enrollInCompassSequence(email, firstName);
+  if (!kit.ok && !kit.skipped) {
+    console.error(`[register] Kit enrollment failed for ${email}: ${kit.error}`);
+  }
 
   return NextResponse.json({ ok: true });
 }
