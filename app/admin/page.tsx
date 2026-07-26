@@ -15,8 +15,9 @@ import { DEFAULT_CONTENT, TEXT_FIELDS, newActivityId } from "@/lib/content";
 import {
   DEFAULT_FUNNEL, type FunnelConfig, type QuizQuestion, type QuizOption,
 } from "@/lib/funnel";
+import FeedbackTab from "@/components/admin/FeedbackTab";
 
-const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Funnel", "Event tracking"] as const;
+const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Feedback", "Funnel", "Event tracking"] as const;
 type Tab = (typeof TABS)[number];
 
 // Paywall / email / coaching copy (stored separately in config/admin) — now edited
@@ -100,6 +101,7 @@ export default function AdminPage() {
         {tab === "Content" && <ContentTab />}
         {tab === "Funnel" && <FunnelTab />}
         {tab === "Event tracking" && <EventTracking />}
+        {tab === "Feedback" && <FeedbackTab />}
       </main>
     </div>
   );

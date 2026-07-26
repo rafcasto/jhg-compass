@@ -9,6 +9,7 @@ import type { Profile } from "@/lib/types";
 import AppShell from "@/components/AppShell";
 import Paywall from "@/components/Paywall";
 import VerifyEmail from "@/components/VerifyEmail";
+import FeedbackGate from "@/components/FeedbackGate";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, emailVerified } = useAuth();
@@ -52,7 +53,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AppShell daysLeft={daysLeft}>
       {children}
+      {/* Expired access blocks everything and takes precedence over feedback. */}
       {!hasAccess && <Paywall />}
+      {/* Feedback only renders for users who still have access. */}
+      {hasAccess && <FeedbackGate uid={user.uid} profile={profile} />}
     </AppShell>
   );
 }
