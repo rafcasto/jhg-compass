@@ -10,6 +10,22 @@ cp .env.example .env.local   # fill values (dev values already in .env.local)
 npm run dev                  # http://localhost:3000
 ```
 
+## Compass tab — goal statement + reading rail
+- **Goal statement** is stored per member at `users/{uid}.goal` (`role, salary, city, subsector, companyType`). Legacy onboarding
+  values in `users/{uid}.compass` are mapped on read (`lib/goal.ts`) so existing members don't see an empty statement.
+- **Articles carousel** pulls posts from the Ghost Content API server-side (`lib/server/ghost.ts`, 10-min cache) and serves them to
+  the client through `GET /api/articles` — the key never reaches the browser. Set `GHOST_CONTENT_API_URL` + `GHOST_CONTENT_API_KEY`.
+  If Ghost is unreachable or unconfigured the section simply doesn't render.
+- **Admin → Articles** tab chooses what the rail shows: every post carrying a Ghost tag (newest first), or a hand-picked ordered list.
+  Stored in `config/articles`; defaults to `tag:compass`.
+- Step-dot colours map from the post's first public tag; numbered live slugs (`1-focus`, `4-outreach`, `5-hidden-offers`…) are normalised
+  in `lib/ghost.ts`.
+
+## Tests
+```bash
+npm test          # vitest (jsdom + testing-library)
+```
+
 ## One-time setup
 1. **Firebase console** → Authentication → enable **Email/Password**. Add `localhost` to authorized domains.
 2. **Firestore** → create database. Deploy rules: `firebase deploy --only firestore:rules` (or paste `firestore.rules`).

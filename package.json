@@ -10,7 +10,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy:rules": "node scripts/deploy-rules.mjs"
+    "deploy:rules": "node scripts/deploy-rules.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "firebase": "^10.13.2",
@@ -24,12 +26,17 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^24.0.0",
     "@types/react": "^18.3.8",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^30.0.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vitest": "^3.2.7"
   }
 }

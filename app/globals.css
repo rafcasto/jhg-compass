@@ -63,3 +63,62 @@ input[type="date"].field::-webkit-calendar-picker-indicator {
 }
 /* While empty, hide the native format text so the placeholder overlay shows through */
 input[type="date"].date-empty::-webkit-datetime-edit { color: transparent; }
+
+/* ===== Compass tab (JobHackers design system) =====
+   Focus ring is global and never removed: 2px red at 40%, 2px offset. */
+:focus-visible { outline: 2px solid rgba(194, 0, 31, 0.4); outline-offset: 2px; }
+
+/* Goal statement — Poppins 600, 19px mobile / 23px desktop, 1.5 line-height */
+.goal-statement {
+  font-family: Poppins, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: -0.005em;
+}
+@media (min-width: 768px) { .goal-statement { font-size: 23px; } }
+
+/* Buttons: 8px radius, Poppins 600, 200ms ease-out on colour + shadow only (no transform) */
+.cbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 15px; line-height: 1;
+  border-radius: 8px; padding: 12px 18px; border: 1px solid transparent; cursor: pointer;
+  transition: background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+.cbtn:disabled { opacity: .55; cursor: not-allowed; }
+.cbtn-primary { background: #c2001f; color: #fff; box-shadow: 0 6px 18px rgba(194, 0, 31, .25); }
+.cbtn-primary:hover:not(:disabled) { background: #8a0016; }
+.cbtn-secondary { background: #fff; color: #191c27; border-color: #191c27; }
+.cbtn-secondary:hover:not(:disabled) { background: #191c27; color: #fff; }
+
+/* Carousel arrows: 40px circles, white, 1px border, shadow-1 -> shadow-2 on hover */
+.cbtn-icon {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 999px;
+  background: #fff; color: #191c27; border: 1px solid #e6e8ef;
+  box-shadow: 0 1px 2px rgba(25, 28, 39, .06);
+  transition: box-shadow 200ms ease-out, color 200ms ease-out, background-color 200ms ease-out;
+}
+.cbtn-icon:hover:not(:disabled) { box-shadow: 0 10px 24px rgba(25, 28, 39, .10); color: #c2001f; }
+.cbtn-icon:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Form fields: Roboto labels, 8px-radius inputs, 1px #e6e8ef border */
+.clabel {
+  display: block; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 500;
+  font-size: 13px; color: #6b7280; margin-bottom: 6px;
+}
+.cfield {
+  width: 100%; background: #fff; color: #191c27; border: 1px solid #e6e8ef; border-radius: 8px;
+  padding: 11px 14px; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.4;
+  transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+.cfield::placeholder { color: #9aa0ad; }
+.cfield:hover { border-color: #d4d8e2; }
+.cfield:focus { border-color: #c2001f; }
+select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center; }
+
+/* Hide the scrollbar on the article rail (keeps native touch scrolling) */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
