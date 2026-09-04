@@ -6,11 +6,14 @@
 //   2) text        — every static string shown across the app: Performance, onboarding,
 //                    Compass, the Tracker/Progress board, navigation, and the
 //                    sign-in / invite / set-password / verify-email screens
+//   3) stages      — the Progress-board pipeline columns, managed from the separate
+//                    admin "Stages" tab (see lib/stages.ts)
 //
 // This module is pure (no client/server-only imports) so it can be shared by the
 // client hook (lib/firestore/content.ts) and the server helpers (lib/server/content.ts).
 
 import { CATEGORIES, DEFAULT_WEEKLY_TARGETS, EFFORT_SPLIT } from "./categories";
+import { DEFAULT_STAGES, normalizeStages } from "./stages";
 import type { Activity, ContentConfig } from "./types";
 
 // ---- default activity taxonomy (derived from the original static lists) ----
@@ -83,12 +86,7 @@ export const TEXT_FIELDS: TextField[] = [
   { group: "Progress (Tracker)", key: "tracker.dropHere", label: "Empty-column text" },
   { group: "Progress (Tracker)", key: "tracker.moveTo", label: "“Move to:” prefix (mobile)" },
   { group: "Progress (Tracker)", key: "tracker.roleFallback", label: "Role fallback (when blank)" },
-  // Kanban stage names
-  { group: "Progress (Tracker)", key: "tracker.stage.wishlist", label: "Stage — Wishlist" },
-  { group: "Progress (Tracker)", key: "tracker.stage.applied", label: "Stage — Applied" },
-  { group: "Progress (Tracker)", key: "tracker.stage.interview", label: "Stage — Interview" },
-  { group: "Progress (Tracker)", key: "tracker.stage.offer", label: "Stage — Offer" },
-  { group: "Progress (Tracker)", key: "tracker.stage.rejected", label: "Stage — Rejected" },
+  // Kanban stage names live on the admin "Stages" tab (config/content.stages), not here.
   // Add-job sheet
   { group: "Progress (Tracker)", key: "tracker.addTitle", label: "Add-job sheet — title" },
   { group: "Progress (Tracker)", key: "tracker.addSubmit", label: "Add-job sheet — submit" },
@@ -279,11 +277,6 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "tracker.dropHere": "Drop jobs here",
   "tracker.moveTo": "Move to:",
   "tracker.roleFallback": "Role",
-  "tracker.stage.wishlist": "Wishlist",
-  "tracker.stage.applied": "Applied",
-  "tracker.stage.interview": "Interview",
-  "tracker.stage.offer": "Offer",
-  "tracker.stage.rejected": "Rejected",
   "tracker.addTitle": "Add job opportunity",
   "tracker.addSubmit": "Add to Wishlist",
   "tracker.jobLink": "Job link",
@@ -428,12 +421,13 @@ TEXT_FIELDS.push({
 export const DEFAULT_CONTENT: ContentConfig = {
   effortSplit: { ...EFFORT_SPLIT },
   activities: DEFAULT_ACTIVITIES,
+  stages: DEFAULT_STAGES,
   text: DEFAULT_TEXT,
 };
 
 // ---- merge helpers (defaults <- stored overrides) ----
-// Stored activities fully replace defaults (so admins can remove items); text is
-// merged key-by-key so newly-added default keys always have a value.
+// Stored activities / stages fully replace defaults (so admins can remove items);
+// text is merged key-by-key so newly-added default keys always have a value.
 export function mergeContent(stored?: Partial<ContentConfig> | null): ContentConfig {
   return {
     effortSplit: { ...DEFAULT_CONTENT.effortSplit, ...(stored?.effortSplit ?? {}) },
@@ -441,6 +435,7 @@ export function mergeContent(stored?: Partial<ContentConfig> | null): ContentCon
       Array.isArray(stored?.activities) && stored!.activities.length
         ? stored!.activities
         : DEFAULT_ACTIVITIES,
+    stages: normalizeStages(stored?.stages),
     text: { ...DEFAULT_TEXT, ...(stored?.text ?? {}) },
   };
 }

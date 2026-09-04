@@ -9,9 +9,17 @@ export type InteractionType =
   | "information_interview" | "job_interview" | "thank_you_note"
   | "networking_event" | "personal_branding" | "application" | "headhunter" | "other";
 
-// Kanban pipeline stages (req 4.3).
-export type OpportunityStage =
-  | "wishlist" | "applied" | "interview" | "offer" | "rejected";
+// Kanban pipeline stage id (req 4.3). Stages are admin-editable (see lib/stages.ts),
+// so this is an open string — use resolveStage() to map a stored value to a
+// column that exists on the current board.
+export type OpportunityStage = string;
+
+// One column on the Progress (Tracker) board. Admin-editable via the Stages tab.
+export interface Stage {
+  id: string;     // stable key stored on each opportunity — never changes once created
+  label: string;  // column heading
+  color: string;  // palette key, see STAGE_COLORS in lib/stages.ts
+}
 
 export type GrantStatus = "pending" | "active" | "expired" | "revoked";
 
@@ -197,6 +205,8 @@ export interface ContentConfig {
   effortSplit: { hidden: number; visible: number };
   // The full activity list (both markets); admin can add / remove / reorder.
   activities: Activity[];
+  // Progress-board pipeline columns, in order; admin can add / edit / remove / reorder.
+  stages: Stage[];
   // All editable static strings, keyed (see lib/content.ts for the catalogue).
   text: Record<string, string>;
 }

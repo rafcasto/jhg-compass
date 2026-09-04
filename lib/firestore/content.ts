@@ -7,7 +7,7 @@ import {
   DEFAULT_CONTENT, DEFAULT_TEXT, mergeContent,
   hiddenActivities, visibleActivities, weeklyTargetsFrom,
 } from "@/lib/content";
-import type { Activity, ContentConfig } from "@/lib/types";
+import type { Activity, ContentConfig, Stage } from "@/lib/types";
 
 export interface UseContent {
   loading: boolean;
@@ -16,6 +16,8 @@ export interface UseContent {
   visible: Activity[];
   weeklyTargets: Record<string, number>;
   effortSplit: { hidden: number; visible: number };
+  /** Progress-board columns, in order (admin-editable). */
+  stages: Stage[];
   /** Look up an editable string by key (falls back to the baked-in default). */
   t: (key: string) => string;
 }
@@ -46,6 +48,7 @@ export function useContent(): UseContent {
     visible: visibleActivities(config),
     weeklyTargets: weeklyTargetsFrom(config),
     effortSplit: config.effortSplit,
+    stages: config.stages,
     t: (key: string) => config.text[key] ?? DEFAULT_TEXT[key] ?? "",
   }), [config, loading]);
 }

@@ -10,32 +10,15 @@ import {
   useLiveCollection, paths, createDoc, updateRecord, deleteRecord,
 } from "@/lib/firestore/db";
 import { useContent } from "@/lib/firestore/content";
-import type { Contact, Opportunity, OpportunityStage, Reminder } from "@/lib/types";
+import type { Contact, Opportunity, OpportunityStage, Reminder, Stage } from "@/lib/types";
 import type { Market } from "@/lib/categories";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
+import { resolveStage, stageDotClass } from "@/lib/stages";
 
-// Stage columns — labels are admin-editable via content (tracker.stage.*).
-const STAGES: { key: OpportunityStage; tkey: string; dot: string }[] = [
-  { key: "wishlist",  tkey: "tracker.stage.wishlist",  dot: "bg-jh-mute" },
-  { key: "applied",   tkey: "tracker.stage.applied",   dot: "bg-rb-blue" },
-  { key: "interview", tkey: "tracker.stage.interview", dot: "bg-rb-orange" },
-  { key: "offer",     tkey: "tracker.stage.offer",     dot: "bg-rb-green-dark" },
-  { key: "rejected",  tkey: "tracker.stage.rejected",  dot: "bg-jh-red" },
-];
-
-// Map any legacy stage to the new kanban columns.
-function normalizeStage(s: string | undefined): OpportunityStage {
-  switch (s) {
-    case "wishlist": case "applied": case "interview": case "offer": case "rejected": return s;
-    case "researching": return "wishlist";
-    case "contacted": return "applied";
-    case "interviewing": return "interview";
-    case "accepted": return "offer";
-    case "closed": return "rejected";
-    default: return "wishlist";
-  }
-}
+// Stage columns come from admin-editable content (config/content.stages) — see the
+// admin "Stages" tab. Cards carrying a stage that no longer exists are shown in
+// the first column (resolveStage).
 
 type View = "board" | "reminders" | "contacts";
 
@@ -48,7 +31,7 @@ const HEAD: Record<View, { eyebrow: string; title: string; intro: string }> = {
 export default function TrackerPage() {
   const { user } = useAuth();
   const uid = user?.uid;
-  const { t } = useContent();
+  const { t, stages } = useContent();
   const { data: opps } = useLiveCollection<Opportunity>(uid, paths.opportunities);
   const { data: contacts } = useLiveCollection<Contact>(uid, paths.contacts);
   const { data: reminders } = useLiveCollection<Reminder>(uid, paths.reminders);
@@ -60,17 +43,17 @@ export default function TrackerPage() {
   const [dragOver, setDragOver] = useState<OpportunityStage | null>(null);
 
   const byStage = useMemo(() => {
-    const m: Record<OpportunityStage, Opportunity[]> = { wishlist: [], applied: [], interview: [], offer: [], rejected: [] };
-    for (const o of opps) m[normalizeStage(o.stage)].push(o);
+    const m: Record<OpportunityStage, Opportunity[]> = Object.fromEntries(stages.map((s) => [s.id, []]));
+    for (const o of opps) m[resolveStage(o.stage, stages)].push(o);
     return m;
-  }, [opps]);
+  }, [opps, stages]);
 
   const openOpp = opps.find((o) => o.id === openId) ?? null;
   const openReminders = reminders.filter((r) => !r.done).length;
 
   async function move(id: string, stage: OpportunityStage) {
     const o = opps.find((x) => x.id === id);
-    if (!uid || !o || normalizeStage(o.stage) === stage) return;
+    if (!uid || !o || resolveStage(o.stage, stages) === stage) return;
     await updateRecord(uid, "opportunities", id, { stage });
     track(TAGS.STAGE_CHANGE, { props: { id, stage } });
   }
@@ -116,26 +99,27 @@ export default function TrackerPage() {
       <p className="text-jh-mute text-sm -mt-2">{t(HEAD[view].intro)}</p>
 
       {view === "board" && (
-        /* Board: horizontal scroll on mobile, 5 columns on desktop */
-        <div className="flex gap-3 overflow-x-auto md:overflow-visible pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
-          {STAGES.map((s) => {
-            const cards = byStage[s.key];
+        /* Board: one column per stage; scrolls horizontally on every breakpoint
+           because the stage list is admin-defined and can be long */
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
+          {stages.map((s) => {
+            const cards = byStage[s.id] ?? [];
             return (
-              <div key={s.key}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(s.key); }}
-                onDragLeave={() => setDragOver((d) => (d === s.key ? null : d))}
-                onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); setDragOver(null); if (id) move(id, s.key); }}
-                className={`w-[80vw] max-w-[18rem] shrink-0 md:w-auto md:flex-1 md:max-w-none snap-start rounded-lg border transition
-                  ${dragOver === s.key ? "border-jh-red bg-jh-red-soft/40" : "border-jh-line bg-jh-mist/50"}`}>
+              <div key={s.id}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(s.id); }}
+                onDragLeave={() => setDragOver((d) => (d === s.id ? null : d))}
+                onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); setDragOver(null); if (id) move(id, s.id); }}
+                className={`w-[80vw] max-w-[18rem] shrink-0 md:w-60 snap-start rounded-lg border transition
+                  ${dragOver === s.id ? "border-jh-red bg-jh-red-soft/40" : "border-jh-line bg-jh-mist/50"}`}>
                 <div className="flex items-center justify-between px-3 py-2.5 border-b border-jh-line">
                   <span className="flex items-center gap-2 font-display font-semibold text-sm text-jh-ink">
-                    <span className={`h-2 w-2 rounded-full ${s.dot}`} /> {t(s.tkey)}
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${stageDotClass(s.color)}`} /> {s.label}
                   </span>
                   <span className="text-xs text-jh-mute font-semibold">{cards.length}</span>
                 </div>
                 <div className="p-2 space-y-2 min-h-16">
                   {cards.map((o) => (
-                    <Card key={o.id} o={o} contacts={contacts} reminders={reminders}
+                    <Card key={o.id} o={o} stages={stages} contacts={contacts} reminders={reminders}
                       onOpen={() => setOpenId(o.id)} onMove={(st) => move(o.id, st)} />
                   ))}
                   {cards.length === 0 && <p className="text-center text-xs text-jh-mute-2 py-4">{t("tracker.dropHere")}</p>}
@@ -157,8 +141,8 @@ export default function TrackerPage() {
   );
 }
 
-function Card({ o, contacts, reminders, onOpen, onMove }: {
-  o: Opportunity; contacts: Contact[]; reminders: Reminder[]; onOpen: () => void; onMove: (s: OpportunityStage) => void;
+function Card({ o, stages, contacts, reminders, onOpen, onMove }: {
+  o: Opportunity; stages: Stage[]; contacts: Contact[]; reminders: Reminder[]; onOpen: () => void; onMove: (s: OpportunityStage) => void;
 }) {
   const { t } = useContent();
   const attached = (o.contactIds ?? []).length;
@@ -180,10 +164,10 @@ function Card({ o, contacts, reminders, onOpen, onMove }: {
         {openReminders > 0 && <span className="inline-flex items-center gap-1"><Bell className="h-3.5 w-3.5" /> {openReminders}</span>}
       </div>
       {/* Mobile-friendly move control */}
-      <select value={normalizeStage(o.stage)} onChange={(e) => onMove(e.target.value as OpportunityStage)}
+      <select value={resolveStage(o.stage, stages)} onChange={(e) => onMove(e.target.value)}
         onClick={(e) => e.stopPropagation()}
         className="mt-2 w-full rounded-[8px] border border-jh-line bg-jh-mist/60 px-2 py-1 text-xs text-jh-ink md:hidden">
-        {STAGES.map((s) => <option key={s.key} value={s.key}>{t("tracker.moveTo")} {t(s.tkey)}</option>)}
+        {stages.map((s) => <option key={s.id} value={s.id}>{t("tracker.moveTo")} {s.label}</option>)}
       </select>
     </div>
   );
@@ -456,7 +440,7 @@ function AddContactStandalone({ uid, onClose }: { uid: string; onClose: () => vo
 
 /* ---------------- Add opportunity ---------------- */
 function AddOpportunity({ uid, onClose }: { uid: string; onClose: () => void }) {
-  const { t } = useContent();
+  const { t, stages } = useContent();
   const [f, setF] = useState({ company: "", role: "", market: "hidden" as Market, source: "", url: "" });
   const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
   const [busy, setBusy] = useState(false);
@@ -465,7 +449,8 @@ function AddOpportunity({ uid, onClose }: { uid: string; onClose: () => void }) 
     e.preventDefault();
     if (!f.company) return;
     setBusy(true);
-    await createDoc(paths.opportunities(uid), { ...f, stage: "wishlist", contactIds: [], log: [] });
+    // New jobs start in the first column of the admin-defined pipeline.
+    await createDoc(paths.opportunities(uid), { ...f, stage: stages[0].id, contactIds: [], log: [] });
     track(TAGS.ADD_OPPORTUNITY, { props: { market: f.market } });
     setBusy(false); onClose();
   }
