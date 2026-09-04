@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/components/AuthProvider";
 import { auth } from "@/lib/firebase/client";
 import ArticlesTab from "@/components/admin/ArticlesTab";
+import StagesTab from "@/components/admin/StagesTab";
 import type { AdminConfig, Activity, ContentConfig } from "@/lib/types";
 import { DEFAULT_CONTENT, TEXT_FIELDS, newActivityId } from "@/lib/content";
 import {
@@ -18,7 +19,7 @@ import {
 } from "@/lib/funnel";
 import FeedbackTab from "@/components/admin/FeedbackTab";
 
-const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Articles", "Feedback", "Funnel", "Event tracking"] as const;
+const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Stages", "Articles", "Feedback", "Funnel", "Event tracking"] as const;
 type Tab = (typeof TABS)[number];
 
 // Paywall / email / coaching copy (stored separately in config/admin) — now edited
@@ -100,6 +101,7 @@ export default function AdminPage() {
         {tab === "Analytics" && <AnalyticsTab />}
         {tab === "Registration links" && <RegistrationLinks />}
         {tab === "Content" && <ContentTab />}
+        {tab === "Stages" && <StagesTab />}
         {tab === "Articles" && <ArticlesTab />}
         {tab === "Funnel" && <FunnelTab />}
         {tab === "Event tracking" && <EventTracking />}
@@ -504,7 +506,9 @@ function OpenResponsesDash({ data }: { data: Analytics }) {
   );
 }
 
-/* ---------------- Content (static text + activities + paywall/email copy) ---------------- */
+/* ---------------- Content (static text + activities + paywall/email copy) ----------------
+   Progress-board stages are managed on the separate Stages tab — this tab never
+   writes config/content.stages, so the two can be edited independently. */
 function ContentTab() {
   const [cfg, setCfg] = useState<ContentConfig | null>(null);
   const [adminCfg, setAdminCfg] = useState<Partial<AdminConfig>>({});
@@ -540,8 +544,9 @@ function ContentTab() {
   async function save() {
     if (!cfg) return;
     setBusy(true); setSaved(false);
+    const { stages: _stages, ...content } = cfg; // stages are owned by the Stages tab
     const [rContent, rConfig] = await Promise.all([
-      authedFetch("/api/admin/content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: cfg }) }),
+      authedFetch("/api/admin/content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }) }),
       authedFetch("/api/admin/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(adminCfg) }),
     ]);
     if (rContent.ok) setCfg((await rContent.json()).content);
@@ -550,8 +555,8 @@ function ContentTab() {
     setBusy(false);
   }
   function resetDefaults() {
-    if (confirm("Reset the text & activity lists to the built-in defaults? (Paywall/email copy is left as-is.) Applied when you Save.")) {
-      setCfg(structuredClone(DEFAULT_CONTENT)); setSaved(false);
+    if (confirm("Reset the text & activity lists to the built-in defaults? (Paywall/email copy and Progress stages are left as-is.) Applied when you Save.")) {
+      setCfg((c) => ({ ...structuredClone(DEFAULT_CONTENT), stages: (c as ContentConfig).stages })); setSaved(false);
     }
   }
 
@@ -573,7 +578,7 @@ function ContentTab() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl">App content</h2>
-          <p className="text-jh-mute text-sm mt-1">Edit every static label, the job-market activity lists, and the paywall / email / coaching copy. Changes go live across the app and onboarding the moment you save.</p>
+          <p className="text-jh-mute text-sm mt-1">Edit every static label, the job-market activity lists, and the paywall / email / coaching copy. Progress-board stages live on the Stages tab. Changes go live across the app and onboarding the moment you save.</p>
         </div>
         <button onClick={resetDefaults} className="btn-secondary text-xs px-3 py-2 whitespace-nowrap">Reset to defaults</button>
       </div>

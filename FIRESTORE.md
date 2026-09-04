@@ -19,9 +19,14 @@ accessGrants/{uid}               { email, plan, durationDays, source, status, re
 
 config/admin                     { paywallTitle, paywallBody, paywallCtaLabel, paywallCtaUrl,
                                    pwResetSubject, pwResetBody, updatedBy, updatedAt }
+
+config/content                   { effortSplit, activities[], text{}, stages[], updatedBy, updatedAt }
+                                 // stages: [{ id, label, color }] — Progress-board columns in order,
+                                 // managed from Admin → Stages (defaults in lib/stages.ts)
 ```
 
 - `categoryId` values come from `lib/categories.ts` (the Excel taxonomy; static in code).
 - `market`: `"hidden"` (~80% effort) | `"visible"` (<=20% effort).
+- `opportunities.stage` holds a `config/content.stages[].id`; unknown / legacy ids are shown in the first column (`resolveStage`).
 - Admin users are flagged with a custom claim `admin: true` (set via Admin SDK).
 - Security rules: `firestore.rules`.
