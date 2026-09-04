@@ -129,14 +129,14 @@ export default function PerformancePage() {
       {/* Hidden job market — the bulk of success (top) */}
       <section>
         <Banner emoji={t("perf.hiddenEmoji")} main={t("perf.hiddenTitle")}
-          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} bg={C.bannerRed} />
+          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} bg={C.bannerBlue} />
         <Rows cats={hidden} {...rowProps} />
       </section>
 
       {/* Visible job market (bottom) */}
       <section>
         <Banner emoji={t("perf.visibleEmoji")} main={t("perf.visibleTitle")}
-          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} bg={C.bannerBlue} />
+          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} bg={C.bannerRed} />
         <Rows cats={visible} {...rowProps} />
       </section>
 
