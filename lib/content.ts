@@ -70,10 +70,10 @@ export const TEXT_FIELDS: TextField[] = [
   { group: "Compass tab", key: "compass.eyebrow", label: "Eyebrow" },
   { group: "Compass tab", key: "compass.title", label: "Title" },
   { group: "Compass tab", key: "compass.goalEyebrow", label: "Goal statement — eyebrow" },
-  { group: "Compass tab", key: "compass.editIntro", label: "Edit-mode intro", textarea: true },
-  { group: "Compass tab", key: "compass.salaryHelp", label: "Compensation helper", textarea: true },
-  { group: "Compass tab", key: "compass.compTarget", label: "“Target salary” label" },
-  { group: "Compass tab", key: "compass.compMin", label: "“Minimum” label" },
+  { group: "Compass tab", key: "compass.editTitle", label: "Edit form — heading" },
+  { group: "Compass tab", key: "compass.editIntro", label: "Edit form — sub-heading" },
+  { group: "Compass tab", key: "compass.articlesEyebrow", label: "Articles — eyebrow" },
+  { group: "Compass tab", key: "compass.articlesTitle", label: "Articles — heading" },
 
   // ----- Tracker / Progress board -----
   { group: "Progress (Tracker)", key: "tracker.eyebrow", label: "Eyebrow" },
@@ -263,13 +263,13 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "onb.finish": "Finish & enter Compass",
 
   // Compass tab
-  "compass.eyebrow": "Your north star",
+  "compass.eyebrow": "Clear objective",
   "compass.title": "Compass",
-  "compass.goalEyebrow": "Your Goal Statement",
-  "compass.editIntro": "Refine your target. Be specific — clarity drives action.",
-  "compass.salaryHelp": "Target = what you're aiming for. Minimum = the lowest you'd accept.",
-  "compass.compTarget": "Target salary",
-  "compass.compMin": "Minimum · deal-breaker",
+  "compass.goalEyebrow": "Your goal statement",
+  "compass.editTitle": "Complete your objective",
+  "compass.editIntro": "Every field feeds the statement above.",
+  "compass.articlesEyebrow": "Sharpen your lane",
+  "compass.articlesTitle": "Reading for this step",
 
   // Tracker / Progress board
   "tracker.eyebrow": "Pipeline",

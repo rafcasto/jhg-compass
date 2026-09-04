@@ -1,4 +1,5 @@
 import type { Market } from "./categories";
+import type { Goal } from "./goal";
 
 export type ContactType =
   | "prospect" | "coach" | "recruiter" | "referral" | "peer" | "hiring_manager" | "other";
@@ -37,7 +38,9 @@ export interface Profile {
   lastName?: string;
   country?: string;
   archetype?: string;
-  compass?: CompassFormula;
+  compass?: CompassFormula; // legacy (onboarding) — see lib/goal.ts goalFromLegacy
+  goal?: Goal;              // Compass tab objective (req: Compass tab)
+  goalUpdatedAt?: number;
   onboardedAt?: number;
   createdAt?: number;
 }

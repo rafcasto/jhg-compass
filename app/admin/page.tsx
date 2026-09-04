@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { useAuth } from "@/components/AuthProvider";
 import { auth } from "@/lib/firebase/client";
+import ArticlesTab from "@/components/admin/ArticlesTab";
 import type { AdminConfig, Activity, ContentConfig } from "@/lib/types";
 import { DEFAULT_CONTENT, TEXT_FIELDS, newActivityId } from "@/lib/content";
 import {
@@ -17,7 +18,7 @@ import {
 } from "@/lib/funnel";
 import FeedbackTab from "@/components/admin/FeedbackTab";
 
-const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Feedback", "Funnel", "Event tracking"] as const;
+const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Articles", "Feedback", "Funnel", "Event tracking"] as const;
 type Tab = (typeof TABS)[number];
 
 // Paywall / email / coaching copy (stored separately in config/admin) — now edited
@@ -99,6 +100,7 @@ export default function AdminPage() {
         {tab === "Analytics" && <AnalyticsTab />}
         {tab === "Registration links" && <RegistrationLinks />}
         {tab === "Content" && <ContentTab />}
+        {tab === "Articles" && <ArticlesTab />}
         {tab === "Funnel" && <FunnelTab />}
         {tab === "Event tracking" && <EventTracking />}
         {tab === "Feedback" && <FeedbackTab />}
