@@ -140,6 +140,45 @@ export interface AdminConfig {
   coachingCtaUrl: string;
 }
 
+// ---- In-app feedback survey (admin-editable) ----
+export type FeedbackQuestionKind = "rating" | "text";
+
+// A single survey question. Rating questions render an emoji scale; text
+// questions render a textarea. Everything here is editable in the admin portal.
+export interface FeedbackQuestion {
+  id: string;
+  kind: FeedbackQuestionKind;
+  prompt: string;
+  required?: boolean;
+  placeholder?: string;   // text questions
+  emojis?: string[];      // rating questions — one per point on the scale
+  scaleLabels?: string[]; // rating questions — label under each emoji
+}
+
+// Stored at config/feedback. `enabled` drives the GLOBAL modal (shown to every
+// user until they submit); the per-user link (?feedback=1) shows it regardless.
+export interface FeedbackConfig {
+  enabled: boolean;
+  title: string;
+  intro: string;
+  submitLabel: string;
+  thanksTitle: string;
+  thanksBody: string;
+  questions: FeedbackQuestion[];
+}
+
+// A submitted survey — stored under users/{uid}/feedback/{autoId}. `answers`
+// is keyed by question id; `rating` is a convenience copy of the first rating.
+export interface FeedbackResponse {
+  uid?: string;
+  email?: string;
+  firstName?: string;
+  rating?: number | null;
+  answers: Record<string, string | number>;
+  source: "global" | "link";
+  createdAt: number;
+}
+
 // An editable activity in the Performance tab / onboarding.
 // Extends the static ActivityCategory with a per-activity default weekly target,
 // so the whole taxonomy can live in admin-editable content.

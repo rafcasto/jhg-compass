@@ -17,9 +17,12 @@ export const paths = {
   reminders: (uid: string) => collection(db, "users", uid, "reminders"),
   profile: (uid: string) => doc(db, "users", uid),
   settingsTargets: (uid: string) => doc(db, "users", uid, "settings", "targets"),
+  // per-user feedback submissions (owner-writable via users/{uid} rules)
+  feedbackResponses: (uid: string) => collection(db, "users", uid, "feedback"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
   content: () => doc(db, "config", "content"),
+  feedbackConfig: () => doc(db, "config", "feedback"),
 };
 
 type SubCollection = "contacts" | "interactions" | "opportunities" | "activityLogs" | "reminders";
@@ -84,4 +87,4 @@ export async function deleteRecord(
   return deleteDoc(doc(db, "users", uid, sub, id));
 }
 
-export { serverTimestamp, setDoc, doc, deleteDoc };
+export { serverTimestamp, setDoc, doc, deleteDoc, addDoc };
