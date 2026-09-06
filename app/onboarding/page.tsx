@@ -144,10 +144,10 @@ export default function OnboardingPage() {
             </div>
 
             <TargetSection emoji={t("perf.hiddenEmoji")} main={t("perf.hiddenTitle")}
-              subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} bg={C.bannerRed}
+              subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} bg={C.bannerBlue}
               cats={hidden} perDayLabel={t("onb.perDay")} daily={daily} setDaily={setDaily} />
             <TargetSection emoji={t("perf.visibleEmoji")} main={t("perf.visibleTitle")}
-              subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} bg={C.bannerBlue}
+              subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} bg={C.bannerRed}
               cats={visible} perDayLabel={t("onb.perDay")} daily={daily} setDaily={setDaily} />
 
             <Nav onBack={() => setStep(1)}
