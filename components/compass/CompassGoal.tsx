@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Compass as CompassIcon, Pencil } from "lucide-react";
-import { COMPANY_TYPES, EMPTY_GOAL, GOAL_KEYS, normalizeGoal, type Goal } from "@/lib/goal";
+import { EMPTY_GOAL, normalizeGoal, type Goal } from "@/lib/goal";
 import GoalStatement from "./GoalStatement";
+import GoalFields from "./GoalFields";
 
 export interface CompassGoalLabels {
   eyebrow: string;
@@ -57,8 +58,6 @@ export default function CompassGoal({ goal, onSave, labels }: Props) {
       setBusy(false);
     }
   }
-  const set = (k: (typeof GOAL_KEYS)[number]) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setDraft((d) => ({ ...d, [k]: e.target.value }));
 
   return (
     <div className="space-y-5">
@@ -101,35 +100,7 @@ export default function CompassGoal({ goal, onSave, labels }: Props) {
             <p className="mt-1 text-sm text-jh-mute">{L.editIntro}</p>
           </div>
 
-          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-            <div>
-              <label htmlFor="goal-role" className="clabel">Job title + seniority level</label>
-              <input id="goal-role" className="cfield" value={draft.role ?? ""} onChange={set("role")}
-                placeholder="e.g. Senior Product Owner" autoComplete="organization-title" />
-            </div>
-            <div>
-              <label htmlFor="goal-salary" className="clabel">Yearly salary before tax</label>
-              <input id="goal-salary" className="cfield text-rb-green-dark font-medium" value={draft.salary ?? ""}
-                onChange={set("salary")} placeholder="250,000" inputMode="numeric" />
-            </div>
-            <div>
-              <label htmlFor="goal-city" className="clabel">City</label>
-              <input id="goal-city" className="cfield" value={draft.city ?? ""} onChange={set("city")}
-                placeholder="e.g. Auckland" autoComplete="address-level2" />
-            </div>
-            <div>
-              <label htmlFor="goal-subsector" className="clabel">Thriving industry subsector</label>
-              <input id="goal-subsector" className="cfield" value={draft.subsector ?? ""} onChange={set("subsector")}
-                placeholder="e.g. climate-tech SaaS" />
-            </div>
-            <div>
-              <label htmlFor="goal-companyType" className="clabel">Company type</label>
-              <select id="goal-companyType" className="cfield" value={draft.companyType ?? ""} onChange={set("companyType")}>
-                <option value="">Select…</option>
-                {COMPANY_TYPES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
+          <GoalFields value={draft} onChange={setDraft} variant="compass" idPrefix="goal" />
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button type="submit" className="cbtn cbtn-primary" disabled={busy}>
