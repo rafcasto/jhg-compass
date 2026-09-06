@@ -11,6 +11,7 @@ import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
 import { useContent } from "@/lib/firestore/content";
 import { fillTemplate } from "@/lib/content";
 import { scaleTarget, toWeekly } from "@/lib/period";
+import { resolveWeeklyTarget, withTargetEdits } from "@/lib/targets";
 import type { Activity, CompassFormula, Profile } from "@/lib/types";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
@@ -45,8 +46,11 @@ export default function OnboardingPage() {
   // Step 2 — compass formula
   const [compass, setCompass] = useState<CompassFormula>({});
 
-  // Step 3 — targets (stored as a canonical WEEKLY base; edited here per day)
-  const [targets, setTargets] = useState<Record<string, number>>({});
+  // Step 3 — targets. Only the rows the user actually touches live here (as the
+  // canonical WEEKLY base). Everything else is derived live from the same rule the
+  // Performance tab uses: user override -> admin default -> 0. No local copy, so
+  // admin-set defaults show up even if config/content loads after first render.
+  const [edits, setEdits] = useState<Record<string, number>>({});
 
   // Route guards + prefill from any existing profile.
   useEffect(() => {
@@ -65,14 +69,13 @@ export default function OnboardingPage() {
     }
   }, [profile, router]);
 
-  useEffect(() => {
-    setTargets((t) => (Object.keys(t).length ? t : { ...weeklyTargets, ...(targetDoc?.targets ?? {}) }));
-  }, [targetDoc, weeklyTargets]);
+  const userTargets = targetDoc?.targets ?? {};
+  const weekly = (id: string) => edits[id] ?? resolveWeeklyTarget(id, userTargets, weeklyTargets);
 
-  // Per-day view of the stored weekly target (day conversion ignores the anchor).
-  const daily = (id: string) => scaleTarget(targets[id] ?? 0, "day", new Date());
+  // Per-day view of the weekly target — identical maths to Performance in "day" mode.
+  const daily = (id: string) => scaleTarget(weekly(id), "day", new Date());
   const setDaily = (id: string, d: number) =>
-    setTargets((t) => ({ ...t, [id]: toWeekly(Math.max(0, d), "day", new Date()) }));
+    setEdits((e) => ({ ...e, [id]: toWeekly(Math.max(0, d), "day", new Date()) }));
 
   const step1Valid = firstName.trim() && lastName.trim() && country.trim();
   const step2Valid = compass.jobTitle?.trim();
@@ -81,7 +84,11 @@ export default function OnboardingPage() {
     if (!user) return;
     setBusy(true);
     try {
-      await setDoc(paths.settingsTargets(user.uid), { targets }, { merge: true });
+      // Same write shape as Performance's setGoal: existing overrides + edited rows.
+      // Untouched rows are NOT written, so admin default changes keep reaching this user.
+      if (Object.keys(edits).length) {
+        await setDoc(paths.settingsTargets(user.uid), { targets: withTargetEdits(userTargets, edits) }, { merge: true });
+      }
       await setDoc(paths.profile(user.uid), {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -96,7 +103,7 @@ export default function OnboardingPage() {
     }
   }
 
-  if (loading || !user || profileLoading) {
+  if (loading || !user || profileLoading || content.loading) {
     return <div className="min-h-screen grid place-items-center text-jh-mute animate-pulse">Loading…</div>;
   }
 
