@@ -1,8 +1,8 @@
 import type { Market } from "./categories";
 import type { Goal } from "./goal";
+import type { ContactType } from "./contacts";
 
-export type ContactType =
-  | "prospect" | "coach" | "recruiter" | "referral" | "peer" | "hiring_manager" | "other";
+export type { ContactType } from "./contacts";
 
 export type InteractionType =
   | "research" | "outreach_referral" | "outreach_cold" | "pleasure_interview"
@@ -58,8 +58,8 @@ export interface Contact {
   fullName: string;
   company?: string;
   role?: string;
-  type: ContactType;
-  market: Market;
+  type: ContactType;       // hiring_manager | peer | influencer | referrer (see lib/contacts.ts)
+  market?: Market;         // legacy — contacts are no longer classified by market
   linkedinUrl?: string;
   email?: string;
   phone?: string;
