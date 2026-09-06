@@ -65,14 +65,21 @@ export function periodLabel(period: Period, anchor: Date): string {
 }
 
 // ----- target conversion: one canonical WEEKLY base, shown/edited per period -----
+// A job-search week is 5 WORKDAYS: a daily target is weekly / 5, so a 5/wk default
+// reads as 1/day (not 1 for both 5/wk and 8/wk, as a 7-day split gave).
+// Months stay calendar-based (daysInMonth / 7 weeks in the month).
+export const WORKDAYS_PER_WEEK = 5;
+
 // Scale a weekly target down/up to the selected period (for display).
 export function scaleTarget(weeklyTarget: number, period: Period, anchor: Date): number {
   if (period === "week") return Math.round(weeklyTarget);
+  if (period === "day") return Math.round(weeklyTarget / WORKDAYS_PER_WEEK);
   return Math.round((weeklyTarget * periodDays(period, anchor)) / 7);
 }
 // Convert a value entered in the current period back to the weekly base (for storage).
 export function toWeekly(entered: number, period: Period, anchor: Date): number {
   if (period === "week") return Math.max(0, Math.round(entered));
+  if (period === "day") return Math.max(0, Math.round(entered * WORKDAYS_PER_WEEK));
   return Math.max(0, Math.round((entered * 7) / periodDays(period, anchor)));
 }
 

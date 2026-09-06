@@ -11,7 +11,10 @@ users/{uid}                      profile: { email, firstName, lastName, archetyp
   │                                outcome, notes, createdAt }   // info/job/pleasure interviews, coffee
   ├─ opportunities/{id}          { contactId, company, role, market, stage, source, url, notes, createdAt }
   ├─ activityLogs/{id}           { categoryId, contactId?, loggedOn (YYYY-MM-DD), count, notes, createdAt }
-  └─ activityTargets/{weekStart} { weekStart (YYYY-MM-DD, Monday), targets: { [categoryId]: number } }
+  └─ settings/targets            { targets: { [activityId]: weeklyNumber } }
+                                 // ONLY rows the user has explicitly set. Effective target =
+                                 // user override ?? config/content.activities[].defaultWeekly ?? 0
+                                 // (lib/targets.ts — shared by Performance and onboarding)
 
 accessGrants/{uid}               { email, plan, durationDays, source, status, redeemBy,
                                    startsAt, expiresAt, webhookPayload, createdAt, updatedAt }

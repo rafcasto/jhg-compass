@@ -12,6 +12,7 @@ import type { Activity, ActivityLog } from "@/lib/types";
 import {
   type Period, rangeYmd, shift, periodLabel, scaleTarget, toWeekly, inRange, ymd,
 } from "@/lib/period";
+import { resolveWeeklyTarget, withTargetEdits } from "@/lib/targets";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
@@ -40,7 +41,8 @@ export default function PerformancePage() {
   const userTargets = targetDoc?.targets ?? {};
 
   const range = rangeYmd(period, anchor);
-  const weeklyTarget = (id: string) => userTargets[id] ?? weeklyTargets[id] ?? 0;
+  // Source of truth for target resolution — shared with onboarding (lib/targets.ts).
+  const weeklyTarget = (id: string) => resolveWeeklyTarget(id, userTargets, weeklyTargets);
   const periodTarget = (id: string) => scaleTarget(weeklyTarget(id), period, anchor);
 
   const actuals = useMemo(() => {
@@ -71,7 +73,7 @@ export default function PerformancePage() {
   async function setGoal(catId: string, enteredForPeriod: number) {
     if (!uid) return;
     const weekly = toWeekly(Math.max(0, enteredForPeriod), period, anchor);
-    await setDoc(paths.settingsTargets(uid), { targets: { ...userTargets, [catId]: weekly } }, { merge: true });
+    await setDoc(paths.settingsTargets(uid), { targets: withTargetEdits(userTargets, { [catId]: weekly }) }, { merge: true });
     track(TAGS.SET_TARGET, { props: { categoryId: catId, period, value: enteredForPeriod } });
   }
 
