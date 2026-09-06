@@ -63,7 +63,6 @@ export const TEXT_FIELDS: TextField[] = [
   { group: "Onboarding", key: "onb.country", label: "Field — country" },
   { group: "Onboarding", key: "onb.goalEyebrow", label: "Goal statement — eyebrow" },
   { group: "Onboarding", key: "onb.goalIntro", label: "Step 2 — intro", textarea: true },
-  { group: "Onboarding", key: "onb.salaryHelp", label: "Compensation helper", textarea: true },
   { group: "Onboarding", key: "onb.targetsTitle", label: "Step 3 — title" },
   { group: "Onboarding", key: "onb.targetsSubtitle", label: "Step 3 — subtitle", textarea: true },
   { group: "Onboarding", key: "onb.perDay", label: "“Per day” label" },
@@ -261,7 +260,6 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "onb.country": "Country",
   "onb.goalEyebrow": "Your Goal Statement",
   "onb.goalIntro": "Your goal statement keeps you pointed at the right target. Fill in the blanks — be specific.",
-  "onb.salaryHelp": "Target = what you're aiming for. Minimum = the lowest you'd accept.",
   "onb.targetsTitle": "Set your daily targets 🎯",
   "onb.targetsSubtitle": "How much will you do each day? You can fine-tune these any time in Performance.",
   "onb.perDay": "Per day",
@@ -420,17 +418,7 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "auth.verify.cancel": "Cancel",
   "auth.verify.signOut": "Sign out",
   "auth.verify.notVerified": "Not verified yet — click the link in your email, then try again.",
-
-  // Goal statement
-  "goal.template":
-    "In 60 days from now, I'm an outstanding {jobTitle} who adds value for my employer ABC Corp, in the {industry} industry.\nI'm making $ {targetSalary} yearly.\nI'm located in {geography} and enjoy flexible working arrangements.",
 };
-
-// Goal statement sits in its own group at the end of the catalogue UI.
-TEXT_FIELDS.push({
-  group: "Goal statement", key: "goal.template", label: "Goal statement template", textarea: true,
-  help: "Tokens {jobTitle} {industry} {targetSalary} {geography} are filled with the user’s answers and shown in bold.",
-});
 
 export const DEFAULT_CONTENT: ContentConfig = {
   effortSplit: { ...EFFORT_SPLIT },

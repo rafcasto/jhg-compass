@@ -6,16 +6,16 @@ import Image from "next/image";
 import { Compass, ArrowRight, ArrowLeft, Check, Plus, Minus } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import CountrySelect from "@/components/CountrySelect";
-import CompassSentence from "@/components/CompassSentence";
+import GoalStatement from "@/components/compass/GoalStatement";
+import GoalFields from "@/components/compass/GoalFields";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
 import { useContent } from "@/lib/firestore/content";
 import { fillTemplate } from "@/lib/content";
 import { scaleTarget, toWeekly } from "@/lib/period";
-import type { Activity, CompassFormula, Profile } from "@/lib/types";
+import type { Activity, Profile } from "@/lib/types";
+import { EMPTY_GOAL, goalFromProfile, normalizeGoal, type Goal } from "@/lib/goal";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
-
-const COMPANY_TYPES = ["startup", "small", "mid-size", "large"] as const;
 
 // Design tokens shared with the Performance tab (JobHackers design system).
 const C = {
@@ -42,8 +42,8 @@ export default function OnboardingPage() {
   const [lastName, setLastName] = useState("");
   const [country, setCountry] = useState("");
 
-  // Step 2 — compass formula
-  const [compass, setCompass] = useState<CompassFormula>({});
+  // Step 2 — goal statement (same model + form as the Compass tab)
+  const [goal, setGoal] = useState<Goal>(EMPTY_GOAL);
 
   // Step 3 — targets (stored as a canonical WEEKLY base; edited here per day)
   const [targets, setTargets] = useState<Record<string, number>>({});
@@ -61,7 +61,7 @@ export default function OnboardingPage() {
       setFirstName((p) => p || profile.firstName || "");
       setLastName((p) => p || profile.lastName || "");
       setCountry((p) => p || profile.country || "");
-      if (profile.compass) setCompass((c) => ({ ...profile.compass, ...c }));
+      if (profile.goal || profile.compass) setGoal((g) => ({ ...goalFromProfile(profile), ...g }));
     }
   }, [profile, router]);
 
@@ -75,7 +75,7 @@ export default function OnboardingPage() {
     setTargets((t) => ({ ...t, [id]: toWeekly(Math.max(0, d), "day", new Date()) }));
 
   const step1Valid = firstName.trim() && lastName.trim() && country.trim();
-  const step2Valid = compass.jobTitle?.trim();
+  const step2Valid = goal.role?.trim();
 
   async function finish() {
     if (!user) return;
@@ -86,7 +86,8 @@ export default function OnboardingPage() {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         country: country.trim(),
-        compass,
+        goal: normalizeGoal(goal),
+        goalUpdatedAt: Date.now(),
         onboardedAt: Date.now(),
       }, { merge: true });
       track(TAGS.ONBOARDED, { stage: "activation" });
@@ -121,32 +122,9 @@ export default function OnboardingPage() {
         )}
 
         {step === 1 && (
-          <CompassCard sentence={<CompassSentence c={compass} />} eyebrow={t("onb.goalEyebrow")}>
+          <CompassCard sentence={<GoalStatement goal={goal} />} eyebrow={t("onb.goalEyebrow")}>
             <p className="text-sm text-jh-mute mb-4">{t("onb.goalIntro")}</p>
-            <Field label="Job title / function" value={compass.jobTitle ?? ""}
-              onChange={(v) => setCompass((c) => ({ ...c, jobTitle: v }))} placeholder="e.g. Product Marketing Manager" />
-            <Field label="Industry" value={compass.industry ?? ""}
-              onChange={(v) => setCompass((c) => ({ ...c, industry: v }))} placeholder="e.g. FinTech" />
-            <Field label="Location" value={compass.geography ?? ""}
-              onChange={(v) => setCompass((c) => ({ ...c, geography: v }))} placeholder="e.g. London or remote-EU" />
-            <div>
-              <label className="label">Type of company</label>
-              <select className="field" value={compass.companyType ?? ""}
-                onChange={(e) => setCompass((c) => ({ ...c, companyType: e.target.value }))}>
-                <option value="">Select…</option>
-                {COMPANY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Compensation</label>
-              <div className="grid grid-cols-2 gap-3">
-                <input className="field" placeholder="Target salary" value={compass.targetSalary ?? ""}
-                  onChange={(e) => setCompass((c) => ({ ...c, targetSalary: e.target.value }))} />
-                <input className="field" placeholder="Minimum (deal-breaker)" value={compass.minSalary ?? ""}
-                  onChange={(e) => setCompass((c) => ({ ...c, minSalary: e.target.value }))} />
-              </div>
-              <p className="text-[11px] text-jh-mute mt-1">{t("onb.salaryHelp")}</p>
-            </div>
+            <GoalFields value={goal} onChange={setGoal} variant="onboarding" idPrefix="onb-goal" />
             <Nav onBack={() => setStep(0)} onNext={() => setStep(2)} nextDisabled={!step2Valid} />
           </CompassCard>
         )}
@@ -205,7 +183,7 @@ function CompassCard({ sentence, eyebrow, children }: { sentence: React.ReactNod
         <Compass className="absolute -right-6 -bottom-6 h-40 w-40 text-white/5" strokeWidth={1} />
         <div className="relative">
           <span className="eyebrow text-white/60">{eyebrow}</span>
-          <p className="mt-2 font-display font-semibold text-lg leading-snug">{sentence}</p>
+          <div className="mt-2">{sentence}</div>
         </div>
       </div>
       <div className="card p-6 space-y-4">{children}</div>
