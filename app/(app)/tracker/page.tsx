@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Plus, X, ExternalLink, Trash2, Users, MessageSquare, Linkedin, Mail, GripVertical,
-  Pencil, Columns3, Bell, Calendar, AlertCircle,
+  Pencil, Columns3, Bell, Calendar, AlertCircle, Phone,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import {
@@ -12,6 +12,7 @@ import {
 import { useContent } from "@/lib/firestore/content";
 import type { Contact, Opportunity, OpportunityStage, Reminder } from "@/lib/types";
 import type { Market } from "@/lib/categories";
+import { CONTACT_TYPES, CONTACT_TYPE_TKEY, DEFAULT_CONTACT_TYPE, normalizeContactType, type ContactType } from "@/lib/contacts";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
@@ -387,9 +388,10 @@ function ContactCard({ uid, c }: { uid: string; c: Contact }) {
           <p className="font-display font-semibold text-jh-ink text-sm truncate">{c.fullName}</p>
           <p className="text-xs text-jh-mute truncate">{[c.role, c.company].filter(Boolean).join(" · ")}</p>
         </div>
-        <span className={c.market === "hidden" ? "pill-hidden shrink-0 hidden sm:inline-flex" : "pill-visible shrink-0 hidden sm:inline-flex"}>{c.market}</span>
+        <span className="pill-visible shrink-0 hidden sm:inline-flex">{t(CONTACT_TYPE_TKEY[normalizeContactType(c.type)])}</span>
         {c.linkedinUrl && <a href={c.linkedinUrl} target="_blank" rel="noreferrer" className="text-jh-mute hover:text-jh-ink"><Linkedin className="h-4 w-4" /></a>}
         {c.email && <a href={`mailto:${c.email}`} className="text-jh-mute hover:text-jh-ink"><Mail className="h-4 w-4" /></a>}
+        {c.phone && <a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`} className="text-jh-mute hover:text-jh-ink" aria-label={t("tracker.f.phone")}><Phone className="h-4 w-4" /></a>}
         <button onClick={() => setOpen((o) => !o)} className="relative text-jh-mute hover:text-jh-ink" aria-label={t("tracker.notes")}>
           <MessageSquare className="h-4 w-4" />
           {log.length > 0 && <span className="absolute -top-1.5 -right-1.5 min-w-3.5 rounded-full bg-jh-line px-0.5 text-[9px] leading-[14px] text-jh-mute text-center">{log.length}</span>}
@@ -419,7 +421,8 @@ function ContactCard({ uid, c }: { uid: string; c: Contact }) {
 
 function AddContactStandalone({ uid, onClose }: { uid: string; onClose: () => void }) {
   const { t } = useContent();
-  const [f, setF] = useState({ fullName: "", company: "", role: "", market: "hidden" as Market, email: "", linkedinUrl: "" });
+  const idp = "add-contact";
+  const [f, setF] = useState({ fullName: "", company: "", role: "", type: DEFAULT_CONTACT_TYPE as ContactType, email: "", phone: "", linkedinUrl: "" });
   const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
   const [busy, setBusy] = useState(false);
 
@@ -427,8 +430,8 @@ function AddContactStandalone({ uid, onClose }: { uid: string; onClose: () => vo
     e.preventDefault();
     if (!f.fullName.trim()) return;
     setBusy(true);
-    await createDoc(paths.contacts(uid), { ...f, fullName: f.fullName.trim(), type: "prospect" });
-    track(TAGS.ADD_CONTACT, { props: { market: f.market } });
+    await createDoc(paths.contacts(uid), { ...f, fullName: f.fullName.trim(), phone: f.phone.trim() });
+    track(TAGS.ADD_CONTACT, { props: { type: f.type } });
     setBusy(false); onClose();
   }
 
@@ -441,13 +444,16 @@ function AddContactStandalone({ uid, onClose }: { uid: string; onClose: () => vo
           <div><label className="label">{t("tracker.f.role")}</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">{t("tracker.f.market")}</label>
-            <select className="field" value={f.market} onChange={(e) => set("market", e.target.value)}>
-              <option value="hidden">{t("tracker.f.hidden")}</option><option value="visible">{t("tracker.f.visible")}</option>
+          <div><label className="label" htmlFor={`${idp}-type`}>{t("tracker.f.contactType")}</label>
+            <select id={`${idp}-type`} className="field" value={f.type} onChange={(e) => set("type", e.target.value as ContactType)}>
+              {CONTACT_TYPES.map((ct) => <option key={ct} value={ct}>{t(CONTACT_TYPE_TKEY[ct])}</option>)}
             </select></div>
-          <div><label className="label">{t("tracker.f.email")}</label><input className="field" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.email")}</label><input className="field" type="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
         </div>
-        <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label" htmlFor={`${idp}-phone`}>{t("tracker.f.phone")} <span className="font-normal text-jh-mute">{t("tracker.f.optional")}</span></label><input id={`${idp}-phone`} className="field" type="tel" inputMode="tel" autoComplete="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        </div>
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Adding…" : t("contacts.addSubmit")}</button>
       </form>
     </Sheet>
@@ -718,9 +724,10 @@ function ContactRow({ uid, c, onDetach }: { uid: string; c: Contact; onDetach: (
 /* ---------------- Edit contact (update a contact) ---------------- */
 function EditContact({ uid, c, onClose }: { uid: string; c: Contact; onClose: () => void }) {
   const { t } = useContent();
+  const idp = `edit-contact-${c.id}`;
   const [f, setF] = useState({
     fullName: c.fullName ?? "", company: c.company ?? "", role: c.role ?? "",
-    market: (c.market ?? "hidden") as Market, email: c.email ?? "", linkedinUrl: c.linkedinUrl ?? "",
+    type: normalizeContactType(c.type), email: c.email ?? "", phone: c.phone ?? "", linkedinUrl: c.linkedinUrl ?? "",
   });
   const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
   const [busy, setBusy] = useState(false);
@@ -731,9 +738,9 @@ function EditContact({ uid, c, onClose }: { uid: string; c: Contact; onClose: ()
     setBusy(true);
     await updateRecord(uid, "contacts", c.id, {
       fullName: f.fullName.trim(), company: f.company, role: f.role,
-      market: f.market, email: f.email, linkedinUrl: f.linkedinUrl,
+      type: f.type, email: f.email, phone: f.phone.trim(), linkedinUrl: f.linkedinUrl,
     });
-    track(TAGS.UPDATE_CONTACT, { props: { market: f.market } });
+    track(TAGS.UPDATE_CONTACT, { props: { type: f.type } });
     setBusy(false); onClose();
   }
 
@@ -746,13 +753,16 @@ function EditContact({ uid, c, onClose }: { uid: string; c: Contact; onClose: ()
           <div><label className="label">{t("tracker.f.role")}</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">{t("tracker.f.market")}</label>
-            <select className="field" value={f.market} onChange={(e) => set("market", e.target.value)}>
-              <option value="hidden">{t("tracker.f.hidden")}</option><option value="visible">{t("tracker.f.visible")}</option>
+          <div><label className="label" htmlFor={`${idp}-type`}>{t("tracker.f.contactType")}</label>
+            <select id={`${idp}-type`} className="field" value={f.type} onChange={(e) => set("type", e.target.value as ContactType)}>
+              {CONTACT_TYPES.map((ct) => <option key={ct} value={ct}>{t(CONTACT_TYPE_TKEY[ct])}</option>)}
             </select></div>
-          <div><label className="label">{t("tracker.f.email")}</label><input className="field" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.email")}</label><input className="field" type="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
         </div>
-        <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label" htmlFor={`${idp}-phone`}>{t("tracker.f.phone")} <span className="font-normal text-jh-mute">{t("tracker.f.optional")}</span></label><input id={`${idp}-phone`} className="field" type="tel" inputMode="tel" autoComplete="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        </div>
         <div className="flex gap-2">
           <button type="button" onClick={onClose} className="btn-secondary flex-1">{t("tracker.cancel")}</button>
           <button type="submit" disabled={busy} className="btn-primary flex-1 disabled:opacity-60">{busy ? "Saving…" : t("tracker.save")}</button>
@@ -766,16 +776,17 @@ function CreateContact({ uid, onClose, onCreated }: {
   uid: string; onClose: () => void; onCreated: (id: string) => void;
 }) {
   const { t } = useContent();
-  const [f, setF] = useState({ fullName: "", company: "", role: "", market: "hidden" as Market, email: "", linkedinUrl: "" });
+  const idp = "create-contact";
+  const [f, setF] = useState({ fullName: "", company: "", role: "", type: DEFAULT_CONTACT_TYPE as ContactType, email: "", phone: "", linkedinUrl: "" });
   const set = (k: string, v: any) => setF((p) => ({ ...p, [k]: v }));
   const [busy, setBusy] = useState(false);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!f.fullName) return;
+    if (!f.fullName.trim()) return;
     setBusy(true);
-    const ref = await createDoc(paths.contacts(uid), { ...f, type: "prospect" });
-    track(TAGS.ADD_CONTACT, { props: { market: f.market } });
+    const ref = await createDoc(paths.contacts(uid), { ...f, fullName: f.fullName.trim(), phone: f.phone.trim() });
+    track(TAGS.ADD_CONTACT, { props: { type: f.type } });
     setBusy(false);
     onCreated((ref as any).id);
     onClose();
@@ -790,13 +801,16 @@ function CreateContact({ uid, onClose, onCreated }: {
           <div><label className="label">{t("tracker.f.role")}</label><input className="field" value={f.role} onChange={(e) => set("role", e.target.value)} /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">{t("tracker.f.market")}</label>
-            <select className="field" value={f.market} onChange={(e) => set("market", e.target.value)}>
-              <option value="hidden">{t("tracker.f.hidden")}</option><option value="visible">{t("tracker.f.visible")}</option>
+          <div><label className="label" htmlFor={`${idp}-type`}>{t("tracker.f.contactType")}</label>
+            <select id={`${idp}-type`} className="field" value={f.type} onChange={(e) => set("type", e.target.value as ContactType)}>
+              {CONTACT_TYPES.map((ct) => <option key={ct} value={ct}>{t(CONTACT_TYPE_TKEY[ct])}</option>)}
             </select></div>
-          <div><label className="label">{t("tracker.f.email")}</label><input className="field" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.email")}</label><input className="field" type="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
         </div>
-        <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label" htmlFor={`${idp}-phone`}>{t("tracker.f.phone")} <span className="font-normal text-jh-mute">{t("tracker.f.optional")}</span></label><input id={`${idp}-phone`} className="field" type="tel" inputMode="tel" autoComplete="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+          <div><label className="label">{t("tracker.f.linkedin")}</label><input className="field" value={f.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} /></div>
+        </div>
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Saving…" : t("tracker.createAttach")}</button>
       </form>
     </Sheet>
