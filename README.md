@@ -21,6 +21,13 @@ npm run dev                  # http://localhost:3000
 - Step-dot colours map from the post's first public tag; numbered live slugs (`1-focus`, `4-outreach`, `5-hidden-offers`…) are normalised
   in `lib/ghost.ts`.
 
+## Coaching tab — admin-editable screen
+- `/coaching` renders `components/coaching/CoachingScreen.tsx` with the **published** copy from `config/coachingScreen`
+  (seed copy in `lib/coaching-screen.ts` until something is published). Designed for 390×844 with no scrolling.
+- **Admin → Coaching** edits every string (headline, subhead, benefits 2–4, entitlements 1–6, CTA) beside a true-size
+  390×844 preview of the real component, with soft character counters, a "won't fit" flag, save-as-draft / publish and
+  an audit line. API: `GET/POST /api/admin/coaching-screen`.
+
 ## Tests
 ```bash
 npm test          # vitest (jsdom + testing-library)
