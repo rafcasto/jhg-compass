@@ -36,9 +36,9 @@ describe("GoalStatement", () => {
 
   it("shows dimmed placeholders for blank fields", () => {
     render(<GoalStatement goal={{}} />);
-    const blanks = screen.getAllByText(/^(\[.+\]|____)$/);
+    const blanks = screen.getAllByText(/^\[.+\]$/);
     expect(blanks.map((b) => b.textContent)).toEqual([
-      "[Seniority Level + Job title]", "____", "[City]", "[Specific Subsector]", "[Company Type]",
+      "[Seniority Level + Job title]", "[Target Salary]", "[City]", "[Specific Sub-sector]", "[Company Type]",
     ]);
     blanks.forEach((b) => expect(b).toHaveAttribute("data-empty", "true"));
   });
