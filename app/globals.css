@@ -122,3 +122,91 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
 /* Hide the scrollbar on the article rail (keeps native touch scrolling) */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ===== Coaching tab (JobHackers design system) =====
+   A fixed-height column on mobile: header 56 + tab bar 58 are subtracted from the
+   viewport (see components/shell/MobileChrome.tsx). Vertical slack goes to the
+   benefit rows (flex:1 + space-evenly), never above the CTA. Geometry is mirrored
+   in COACHING_VIEWPORT / estimateCoachingScreenHeight (lib/coaching-screen.ts). */
+.coaching-screen {
+  display: flex; flex-direction: column; box-sizing: border-box;
+  padding: 12px 16px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  color: #191c27; background: #fafafa;
+}
+.coaching-screen--preview { height: 100%; }
+@media (max-width: 767px) {
+  /* Cancel the shell's px-5 py-6 (+ pb-24 for the fixed tab bar) so the column is exact. */
+  .coaching-screen--page {
+    margin: -24px -20px -120px;
+    height: calc(100vh - 114px);
+    height: calc(100dvh - 114px - env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (min-width: 768px) {
+  .coaching-screen--page { max-width: 440px; padding: 0; }
+  .coaching-screen--page .coaching-benefits { gap: 18px; }
+}
+
+.coaching-headline {
+  display: flex; flex-direction: column;
+  font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: -0.01em;
+  margin: 0 0 10px;
+}
+.coaching-headline-1 { font-size: 36px; line-height: 1.1; color: #191c27; }
+.coaching-headline-2 { font-size: 18px; line-height: 1.25; font-weight: 600; color: #191c27; }
+.coaching-headline-3 { font-size: 44px; line-height: 1.05; color: #c2001f; }
+
+.coaching-subhead {
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.45; color: #3a3f4d;
+  margin: 0 0 12px;
+}
+
+/* Benefit rows: emoji + title + one line of body, 3px red left rule. flex:1 +
+   space-evenly distributes whatever height is left across the rows. */
+.coaching-benefits {
+  list-style: none; margin: 0 0 12px; padding: 0;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; justify-content: space-evenly; gap: 8px;
+}
+.coaching-benefit {
+  display: flex; align-items: flex-start; gap: 10px;
+  border-left: 3px solid #c2001f; padding-left: 11px;
+}
+.coaching-benefit-emoji { font-size: 22px; line-height: 1; width: 26px; flex: 0 0 26px; text-align: center; padding-top: 1px; }
+.coaching-benefit-title { margin: 0 0 2px; font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.3; color: #191c27; }
+.coaching-benefit-body { margin: 0; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.4; color: #3a3f4d; }
+
+/* Entitlement card on the blue-grey tint. Body is #3a3f4d (not #6b7280) — the
+   tint drops #6b7280 to ~4.0:1, under the 4.5:1 floor. */
+.coaching-card {
+  list-style: none; margin: 0 0 14px; padding: 14px;
+  background: #e2ebfb; border-radius: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.coaching-entitlement { display: flex; align-items: flex-start; gap: 10px; }
+.coaching-entitlement-emoji { font-size: 20px; line-height: 1; width: 20px; flex: 0 0 20px; text-align: center; padding-top: 1px; }
+.coaching-entitlement-title { margin: 0 0 4px; font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 15px; line-height: 1.3; color: #191c27; }
+.coaching-entitlement-body { margin: 0; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #3a3f4d; }
+
+/* CTA: full-width, 8px radius, red glow, Poppins 700, ≥48px tap target */
+.coaching-cta-wrap { flex: 0 0 auto; }
+.coaching-cta {
+  display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; padding: 12px 18px;
+  font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 16px; line-height: 1.2;
+  color: #fff; background: #c2001f; border-radius: 8px; text-decoration: none;
+  box-shadow: 0 6px 18px rgba(194, 0, 31, .25);
+  transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+.coaching-cta:hover, .coaching-cta:active { background: #8a0016; }
+.coaching-caption {
+  margin: 8px 0 0; text-align: center;
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #6b7280;
+}
+
+/* Admin preview frame: a true-size 390×844 phone around the real screen + chrome */
+.coaching-preview {
+  display: flex; flex-direction: column; flex: 0 0 auto; overflow: hidden;
+  background: #fafafa; border: 1px solid #e6e8ef; border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(25, 28, 39, .10);
+}
+.coaching-preview > * { flex: 0 0 auto; }

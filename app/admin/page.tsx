@@ -12,6 +12,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { auth } from "@/lib/firebase/client";
 import ArticlesTab from "@/components/admin/ArticlesTab";
 import StagesTab from "@/components/admin/StagesTab";
+import CoachingScreenTab from "@/components/admin/CoachingScreenTab";
 import type { AdminConfig, Activity, ContentConfig } from "@/lib/types";
 import { DEFAULT_CONTENT, TEXT_FIELDS, newActivityId } from "@/lib/content";
 import {
@@ -19,11 +20,11 @@ import {
 } from "@/lib/funnel";
 import FeedbackTab from "@/components/admin/FeedbackTab";
 
-const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Stages", "Articles", "Feedback", "Funnel", "Event tracking"] as const;
+const TABS = ["Dashboard", "Analytics", "Registration links", "Content", "Stages", "Articles", "Coaching", "Feedback", "Funnel", "Event tracking"] as const;
 type Tab = (typeof TABS)[number];
 
-// Paywall / email / coaching copy (stored separately in config/admin) — now edited
-// inside the Content tab alongside all other static text.
+// Paywall / email copy (stored separately in config/admin) — edited inside the
+// Content tab alongside all other static text. Coaching-tab copy has its own tab.
 const CONFIG_FIELDS: { key: keyof AdminConfig; label: string; textarea?: boolean }[] = [
   { key: "paywallTitle", label: "Paywall — title" },
   { key: "paywallBody", label: "Paywall — body", textarea: true },
@@ -33,10 +34,6 @@ const CONFIG_FIELDS: { key: keyof AdminConfig; label: string; textarea?: boolean
   { key: "pwResetBody", label: "Password email — body", textarea: true },
   { key: "emailVerifySubject", label: "Email verification — subject" },
   { key: "emailVerifyBody", label: "Email verification — body", textarea: true },
-  { key: "coachingTitle", label: "Coaching — title" },
-  { key: "coachingBody", label: "Coaching — body", textarea: true },
-  { key: "coachingCtaLabel", label: "Coaching — CTA label" },
-  { key: "coachingCtaUrl", label: "Coaching — CTA URL" },
 ];
 
 async function token() { return auth.currentUser!.getIdToken(); }
@@ -103,6 +100,7 @@ export default function AdminPage() {
         {tab === "Content" && <ContentTab />}
         {tab === "Stages" && <StagesTab />}
         {tab === "Articles" && <ArticlesTab />}
+        {tab === "Coaching" && <CoachingScreenTab />}
         {tab === "Funnel" && <FunnelTab />}
         {tab === "Event tracking" && <EventTracking />}
         {tab === "Feedback" && <FeedbackTab />}
@@ -578,7 +576,7 @@ function ContentTab() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl">App content</h2>
-          <p className="text-jh-mute text-sm mt-1">Edit every static label, the job-market activity lists, and the paywall / email / coaching copy. Progress-board stages live on the Stages tab. Changes go live across the app and onboarding the moment you save.</p>
+          <p className="text-jh-mute text-sm mt-1">Edit every static label, the job-market activity lists, and the paywall / email copy. Progress-board stages live on the Stages tab; the Coaching tab has its own editor. Changes go live across the app and onboarding the moment you save.</p>
         </div>
         <button onClick={resetDefaults} className="btn-secondary text-xs px-3 py-2 whitespace-nowrap">Reset to defaults</button>
       </div>
@@ -628,11 +626,11 @@ function ContentTab() {
         ))}
       </section>
 
-      {/* ---- Paywall, email & coaching copy ---- */}
+      {/* ---- Paywall & email copy ---- */}
       <section className="space-y-5">
         <div>
-          <h3 className="font-display font-bold text-jh-ink">Paywall, email &amp; coaching</h3>
-          <p className="text-jh-mute text-sm">Copy for the expired-access paywall, transactional emails, and the coaching upsell modal.</p>
+          <h3 className="font-display font-bold text-jh-ink">Paywall &amp; email</h3>
+          <p className="text-jh-mute text-sm">Copy for the expired-access paywall and transactional emails.</p>
         </div>
         <div className="card p-5 space-y-4">
           {CONFIG_FIELDS.map((f) => (

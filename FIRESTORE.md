@@ -23,6 +23,11 @@ accessGrants/{uid}               { email, plan, durationDays, source, status, re
 config/admin                     { paywallTitle, paywallBody, paywallCtaLabel, paywallCtaUrl,
                                    pwResetSubject, pwResetBody, updatedBy, updatedAt }
 
+config/coachingScreen            { draft, published, publishedAt, publishedBy, updatedAt, updatedBy }
+                                 // draft/published: { headline{line1,line2,line3}, subhead, benefits[],
+                                 //   entitlements[], cta{label,url}, ctaCaption } — the Coaching tab copy,
+                                 //   edited from Admin → Coaching (lib/coaching-screen.ts). App reads `published`.
+
 config/content                   { effortSplit, activities[], text{}, stages[], updatedBy, updatedAt }
                                  // stages: [{ id, label, color }] — Progress-board columns in order,
                                  // managed from Admin → Stages (defaults in lib/stages.ts)

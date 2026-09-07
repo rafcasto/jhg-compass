@@ -141,11 +141,7 @@ export interface AdminConfig {
   // Email verification template (req 2) — admin-editable.
   emailVerifySubject: string;
   emailVerifyBody: string;
-  // Coaching modal copy (Q1) — admin-editable.
-  coachingTitle: string;
-  coachingBody: string;
-  coachingCtaLabel: string;
-  coachingCtaUrl: string;
+  // Coaching-tab copy lives in config/coachingScreen (lib/coaching-screen.ts), not here.
 }
 
 // ---- In-app feedback survey (admin-editable) ----

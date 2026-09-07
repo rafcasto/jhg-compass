@@ -22,6 +22,8 @@ export const paths = {
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
   content: () => doc(db, "config", "content"),
+  // Coaching tab copy: { draft, published, publishedAt, publishedBy, … } (Admin → Coaching)
+  coachingScreen: () => doc(db, "config", "coachingScreen"),
   feedbackConfig: () => doc(db, "config", "feedback"),
 };
 
