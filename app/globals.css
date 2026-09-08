@@ -142,9 +142,51 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
     height: calc(100dvh - 114px - env(safe-area-inset-bottom, 0px));
   }
 }
+/* Card + CTA travel together so desktop can pull them into a second column;
+   on mobile / in the preview the wrapper has no box and the flex column is unchanged. */
+.coaching-offer { display: contents; }
+
+/* ---- Desktop (md+): the shell adds a 324px sidebar and generous padding, so the
+   fixed phone column is dropped. One wider column with a larger type scale… ---- */
 @media (min-width: 768px) {
-  .coaching-screen--page { max-width: 440px; padding: 0; }
-  .coaching-screen--page .coaching-benefits { gap: 18px; }
+  .coaching-screen--page {
+    height: auto; max-width: 600px; padding: 0; overflow: visible; background: transparent;
+  }
+  .coaching-screen--page .coaching-headline { margin-bottom: 16px; }
+  .coaching-screen--page .coaching-headline-1 { font-size: 44px; }
+  .coaching-screen--page .coaching-headline-2 { font-size: 20px; margin-top: 4px; }
+  .coaching-screen--page .coaching-headline-3 { font-size: 56px; }
+  .coaching-screen--page .coaching-subhead { font-size: 17px; line-height: 1.5; max-width: 560px; margin-bottom: 28px; }
+  .coaching-screen--page .coaching-benefits { flex: 0 0 auto; justify-content: flex-start; gap: 20px; margin-bottom: 28px; }
+  .coaching-screen--page .coaching-benefit { gap: 14px; padding-left: 14px; }
+  .coaching-screen--page .coaching-benefit-emoji { font-size: 26px; width: 30px; flex-basis: 30px; }
+  .coaching-screen--page .coaching-benefit-title { font-size: 18px; margin-bottom: 4px; }
+  .coaching-screen--page .coaching-benefit-body { font-size: 15px; line-height: 1.5; }
+  .coaching-screen--page .coaching-offer { display: flex; flex-direction: column; gap: 16px; }
+  .coaching-screen--page .coaching-card { margin: 0; padding: 22px 24px; border-radius: 16px; gap: 14px; }
+  .coaching-screen--page .coaching-entitlement { gap: 14px; }
+  .coaching-screen--page .coaching-entitlement-emoji { font-size: 24px; width: 26px; flex-basis: 26px; }
+  .coaching-screen--page .coaching-entitlement-title { font-size: 17px; }
+  .coaching-screen--page .coaching-entitlement-body { font-size: 15px; line-height: 1.5; }
+  .coaching-screen--page .coaching-cta { min-height: 52px; padding: 14px 24px; font-size: 17px; border-radius: 10px; }
+  .coaching-screen--page .coaching-caption { font-size: 14px; margin-top: 10px; }
+}
+/* ---- …and once the sidebar leaves room, two columns: pitch left, offer right
+   (sticky), the same "header + dark card" rhythm the Compass tab uses. ---- */
+@media (min-width: 1100px) {
+  .coaching-screen--page {
+    display: grid; max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: "head offer" "sub offer" "benefits offer";
+    column-gap: 64px; align-items: start;
+  }
+  .coaching-screen--page .coaching-headline { grid-area: head; }
+  .coaching-screen--page .coaching-headline-1 { font-size: 48px; }
+  .coaching-screen--page .coaching-headline-3 { font-size: 64px; }
+  .coaching-screen--page .coaching-subhead { grid-area: sub; }
+  .coaching-screen--page .coaching-benefits { grid-area: benefits; margin-bottom: 0; }
+  .coaching-screen--page .coaching-offer { grid-area: offer; position: sticky; top: 44px; }
 }
 
 .coaching-headline {

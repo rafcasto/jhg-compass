@@ -23,7 +23,8 @@ npm run dev                  # http://localhost:3000
 
 ## Coaching tab — admin-editable screen
 - `/coaching` renders `components/coaching/CoachingScreen.tsx` with the **published** copy from `config/coachingScreen`
-  (seed copy in `lib/coaching-screen.ts` until something is published). Designed for 390×844 with no scrolling.
+  (seed copy in `lib/coaching-screen.ts` until something is published). Designed for 390×844 with no scrolling on a phone;
+  on desktop the same DOM becomes a two-column pitch / offer layout (`.coaching-screen--page` rules in `app/globals.css`).
 - **Admin → Lead magnet CMS → Coaching** edits every string beside a true-size 390×844 preview of the real component, with
   soft character counters, a "won't fit" flag, save-as-draft / publish and an audit line. API: `GET/POST /api/admin/coaching-screen`.
 

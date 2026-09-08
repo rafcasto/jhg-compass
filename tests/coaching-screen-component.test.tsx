@@ -122,6 +122,16 @@ describe("no-scroll layout contract (app/globals.css)", () => {
     expect(b).toContain(`calc(100dvh - ${MOBILE_HEADER_HEIGHT + MOBILE_TABBAR_HEIGHT}px`);
   });
 
+  it("desktop keeps the mobile column intact and adds a two-column pitch / offer layout", () => {
+    // mobile: the wrapper has no box, so the flex column (and the admin preview) is unchanged
+    expect(block(".coaching-offer")).toMatch(/display:\s*contents/);
+    const coachingCss = css.slice(css.indexOf("Coaching tab (JobHackers design system)"));
+    // md+: no fixed height; wide: grid with the offer column on the right, sticky
+    expect(coachingCss).toMatch(/@media \(min-width: 768px\)[\s\S]*\.coaching-screen--page \{[^}]*height:\s*auto/);
+    expect(coachingCss).toMatch(/@media \(min-width: 1100px\)[\s\S]*grid-template-areas:\s*"head offer" "sub offer" "benefits offer"/);
+    expect(coachingCss).toMatch(/\.coaching-screen--page \.coaching-offer \{[^}]*position:\s*sticky/);
+  });
+
   it("uses the brand tokens: red CTA with glow, blue-grey card, no #9aa0ad text", () => {
     expect(block(".coaching-cta")).toContain("#c2001f");
     expect(block(".coaching-cta")).toContain("0 6px 18px rgba(194, 0, 31, .25)");
