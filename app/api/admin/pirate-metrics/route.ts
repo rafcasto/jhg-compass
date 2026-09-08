@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEventConfig } from "@/lib/server/eventConfig";
 import { PIRATE_STAGES, isEventStage, type EventStage } from "@/lib/tags";
-import { gaUsesFirebaseAccount, getAwarenessReport, type AwarenessResult } from "@/lib/server/ga4";
+import { gaServiceAccountEmail, gaUsesFirebaseAccount, getAwarenessReport, type AwarenessResult } from "@/lib/server/ga4";
 
 export const runtime = "nodejs";
 
@@ -112,9 +112,10 @@ export async function GET(req: NextRequest) {
   const timeseries = [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, v]) => ({ day, ...v }));
 
   // FO layer — Google Analytics (awareness). Awareness "people" = GA users.
-  const ga: AwarenessResult & { usesFirebaseAccount: boolean; measurementId: string | null } = {
+  const ga: AwarenessResult & { usesFirebaseAccount: boolean; serviceAccountEmail: string | null; measurementId: string | null } = {
     ...(gaResult as AwarenessResult),
     usesFirebaseAccount: gaUsesFirebaseAccount(),
+    serviceAccountEmail: gaServiceAccountEmail(),
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ?? null,
   };
   const awareness = stages.find((s) => s.stage === "awareness");
