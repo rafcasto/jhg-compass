@@ -32,6 +32,8 @@ function serviceAccount(): ServiceAccount | null {
   } catch { return null; }
 }
 export const isGaConfigured = () => !!gaPropertyId() && !!serviceAccount();
+// The account that must be granted Viewer on the property (shown in the admin so nobody has to decode the env var).
+export const gaServiceAccountEmail = () => serviceAccount()?.client_email ?? null;
 export const gaUsesFirebaseAccount = () => !process.env.GA4_SERVICE_ACCOUNT_B64?.trim() && !!process.env.FIREBASE_SERVICE_ACCOUNT_B64?.trim();
 
 /* ---------------- auth ---------------- */
@@ -58,7 +60,7 @@ async function accessToken(sa: ServiceAccount): Promise<string> {
     signal: AbortSignal.timeout(10_000),
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok || !json.access_token) throw new Error(`ga_token_${res.status}${json.error ? `_${json.error}` : ""}`);
+  if (!res.ok || !json.access_token) throw new Error(`ga_token_${res.status}${json.error ? `_${json.error}` : ""}${json.error_description ? `: ${json.error_description}` : ""}`);
   tokenCache = { token: json.access_token, expiresAt: Date.now() + (Number(json.expires_in) || 3600) * 1000 };
   return tokenCache.token;
 }
@@ -91,7 +93,10 @@ async function runReport(token: string, propertyId: string, body: Record<string,
     signal: AbortSignal.timeout(15_000),
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`ga_report_${res.status}${json?.error?.status ? `_${json.error.status}` : ""}`);
+  // Keep Google's message: a 403 PERMISSION_DENIED is the same code for "account not on the
+  // property", "Data API not enabled on the GCP project" and "wrong property id" — only the
+  // message tells them apart.
+  if (!res.ok) throw new Error(`ga_report_${res.status}${json?.error?.status ? `_${json.error.status}` : ""}${json?.error?.message ? `: ${json.error.message}` : ""}`);
   return normalizeReport(json as RunReportResponse);
 }
 

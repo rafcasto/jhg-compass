@@ -5,6 +5,7 @@ import { Database, Globe, ExternalLink } from "lucide-react";
 import { PIRATE_STAGES, type EventStage } from "@/lib/tags";
 import { authed, Empty, Loading, Section, StatCard, SubTabs } from "@/components/admin/shared";
 import { ChartCard, CHART_COLORS, HBar, TimeLine } from "./charts";
+import { gaErrorHint } from "@/lib/ga4-hint";
 
 interface StageRollup { stage: EventStage; label: string; people: number; events: number; byEvent: { key: string; label: string; tag: string; people: number; events: number; enabled: boolean }[] }
 interface AwarenessReport {
@@ -15,7 +16,7 @@ interface AwarenessReport {
   pages: { label: string; count: number }[];
   daily: { day: string; sessions: number; users: number }[];
 }
-type Ga = { usesFirebaseAccount: boolean; measurementId: string | null } & (
+type Ga = { usesFirebaseAccount: boolean; serviceAccountEmail: string | null; measurementId: string | null } & (
   | { configured: false }
   | { configured: true; ok: true; report: AwarenessReport }
   | { configured: true; ok: false; error: string });
@@ -119,7 +120,7 @@ function Awareness({ ga }: { ga: Ga }) {
           <ol className="list-decimal pl-5 space-y-1">
             <li>Set <code className="font-mono text-xs text-jh-ink">GA4_PROPERTY_ID</code> (the numeric id under GA → Admin → Property settings).</li>
             <li>{ga.usesFirebaseAccount
-              ? <>Grant the Firebase service account <strong>Viewer</strong> on the GA4 property (GA → Admin → Property access management). No extra key needed — <code className="font-mono text-xs text-jh-ink">FIREBASE_SERVICE_ACCOUNT_B64</code> is reused.</>
+              ? <>Grant the Firebase service account{ga.serviceAccountEmail && <> <code className="font-mono text-xs text-jh-ink">{ga.serviceAccountEmail}</code></>} <strong>Viewer</strong> on the GA4 property (GA → Admin → Property access management). No extra key needed — <code className="font-mono text-xs text-jh-ink">FIREBASE_SERVICE_ACCOUNT_B64</code> is reused.</>
               : <>Set <code className="font-mono text-xs text-jh-ink">GA4_SERVICE_ACCOUNT_B64</code> to a service account (base64 JSON) with <strong>Viewer</strong> on the property.</>}</li>
           </ol>
           <p>{ga.measurementId ? <>Tagging is in place (measurement id <code className="font-mono text-xs">{ga.measurementId}</code>).</> : "No measurement id found — the public pages aren't tagged yet."}</p>
@@ -131,13 +132,8 @@ function Awareness({ ga }: { ga: Ga }) {
   if (!ga.ok) {
     return (
       <ChartCard title="Awareness · Google Analytics" subtitle="Could not read the GA4 Data API" aside={pill}>
-        <p className="text-sm text-jh-red font-mono">{ga.error}</p>
-        <p className="text-sm text-jh-mute mt-2">
-          {ga.error.includes("403") || ga.error.includes("PERMISSION") ? "The service account has no access to this property — add it as Viewer under GA → Admin → Property access management."
-            : ga.error.includes("404") || ga.error.includes("NOT_FOUND") ? "Check GA4_PROPERTY_ID — it must be the numeric property id, not the G-… measurement id."
-            : ga.error.startsWith("ga_token") ? "Token exchange failed — the service-account JSON may be malformed or the key revoked."
-            : "Check the server logs; the Data API may be disabled on the GCP project (enable “Google Analytics Data API”)."}
-        </p>
+        <p className="text-sm text-jh-red font-mono break-words">{ga.error}</p>
+        <p className="text-sm text-jh-mute mt-2">{gaErrorHint(ga.error, ga.serviceAccountEmail)}</p>
       </ChartCard>
     );
   }
