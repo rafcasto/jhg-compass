@@ -19,10 +19,11 @@ interface Props {
 
 // The Coaching tab. Renders whatever content it's given — the page passes the
 // published copy, the admin editor passes the draft — so the preview is exactly
-// what ships. On a phone the layout is a fixed-height column: vertical slack is
-// absorbed by the benefit rows (flex:1 + space-evenly), never dumped above the
-// CTA. On desktop (.coaching-screen--page, see globals.css) the same DOM becomes
-// a two-column pitch / offer layout so it sits like the other tabs.
+// what ships. The layout is a fixed-height column: vertical slack is absorbed by
+// the benefit rows (flex:1 + space-evenly), never dumped above the CTA. On a phone
+// the column is the space between header and tab bar; on desktop it is a single
+// 640px column centred in the main area with the type scaled up (a container
+// query on the screen's own width — see .coaching-* in app/globals.css).
 export default function CoachingScreen({ content, className = "", style, onCtaClick, onFitChange }: Props) {
   const ref = useRef<HTMLElement>(null);
 
@@ -33,11 +34,10 @@ export default function CoachingScreen({ content, className = "", style, onCtaCl
     const check = () => onFitChange(el.scrollHeight <= el.clientHeight + 1);
     check();
     if (typeof ResizeObserver === "undefined") return;
-    // Observe the descendants too: the root's box is fixed, only its content grows
-    // (.coaching-offer is display:contents on mobile, so go one level deeper as well).
+    // Observe the children too: the root's box is fixed, only its content grows.
     const ro = new ResizeObserver(check);
     ro.observe(el);
-    el.querySelectorAll(":scope > *, :scope > * > *").forEach((c) => ro.observe(c));
+    Array.from(el.children).forEach((c) => ro.observe(c));
     return () => ro.disconnect();
   }, [content, onFitChange]);
 
@@ -64,7 +64,6 @@ export default function CoachingScreen({ content, className = "", style, onCtaCl
         ))}
       </ul>
 
-      <div className="coaching-offer">
       <ul className="coaching-card" aria-label="Included with coaching">
         {entitlements.map((e, i) => (
           <li key={i} className="coaching-entitlement">
@@ -82,7 +81,6 @@ export default function CoachingScreen({ content, className = "", style, onCtaCl
           {cta.label}
         </a>
         <p className="coaching-caption">{ctaCaption}</p>
-      </div>
       </div>
     </section>
   );

@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { AlertTriangle, ArrowDown, ArrowUp, Check, GripVertical, Plus, Trash2 } from "lucide-react";
 import { auth } from "@/lib/firebase/client";
 import CoachingPreview from "@/components/coaching/CoachingPreview";
+import CoachingDesktopPreview from "@/components/coaching/CoachingDesktopPreview";
+import { SubTabs } from "@/components/admin/shared";
 import {
-  COACHING_EMOJI, COACHING_LIMITS, COACHING_LIST_LIMITS, COACHING_VIEWPORT, DEFAULT_COACHING_SCREEN,
+  COACHING_DESKTOP, COACHING_EMOJI, COACHING_LIMITS, COACHING_LIST_LIMITS, COACHING_VIEWPORT, DEFAULT_COACHING_SCREEN,
   charCount, validateCoachingScreen,
   type CoachingIssue, type CoachingItem, type CoachingScreenContent, type CoachingScreenDoc,
 } from "@/lib/coaching-screen";
@@ -29,12 +31,20 @@ const LIST_META: Record<ListKey, { label: string; heading: string; help: string;
   },
 };
 
+const DEVICES = [
+  { key: "mobile", label: `Mobile · ${COACHING_VIEWPORT.width}×${COACHING_VIEWPORT.height}` },
+  { key: "desktop", label: `Desktop · ${COACHING_DESKTOP.width}×${COACHING_DESKTOP.height}` },
+] as const;
+type Device = (typeof DEVICES)[number]["key"];
+
 const fmt = (ms: number) =>
   new Date(ms).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-// Admin: edit every string on the Coaching tab beside a true-size 390×844 preview
-// of the real screen. Save as draft (always allowed) or publish (blocked while any
-// field is invalid). Stored at config/coachingScreen.
+// Admin: edit every string on the Coaching tab beside a live preview of the real
+// screen in both shipping layouts — 390×844 phone and 1280×800 desktop. Both are
+// always mounted and measured, so the "won't fit" flag covers whichever one the
+// editor isn't looking at. Save as draft (always allowed) or publish (blocked while
+// any field is invalid). Stored at config/coachingScreen.
 export default function CoachingScreenTab() {
   const [doc, setDoc] = useState<CoachingScreenDoc | null>(null);
   const [content, setContent] = useState<CoachingScreenContent | null>(null);
@@ -42,7 +52,9 @@ export default function CoachingScreenTab() {
   const [busy, setBusy] = useState<"draft" | "publish" | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [fits, setFits] = useState<boolean | null>(null);
+  const [device, setDevice] = useState<Device>("mobile");
+  const [fits, setFits] = useState<Record<Device, boolean | null>>({ mobile: null, desktop: null });
+  const setFitsFor = (d: Device) => (v: boolean) => setFits((f) => (f[d] === v ? f : { ...f, [d]: v }));
 
   useEffect(() => {
     authed("/api/admin/coaching-screen").then((r) => r.json()).then((d) => {
@@ -113,7 +125,7 @@ export default function CoachingScreenTab() {
         <div>
           <h2 className="text-xl">Coaching tab</h2>
           <p className="text-jh-mute text-sm mt-1">
-            Every word on the Coaching screen. The preview is the real screen at {COACHING_VIEWPORT.width}×{COACHING_VIEWPORT.height} — members should never have to scroll it.
+            Every word on the Coaching screen. The previews are the real screen in both shipping layouts — members should never have to scroll it on a phone or a laptop.
           </p>
         </div>
         <div className="flex gap-2">
@@ -145,22 +157,28 @@ export default function CoachingScreenTab() {
           </Section>
         </div>
 
-        {/* ---------------- live preview ---------------- */}
-        <aside className="shrink-0 xl:sticky xl:top-6 space-y-2">
-          <div className="flex items-center justify-between gap-3" style={{ width: COACHING_VIEWPORT.width }}>
-            <span className="font-display font-semibold text-sm text-jh-ink">Live preview · {COACHING_VIEWPORT.width}×{COACHING_VIEWPORT.height}</span>
-            {fits === false ? (
-              <span role="status" className="pill bg-jh-red-soft text-jh-red"><AlertTriangle className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden /> Won&apos;t fit on a {COACHING_VIEWPORT.width}×{COACHING_VIEWPORT.height} screen</span>
-            ) : (
-              <span role="status" className="pill bg-jh-mist text-rb-green-dark"><Check className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden /> Fits without scrolling</span>
-            )}
+        {/* ---------------- live previews (both mounted; one shown) ---------------- */}
+        <aside className="shrink-0 xl:sticky xl:top-6 space-y-3" style={{ width: Math.max(COACHING_VIEWPORT.width, COACHING_DESKTOP.width * 0.5) }}>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <SubTabs items={DEVICES} value={device} onChange={setDevice} ariaLabel="Preview device" />
+            <div className="flex gap-2">
+              {DEVICES.map((d) => (
+                <FitPill key={d.key} label={d.key === "mobile" ? `${COACHING_VIEWPORT.width}×${COACHING_VIEWPORT.height}` : `${COACHING_DESKTOP.width}×${COACHING_DESKTOP.height}`} fits={fits[d.key]} />
+              ))}
+            </div>
           </div>
-          <CoachingPreview content={content} onFitChange={setFits} />
-          {validation.warnings.length > 0 && (
-            <p className="text-xs text-jh-mute" style={{ width: COACHING_VIEWPORT.width }}>
-              {validation.warnings.length} field{validation.warnings.length === 1 ? "" : "s"} over the soft limit — allowed, but watch the fit flag.
-            </p>
-          )}
+          <div className="relative">
+            <div className={device === "mobile" ? "" : "absolute left-0 top-0 invisible pointer-events-none"} aria-hidden={device !== "mobile"}>
+              <CoachingPreview content={content} onFitChange={setFitsFor("mobile")} />
+            </div>
+            <div className={device === "desktop" ? "" : "absolute left-0 top-0 invisible pointer-events-none"} aria-hidden={device !== "desktop"}>
+              <CoachingDesktopPreview content={content} onFitChange={setFitsFor("desktop")} />
+            </div>
+          </div>
+          <p className="text-xs text-jh-mute">
+            {device === "desktop" ? "Shown at 50%. " : ""}
+            {validation.warnings.length > 0 && <>{validation.warnings.length} field{validation.warnings.length === 1 ? "" : "s"} over the soft limit — allowed, but watch the fit flags.</>}
+          </p>
         </aside>
       </div>
 
@@ -188,6 +206,13 @@ export default function CoachingScreenTab() {
 }
 
 /* ---------------- building blocks ---------------- */
+
+function FitPill({ label, fits }: { label: string; fits: boolean | null }) {
+  if (fits === false) {
+    return <span role="status" className="pill bg-jh-red-soft text-jh-red"><AlertTriangle className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden /> Won&apos;t fit on a {label} screen</span>;
+  }
+  return <span role="status" className="pill bg-jh-mist text-rb-green-dark"><Check className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden /> {label} · fits</span>;
+}
 
 function Section({ title, help, children }: { title: string; help?: string; children: React.ReactNode }) {
   return (

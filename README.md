@@ -23,10 +23,13 @@ npm run dev                  # http://localhost:3000
 
 ## Coaching tab — admin-editable screen
 - `/coaching` renders `components/coaching/CoachingScreen.tsx` with the **published** copy from `config/coachingScreen`
-  (seed copy in `lib/coaching-screen.ts` until something is published). Designed for 390×844 with no scrolling on a phone;
-  on desktop the same DOM becomes a two-column pitch / offer layout (`.coaching-screen--page` rules in `app/globals.css`).
-- **Admin → Lead magnet CMS → Coaching** edits every string beside a true-size 390×844 preview of the real component, with
-  soft character counters, a "won't fit" flag, save-as-draft / publish and an audit line. API: `GET/POST /api/admin/coaching-screen`.
+  (seed copy in `lib/coaching-screen.ts` until something is published). One component, one content source, two layouts:
+  a fixed-height column that must fit **390×844** without scrolling on a phone, and a single 640px column centred in the
+  main area (232px sidebar, 44/48px padding) that must fit **1280×800** on desktop. The desktop type scale is a CSS
+  *container* query on the screen's own width, so the admin preview renders it faithfully (`.coaching-*` in `app/globals.css`).
+- **Admin → Lead magnet CMS → Coaching** edits every string beside live previews of the real component in both layouts
+  (mobile / desktop toggle; both are measured, so the "won't fit" flag covers each), with soft character counters,
+  save-as-draft / publish and an audit line. API: `GET/POST /api/admin/coaching-screen`.
 
 ## Admin portal (`/admin`)
 Four top-level tabs, each with sub-tabs; the location lives in the URL hash (`/admin#cms/compass`) so links are shareable.

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  COACHING_COLUMN_HEIGHT, COACHING_EMOJI, COACHING_LIMITS, COACHING_LIST_LIMITS, DEFAULT_COACHING_SCREEN,
+  COACHING_COLUMN_HEIGHT, COACHING_DESKTOP, COACHING_DESKTOP_COLUMN_HEIGHT, COACHING_EMOJI, COACHING_LIMITS, COACHING_LIST_LIMITS, DEFAULT_COACHING_SCREEN,
   charCount, estimateCoachingScreenHeight, isHttpsUrl, mergeCoachingScreen, normalizeCoachingScreen, validateCoachingScreen,
   type CoachingScreenContent,
 } from "@/lib/coaching-screen";
@@ -157,6 +157,10 @@ describe("390×844 layout model", () => {
     expect(COACHING_COLUMN_HEIGHT).toBeLessThanOrEqual(690);
   });
 
+  it("pads the phone column 20px", () => {
+    expect(estimateCoachingScreenHeight(seed()).available).toBe(COACHING_COLUMN_HEIGHT - 40);
+  });
+
   it("the seed copy fits without scrolling, with headroom for the fourth benefit", () => {
     const e = estimateCoachingScreenHeight(seed());
     expect(e.fits).toBe(true);
@@ -175,5 +179,39 @@ describe("390×844 layout model", () => {
     const e = estimateCoachingScreenHeight(c);
     expect(e.fits).toBe(false);
     expect(e.height).toBeGreaterThan(e.available);
+  });
+});
+
+describe("1280×800 layout model", () => {
+  it("is a 232px sidebar plus a 640px column inside 44px / 48px padding", () => {
+    expect(COACHING_DESKTOP).toMatchObject({ width: 1280, height: 800, sidebar: 232, padX: 48, padY: 44, column: 640 });
+    expect(COACHING_DESKTOP_COLUMN_HEIGHT).toBe(800 - 88);
+    // the column plus padding fits the main area at 1280
+    expect(COACHING_DESKTOP.sidebar + COACHING_DESKTOP.padX * 2 + COACHING_DESKTOP.column).toBeLessThan(1280);
+  });
+
+  it("the seed copy fits at the desktop scale, with headroom for a fourth benefit", () => {
+    const e = estimateCoachingScreenHeight(seed(), { layout: "desktop" });
+    expect(e.available).toBe(COACHING_DESKTOP_COLUMN_HEIGHT);
+    expect(e.fits).toBe(true);
+    expect(e.height).toBeLessThanOrEqual(e.available);
+
+    const four = seed();
+    four.benefits.push({ emoji: "🎯", title: "Stay focused", body: "One clear next step every week, no more scattered effort." });
+    expect(estimateCoachingScreenHeight(four, { layout: "desktop" }).fits).toBe(true);
+  });
+
+  it("copy well past the soft limits overflows the desktop column too", () => {
+    const c = seed();
+    c.subhead = "s".repeat(COACHING_LIMITS.subhead * 3);
+    c.benefits = [...c.benefits, c.benefits[0]].map((b) => ({ ...b, body: "b".repeat(COACHING_LIMITS.benefitBody * 3) }));
+    c.entitlements = Array.from({ length: 6 }, () => ({ ...c.entitlements[0], body: "e".repeat(COACHING_LIMITS.entitlementBody * 2) }));
+    const e = estimateCoachingScreenHeight(c, { layout: "desktop" });
+    expect(e.fits).toBe(false);
+  });
+
+  it("the desktop scale is larger than the phone scale for the same copy", () => {
+    expect(estimateCoachingScreenHeight(seed(), { layout: "desktop" }).height)
+      .toBeGreaterThan(estimateCoachingScreenHeight(seed(), { layout: "mobile" }).height * 0.9);
   });
 });

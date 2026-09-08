@@ -227,21 +227,38 @@ export function validateCoachingScreen(input: unknown): CoachingValidation {
   return { ok: errors.length === 0, errors, warnings };
 }
 
-// ---- 390×844 layout model ----
-// Geometry of the mobile shell the screen sits in (see components/shell/MobileChrome.tsx
-// and the .coaching-screen rules in app/globals.css). Keep these in step with the CSS.
+// ---- layout models: 390×844 phone and 1280×800 desktop ----
+// Geometry of the two shells the screen sits in (components/shell/MobileChrome.tsx,
+// components/shell/DesktopChrome.tsx) and the .coaching-* rules in app/globals.css.
+// Keep these in step with the CSS.
 export const COACHING_VIEWPORT = {
   width: 390,
   height: 844,
   statusBar: 44,
   header: 56,
   tabBar: 58,
-  padX: 16,
-  padY: 12,
+  padX: 20,
+  padY: 20,
 } as const;
-/** Height of the content column between the header and the tab bar (≈670px). */
+/** Height of the content column between the header and the tab bar (≈686px). */
 export const COACHING_COLUMN_HEIGHT =
   COACHING_VIEWPORT.height - COACHING_VIEWPORT.statusBar - COACHING_VIEWPORT.header - COACHING_VIEWPORT.tabBar;
+
+export const COACHING_DESKTOP = {
+  width: 1280,
+  height: 800,
+  sidebar: 232,
+  padX: 48,
+  padY: 44,
+  /** The single centred column the stack lives in. */
+  column: 640,
+  /** The subhead wraps narrower than the column. */
+  subheadMax: 520,
+} as const;
+/** Height of the centred column between the main area's top and bottom padding (712px). */
+export const COACHING_DESKTOP_COLUMN_HEIGHT = COACHING_DESKTOP.height - COACHING_DESKTOP.padY * 2;
+
+export type CoachingLayout = "mobile" | "desktop";
 
 // Text metrics mirrored from the .coaching-* CSS. `cw` is the average glyph
 // width as a fraction of the font size, calibrated against a headless-Chrome
@@ -249,25 +266,39 @@ export const COACHING_COLUMN_HEIGHT =
 // (Roboto ≈ 0.44em, Poppins 600 ≈ 0.49em, Poppins 700 display ≈ 0.66em).
 // This is an estimate: the admin preview measures the real DOM; this backs the
 // tests and gives a cheap heuristic where there is no layout engine.
-const TYPE = {
-  line1: { size: 36, lh: 1.1, cw: 0.66 },
-  line2: { size: 18, lh: 1.25, cw: 0.49 },
-  line3: { size: 44, lh: 1.05, cw: 0.66 },
-  subhead: { size: 15, lh: 1.45, cw: 0.44 },
-  benefitTitle: { size: 16, lh: 1.3, cw: 0.62 },
-  benefitBody: { size: 14, lh: 1.4, cw: 0.44 },
-  entTitle: { size: 15, lh: 1.3, cw: 0.62 },
-  entBody: { size: 13, lh: 1.4, cw: 0.44 },
-  caption: { size: 13, lh: 1.4, cw: 0.44 },
+type Metric = { size: number; lh: number; cw: number };
+type TypeScale = Record<"line1" | "line2" | "line3" | "subhead" | "benefitTitle" | "benefitBody" | "entTitle" | "entBody" | "caption", Metric>;
+const TYPE: Record<CoachingLayout, TypeScale> = {
+  mobile: {
+    line1: { size: 36, lh: 1.02, cw: 0.66 },
+    line2: { size: 18, lh: 1.02, cw: 0.49 },
+    line3: { size: 44, lh: 1.02, cw: 0.66 },
+    subhead: { size: 15, lh: 1.45, cw: 0.44 },
+    benefitTitle: { size: 15, lh: 1.3, cw: 0.62 },
+    benefitBody: { size: 14, lh: 1.4, cw: 0.44 },
+    entTitle: { size: 15, lh: 1.3, cw: 0.62 },
+    entBody: { size: 13, lh: 1.4, cw: 0.44 },
+    caption: { size: 13, lh: 1.4, cw: 0.44 },
+  },
+  desktop: {
+    line1: { size: 52, lh: 1.02, cw: 0.66 },
+    line2: { size: 24, lh: 1.02, cw: 0.49 },
+    line3: { size: 62, lh: 1.02, cw: 0.66 },
+    subhead: { size: 17, lh: 1.5, cw: 0.44 },
+    benefitTitle: { size: 18, lh: 1.3, cw: 0.62 },
+    benefitBody: { size: 16, lh: 1.5, cw: 0.44 },
+    entTitle: { size: 18, lh: 1.3, cw: 0.62 },
+    entBody: { size: 15, lh: 1.5, cw: 0.44 },
+    caption: { size: 14, lh: 1.4, cw: 0.44 },
+  },
+};
+// Vertical rhythm per layout (margins / gaps / fixed boxes), also mirrored from the CSS.
+const RHYTHM = {
+  mobile:  { afterHeadline: 10, afterSubhead: 12, benefitRows: 8,  afterBenefits: 12, cardPad: 14, entRows: 10, afterCard: 14, cta: 48, ctaToCaption: 8,  rowRule: 14, rowEmoji: 36, cardEmoji: 30 },
+  desktop: { afterHeadline: 16, afterSubhead: 24, benefitRows: 18, afterBenefits: 24, cardPad: 20, entRows: 14, afterCard: 20, cta: 52, ctaToCaption: 10, rowRule: 17, rowEmoji: 44, cardEmoji: 40 },
 } as const;
-const GAP = { afterHeadline: 10, afterSubhead: 12, benefitRows: 8, afterBenefits: 12, afterCard: 14, ctaToCaption: 8 };
-const CTA_HEIGHT = 48;
-const CARD_PAD = 14;
-const ROW_EMOJI = 36;   // emoji column (incl. gap) inside a benefit row
-const ROW_RULE = 14;    // 3px red rule + its 11px inset
-const CARD_EMOJI = 30;
 
-function textHeight(text: string, t: { size: number; lh: number; cw: number }, width: number): number {
+function textHeight(text: string, t: Metric, width: number): number {
   const lines = Math.max(1, Math.ceil((charCount(text) * t.size * t.cw) / width));
   return lines * t.size * t.lh;
 }
@@ -282,35 +313,42 @@ export interface CoachingHeightEstimate {
 
 export function estimateCoachingScreenHeight(
   content: CoachingScreenContent,
-  viewport: { width?: number; columnHeight?: number } = {}
+  viewport: { layout?: CoachingLayout; width?: number; columnHeight?: number } = {}
 ): CoachingHeightEstimate {
-  const width = (viewport.width ?? COACHING_VIEWPORT.width) - COACHING_VIEWPORT.padX * 2;
-  const available = (viewport.columnHeight ?? COACHING_COLUMN_HEIGHT) - COACHING_VIEWPORT.padY * 2;
+  const layout: CoachingLayout = viewport.layout ?? "mobile";
+  const T = TYPE[layout]; const R = RHYTHM[layout];
+  const width = layout === "mobile"
+    ? (viewport.width ?? COACHING_VIEWPORT.width) - COACHING_VIEWPORT.padX * 2
+    : (viewport.width ?? COACHING_DESKTOP.column);
+  const available = layout === "mobile"
+    ? (viewport.columnHeight ?? COACHING_COLUMN_HEIGHT) - COACHING_VIEWPORT.padY * 2
+    : (viewport.columnHeight ?? COACHING_DESKTOP_COLUMN_HEIGHT);
+  const subheadWidth = layout === "desktop" ? Math.min(width, COACHING_DESKTOP.subheadMax) : width;
 
   let h = 0;
-  h += textHeight(content.headline.line1, TYPE.line1, width);
-  h += textHeight(content.headline.line2, TYPE.line2, width);
-  h += textHeight(content.headline.line3, TYPE.line3, width);
-  h += GAP.afterHeadline;
-  h += textHeight(content.subhead, TYPE.subhead, width);
-  h += GAP.afterSubhead;
+  h += textHeight(content.headline.line1, T.line1, width);
+  h += textHeight(content.headline.line2, T.line2, width);
+  h += textHeight(content.headline.line3, T.line3, width);
+  h += R.afterHeadline;
+  h += textHeight(content.subhead, T.subhead, subheadWidth);
+  h += R.afterSubhead;
 
-  const rowWidth = width - ROW_RULE - ROW_EMOJI;
+  const rowWidth = width - R.rowRule - R.rowEmoji;
   content.benefits.forEach((b, i) => {
-    h += textHeight(b.title, TYPE.benefitTitle, rowWidth) + 2 + textHeight(b.body, TYPE.benefitBody, rowWidth);
-    if (i > 0) h += GAP.benefitRows;
+    h += textHeight(b.title, T.benefitTitle, rowWidth) + 2 + textHeight(b.body, T.benefitBody, rowWidth);
+    if (i > 0) h += R.benefitRows;
   });
-  h += GAP.afterBenefits;
+  h += R.afterBenefits;
 
-  const cardWidth = width - CARD_PAD * 2 - CARD_EMOJI;
-  h += CARD_PAD * 2;
+  const cardWidth = width - R.cardPad * 2 - R.cardEmoji;
+  h += R.cardPad * 2;
   content.entitlements.forEach((e, i) => {
-    h += textHeight(e.title, TYPE.entTitle, cardWidth) + 4 + textHeight(e.body, TYPE.entBody, cardWidth);
-    if (i > 0) h += 10;
+    h += textHeight(e.title, T.entTitle, cardWidth) + 4 + textHeight(e.body, T.entBody, cardWidth);
+    if (i > 0) h += R.entRows;
   });
-  h += GAP.afterCard;
+  h += R.afterCard;
 
-  h += CTA_HEIGHT + GAP.ctaToCaption + textHeight(content.ctaCaption, TYPE.caption, width);
+  h += R.cta + R.ctaToCaption + textHeight(content.ctaCaption, T.caption, width);
 
   const height = Math.round(h);
   return { height, available, fits: height <= available };

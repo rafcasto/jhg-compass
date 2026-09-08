@@ -212,13 +212,31 @@ describe("Admin → Coaching tab", () => {
     await waitFor(() => expect(screen.getByText("CTA URL must be an absolute https:// link.", { selector: "span" })).toBeInTheDocument());
   });
 
-  it("flags copy that won't fit on a 390×844 screen from the real preview measurement", async () => {
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get() { return this.classList?.contains("coaching-screen") ? 686 : 0; } });
-    Object.defineProperty(HTMLElement.prototype, "scrollHeight", { configurable: true, get() { return this.classList?.contains("coaching-screen") ? 900 : 0; } });
+  it("flags copy that won't fit, per device, from the real preview measurements", async () => {
+    // Phone column overflows; desktop column does not.
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get() { return this.classList?.contains("coaching-screen") ? (this.style.width === "640px" ? 712 : 686) : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "scrollHeight", { configurable: true, get() { return this.classList?.contains("coaching-screen") ? (this.style.width === "640px" ? 700 : 900) : 0; } });
     render(<CoachingScreenTab />);
     await loaded();
-    expect(screen.getByRole("status", { name: "" })).toBeTruthy();
-    expect(screen.getByText("Won't fit on a 390×844 screen")).toBeInTheDocument();
-    expect(screen.queryByText("Fits without scrolling")).not.toBeInTheDocument();
+    const pills = screen.getAllByRole("status").map((p) => p.textContent!.trim());
+    expect(pills).toContain("Won't fit on a 390×844 screen");
+    expect(pills).toContain("1280×800 · fits");
+  });
+
+  it("previews both shipping layouts and toggles between them", async () => {
+    const user = userEvent.setup();
+    render(<CoachingScreenTab />);
+    await loaded();
+    const mobile = screen.getByRole("img", { name: "Live preview at 390×844" });
+    const desktop = screen.getByRole("img", { name: "Live preview at 1280×800", hidden: true });
+    // both are mounted (so both are measured); only one is exposed
+    expect(mobile.closest("[aria-hidden]")).toHaveAttribute("aria-hidden", "false");
+    expect(desktop.closest("[aria-hidden]")).toHaveAttribute("aria-hidden", "true");
+    await user.click(screen.getByRole("tab", { name: /Desktop · 1280×800/ }));
+    expect(screen.getByRole("tab", { name: /Desktop/ })).toHaveAttribute("aria-selected", "true");
+    expect(desktop.closest("[aria-hidden]")).toHaveAttribute("aria-hidden", "false");
+    expect(mobile.closest("[aria-hidden]")).toHaveAttribute("aria-hidden", "true");
+    // the desktop frame carries the real sidebar chrome
+    expect(within(desktop).getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
   });
 });
