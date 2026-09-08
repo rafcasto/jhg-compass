@@ -7,6 +7,7 @@ import { ANALYTICS_SUBTABS, type AnalyticsSub } from "@/components/admin/nav";
 import QuizResults, { type Analytics } from "./QuizResults";
 import Segments from "./Segments";
 import PirateMetrics from "./PirateMetrics";
+import UsageTab from "./UsageTab";
 
 export default function AnalyticsTab({ sub, onSub }: { sub: AnalyticsSub; onSub: (s: AnalyticsSub) => void }) {
   const [data, setData] = useState<Analytics | null>(null);
@@ -27,6 +28,7 @@ export default function AnalyticsTab({ sub, onSub }: { sub: AnalyticsSub; onSub:
       {data && sub === "quiz" && <QuizResults data={data} />}
       {data && sub === "segments" && <Segments data={data} />}
       {sub === "pirate" && <PirateMetrics />}
+      {sub === "usage" && <UsageTab />}
     </div>
   );
 }

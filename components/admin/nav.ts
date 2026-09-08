@@ -20,14 +20,15 @@ export type CmsSub = (typeof CMS_SUBTABS)[number]["key"];
 
 export const INTERACTIONS_SUBTABS = [
   { key: "feedback", label: "Feedback", hint: "In-app survey (UAT) — questions, toggle, responses" },
-  { key: "usage", label: "Usage", hint: "Members, access, and the latest Compass events" },
+  { key: "tracking", label: "Tracking", hint: "Which interactions are tracked, their Supabase tags and AAARRR stage" },
 ] as const;
 export type InteractionsSub = (typeof INTERACTIONS_SUBTABS)[number]["key"];
 
 export const ANALYTICS_SUBTABS = [
   { key: "quiz", label: "Quiz results", hint: "Answers, archetypes, readiness & fit, respondents" },
   { key: "segments", label: "Segments", hint: "4-quadrant matrix (ICP fit × propensity) and follow-up actions" },
-  { key: "pirate", label: "Pirate metrics", hint: "AAARRR dashboard, event configurator, data source" },
+  { key: "pirate", label: "Pirate metrics", hint: "AAARRR dashboard and data source" },
+  { key: "usage", label: "Usage", hint: "Members, access, and the latest Compass events" },
 ] as const;
 export type AnalyticsSub = (typeof ANALYTICS_SUBTABS)[number]["key"];
 

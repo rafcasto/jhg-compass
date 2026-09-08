@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Database, Globe, Settings2, ExternalLink } from "lucide-react";
+import { Database, Globe, ExternalLink } from "lucide-react";
 import { PIRATE_STAGES, type EventStage } from "@/lib/tags";
-import { authed, postJson, Empty, Loading, SaveBar, Section, StatCard, SubTabs, Toggle, type Notice } from "@/components/admin/shared";
+import { authed, Empty, Loading, Section, StatCard, SubTabs } from "@/components/admin/shared";
 import { ChartCard, CHART_COLORS, HBar, TimeLine } from "./charts";
 
 interface StageRollup { stage: EventStage; label: string; people: number; events: number; byEvent: { key: string; label: string; tag: string; people: number; events: number; enabled: boolean }[] }
@@ -27,28 +27,25 @@ interface Metrics {
   supabase: { table: string; scope: string; rows: number };
 }
 const RANGES = [7, 28, 90] as const;
-type EventSetting = { enabled: boolean; tag: string; stage: EventStage; label: string };
 
 const LAYERS = [
   { key: "dashboard", label: "Dashboard", hint: "FO — the AAARRR funnel, sources and trend" },
-  { key: "configurator", label: "Configurator", hint: "MO — which event lands in which stage" },
   { key: "source", label: "Data source", hint: "BO — where the rows live" },
 ] as const;
 type Layer = (typeof LAYERS)[number]["key"];
 
-// AAARRR in three layers: FO (what the team looks at), MO (how events are
-// bucketed) and BO (the store). Consolidates the old Dashboard + Event tracking.
+// AAARRR: FO (what the team looks at) and BO (the store). The MO layer — which
+// event rolls into which stage — is edited under User interactions → Tracking.
 export default function PirateMetrics() {
   const [layer, setLayer] = useState<Layer>("dashboard");
   const [m, setM] = useState<Metrics | null>(null);
   const [err, setErr] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
   const [days, setDays] = useState<number>(28);
 
   useEffect(() => {
     setM(null); setErr(false);
     authed(`/api/admin/pirate-metrics?days=${days}`).then((r) => r.json()).then((d) => (d.ok ? setM(d) : setErr(true))).catch(() => setErr(true));
-  }, [reloadKey, days]);
+  }, [days]);
 
   return (
     <div className="space-y-6">
@@ -66,8 +63,8 @@ export default function PirateMetrics() {
       {err && <p className="text-jh-red">Couldn’t load pirate metrics. Try again.</p>}
       {!err && !m && <Loading>Loading pirate metrics…</Loading>}
       {m && layer === "dashboard" && <Dashboard m={m} />}
-      {layer === "configurator" && <Configurator onSaved={() => setReloadKey((k) => k + 1)} />}
       {m && layer === "source" && <DataSource m={m} />}
+      <p className="text-xs text-jh-mute">Which event counts in which stage is configured under <a href="#interactions/tracking" className="text-jh-red underline underline-offset-2">User interactions → Tracking</a>.</p>
     </div>
   );
 }
@@ -167,71 +164,6 @@ function Awareness({ ga }: { ga: Ga }) {
         <ChartCard title="Countries" subtitle="Top 10 · sessions"><HBar rows={r.countries} color={CHART_COLORS[4]} /></ChartCard>
         <ChartCard title="Landing pages" subtitle="Top 8 · sessions"><HBar rows={r.pages} color={CHART_COLORS[1]} /></ChartCard>
       </div>
-    </div>
-  );
-}
-
-/* ---------------- MO: configurator (was "Event tracking") ---------------- */
-function Configurator({ onSaved }: { onSaved: () => void }) {
-  const [cfg, setCfg] = useState<Record<string, EventSetting> | null>(null);
-  const [dirty, setDirty] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<Notice>(null);
-
-  useEffect(() => { authed("/api/admin/events").then((r) => r.json()).then((d) => d.ok && setCfg(d.config)); }, []);
-  const update = (key: string, p: Partial<EventSetting>) => { setCfg((c) => ({ ...c!, [key]: { ...c![key], ...p } })); setDirty(true); setNotice(null); };
-
-  async function save() {
-    setBusy(true); setNotice(null);
-    try {
-      const d = await (await postJson("/api/admin/events", { events: cfg })).json();
-      if (d.ok) { setCfg(d.config); setDirty(false); setNotice({ kind: "ok", text: "Saved — new events use these settings within 30s." }); onSaved(); }
-      else setNotice({ kind: "err", text: "Save failed." });
-    } catch { setNotice({ kind: "err", text: "Save failed." }); }
-    finally { setBusy(false); }
-  }
-
-  if (!cfg) return <Loading>Loading event settings…</Loading>;
-
-  return (
-    <div className="space-y-6">
-      <Section title="Which event counts where" help={<>Every event the app fires, the tag it writes to Supabase and the AAARRR stage it rolls up into. Disabled events are not written at all. Example: <em>Quiz completed</em> → Acquisition; <em>Registration</em> → Activation.</>}>
-        <div className="space-y-6">
-          {PIRATE_STAGES.map((s) => {
-            const rows = Object.entries(cfg).filter(([, e]) => e.stage === s.key);
-            return (
-              <div key={s.key}>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <h4 className="font-display font-semibold text-jh-ink">{s.label}</h4>
-                  <span className="text-xs text-jh-mute">{s.help}</span>
-                  <span className="ml-auto pill bg-jh-mist text-jh-mute">{s.source}</span>
-                </div>
-                {rows.length === 0 ? (
-                  <p className="text-sm text-jh-mute border border-dashed border-jh-line rounded-md px-3 py-3">No events in this stage yet — move one here with its stage dropdown{s.key === "awareness" ? ", or connect Google Analytics" : ""}.</p>
-                ) : (
-                  <div className="border border-jh-line rounded-md divide-y divide-jh-line overflow-hidden">
-                    {rows.map(([key, e]) => (
-                      <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 bg-white">
-                        <div className="sm:w-48 shrink-0">
-                          <p className="font-display font-semibold text-jh-ink text-sm">{e.label}</p>
-                          <p className="text-[11px] text-jh-mute-2 font-mono">{key}</p>
-                        </div>
-                        <input aria-label={`${e.label} tag`} value={e.tag} onChange={(ev) => update(key, { tag: ev.target.value })} className="field py-2 text-xs font-mono flex-1" />
-                        <select aria-label={`${e.label} stage`} value={e.stage} onChange={(ev) => update(key, { stage: ev.target.value as EventStage })} className="field py-2 w-auto text-sm">
-                          {PIRATE_STAGES.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-                        </select>
-                        <Toggle on={e.enabled} onChange={(v) => update(key, { enabled: v })} label={`${e.label} enabled`} />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </Section>
-      <SaveBar onSave={save} busy={busy} dirty={dirty} notice={notice} label="Save event settings"
-        audit={<span className="inline-flex items-center gap-1"><Settings2 className="h-3.5 w-3.5" aria-hidden /> Stored at <code className="font-mono">config/events</code> · read by /api/track</span>} />
     </div>
   );
 }

@@ -9,7 +9,7 @@ interface Stats {
 }
 
 // JHCompass usage — who is in the app and what they did last. Replaces the old
-// Dashboard tab; the aggregate funnel view lives under Analytics → Pirate metrics.
+// Dashboard tab; the aggregate funnel view is the Pirate metrics sub-tab.
 export default function UsageTab() {
   const [s, setS] = useState<Stats | null>(null);
   const [err, setErr] = useState(false);

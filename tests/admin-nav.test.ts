@@ -8,6 +8,10 @@ describe("admin navigation", () => {
   it("the CMS mirrors the four member-facing tabs in the same order", () => {
     expect(TABS[1].subs.map((s) => s.key)).toEqual(["compass", "performance", "progress", "coaching"]);
   });
+  it("tracking sits under User interactions; usage under Analytics", () => {
+    expect(TABS[2].subs.map((s) => s.key)).toEqual(["feedback", "tracking"]);
+    expect(TABS[3].subs.map((s) => s.key)).toEqual(["quiz", "segments", "pirate", "usage"]);
+  });
   it("parses a hash and round-trips it", () => {
     const loc = parseAdminHash("#cms/progress");
     expect(loc).toEqual({ tab: "cms", sub: "progress" });
