@@ -30,7 +30,16 @@ config/coachingScreen            { draft, published, publishedAt, publishedBy, u
 
 config/content                   { effortSplit, activities[], text{}, stages[], updatedBy, updatedAt }
                                  // stages: [{ id, label, color }] — Progress-board columns in order,
-                                 // managed from Admin → Stages (defaults in lib/stages.ts)
+                                 // managed from Admin → CMS → Progress (defaults in lib/stages.ts).
+                                 // text{} is deep-merged on save: each CMS / TOFU editor writes only its keys.
+
+config/segments                  { propensityThreshold, actions{ fit-high|fit-low|nofit-high|nofit-low:
+                                   { title, description, owner, channel, automation } }, updatedBy, updatedAt }
+                                 // Analytics → Segments: the 4-quadrant matrix (ICP fit × readiness) and the one
+                                 // follow-up action per quadrant (lib/segments.ts)
+
+config/events                    { events{ [EventKey]: { enabled, tag, stage, label } }, updatedBy, updatedAt }
+                                 // Analytics → Pirate metrics → Configurator. stage ∈ AAARRR (lib/tags.ts)
 ```
 
 - `categoryId` values come from `lib/categories.ts` (the Excel taxonomy; static in code).

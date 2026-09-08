@@ -1,9 +1,7 @@
 "use client";
 
 import { auth } from "./firebase/client";
-import type { EventKey } from "./tags";
-
-type Stage = "acquisition" | "activation" | "retention";
+import type { EventKey, EventStage as Stage } from "./tags";
 
 // Fire-and-forget client event → /api/track → Supabase (jobhackers_leads).
 export async function track(

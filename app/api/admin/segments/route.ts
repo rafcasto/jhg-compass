@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getContent, getContentMeta, saveContent } from "@/lib/server/content";
-import { normalizeStages } from "@/lib/stages";
+import { getSegmentsConfig, saveSegmentsConfig } from "@/lib/server/segments";
 
 export const runtime = "nodejs";
 
@@ -16,20 +15,14 @@ async function requireAdmin(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin(req).catch(() => null);
   if (!admin) return NextResponse.json({ ok: false }, { status: 403 });
-  const [content, meta] = await Promise.all([getContent(), getContentMeta()]);
-  return NextResponse.json({ ok: true, content, meta });
+  return NextResponse.json({ ok: true, config: await getSegmentsConfig() });
 }
 
-// POST { content: Partial<ContentConfig> } — a partial patch. `text` is a map, so
-// an editor can send only the keys it owns (e.g. the Compass-tab strings) and
-// every other key survives; `activities` / `stages` are arrays and replace wholesale.
+// POST { propensityThreshold?, actions? } — partial patch, merged server-side.
 export async function POST(req: NextRequest) {
   const admin = await requireAdmin(req).catch(() => null);
   if (!admin) return NextResponse.json({ ok: false }, { status: 403 });
   const body = await req.json().catch(() => ({}));
-  const content = { ...(body.content ?? {}) };
-  if ("stages" in content) content.stages = normalizeStages(content.stages);
-  await saveContent(content, admin.email ?? admin.uid);
-  const [next, meta] = await Promise.all([getContent(), getContentMeta()]);
-  return NextResponse.json({ ok: true, content: next, meta });
+  const config = await saveSegmentsConfig(body ?? {}, admin.email ?? admin.uid);
+  return NextResponse.json({ ok: true, config });
 }
