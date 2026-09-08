@@ -19,8 +19,11 @@ interface Props {
 
 // The Coaching tab. Renders whatever content it's given — the page passes the
 // published copy, the admin editor passes the draft — so the preview is exactly
-// what ships. Layout is a fixed-height column: vertical slack is absorbed by the
-// benefit rows (flex:1 + space-evenly), never dumped above the CTA.
+// what ships. The layout is a fixed-height column: vertical slack is absorbed by
+// the benefit rows (flex:1 + space-evenly), never dumped above the CTA. On a phone
+// the column is the space between header and tab bar; on desktop it is a single
+// 640px column centred in the main area with the type scaled up (a container
+// query on the screen's own width — see .coaching-* in app/globals.css).
 export default function CoachingScreen({ content, className = "", style, onCtaClick, onFitChange }: Props) {
   const ref = useRef<HTMLElement>(null);
 

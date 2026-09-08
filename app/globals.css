@@ -124,14 +124,21 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* ===== Coaching tab (JobHackers design system) =====
-   A fixed-height column on mobile: header 56 + tab bar 58 are subtracted from the
-   viewport (see components/shell/MobileChrome.tsx). Vertical slack goes to the
-   benefit rows (flex:1 + space-evenly), never above the CTA. Geometry is mirrored
-   in COACHING_VIEWPORT / estimateCoachingScreenHeight (lib/coaching-screen.ts). */
+   One component, one content source, two layouts.
+   • Phone: a fixed-height column — header 56 + tab bar 58 are subtracted from the
+     viewport (components/shell/MobileChrome.tsx). Vertical slack goes to the benefit
+     rows (flex:1 + space-evenly), never above the CTA.
+   • Desktop: the same stack in a single 640px column centred in the main area,
+     type scaled up. The scale is switched by a CONTAINER query on the screen's own
+     width (not the viewport), so the admin's 1280×800 preview renders the real
+     desktop layout with no duplicated values.
+   Geometry is mirrored in COACHING_VIEWPORT / COACHING_DESKTOP and
+   estimateCoachingScreenHeight (lib/coaching-screen.ts). */
 .coaching-screen {
   display: flex; flex-direction: column; box-sizing: border-box;
-  padding: 12px 16px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   color: #191c27; background: #fafafa;
+  container-type: inline-size; container-name: coaching;
 }
 .coaching-screen--preview { height: 100%; }
 @media (max-width: 767px) {
@@ -143,18 +150,24 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
   }
 }
 @media (min-width: 768px) {
-  .coaching-screen--page { max-width: 440px; padding: 0; }
-  .coaching-screen--page .coaching-benefits { gap: 18px; }
+  /* Desktop shell: 232px sidebar, main padded 44px / 48px. One 640px column,
+     centred by the shell's mx-auto, text left-aligned; the column height is the
+     main area minus its vertical padding so the no-scroll contract holds at 1280×800. */
+  .coaching-screen--page {
+    width: 100%; max-width: 640px; margin: 0 auto; padding: 0; background: transparent;
+    height: calc(100vh - 88px);
+    height: calc(100dvh - 88px);
+  }
 }
 
 .coaching-headline {
   display: flex; flex-direction: column;
-  font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: -0.01em;
+  font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1.02;
   margin: 0 0 10px;
 }
-.coaching-headline-1 { font-size: 36px; line-height: 1.1; color: #191c27; }
-.coaching-headline-2 { font-size: 18px; line-height: 1.25; font-weight: 600; color: #191c27; }
-.coaching-headline-3 { font-size: 44px; line-height: 1.05; color: #c2001f; }
+.coaching-headline-1 { font-size: 36px; color: #191c27; }
+.coaching-headline-2 { font-size: 18px; font-weight: 600; color: #191c27; margin: 2px 0; }
+.coaching-headline-3 { font-size: 44px; color: #c2001f; }
 
 .coaching-subhead {
   font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.45; color: #3a3f4d;
@@ -173,7 +186,7 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
   border-left: 3px solid #c2001f; padding-left: 11px;
 }
 .coaching-benefit-emoji { font-size: 22px; line-height: 1; width: 26px; flex: 0 0 26px; text-align: center; padding-top: 1px; }
-.coaching-benefit-title { margin: 0 0 2px; font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.3; color: #191c27; }
+.coaching-benefit-title { margin: 0 0 2px; font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 15px; line-height: 1.3; color: #191c27; }
 .coaching-benefit-body { margin: 0; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.4; color: #3a3f4d; }
 
 /* Entitlement card on the blue-grey tint. Body is #3a3f4d (not #6b7280) — the
@@ -198,12 +211,37 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
   transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
 }
 .coaching-cta:hover, .coaching-cta:active { background: #8a0016; }
+.coaching-cta:focus-visible { outline: 2px solid rgba(194, 0, 31, 0.4); outline-offset: 2px; }
 .coaching-caption {
   margin: 8px 0 0; text-align: center;
   font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #6b7280;
 }
 
-/* Admin preview frame: a true-size 390×844 phone around the real screen + chrome */
+/* Desktop type scale — keyed on the screen's own width (a phone column is ≤350px
+   inside its padding; the desktop column is 640px). Applies identically on the
+   /coaching page and inside the admin's 1280×800 preview. */
+@container coaching (min-width: 400px) {
+  .coaching-headline { margin-bottom: 16px; }
+  .coaching-headline-1 { font-size: 52px; }
+  .coaching-headline-2 { font-size: 24px; margin: 4px 0; }
+  .coaching-headline-3 { font-size: 62px; }
+  .coaching-subhead { font-size: 17px; line-height: 1.5; max-width: 520px; margin-bottom: 24px; }
+  .coaching-benefits { gap: 18px; margin-bottom: 24px; }
+  .coaching-benefit { gap: 14px; padding-left: 14px; }
+  .coaching-benefit-emoji { font-size: 26px; width: 30px; flex-basis: 30px; }
+  .coaching-benefit-title { font-size: 18px; margin-bottom: 4px; }
+  .coaching-benefit-body { font-size: 16px; line-height: 1.5; }
+  .coaching-card { padding: 20px 24px; border-radius: 16px; gap: 14px; margin-bottom: 20px; }
+  .coaching-entitlement { gap: 14px; }
+  .coaching-entitlement-emoji { font-size: 24px; width: 26px; flex-basis: 26px; }
+  .coaching-entitlement-title { font-size: 18px; }
+  .coaching-entitlement-body { font-size: 15px; line-height: 1.5; }
+  .coaching-cta { min-height: 52px; padding: 14px 24px; font-size: 17px; }
+  .coaching-caption { font-size: 14px; margin-top: 10px; }
+}
+
+/* Admin preview frames: a true-size 390×844 phone (and a 1280×800 desktop, scaled
+   down with transform) around the real screen + the real shell chrome */
 .coaching-preview {
   display: flex; flex-direction: column; flex: 0 0 auto; overflow: hidden;
   background: #fafafa; border: 1px solid #e6e8ef; border-radius: 16px;

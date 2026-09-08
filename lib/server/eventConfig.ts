@@ -1,6 +1,6 @@
 import "server-only";
 import { adminDb } from "@/lib/firebase/admin";
-import { EVENT_DEFAULTS, EVENT_KEYS, type EventKey, type EventStage } from "@/lib/tags";
+import { EVENT_DEFAULTS, EVENT_KEYS, isEventStage, type EventKey, type EventStage } from "@/lib/tags";
 
 export interface EventSetting {
   enabled: boolean;
@@ -22,7 +22,7 @@ function merge(overrides: Record<string, Partial<EventSetting>>): EventConfig {
     out[key] = {
       enabled: o.enabled ?? true,
       tag: o.tag ?? def.tag,
-      stage: (o.stage as EventStage) ?? def.stage,
+      stage: isEventStage(o.stage) ? o.stage : (def.stage as EventStage),
       label: o.label ?? def.label,
     };
   }

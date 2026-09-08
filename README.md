@@ -23,10 +23,26 @@ npm run dev                  # http://localhost:3000
 
 ## Coaching tab — admin-editable screen
 - `/coaching` renders `components/coaching/CoachingScreen.tsx` with the **published** copy from `config/coachingScreen`
-  (seed copy in `lib/coaching-screen.ts` until something is published). Designed for 390×844 with no scrolling.
-- **Admin → Coaching** edits every string (headline, subhead, benefits 2–4, entitlements 1–6, CTA) beside a true-size
-  390×844 preview of the real component, with soft character counters, a "won't fit" flag, save-as-draft / publish and
-  an audit line. API: `GET/POST /api/admin/coaching-screen`.
+  (seed copy in `lib/coaching-screen.ts` until something is published). One component, one content source, two layouts:
+  a fixed-height column that must fit **390×844** without scrolling on a phone, and a single 640px column centred in the
+  main area (232px sidebar, 44/48px padding) that must fit **1280×800** on desktop. The desktop type scale is a CSS
+  *container* query on the screen's own width, so the admin preview renders it faithfully (`.coaching-*` in `app/globals.css`).
+- **Admin → Lead magnet CMS → Coaching** edits every string beside live previews of the real component in both layouts
+  (mobile / desktop toggle; both are measured, so the "won't fit" flag covers each), with soft character counters,
+  save-as-draft / publish and an audit line. API: `GET/POST /api/admin/coaching-screen`.
+
+## Admin portal (`/admin`)
+Four top-level tabs, each with sub-tabs; the location lives in the URL hash (`/admin#cms/compass`) so links are shareable.
+
+| # | Tab | Sub-tabs | What it owns |
+|---|---|---|---|
+| 1 | **TOFU** — top of the funnel | Landing page · Quiz · Registration & access · Onboarding | `config/funnel` (landing, details, quiz + scoring, thank-you, expired, already-done), invite-link generator (`/register/<token>`, "Use in funnel" points the thank-you CTA at it), sign-in / verify / set-password copy, paywall & transactional emails (`config/admin`), onboarding copy |
+| 2 | **Lead magnet CMS** | Compass · Performance · Progress · Coaching | One editor per member-facing tab, in the order members see them. Every editor = form beside a **true-size preview of the real screen** + sticky save bar with audit line. Compass: header/goal copy, reading rail (Ghost curation, `config/articles`), tab names. Performance: copy, effort split, activity taxonomy (previewed with the real `PerformanceScreen`). Progress: pipeline stages + every board string. Coaching: draft/publish editor. |
+| 3 | **User interactions** | Feedback · Tracking | In-app survey (UAT) config + responses (`config/feedback`, `users/*/feedback`); event tracking — which interactions are written to Supabase, their tags and AAARRR stage (`config/events`) |
+| 4 | **Analytics** | Quiz results · Segments · Pirate metrics · Usage | Quiz dashboards; the **4-quadrant matrix** (ICP fit × buying propensity, threshold + one follow-up action per quadrant in `config/segments`); **AAARRR** in three layers — FO dashboard (Supabase + **Google Analytics** for awareness — set `GA4_PROPERTY_ID` and grant the Firebase service account Viewer on the property, see `lib/server/ga4.ts`), BO data source (the MO configurator lives under User interactions → Tracking); Usage = members / access / latest events |
+
+Editors that share `config/content` save only the text keys they own (`text` is deep-merged server-side), so saving the
+Compass tab can never clobber Progress copy. `components/admin/nav.ts` is the single source of the tab structure.
 
 ## Tests
 ```bash
@@ -70,7 +86,7 @@ Omit `redeemHours` for immediate 3-month access. The user is emailed a set-passw
 | 7 | Time-boxed access (3 mo) | `durationDays` in grants |
 | 8 | 24–48h redeem window | `redeemHours` → pending grant + `/api/access/sync` |
 | 9 | Block expired + modal/CTA | `components/Paywall.tsx` + sync expiry |
-| 10 | Admin portal (copy/CTA/email) | `/admin` · `/api/admin/config` |
+| 10 | Admin portal (copy/CTA/email) | `/admin` (4 tabs, see above) · `/api/admin/*` |
 | 11 | Events in Supabase | `compass_events` · `lib/events.ts` · `lib/track-client.ts` |
 | 12 | Design system | `app/globals.css` · `tailwind.config.ts` · `/design-system` |
 

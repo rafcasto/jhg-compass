@@ -122,6 +122,42 @@ describe("no-scroll layout contract (app/globals.css)", () => {
     expect(b).toContain(`calc(100dvh - ${MOBILE_HEADER_HEIGHT + MOBILE_TABBAR_HEIGHT}px`);
   });
 
+  it("desktop is ONE 640px column centred in the main area, sized to 1280×800 without scrolling", () => {
+    const coachingCss = css.slice(css.indexOf("Coaching tab (JobHackers design system)"));
+    const desktop = coachingCss.match(/@media \(min-width: 768px\) \{[\s\S]*?\.coaching-screen--page \{([^}]*)\}/)![1];
+    expect(desktop).toMatch(/max-width:\s*640px/);
+    expect(desktop).toMatch(/margin:\s*0 auto/);
+    expect(desktop).toContain(`calc(100dvh - ${44 * 2}px)`);   // main padding top + bottom
+    expect(coachingCss).not.toMatch(/grid-template/);         // never spread into columns
+    // the column is centred, the type is not (only the caption under the CTA is centred)
+    for (const sel of [".coaching-screen", ".coaching-headline", ".coaching-subhead", ".coaching-benefit-title", ".coaching-benefit-body", ".coaching-cta"]) {
+      expect(block(sel)).not.toMatch(/text-align/);
+    }
+  });
+
+  it("the desktop type scale is a container query on the screen's own width (so the admin preview gets the real thing)", () => {
+    expect(block(".coaching-screen")).toMatch(/container-type:\s*inline-size/);
+    const coachingCss = css.slice(css.indexOf("Coaching tab (JobHackers design system)"));
+    const cq = coachingCss.match(/@container coaching \(min-width: 400px\) \{([\s\S]*?)\n\}/)![1];
+    expect(cq).toMatch(/\.coaching-headline-1 \{ font-size: 52px/);
+    expect(cq).toMatch(/\.coaching-headline-2 \{ font-size: 24px/);
+    expect(cq).toMatch(/\.coaching-headline-3 \{ font-size: 62px/);
+    expect(cq).toMatch(/\.coaching-subhead \{ font-size: 17px;[^}]*max-width: 520px/);
+    expect(cq).toMatch(/\.coaching-benefit-title \{ font-size: 18px/);
+    expect(cq).toMatch(/\.coaching-benefit-body \{ font-size: 16px/);
+    expect(cq).toMatch(/\.coaching-entitlement-title \{ font-size: 18px/);
+    expect(cq).toMatch(/\.coaching-entitlement-body \{ font-size: 15px/);
+    expect(cq).toMatch(/\.coaching-cta \{[^}]*font-size: 17px/);
+    expect(cq).toMatch(/\.coaching-caption \{ font-size: 14px/);
+    // phone sizes stay on the base rules
+    expect(block(".coaching-headline-1")).toContain("36px");
+    expect(block(".coaching-headline-2")).toContain("18px");
+    expect(block(".coaching-headline-3")).toContain("44px");
+    expect(block(".coaching-benefit-title")).toContain("15px");
+    expect(block(".coaching-headline")).toMatch(/line-height:\s*1\.02/);
+    expect(block(".coaching-screen")).toMatch(/padding:\s*20px/);
+  });
+
   it("uses the brand tokens: red CTA with glow, blue-grey card, no #9aa0ad text", () => {
     expect(block(".coaching-cta")).toContain("#c2001f");
     expect(block(".coaching-cta")).toContain("0 6px 18px rgba(194, 0, 31, .25)");
@@ -131,5 +167,20 @@ describe("no-scroll layout contract (app/globals.css)", () => {
     const coachingCss = css.slice(css.indexOf("Coaching tab (JobHackers design system)"));
     expect(coachingCss).not.toContain("#9aa0ad");
     expect(coachingCss).not.toMatch(/gradient|backdrop-filter/);
+  });
+});
+
+describe("CoachingDesktopPreview", () => {
+  it("wraps the real screen in the real desktop chrome at 1280×800", async () => {
+    const { default: CoachingDesktopPreview } = await import("@/components/coaching/CoachingDesktopPreview");
+    render(<CoachingDesktopPreview content={DEFAULT_COACHING_SCREEN} />);
+    const frame = screen.getByRole("img", { name: "Live preview at 1280×800" });
+    expect(frame).toHaveStyle({ width: "1280px", height: "800px" });
+    const nav = within(frame).getByRole("navigation", { name: "Primary" });
+    expect(nav.textContent!.replace(/\s+/g, " ").trim()).toBe("Compass Performance Progress Coaching");
+    expect(within(nav).getByText("Coaching")).toHaveAttribute("aria-current", "page");
+    expect(within(frame).getByRole("button", { name: /sign out/i })).toBeInTheDocument();
+    expect(within(frame).getByRole("heading", { level: 1 })).toHaveTextContent("Coach!");
+    expect(within(frame).getByRole("link", { name: "Book a coaching call" })).toHaveAttribute("href", "https://jobhackers.global");
   });
 });
