@@ -7,7 +7,7 @@ const HOUR = 3_600_000;
 export interface RegistrationLink {
   token: string;
   createdBy: string;
-  accessDurationDays: number; // access granted on signup (default 90)
+  accessDurationDays: number; // access granted on signup (default 60)
   expiresAt: number;          // when the LINK stops working
   maxUses: number;            // how many signups the link allows (default 1)
   uses: number;
@@ -26,7 +26,7 @@ export async function createRegistrationLink(
   const link: RegistrationLink = {
     token,
     createdBy: adminUid,
-    accessDurationDays: opts.accessDurationDays ?? 90,
+    accessDurationDays: opts.accessDurationDays ?? 60,
     expiresAt: now + (opts.expiryHours ?? 48) * HOUR,
     maxUses: opts.maxUses ?? 1,
     uses: 0,
@@ -70,7 +70,7 @@ interface CompleteResult {
   error?: string;
 }
 
-// Consumes the link: create the user, grant 90-day access, mark link used.
+// Consumes the link: create the user, grant 60-day access (default), mark link used.
 export async function completeRegistration(
   token: string,
   email: string,
@@ -87,7 +87,7 @@ export async function completeRegistration(
   const auth = adminAuth();
   const db = adminDb();
   const now = Date.now();
-  const days = v.accessDurationDays ?? 90;
+  const days = v.accessDurationDays ?? 60;
 
   // create or update the user with the chosen password
   const displayName = [firstName, lastName].filter(Boolean).join(" ") || undefined;
@@ -99,7 +99,7 @@ export async function completeRegistration(
     user = await auth.createUser({ email, password, emailVerified: true, displayName });
   }
 
-  // profile (first + last name carry through to onboarding) + 90-day active grant
+  // profile (first + last name carry through to onboarding) + active access grant
   await db.doc(`users/${user.uid}`).set(
     { email, firstName: firstName ?? null, lastName: lastName ?? null, createdAt: now },
     { merge: true }

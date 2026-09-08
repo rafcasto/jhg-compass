@@ -382,7 +382,7 @@ export const DEFAULT_TEXT: Record<string, string> = {
   // Auth — invite registration
   "auth.register.brand": "Create your",
   "auth.register.brandAccent": "Compass",
-  "auth.register.subtitle": "You've been invited — 90 days of access await.",
+  "auth.register.subtitle": "You've been invited — 60 days of access await.",
   "auth.register.passwordLabel": "Choose a password",
   "auth.register.submit": "Create Account",
   "auth.register.busy": "Creating account…",

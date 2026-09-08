@@ -40,7 +40,7 @@ export default function RegistrationAccess({ inviteUrl, onUseAsInvite }: { invit
 /* ---------------- invite-link generator ---------------- */
 function LinkGenerator({ inviteUrl, onUseAsInvite }: { inviteUrl: string; onUseAsInvite?: (url: string) => Promise<void> }) {
   const [expiryHours, setExpiryHours] = useState(48);
-  const [accessDurationDays, setAccessDurationDays] = useState(90);
+  const [accessDurationDays, setAccessDurationDays] = useState(60);
   const [maxUses, setMaxUses] = useState(1);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
