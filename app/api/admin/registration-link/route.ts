@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const link = await createRegistrationLink(admin.uid, {
     expiryHours: Number(body.expiryHours) || 48,
-    accessDurationDays: Number(body.accessDurationDays) || 90,
+    accessDurationDays: Number(body.accessDurationDays) || 60,
     maxUses: Number(body.maxUses) || 1,
     email: body.email || null,
   });
