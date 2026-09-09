@@ -66,18 +66,18 @@ export default function LandingClient({ funnel: initial }: { funnel: FunnelConfi
                 <div className="cl-phone__island" />
                 <div className="cl-ps-head">
                   <div>
-                    <div className="cl-ps-eyebrow">Performance</div>
-                    <div className="cl-ps-title">Success Predictors</div>
+                    <div className="cl-ps-eyebrow">Success Predictors</div>
+                    <div className="cl-ps-title">Performance</div>
                   </div>
                   <div className="cl-ps-edit">Edit targets</div>
                 </div>
                 <div className="cl-ps-seg">
                   <span className="cl-ps-seg__on">Day</span><span>Week</span><span>Month</span>
                 </div>
-                <div className="cl-ps-date">‹&nbsp;&nbsp;Tue 23 Jun&nbsp;&nbsp;›</div>
+                <div className="cl-ps-date"><i>‹</i><span>Thu, 10 Sep</span><i>›</i></div>
                 <div className="cl-ps-banner">
-                  <span className="cl-ps-banner__e">👀</span>
-                  <div><div className="cl-ps-banner__t">Hidden Job Market</div><div className="cl-ps-banner__s">Contributes to ~80% of your success</div></div>
+                  <span className="cl-ps-banner__e">✅</span>
+                  <div><div className="cl-ps-banner__t">Cracking the Hidden Job Market</div><div className="cl-ps-banner__s">Contributes to ~80% of your success</div></div>
                 </div>
                 {PHONE_ROWS.map((r, i) => (
                   <div className="cl-ps-row" key={i}>
@@ -95,7 +95,15 @@ export default function LandingClient({ funnel: initial }: { funnel: FunnelConfi
                     </div>
                   </div>
                 ))}
-                <div className="cl-phone__home" />
+                <div className="cl-ps-tabs">
+                  {PHONE_TABS.map((t) => (
+                    <div className={"cl-ps-tab" + (t.on ? " cl-ps-tab--on" : "")} key={t.label}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={t.d} /></svg>
+                      <span>{t.label}</span>
+                    </div>
+                  ))}
+                  <div className="cl-phone__home" />
+                </div>
               </div>
             </div>
           </div>
@@ -108,9 +116,17 @@ export default function LandingClient({ funnel: initial }: { funnel: FunnelConfi
 }
 
 const PHONE_ROWS = [
-  { label: "Research & read target industry / top-10 companies", target: 1, pct: "16%" },
-  { label: "Research interesting profiles at target companies", target: 1, pct: "10%" },
-  { label: "Contact prospects — with referrals", target: 1, pct: "20%" },
+  { label: "Research Target Industries and/or Top 10-20 Companies (niching down)", target: 3, pct: "60%" },
+  { label: "Research 2-3 key profiles @ each Target company: recently departed, referee, hiring manager, CXOs…", target: 6, pct: "60%" },
+  { label: "Outreach #1 - Contact People who matter via Linkedin / emailing / phone (warm outreach > cold)", target: 7, pct: "58%" },
+  { label: "Outreach #2: Contact People who matter with a referral / warm intro", target: 7, pct: "60%" },
+];
+
+const PHONE_TABS = [
+  { label: "Compass", d: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm3.2 5.8-1.9 5.5-5.5 1.9 1.9-5.5z" },
+  { label: "Performance", on: true, d: "M4.5 15.5a7.5 7.5 0 0 1 15 0M12 15.5l3.6-4.4M9.5 20h5" },
+  { label: "Progress", d: "M4 4h16v16H4zM9.3 4v16M14.7 4v16" },
+  { label: "Coaching", d: "M2.5 9.5 12 5l9.5 4.5L12 14zM6.5 11.7v3.8c0 1.6 2.5 3 5.5 3s5.5-1.4 5.5-3v-3.8M21.5 9.5v5" },
 ];
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
@@ -197,38 +213,43 @@ const CSS = `
 /* ---- iPhone ---- */
 .cl-visual{display:flex;justify-content:center;align-items:center;}
 .cl-phone{width:268px;border-radius:50px;background:#191c27;padding:13px;box-shadow:0 34px 72px rgba(25,28,39,.34);position:relative;}
-.cl-phone__screen{position:relative;background:#fafafa;border-radius:38px;padding:44px 15px 22px;overflow:hidden;text-align:left;min-height:530px;}
+.cl-phone__screen{position:relative;background:#fff;border-radius:38px;padding:44px 15px 70px;overflow:hidden;text-align:left;height:560px;}
 .cl-phone__island{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:88px;height:26px;border-radius:99px;background:#191c27;z-index:3;}
-.cl-phone__home{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);width:110px;height:5px;border-radius:99px;background:#191c27;opacity:.22;}
+.cl-phone__home{position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:110px;height:5px;border-radius:99px;background:#191c27;opacity:.22;}
 
-.cl-ps-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px;}
-.cl-ps-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:7px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c2001f;}
-.cl-ps-title{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:16px;color:#191c27;letter-spacing:-.02em;line-height:1.05;margin-top:3px;}
-.cl-ps-edit{flex:0 0 auto;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:8px;color:#191c27;border:1px solid #d4d8e2;border-radius:99px;padding:6px 9px;background:#fff;}
-.cl-ps-seg{display:flex;background:#eef0f5;border-radius:10px;padding:3px;margin-bottom:11px;}
-.cl-ps-seg span{flex:1;text-align:center;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:9px;color:#9aa0ad;padding:6px 0;border-radius:8px;}
+.cl-ps-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;}
+.cl-ps-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:6.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#c2001f;}
+.cl-ps-title{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:17px;color:#191c27;letter-spacing:-.02em;line-height:1.05;margin-top:3px;}
+.cl-ps-edit{flex:0 0 auto;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:8px;color:#191c27;border:1px solid #d4d8e2;border-radius:99px;padding:7px 11px;background:#fff;}
+.cl-ps-seg{display:flex;background:#eef0f5;border-radius:99px;padding:3px;margin-bottom:12px;}
+.cl-ps-seg span{flex:1;text-align:center;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:9.5px;color:#7c8394;padding:7px 0;border-radius:99px;}
 .cl-ps-seg__on{background:#fff;color:#191c27 !important;box-shadow:0 1px 3px rgba(25,28,39,.14);}
-.cl-ps-date{text-align:center;font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:10px;color:#191c27;margin-bottom:11px;}
-.cl-ps-banner{display:flex;align-items:center;gap:7px;background:#fbe3e6;border-radius:12px;padding:9px 11px;margin-bottom:2px;}
-.cl-ps-banner__e{font-size:13px;}
+.cl-ps-date{display:flex;justify-content:center;align-items:center;gap:16px;font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:10px;color:#191c27;margin-bottom:12px;}
+.cl-ps-date i{font-style:normal;font-weight:400;font-size:12px;color:#b6bbc7;line-height:1;}
+.cl-ps-banner{display:flex;align-items:center;gap:8px;background:#e6ebf8;border-radius:14px;padding:11px 12px;margin-bottom:2px;}
+.cl-ps-banner__e{font-size:14px;line-height:1;}
 .cl-ps-banner__t{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:10.5px;color:#191c27;line-height:1.1;}
-.cl-ps-banner__s{font-size:7.5px;color:#6b7280;margin-top:1px;}
-.cl-ps-row{display:flex;gap:10px;align-items:center;padding:11px 1px;border-bottom:1px solid #eef0f5;}
+.cl-ps-banner__s{font-size:7.5px;color:#6b7280;margin-top:2px;}
+.cl-ps-row{display:flex;gap:10px;align-items:center;padding:12px 1px;border-bottom:1px solid #eef0f5;}
 .cl-ps-row__l{flex:1;min-width:0;}
-.cl-ps-row__t{font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:10px;line-height:1.25;color:#191c27;}
-.cl-ps-bar{margin-top:9px;height:6px;border-radius:99px;background:#e7ebf3;position:relative;}
-.cl-ps-bar i{position:absolute;top:50%;transform:translate(-50%,-50%);width:3px;height:13px;border-radius:2px;background:#191c27;}
-.cl-ps-row__r{flex:0 0 auto;width:88px;}
-.cl-ps-metrics{display:flex;justify-content:center;align-items:flex-end;gap:7px;}
+.cl-ps-row__t{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:9.5px;line-height:1.3;color:#191c27;letter-spacing:-.01em;}
+.cl-ps-bar{margin-top:10px;height:6px;border-radius:99px;background:#e7ebf3;position:relative;}
+.cl-ps-bar i{position:absolute;top:50%;transform:translate(-50%,-50%);width:3px;height:14px;border-radius:2px;background:#191c27;}
+.cl-ps-row__r{flex:0 0 auto;width:90px;}
+.cl-ps-metrics{display:flex;justify-content:flex-end;align-items:flex-end;gap:8px;}
 .cl-ps-metric{display:flex;flex-direction:column;align-items:center;}
-.cl-ps-metric span{font-family:"Poppins",Arial,sans-serif;font-size:6.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#9aa0ad;margin-bottom:1px;}
+.cl-ps-metric span{font-family:"Poppins",Arial,sans-serif;font-size:6.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9aa0ad;margin-bottom:2px;}
 .cl-ps-metric b{font-family:"Poppins",Arial,sans-serif;font-size:15px;font-weight:700;color:#191c27;line-height:1;}
 .cl-ps-red{color:#c2001f !important;}
 .cl-ps-slash{color:#c5c9d2;font-size:13px;font-weight:600;}
-.cl-ps-step{display:flex;justify-content:center;gap:9px;margin-top:7px;}
-.cl-ps-step i{width:19px;height:19px;border-radius:99px;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;line-height:1;}
-.cl-ps-minus{border:1.5px solid #e6e8ef;color:#9aa0ad;background:#fff;}
+.cl-ps-step{display:flex;justify-content:flex-end;gap:6px;margin-top:6px;}
+.cl-ps-step i{width:21px;height:21px;border-radius:99px;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;line-height:1;}
+.cl-ps-minus{border:1.5px solid #e6e8ef;color:#b6bbc7;background:#fff;}
 .cl-ps-plus{background:#c2001f;color:#fff;box-shadow:0 2px 7px rgba(194,0,31,.36);}
+.cl-ps-tabs{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #eef0f5;display:flex;justify-content:space-around;padding:9px 8px 18px;z-index:2;}
+.cl-ps-tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:#6b7280;font-family:"Poppins",Arial,sans-serif;font-weight:500;font-size:6.5px;}
+.cl-ps-tab svg{width:15px;height:15px;}
+.cl-ps-tab--on{color:#c2001f;font-weight:600;}
 
 /* ---- responsive: stack on tablet/mobile (scroll is fine here) ---- */
 @media (max-width:900px){
