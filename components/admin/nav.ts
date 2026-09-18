@@ -6,6 +6,7 @@ export const TOFU_SUBTABS = [
   { key: "landing", label: "Landing page", hint: "Hero, countdown, details form, thank-you, expired & already-done screens" },
   { key: "quiz", label: "Quiz", hint: "Questions, options and per-option scoring" },
   { key: "registration", label: "Registration & access", hint: "Invite-link generator, sign-in / verify / set-password copy, paywall & emails" },
+  { key: "access", label: "Access renewals", hint: "Members whose access has ended — re-grant one or many" },
   { key: "onboarding", label: "Onboarding", hint: "The three-step first-run flow" },
 ] as const;
 export type TofuSub = (typeof TOFU_SUBTABS)[number]["key"];

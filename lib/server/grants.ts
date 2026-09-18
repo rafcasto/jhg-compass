@@ -1,6 +1,7 @@
 import "server-only";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
-import type { AccessGrant, AdminConfig, GrantStatus } from "@/lib/types";
+import type { AccessGrant, AdminConfig, GrantStatus, Profile } from "@/lib/types";
+import { effectiveStatus, renewalPeriod, type MemberAccessRow } from "@/lib/access";
 
 const DAY = 86_400_000;
 
@@ -118,4 +119,78 @@ export async function syncGrant(uid: string): Promise<AccessGrant | null> {
     return { ...g, ...next } as AccessGrant;
   }
   return g;
+}
+
+// ---- Admin → TOFU → Access renewals ----
+
+// Every grant, with its EFFECTIVE status and the member's name from users/{uid}.
+export async function listGrants(now = Date.now()): Promise<MemberAccessRow[]> {
+  const db = adminDb();
+  const snap = await db.collection("accessGrants").get();
+  const docs = snap.docs;
+  // profiles in chunks (getAll takes up to a few hundred refs comfortably)
+  const profiles = new Map<string, Partial<Profile>>();
+  for (let i = 0; i < docs.length; i += 100) {
+    const refs = docs.slice(i, i + 100).map((d) => db.doc(`users/${d.id}`));
+    if (!refs.length) continue;
+    const got = await db.getAll(...refs);
+    for (const p of got) if (p.exists) profiles.set(p.id, p.data() as Partial<Profile>);
+  }
+  const rows: MemberAccessRow[] = docs.map((d) => {
+    const g = d.data() as AccessGrant & { updatedAt?: number };
+    const prof = profiles.get(d.id) ?? {};
+    return {
+      uid: d.id,
+      email: g.email ?? prof.email ?? "",
+      firstName: prof.firstName ?? null,
+      lastName: prof.lastName ?? null,
+      plan: g.plan ?? null,
+      source: g.source ?? null,
+      status: effectiveStatus(g, now),
+      storedStatus: g.status,
+      durationDays: g.durationDays ?? 0,
+      startsAt: g.startsAt ?? null,
+      expiresAt: g.expiresAt ?? null,
+      redeemBy: g.redeemBy ?? null,
+      updatedAt: g.updatedAt ?? null,
+      renewedAt: g.renewedAt ?? null,
+      renewedBy: g.renewedBy ?? null,
+    };
+  });
+  // newest change first
+  rows.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+  return rows;
+}
+
+export interface RenewResult { uid: string; email: string; expiresAt: number }
+
+// Re-activate (or extend) access for one or many members. Expired / pending /
+// revoked members start a fresh period from now; members still active are
+// extended from their current end date (lib/access.ts renewalPeriod).
+export async function renewGrants(uids: string[], days: number, by: string | null): Promise<{ renewed: RenewResult[]; missing: string[] }> {
+  const db = adminDb();
+  const now = Date.now();
+  const unique = Array.from(new Set(uids.filter(Boolean)));
+  const renewed: RenewResult[] = [];
+  const missing: string[] = [];
+  for (let i = 0; i < unique.length; i += 400) {
+    const chunk = unique.slice(i, i + 400);
+    const refs = chunk.map((uid) => db.doc(`accessGrants/${uid}`));
+    const snaps = await db.getAll(...refs);
+    const batch = db.batch();
+    let n = 0;
+    snaps.forEach((snap, j) => {
+      if (!snap.exists) { missing.push(chunk[j]); return; }
+      const g = snap.data() as AccessGrant;
+      const { startsAt, expiresAt } = renewalPeriod(g, days, now);
+      batch.set(refs[j], {
+        status: "active" satisfies GrantStatus, startsAt, expiresAt, redeemBy: null,
+        durationDays: days, renewedAt: now, renewedBy: by, updatedAt: now,
+      }, { merge: true });
+      renewed.push({ uid: chunk[j], email: g.email, expiresAt });
+      n++;
+    });
+    if (n) await batch.commit();
+  }
+  return { renewed, missing };
 }
