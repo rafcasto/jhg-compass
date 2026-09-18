@@ -5,8 +5,12 @@ import { DEFAULT_TEXT, mergeContent, hiddenActivities, visibleActivities, weekly
 import type { Contact, Opportunity } from "@/lib/types";
 
 // ---- mocks -------------------------------------------------------------------
-const importRecords = vi.fn(async (_uid: string, _sub: string, docs: unknown[]) => docs.length);
-vi.mock("@/lib/firestore/db", () => ({ importRecords: (...a: any[]) => (importRecords as any)(...a) }));
+const importRecords = vi.fn(async (_uid: string, sub: string, docs: unknown[]) => docs.map((_, i) => `${sub}-${i + 1}`));
+const attach = vi.fn(async () => {});
+vi.mock("@/lib/firestore/db", () => ({
+  importRecords: (...a: any[]) => (importRecords as any)(...a),
+  attachContactsToOpportunities: (...a: any[]) => (attach as any)(...a),
+}));
 const track = vi.fn();
 vi.mock("@/lib/track-client", () => ({ track: (...a: any[]) => track(...a) }));
 vi.mock("@/lib/firestore/content", () => ({
@@ -26,8 +30,10 @@ import ImportSheet from "@/components/tracker/ImportSheet";
 const t = (k: string) => DEFAULT_TEXT[k];
 const jane: Contact = { id: "c1", fullName: "Jane Doe", company: "Acme", email: "jane@acme.com", type: "peer" };
 const noOpps: Opportunity[] = [];
+const acmePm: Opportunity = { id: "o1", company: "Acme", role: "PM", market: "hidden", stage: "outreach", contactIds: [] };
+const globex: Opportunity = { id: "o2", company: "Globex", role: "CTO", market: "hidden", stage: "wishlist", contactIds: [] };
 
-beforeEach(() => { importRecords.mockClear(); track.mockClear(); });
+beforeEach(() => { importRecords.mockClear(); attach.mockClear(); track.mockClear(); });
 
 async function pasteAndPreview(user: ReturnType<typeof userEvent.setup>, csv: string) {
   await user.click(screen.getByRole("button", { name: t("import.pasteToggle") }));
@@ -65,10 +71,42 @@ describe("ImportSheet", () => {
     expect(uid).toBe("u1");
     expect(sub).toBe("contacts");
     expect(docs).toEqual([{ fullName: "Bob Builder", company: "", role: "", type: "hiring_manager", email: "bob@b.c", phone: "", linkedinUrl: "", log: [] }]);
-    expect(track).toHaveBeenCalledWith("IMPORT_CONTACTS", { props: { count: 1, skippedErrors: 1, skippedDuplicates: 1 } });
+    expect(attach).not.toHaveBeenCalled();
+    expect(track).toHaveBeenCalledWith("IMPORT_CONTACTS", { props: { count: 1, linked: 0, skippedErrors: 1, skippedDuplicates: 1 } });
 
     await user.click(screen.getByRole("button", { name: t("import.close") }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("contacts: attaches new contacts to the jobs they name — or every job at their company — after creating them", async () => {
+    const user = userEvent.setup();
+    render(<ImportSheet kind="contacts" uid="u1" contacts={[]} opps={[acmePm, globex]} onClose={() => {}} />);
+    await pasteAndPreview(user, "Full name,Company,Jobs\nAmy,Acme,\nBen,Globex,Acme / PM\nCal,Initech,\n");
+
+    expect(screen.getByText("3 ready to import")).toBeInTheDocument();
+    const auto = screen.getByRole("checkbox", { name: t("import.contacts.autoLink") });
+    expect(auto).toBeChecked();
+    // preview "Jobs" column: Amy → 1 (Acme), Ben → 1 (explicit), Cal → 0
+    const cells = screen.getAllByRole("row").slice(1).map((r) => r.lastElementChild!.textContent);
+    expect(cells).toEqual(["1", "1", "0"]);
+
+    await user.click(screen.getByRole("button", { name: "Import 3" }));
+    expect(await screen.findByText(/3 contacts added to your network\. 2 attached to jobs on your board\./)).toBeInTheDocument();
+    expect(attach).toHaveBeenCalledTimes(1);
+    expect(attach).toHaveBeenCalledWith("u1", [{ opportunityId: "o1", contactIds: ["contacts-1", "contacts-2"] }]);
+    expect(track).toHaveBeenCalledWith("IMPORT_CONTACTS", expect.objectContaining({ props: expect.objectContaining({ count: 3, linked: 2 }) }));
+  });
+
+  it("contacts: turning auto-attach off keeps only the explicit Jobs references", async () => {
+    const user = userEvent.setup();
+    render(<ImportSheet kind="contacts" uid="u1" contacts={[]} opps={[acmePm, globex]} onClose={() => {}} />);
+    await pasteAndPreview(user, "Full name,Company,Jobs\nAmy,Acme,\nBen,Globex,Acme / PM\n");
+    await user.click(screen.getByRole("checkbox", { name: t("import.contacts.autoLink") }));
+    const cells = screen.getAllByRole("row").slice(1).map((r) => r.lastElementChild!.textContent);
+    expect(cells).toEqual(["0", "1"]);
+    await user.click(screen.getByRole("button", { name: "Import 2" }));
+    await screen.findByText(/2 contacts added/);
+    expect(attach).toHaveBeenCalledWith("u1", [{ opportunityId: "o1", contactIds: ["contacts-2"] }]);
   });
 
   it("opportunities: reads an uploaded file, resolves stages and links contacts", async () => {
@@ -85,7 +123,8 @@ describe("ImportSheet", () => {
     expect(screen.getByRole("button", { name: /1 warnings/ })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Import 2" }));
-    expect(await screen.findByText("2 jobs added to your board.")).toBeInTheDocument();
+    expect(await screen.findByText(/2 jobs added to your board\. 1 have contacts attached\./)).toBeInTheDocument();
+    expect(attach).not.toHaveBeenCalled();
     const [, sub, docs] = importRecords.mock.calls[0];
     expect(sub).toBe("opportunities");
     expect(docs).toEqual([

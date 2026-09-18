@@ -42,6 +42,9 @@ export const CONTACT_COLUMNS: ColumnSpec[] = [
     help: "Any format.", example: "+1 555 010 1234" },
   { key: "linkedinUrl", header: "LinkedIn URL", aliases: ["linkedin", "linkedin profile", "linkedin url"],
     help: "Profile link.", example: "https://www.linkedin.com/in/janedoe" },
+  { key: "jobs", header: "Jobs", aliases: ["job", "opportunity", "opportunities", "jobs at", "attach to"],
+    help: "Jobs on your board to attach this contact to — “Company” or “Company / Role”, separated by ;. Blank = every job at the same company.",
+    example: "Acme Corp / Senior Product Manager" },
   { key: "notes", header: "Notes", aliases: ["note", "comments", "comment"],
     help: "Saved as the first entry in the contact's conversation notes.", example: "Met at the March meetup — warm intro via Sam" },
 ];
@@ -60,7 +63,7 @@ export const OPPORTUNITY_COLUMNS: ColumnSpec[] = [
   { key: "url", header: "URL", aliases: ["link", "job link", "job url", "posting"],
     help: "Link to the posting or company page.", example: "https://acme.com/careers/123" },
   { key: "contacts", header: "Contacts", aliases: ["contact", "contact emails", "contact names", "people"],
-    help: "Existing contacts to attach — emails or full names, separated by ; (import contacts first).", example: "jane.doe@acme.com; John Smith" },
+    help: "Contacts on your list to attach — emails or full names, separated by ;. Blank = every contact at the same company.", example: "jane.doe@acme.com; John Smith" },
   { key: "notes", header: "Notes", aliases: ["note", "comments", "comment"],
     help: "Free text, shown on the job card.", example: "Reached out on LinkedIn, waiting for reply" },
 ];
@@ -74,8 +77,8 @@ export function contactsCsvTemplate(): string {
   const rows: string[][] = [
     CONTACT_COLUMNS.map((c) => c.header),
     CONTACT_COLUMNS.map((c) => c.example),
-    ["John Smith", "Acme Corp", "Staff Engineer", "peer", "john.smith@acme.com", "", "https://www.linkedin.com/in/johnsmith", "Ex-colleague, happy to refer me"],
-    ["Priya Patel", "Northwind", "Talent Partner", "referrer", "priya@northwind.io", "+44 20 7946 0000", "", ""],
+    ["John Smith", "Acme Corp", "Staff Engineer", "peer", "john.smith@acme.com", "", "https://www.linkedin.com/in/johnsmith", "Acme Corp", "Ex-colleague, happy to refer me"],
+    ["Priya Patel", "Northwind", "Talent Partner", "referrer", "priya@northwind.io", "+44 20 7946 0000", "", "", ""],
   ];
   return toCsv(rows);
 }
@@ -99,6 +102,7 @@ export interface ImportRow<T> {
   data: T;               // the document to write (minus createdAt)
   duplicate: boolean;    // already exists (or repeats an earlier row)
   warnings: string[];
+  attachTo?: string[];   // contacts only: opportunity ids to add this contact to once created
 }
 
 export interface ImportResult<T> {
@@ -191,6 +195,24 @@ export function resolveContactRefs(raw: string, contacts: ContactRef[]): { ids: 
   return { ids, unmatched };
 }
 
+// Resolve "Acme / PM; Globex" against the member's board. A bare company name
+// matches every job at that company; "Company / Role" narrows to one.
+export function resolveOpportunityRefs(raw: string, opps: Pick<Opportunity, "id" | "company" | "role">[]): { ids: string[]; unmatched: string[] } {
+  const ids: string[] = [];
+  const unmatched: string[] = [];
+  for (const token of raw.split(/[;|]/).map((s) => s.trim()).filter(Boolean)) {
+    const slash = token.indexOf("/");
+    const company = compact(slash >= 0 ? token.slice(0, slash) : token);
+    const role = slash >= 0 ? compact(token.slice(slash + 1)) : "";
+    const hits = opps.filter((o) => compact(o.company) === company && (!role || compact(o.role ?? "") === role));
+    if (!hits.length) { unmatched.push(token); continue; }
+    for (const h of hits) if (!ids.includes(h.id)) ids.push(h.id);
+  }
+  return { ids, unmatched };
+}
+
+const sameCompany = (a: string | undefined, b: string | undefined) => !!a && !!b && compact(a) === compact(b);
+
 function emptyResult<T>(missingColumns: string[] = [], unknownColumns: string[] = []): ImportResult<T> {
   return { rows: [], errors: [], missingColumns, unknownColumns, totalRows: 0, tooMany: false };
 }
@@ -199,6 +221,8 @@ function emptyResult<T>(missingColumns: string[] = [], unknownColumns: string[] 
 export interface ParseContactsOptions {
   existing?: Pick<Contact, "id" | "fullName" | "company" | "email">[];
   typeLabels?: Partial<Record<ContactType, string>>; // admin-renamed option labels
+  opportunities?: Pick<Opportunity, "id" | "company" | "role">[]; // board jobs the Jobs column can name
+  autoLinkByCompany?: boolean; // blank Jobs cell → attach to every job at the contact's company (default true)
   now?: number;
 }
 
@@ -242,11 +266,25 @@ export function parseContactsCsv(text: string, opts: ParseContactsOptions = {}):
     const notes = get("notes");
     const log: NoteEntry[] = notes ? [{ at: now, text: notes }] : [];
 
+    // Which jobs to attach this contact to: the Jobs column if given, else (by
+    // default) every job at the same company.
+    let attachTo: string[] = [];
+    if (opts.opportunities) {
+      const jobsRaw = get("jobs");
+      if (jobsRaw) {
+        const r = resolveOpportunityRefs(jobsRaw, opts.opportunities);
+        attachTo = r.ids;
+        for (const u of r.unmatched) warnings.push(`Job not found: "${u}"`);
+      } else if (opts.autoLinkByCompany !== false) {
+        attachTo = opts.opportunities.filter((o) => sameCompany(o.company, company)).map((o) => o.id);
+      }
+    }
+
     const doc: ContactDoc = {
       fullName, company, role: get("role"), type, email, phone: get("phone"),
       linkedinUrl: normalizeUrl(get("linkedinUrl")), log,
     };
-    rows.push({ line, data: doc, duplicate, warnings });
+    rows.push({ line, data: doc, duplicate, warnings, attachTo });
   }
 
   return { rows, errors, missingColumns: [], unknownColumns: unknown, totalRows: body.length, tooMany };
@@ -255,8 +293,9 @@ export function parseContactsCsv(text: string, opts: ParseContactsOptions = {}):
 // ---- opportunities -----------------------------------------------------------
 export interface ParseOpportunitiesOptions {
   stages: Stage[];
-  contacts?: Pick<Contact, "id" | "fullName" | "email">[];
+  contacts?: Pick<Contact, "id" | "fullName" | "email" | "company">[];
   existing?: Pick<Opportunity, "id" | "company" | "role">[];
+  autoLinkByCompany?: boolean; // blank Contacts cell → attach every contact at the job's company (default true)
 }
 
 export function parseOpportunitiesCsv(text: string, opts: ParseOpportunitiesOptions): ImportResult<OpportunityDoc> {
@@ -288,8 +327,15 @@ export function parseOpportunitiesCsv(text: string, opts: ParseOpportunitiesOpti
     let stage = parseStage(stageRaw, opts.stages);
     if (stage === null) { warnings.push(`Unknown stage "${stageRaw}" — placed in ${opts.stages[0]?.label ?? "the first column"}`); stage = firstStage; }
 
-    const { ids: contactIds, unmatched } = resolveContactRefs(get("contacts"), opts.contacts ?? []);
-    for (const u of unmatched) warnings.push(`Contact not found: "${u}"`);
+    const contactsRaw = get("contacts");
+    let contactIds: string[] = [];
+    if (contactsRaw) {
+      const r = resolveContactRefs(contactsRaw, opts.contacts ?? []);
+      contactIds = r.ids;
+      for (const u of r.unmatched) warnings.push(`Contact not found: "${u}"`);
+    } else if (opts.autoLinkByCompany !== false) {
+      contactIds = (opts.contacts ?? []).filter((c) => sameCompany(c.company, company)).map((c) => c.id);
+    }
 
     const role = get("role");
     const key = compact(company) + "|" + compact(role);

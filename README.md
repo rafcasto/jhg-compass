@@ -42,11 +42,16 @@ npm run dev                  # http://localhost:3000
   auto-detected so Excel exports from any locale work) and `lib/import.ts` (column specs, forgiving header matching —
   `Full name` / `full_name` / `fullName` / aliases like `Job title` — row → document mapping, duplicate detection).
 - **Contacts columns:** Full name *(required)*, Company, Role, Type (`hiring_manager` / `peer` / `influencer` / `referrer`,
-  labels and legacy values accepted), Email, Phone, LinkedIn URL, Notes (becomes the first conversation-note entry).
+  labels and legacy values accepted), Email, Phone, LinkedIn URL, Jobs (jobs on the board to attach to — `Company` or
+  `Company / Role`, `;`-separated), Notes (becomes the first conversation-note entry).
   Duplicate = same email, or same name + company, as an existing contact (or an earlier row).
 - **Jobs columns:** Company *(required)*, Role, Market (`hidden` default / `visible`), Stage (column id or label, emoji and
   case ignored; unknown → first column with a warning), Source, URL, Contacts (existing contacts by email or full name,
-  `;`-separated — import contacts first), Notes (now shown on the job detail sheet). Duplicate = same company + role.
+  `;`-separated), Notes (now shown on the job detail sheet). Duplicate = same company + role.
+- **Linking works in both directions and by company.** A blank `Jobs` cell attaches the contact to every job at the same
+  company; a blank `Contacts` cell attaches every existing contact at that company (checkbox in the preview turns the
+  company matching off). New contacts are created first, then the named jobs get `contactIds` updated
+  (`attachContactsToOpportunities`, `arrayUnion`) — so import in either order and the second import does the linking.
 - Writes go through `importRecords()` in `lib/firestore/db.ts` (chunked `writeBatch`, same `createdAt` semantics as a
   single add); max 1000 rows per file. Events: `IMPORT_CONTACTS`, `IMPORT_OPPORTUNITIES`. All sheet copy is admin-editable
   under CMS → Progress (`import.*` keys).

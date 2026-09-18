@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Upload } from "lu
 import { Sheet } from "./Sheet";
 import { useContent } from "@/lib/firestore/content";
 import { fillTemplate } from "@/lib/content";
-import { importRecords } from "@/lib/firestore/db";
+import { importRecords, attachContactsToOpportunities } from "@/lib/firestore/db";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 import { CONTACT_TYPES, CONTACT_TYPE_TKEY, normalizeContactType, type ContactType } from "@/lib/contacts";
@@ -13,7 +13,7 @@ import {
   CONTACT_COLUMNS, OPPORTUNITY_COLUMNS, MAX_IMPORT_ROWS,
   contactsCsvTemplate, opportunitiesCsvTemplate, templateFile,
   parseContactsCsv, parseOpportunitiesCsv,
-  type ContactDoc, type ImportResult, type OpportunityDoc,
+  type ContactDoc, type ImportResult, type ImportRow, type OpportunityDoc,
 } from "@/lib/import";
 import type { Contact, Opportunity } from "@/lib/types";
 
@@ -52,19 +52,24 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
   const [result, setResult] = useState<ImportResult<ContactDoc> | ImportResult<OpportunityDoc> | null>(null);
   const [skipDup, setSkipDup] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [imported, setImported] = useState<number | null>(null);
+  const [imported, setImported] = useState<{ n: number; linked: number } | null>(null);
+  const [rawText, setRawText] = useState("");
+  const [autoLink, setAutoLink] = useState(true);
   const [readError, setReadError] = useState<string | null>(null);
 
   const columns = kind === "contacts" ? CONTACT_COLUMNS : OPPORTUNITY_COLUMNS;
   const typeLabels = useMemo(() => Object.fromEntries(CONTACT_TYPES.map((ct) => [ct, t(CONTACT_TYPE_TKEY[ct])])) as Record<ContactType, string>, [t]);
   const stageLabel = (id: string) => stages.find((s) => s.id === id)?.label ?? id;
 
-  function parse(text: string) {
+  function parse(text: string, auto = autoLink) {
     setReadError(null);
+    setRawText(text);
     setResult(kind === "contacts"
-      ? parseContactsCsv(text, { existing: contacts, typeLabels })
-      : parseOpportunitiesCsv(text, { stages, contacts, existing: opps }));
+      ? parseContactsCsv(text, { existing: contacts, typeLabels, opportunities: opps, autoLinkByCompany: auto })
+      : parseOpportunitiesCsv(text, { stages, contacts, existing: opps, autoLinkByCompany: auto }));
   }
+  // Auto-attach is only meaningful when there is something on the other side to attach to.
+  const canAutoLink = kind === "contacts" ? opps.length > 0 : contacts.length > 0;
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -86,11 +91,24 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
     if (!result || toImport.length === 0) return;
     setBusy(true);
     try {
-      const n = await importRecords(uid, kind, toImport.map((r) => r.data as Record<string, unknown>));
+      const ids = await importRecords(uid, kind, toImport.map((r) => r.data as Record<string, unknown>));
+      let linked = 0;
+      if (kind === "contacts") {
+        // New contact ids come back in input order → fan out to the jobs each row named.
+        const byOpp = new Map<string, string[]>();
+        toImport.forEach((r, i) => {
+          if (!r.attachTo?.length) return;
+          linked++;
+          for (const oppId of r.attachTo) byOpp.set(oppId, [...(byOpp.get(oppId) ?? []), ids[i]]);
+        });
+        if (byOpp.size) await attachContactsToOpportunities(uid, Array.from(byOpp, ([opportunityId, contactIds]) => ({ opportunityId, contactIds })));
+      } else {
+        linked = toImport.filter((r) => ((r.data as OpportunityDoc).contactIds ?? []).length > 0).length;
+      }
       track(kind === "contacts" ? TAGS.IMPORT_CONTACTS : TAGS.IMPORT_OPPORTUNITIES, {
-        props: { count: n, skippedErrors: result.errors.length, skippedDuplicates: skipDup ? dupCount : 0 },
+        props: { count: ids.length, linked, skippedErrors: result.errors.length, skippedDuplicates: skipDup ? dupCount : 0 },
       });
-      setImported(n);
+      setImported({ n: ids.length, linked });
     } finally { setBusy(false); }
   }
 
@@ -102,7 +120,10 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
       <Sheet title={title} onClose={onClose}>
         <div className="py-6 text-center space-y-3">
           <CheckCircle2 className="mx-auto h-10 w-10 text-rb-green-dark" />
-          <p className="text-sm text-jh-ink">{fillTemplate(t(`import.${kind}.done`), { n: imported })}</p>
+          <p className="text-sm text-jh-ink">
+            {fillTemplate(t(`import.${kind}.done`), { n: imported.n })}
+            {imported.linked > 0 && <> {fillTemplate(t(`import.${kind}.linked`), { n: imported.linked })}</>}
+          </p>
           <button onClick={onClose} className="btn-primary w-full">{t("import.close")}</button>
         </div>
       </Sheet>
@@ -139,6 +160,13 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
                   {fillTemplate(t("import.duplicates"), { n: dupCount })}
                 </label>
               )}
+              {canAutoLink && (
+                <label className="flex items-center gap-2 text-sm text-jh-ink">
+                  <input type="checkbox" checked={autoLink} className="h-4 w-4 accent-jh-red"
+                    onChange={(e) => { setAutoLink(e.target.checked); parse(rawText, e.target.checked); }} />
+                  {t(`import.${kind}.autoLink`)}
+                </label>
+              )}
 
               {/* sample rows */}
               {toImport.length > 0 && (
@@ -150,7 +178,7 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
                     <tbody>
                       {toImport.slice(0, PREVIEW_ROWS).map((r) => (
                         <tr key={r.line} className="border-t border-jh-line">
-                          {previewCells(kind, r.data, t, stageLabel, typeLabels).map((c, i) => (
+                          {previewCells(kind, r, t, stageLabel, typeLabels).map((c, i) => (
                             <td key={i} className="px-2 py-1.5 text-jh-ink max-w-40 truncate">{c}</td>
                           ))}
                         </tr>
@@ -267,16 +295,16 @@ function IssueList({ title, tone, items, lineLabel }: {
 
 function previewHeaders(kind: ImportKind, t: (k: string) => string): string[] {
   return kind === "contacts"
-    ? [t("tracker.f.fullName"), t("tracker.f.company"), t("tracker.f.role"), t("tracker.f.contactType"), t("tracker.f.email")]
+    ? [t("tracker.f.fullName"), t("tracker.f.company"), t("tracker.f.role"), t("tracker.f.contactType"), t("tracker.f.email"), t("import.jobs")]
     : [t("tracker.f.company"), t("tracker.f.role"), t("tracker.f.market"), "Stage", t("tracker.contacts")];
 }
 
-function previewCells(kind: ImportKind, d: ContactDoc | OpportunityDoc, t: (k: string) => string,
+function previewCells(kind: ImportKind, row: ImportRow<ContactDoc> | ImportRow<OpportunityDoc>, t: (k: string) => string,
   stageLabel: (id: string) => string, typeLabels: Record<ContactType, string>): string[] {
   if (kind === "contacts") {
-    const c = d as ContactDoc;
-    return [c.fullName, c.company ?? "", c.role ?? "", typeLabels[normalizeContactType(c.type)], c.email ?? ""];
+    const c = row.data as ContactDoc;
+    return [c.fullName, c.company ?? "", c.role ?? "", typeLabels[normalizeContactType(c.type)], c.email ?? "", String(row.attachTo?.length ?? 0)];
   }
-  const o = d as OpportunityDoc;
+  const o = row.data as OpportunityDoc;
   return [o.company, o.role ?? "", t(o.market === "hidden" ? "tracker.f.hidden" : "tracker.f.visible"), stageLabel(o.stage), String((o.contactIds ?? []).length)];
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  collection, doc, addDoc, setDoc, updateDoc, deleteDoc, writeBatch,
+  collection, doc, addDoc, setDoc, updateDoc, deleteDoc, writeBatch, arrayUnion,
   onSnapshot, query, orderBy, serverTimestamp, type DocumentData,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -92,22 +92,41 @@ export async function deleteRecord(
 // ---- bulk import (CSV) ----
 // Writes many docs to a per-user subcollection in chunked batches (Firestore caps
 // a batch at 500 ops). Each doc gets the same createdAt as a single add would.
+// Returns the new document ids, in input order.
 export async function importRecords(
   uid: string,
   sub: SubCollection,
   docs: Record<string, unknown>[],
   chunkSize = 400
-): Promise<number> {
+): Promise<string[]> {
   const col = collection(db, "users", uid, sub);
-  let written = 0;
+  const ids: string[] = [];
   for (let i = 0; i < docs.length; i += chunkSize) {
     const batch = writeBatch(db);
-    const slice = docs.slice(i, i + chunkSize);
-    for (const d of slice) batch.set(doc(col), { ...d, createdAt: serverTimestamp() });
+    for (const d of docs.slice(i, i + chunkSize)) {
+      const ref = doc(col);
+      batch.set(ref, { ...d, createdAt: serverTimestamp() });
+      ids.push(ref.id);
+    }
     await batch.commit();
-    written += slice.length;
   }
-  return written;
+  return ids;
+}
+
+// Add contacts to opportunities' contactIds (set semantics — never duplicates).
+export async function attachContactsToOpportunities(
+  uid: string,
+  links: { opportunityId: string; contactIds: string[] }[],
+  chunkSize = 400
+): Promise<void> {
+  const todo = links.filter((l) => l.contactIds.length > 0);
+  for (let i = 0; i < todo.length; i += chunkSize) {
+    const batch = writeBatch(db);
+    for (const l of todo.slice(i, i + chunkSize)) {
+      batch.update(doc(db, "users", uid, "opportunities", l.opportunityId), { contactIds: arrayUnion(...l.contactIds) });
+    }
+    await batch.commit();
+  }
 }
 
 export { serverTimestamp, setDoc, doc, deleteDoc, addDoc };
