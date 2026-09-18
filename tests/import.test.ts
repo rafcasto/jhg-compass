@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   parseContactsCsv, parseOpportunitiesCsv, contactsCsvTemplate, opportunitiesCsvTemplate, templateFile,
-  parseStage, parseContactType, parseMarket, resolveContactRefs, normalizeUrl,
+  parseStage, parseContactType, parseMarket, resolveContactRefs, resolveOpportunityRefs, normalizeUrl,
   CONTACT_COLUMNS, OPPORTUNITY_COLUMNS, MAX_IMPORT_ROWS,
 } from "@/lib/import";
 import { DEFAULT_STAGES } from "@/lib/stages";
@@ -18,7 +18,7 @@ describe("contacts import", () => {
     expect(r.unknownColumns).toEqual([]);
     expect(r.errors).toEqual([]);
     expect(r.rows).toHaveLength(1);
-    expect(r.rows[0]).toMatchObject({ line: 2, duplicate: false, warnings: [] });
+    expect(r.rows[0]).toMatchObject({ line: 2, duplicate: false, warnings: [], attachTo: [] });
     expect(r.rows[0].data).toEqual({
       fullName: "Jane Doe", company: "Acme", role: "CTO", type: "peer", email: "jane@acme.com", phone: "+1 555",
       linkedinUrl: "https://linkedin.com/in/jane", log: [{ at: 123, text: "Met at meetup" }],
@@ -72,6 +72,21 @@ describe("contacts import", () => {
     expect(r.errors).toEqual([{ line: 5, message: "Missing full name" }]);
   });
 
+  it("attaches contacts to jobs: the Jobs column wins, otherwise every job at the same company", () => {
+    const opportunities = [
+      { id: "o1", company: "Acme", role: "PM" }, { id: "o2", company: "Acme", role: "Designer" }, { id: "o3", company: "Globex", role: "CTO" },
+    ];
+    const csv = "Full name,Company,Jobs\nA,Acme,\nB,acme,Globex / CTO; Acme / pm\nC,Nowhere,\nD,Acme,Acme / Janitor; Initech\nE,,ACME\n";
+    const r = parseContactsCsv(csv, { opportunities });
+    expect(r.rows.map((x) => x.attachTo)).toEqual([["o1", "o2"], ["o3", "o1"], [], [], ["o1", "o2"]]);
+    expect(r.rows[3].warnings).toEqual(['Job not found: "Acme / Janitor"', 'Job not found: "Initech"']);
+    // auto-link off: only explicit references attach
+    const off = parseContactsCsv(csv, { opportunities, autoLinkByCompany: false });
+    expect(off.rows.map((x) => x.attachTo)).toEqual([[], ["o3", "o1"], [], [], ["o1", "o2"]]);
+    // no board passed → nothing to attach to, and no warnings either
+    expect(parseContactsCsv(csv).rows.map((x) => x.attachTo)).toEqual([[], [], [], [], []]);
+  });
+
   it("returns an empty result for an empty file", () => {
     const r = parseContactsCsv("");
     expect(r.totalRows).toBe(0);
@@ -101,6 +116,21 @@ describe("opportunities import", () => {
     expect(r.rows[0].warnings).toEqual([]);
     expect(r.rows[1].data).toMatchObject({ market: "hidden", stage: "wishlist" });
     expect(r.rows[1].warnings).toEqual(['Unknown market "sideways" — set to hidden', 'Unknown stage "Moon" — placed in Wishlist']);
+  });
+
+  it("attaches existing contacts at the same company when the Contacts cell is blank", () => {
+    const withCompany = [
+      { id: "c1", fullName: "Jane Doe", email: "jane@acme.com", company: "Acme" },
+      { id: "c2", fullName: "John Smith", email: "", company: "ACME Corp" },
+      { id: "c3", fullName: "Zed", email: "", company: "Acme" },
+    ];
+    const csv = "Company,Role,Contacts\nAcme,PM,\nAcme,Designer,john smith\nGlobex,CTO,\n";
+    const r = parseOpportunitiesCsv(csv, { stages, contacts: withCompany });
+    // blank cell → everyone at Acme; explicit name → just that person; Globex has nobody
+    expect(r.rows.map((x) => x.data.contactIds)).toEqual([["c1", "c3"], ["c2"], []]);
+    expect(r.rows.flatMap((x) => x.warnings)).toEqual([]);
+    const off = parseOpportunitiesCsv(csv, { stages, contacts: withCompany, autoLinkByCompany: false });
+    expect(off.rows.map((x) => x.data.contactIds)).toEqual([[], ["c2"], []]);
   });
 
   it("matches stages by id or label, ignoring case, punctuation and emoji", () => {
@@ -133,6 +163,13 @@ describe("helpers", () => {
     expect(ids).toEqual(["1"]);
     expect(unmatched).toEqual(["Zed"]);
   });
+  it("resolveOpportunityRefs: bare company = all jobs there, Company / Role = one", () => {
+    const opps = [{ id: "o1", company: "Acme Corp", role: "PM" }, { id: "o2", company: "Acme Corp", role: "Designer" }, { id: "o3", company: "Globex", role: "" }];
+    expect(resolveOpportunityRefs("acme corp", opps)).toEqual({ ids: ["o1", "o2"], unmatched: [] });
+    expect(resolveOpportunityRefs("Acme Corp / designer; Globex; Acme Corp / PM | Acme Corp / Nope", opps))
+      .toEqual({ ids: ["o2", "o3", "o1"], unmatched: ["Acme Corp / Nope"] });
+    expect(resolveOpportunityRefs("", opps)).toEqual({ ids: [], unmatched: [] });
+  });
 });
 
 describe("templates", () => {
@@ -143,19 +180,26 @@ describe("templates", () => {
     expect(read("opportunities-template.csv")).toBe(templateFile(opportunitiesCsvTemplate(DEFAULT_STAGES)));
   });
 
-  it("templates import cleanly with no errors or warnings", () => {
+  it("templates import cleanly with no errors or warnings, linking in either order", () => {
+    // contacts first, then jobs → the jobs' Contacts column attaches them
     const c = parseContactsCsv(contactsCsvTemplate());
     expect(c.missingColumns).toEqual([]);
     expect(c.errors).toEqual([]);
     expect(c.rows.flatMap((r) => r.warnings)).toEqual([]);
     expect(c.rows).toHaveLength(3);
-    const contacts = c.rows.map((r, i) => ({ id: `c${i}`, fullName: r.data.fullName, email: r.data.email }));
+    const contacts = c.rows.map((r, i) => ({ id: `c${i}`, fullName: r.data.fullName, email: r.data.email, company: r.data.company }));
     const o = parseOpportunitiesCsv(opportunitiesCsvTemplate(DEFAULT_STAGES), { stages: DEFAULT_STAGES, contacts });
     expect(o.missingColumns).toEqual([]);
     expect(o.errors).toEqual([]);
     expect(o.rows.flatMap((r) => r.warnings)).toEqual([]);
-    expect(o.rows[0].data.contactIds).toEqual(["c0", "c1"]);
+    expect(o.rows.map((r) => r.data.contactIds)).toEqual([["c0", "c1"], ["c2"], []]);
     expect(o.rows[0].data.stage).toBe("outreach");
+
+    // jobs first, then contacts → the contacts' Jobs column (or their company) attaches them
+    const opportunities = o.rows.map((r, i) => ({ id: `o${i}`, company: r.data.company, role: r.data.role }));
+    const c2 = parseContactsCsv(contactsCsvTemplate(), { opportunities });
+    expect(c2.rows.flatMap((r) => r.warnings)).toEqual([]);
+    expect(c2.rows.map((r) => r.attachTo)).toEqual([["o0"], ["o0"], ["o1"]]);
   });
 
   it("header rows cover every column spec in order", () => {
