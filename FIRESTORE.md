@@ -17,8 +17,12 @@ users/{uid}                      profile: { email, firstName, lastName, archetyp
                                  // (lib/targets.ts — shared by Performance and onboarding)
 
 accessGrants/{uid}               { email, plan, durationDays, source, status, redeemBy,
-                                   startsAt, expiresAt, webhookPayload, createdAt, updatedAt }
+                                   startsAt, expiresAt, renewedAt?, renewedBy?, webhookPayload, createdAt, updatedAt }
                                  // status: pending | active | expired | revoked. Admin SDK writes only.
+                                 // Stored status only flips to expired on the member's next login (syncGrant);
+                                 // Admin → TOFU → Access renewals re-derives the effective status from the
+                                 // timestamps (lib/access.ts) and re-grants via renewGrants (sets active,
+                                 // fresh startsAt/expiresAt — or extends expiresAt if still active — renewedAt/By).
 
 config/admin                     { paywallTitle, paywallBody, paywallCtaLabel, paywallCtaUrl,
                                    pwResetSubject, pwResetBody, updatedBy, updatedAt }

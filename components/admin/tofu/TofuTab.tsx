@@ -9,6 +9,7 @@ import LandingEditor from "./LandingEditor";
 import QuizEditor from "./QuizEditor";
 import OnboardingEditor from "./OnboardingEditor";
 import RegistrationAccess from "./RegistrationAccess";
+import AccessRenewals from "./AccessRenewals";
 
 // Top Of the FUnnel — everything a prospect meets BEFORE they are a member:
 // landing page → details → quiz → thank-you → registration link → sign-in →
@@ -78,6 +79,7 @@ export default function TofuTab({ sub, onSub }: { sub: TofuSub; onSub: (s: TofuS
           onUseAsInvite={funnel ? async (url) => { const next = { ...funnel, inviteUrl: url }; setFunnel(next); await save(next); } : undefined}
         />
       )}
+      {sub === "access" && <AccessRenewals />}
       {sub === "onboarding" && <OnboardingEditor />}
     </div>
   );

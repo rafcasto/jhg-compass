@@ -58,6 +58,7 @@ export const EVENT_DEFAULTS = {
   PAYWALL_HIT:     { tag: "EVENT->PAYWALL_HIT->TRACKER",      stage: "revenue",    label: "Paywall shown" },
   GRANT_CREATED:   { tag: "EVENT->GRANT_CREATED->TRACKER",    stage: "activation", label: "Access granted" },
   GRANT_REDEEMED:  { tag: "EVENT->GRANT_REDEEMED->TRACKER",   stage: "activation", label: "Access redeemed" },
+  GRANT_RENEWED:   { tag: "EVENT->GRANT_RENEWED->TRACKER",    stage: "activation", label: "Access renewed by admin" },
 } as const satisfies Record<string, EventDef>;
 
 export type EventKey = keyof typeof EVENT_DEFAULTS;

@@ -129,6 +129,8 @@ export interface AccessGrant {
   redeemBy?: number | null;
   startsAt?: number | null;
   expiresAt?: number | null;
+  renewedAt?: number | null;   // last admin renewal (Admin → TOFU → Access renewals)
+  renewedBy?: string | null;
 }
 
 export interface AdminConfig {
