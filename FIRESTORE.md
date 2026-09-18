@@ -45,5 +45,8 @@ config/events                    { events{ [EventKey]: { enabled, tag, stage, la
 - `categoryId` values come from `lib/categories.ts` (the Excel taxonomy; static in code).
 - `market`: `"hidden"` (~80% effort) | `"visible"` (<=20% effort).
 - `opportunities.stage` holds a `config/content.stages[].id`; unknown / legacy ids are shown in the first column (`resolveStage`).
+- **CSV import** (Progress tab) writes `contacts` and `opportunities` docs with exactly the shapes above via chunked
+  `writeBatch` (`importRecords`, `lib/firestore/db.ts`); imported contact notes land in `log[]`, job notes in `notes`.
+  Job → contact links resolve to existing `contacts/{id}` by email or full name at import time (`contactIds[]`).
 - Admin users are flagged with a custom claim `admin: true` (set via Admin SDK).
 - Security rules: `firestore.rules`.

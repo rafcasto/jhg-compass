@@ -52,6 +52,8 @@ export const EVENT_DEFAULTS = {
   STAGE_CHANGE:    { tag: "EVENT->OPPORTUNITY_STAGE->TRACKER",stage: "retention",  label: "Opportunity stage change" },
   ADD_REMINDER:    { tag: "EVENT->ADD_REMINDER->TRACKER",     stage: "retention",  label: "Add reminder" },
   REMINDER_DONE:   { tag: "EVENT->REMINDER_DONE->TRACKER",    stage: "retention",  label: "Reminder completed" },
+  IMPORT_CONTACTS: { tag: "EVENT->IMPORT_CONTACTS->TRACKER",  stage: "retention",  label: "Import contacts (CSV)" },
+  IMPORT_OPPORTUNITIES: { tag: "EVENT->IMPORT_OPPORTUNITIES->TRACKER", stage: "retention", label: "Import opportunities (CSV)" },
   COACHING_OPEN:   { tag: "EVENT->COACHING_OPEN->TRACKER",    stage: "revenue",    label: "Coaching opened" },
   PAYWALL_HIT:     { tag: "EVENT->PAYWALL_HIT->TRACKER",      stage: "revenue",    label: "Paywall shown" },
   GRANT_CREATED:   { tag: "EVENT->GRANT_CREATED->TRACKER",    stage: "activation", label: "Access granted" },

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Plus, X, ExternalLink, Trash2, Users, MessageSquare, Linkedin, Mail, GripVertical,
-  Pencil, Columns3, Bell, Calendar, AlertCircle, Phone,
+  Pencil, Columns3, Bell, Calendar, AlertCircle, Phone, Upload,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import {
@@ -16,6 +16,8 @@ import { CONTACT_TYPES, CONTACT_TYPE_TKEY, DEFAULT_CONTACT_TYPE, normalizeContac
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 import { resolveStage, stageDotClass } from "@/lib/stages";
+import { Sheet } from "@/components/tracker/Sheet";
+import ImportSheet, { type ImportKind } from "@/components/tracker/ImportSheet";
 
 // Stage columns come from admin-editable content (config/content.stages) — see the
 // admin "Stages" tab. Cards carrying a stage that no longer exists are shown in
@@ -42,6 +44,7 @@ export default function TrackerPage() {
   const [addingContact, setAddingContact] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<OpportunityStage | null>(null);
+  const [importing, setImporting] = useState<ImportKind | null>(null);
 
   const byStage = useMemo(() => {
     const m: Record<OpportunityStage, Opportunity[]> = Object.fromEntries(stages.map((s) => [s.id, []]));
@@ -72,9 +75,17 @@ export default function TrackerPage() {
           <span className="eyebrow">{t(HEAD[view].eyebrow)}</span>
           <h1 className="mt-1">{t(HEAD[view].title)}</h1>
         </div>
-        {view === "board" && <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("tracker.addJob")}</button>}
-        {view === "reminders" && <button onClick={() => setAddingReminder(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("reminders.add")}</button>}
-        {view === "contacts" && <button onClick={() => setAddingContact(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("contacts.add")}</button>}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* CSV import: jobs on the Board view, contacts on the Contacts view */}
+          {(view === "board" || view === "contacts") && (
+            <button onClick={() => setImporting(view === "board" ? "opportunities" : "contacts")} className="btn-secondary" aria-label={t("tracker.import")}>
+              <Upload className="h-4 w-4" /> <span className="hidden sm:inline">{t("tracker.import")}</span>
+            </button>
+          )}
+          {view === "board" && <button onClick={() => setAdding(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("tracker.addJob")}</button>}
+          {view === "reminders" && <button onClick={() => setAddingReminder(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("reminders.add")}</button>}
+          {view === "contacts" && <button onClick={() => setAddingContact(true)} className="btn-primary"><Plus className="h-4 w-4" /> {t("contacts.add")}</button>}
+        </div>
       </div>
 
       {/* View switch: Board (kanban) · Reminders (list) · Contacts (list) */}
@@ -137,6 +148,7 @@ export default function TrackerPage() {
       {adding && <AddOpportunity uid={uid!} onClose={() => setAdding(false)} />}
       {addingReminder && <AddReminder uid={uid!} opps={opps} onClose={() => setAddingReminder(false)} />}
       {addingContact && <AddContactStandalone uid={uid!} onClose={() => setAddingContact(false)} />}
+      {importing && <ImportSheet kind={importing} uid={uid!} contacts={contacts} opps={opps} onClose={() => setImporting(null)} />}
       {openOpp && <DetailModal uid={uid!} opp={openOpp} contacts={contacts} reminders={reminders} onClose={() => setOpenId(null)} />}
     </div>
   );
@@ -594,6 +606,7 @@ function DetailModal({ uid, opp, contacts, reminders, onClose }: {
         </div>
 
         {opp.source && <p className="text-xs text-jh-mute -mt-2">{t("tracker.f.source")}: <span className="text-jh-ink">{opp.source}</span></p>}
+        {opp.notes && <p className="text-xs text-jh-ink -mt-2 whitespace-pre-wrap">{opp.notes}</p>}
 
         {/* Attached contacts */}
         <section>
@@ -799,24 +812,6 @@ function CreateContact({ uid, onClose, onCreated }: {
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Saving…" : t("tracker.createAttach")}</button>
       </form>
     </Sheet>
-  );
-}
-
-/* ---------------- Shared bottom-sheet / modal ---------------- */
-function Sheet({ title, onClose, children, wide }: {
-  title: string; onClose: () => void; children: React.ReactNode; wide?: boolean;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-jh-ink/60 sm:p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()}
-        className={`card w-full ${wide ? "sm:max-w-lg" : "sm:max-w-md"} p-6 space-y-3 rounded-b-none sm:rounded-lg max-h-[90vh] overflow-auto`}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg leading-snug pr-4">{title}</h3>
-          <button type="button" onClick={onClose}><X className="h-5 w-5 text-jh-mute" /></button>
-        </div>
-        {children}
-      </div>
-    </div>
   );
 }
 

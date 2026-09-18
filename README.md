@@ -31,6 +31,26 @@ npm run dev                  # http://localhost:3000
   (mobile / desktop toggle; both are measured, so the "won't fit" flag covers each), with soft character counters,
   save-as-draft / publish and an audit line. API: `GET/POST /api/admin/coaching-screen`.
 
+## Progress tab — CSV import (contacts + jobs)
+- **Import CSV** sits beside the primary button on the Board view (imports jobs / opportunities) and the Contacts view
+  (imports contacts). Members pick a file or paste CSV text, see a preview (ready / skipped / duplicate counts, per-line
+  errors and warnings, sample rows), then confirm. Nothing is written until they confirm.
+- Templates: `public/templates/contacts-template.csv` and `public/templates/opportunities-template.csv` (also generated
+  live from the sheet's **Download template** button so the jobs template always shows the *current* stage names).
+  A test keeps the committed files in sync with the generators.
+- Parsing lives in `lib/csv.ts` (dependency-free RFC-4180 reader — quotes, embedded newlines, BOM, `,` / `;` / tab
+  auto-detected so Excel exports from any locale work) and `lib/import.ts` (column specs, forgiving header matching —
+  `Full name` / `full_name` / `fullName` / aliases like `Job title` — row → document mapping, duplicate detection).
+- **Contacts columns:** Full name *(required)*, Company, Role, Type (`hiring_manager` / `peer` / `influencer` / `referrer`,
+  labels and legacy values accepted), Email, Phone, LinkedIn URL, Notes (becomes the first conversation-note entry).
+  Duplicate = same email, or same name + company, as an existing contact (or an earlier row).
+- **Jobs columns:** Company *(required)*, Role, Market (`hidden` default / `visible`), Stage (column id or label, emoji and
+  case ignored; unknown → first column with a warning), Source, URL, Contacts (existing contacts by email or full name,
+  `;`-separated — import contacts first), Notes (now shown on the job detail sheet). Duplicate = same company + role.
+- Writes go through `importRecords()` in `lib/firestore/db.ts` (chunked `writeBatch`, same `createdAt` semantics as a
+  single add); max 1000 rows per file. Events: `IMPORT_CONTACTS`, `IMPORT_OPPORTUNITIES`. All sheet copy is admin-editable
+  under CMS → Progress (`import.*` keys).
+
 ## Admin portal (`/admin`)
 Four top-level tabs, each with sub-tabs; the location lives in the URL hash (`/admin#cms/compass`) so links are shareable.
 

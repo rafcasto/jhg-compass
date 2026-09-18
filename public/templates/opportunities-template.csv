@@ -1,0 +1,4 @@
+﻿Company,Role,Market,Stage,Source,URL,Contacts,Notes
+Acme Corp,Senior Product Manager,hidden,Outreach,Referral from Jane,https://acme.com/careers/123,jane.doe@acme.com; John Smith,"Reached out on LinkedIn, waiting for reply"
+Northwind,Product Lead,visible,Application,LinkedIn Jobs,https://www.linkedin.com/jobs/view/123,Priya Patel,Applied via the careers page
+Globex,Director of Product,hidden,Wishlist,,,,
