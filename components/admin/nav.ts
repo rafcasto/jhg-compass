@@ -1,4 +1,4 @@
-// Admin information architecture — four top-level tabs, each with sub-tabs.
+// Admin information architecture — five top-level tabs, each with sub-tabs.
 // Pure module (no React, no Firebase) so the hash ↔ location parsing is
 // unit-testable and every tab component imports its sub-tab list from here.
 
@@ -33,11 +33,20 @@ export const ANALYTICS_SUBTABS = [
 ] as const;
 export type AnalyticsSub = (typeof ANALYTICS_SUBTABS)[number]["key"];
 
+export const AGENTS_SUBTABS = [
+  { key: "overview", label: "Overview", hint: "Pi worker, n8n and Ollama health, queue and recent runs" },
+  { key: "models",   label: "Models",   hint: "Which Ollama model each agent uses; import a model" },
+  { key: "prompts",  label: "Prompts",  hint: "Each agent's system prompt, versioned" },
+  { key: "training", label: "Training", hint: "Datasets, fine-tune on the GPU box, exam, promote" },
+] as const;
+export type AgentsSub = (typeof AGENTS_SUBTABS)[number]["key"];
+
 export const TABS = [
   { key: "tofu", label: "TOFU", title: "Top of the funnel", subs: TOFU_SUBTABS },
   { key: "cms", label: "Lead magnet CMS", title: "JHCompass lead magnet CMS", subs: CMS_SUBTABS },
   { key: "interactions", label: "User interactions", title: "User interactions", subs: INTERACTIONS_SUBTABS },
   { key: "analytics", label: "Analytics", title: "Analytics", subs: ANALYTICS_SUBTABS },
+  { key: "agents", label: "Agents", title: "AI agents (career-ops on the Pi)", subs: AGENTS_SUBTABS },
 ] as const;
 export type TabKey = (typeof TABS)[number]["key"];
 

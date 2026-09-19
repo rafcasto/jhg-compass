@@ -155,6 +155,7 @@ export async function listGrants(now = Date.now()): Promise<MemberAccessRow[]> {
       updatedAt: g.updatedAt ?? null,
       renewedAt: g.renewedAt ?? null,
       renewedBy: g.renewedBy ?? null,
+      careerOps: g.features?.careerOps === true,
     };
   });
   // newest change first
@@ -193,4 +194,31 @@ export async function renewGrants(uids: string[], days: number, by: string | nul
     if (n) await batch.commit();
   }
   return { renewed, missing };
+}
+
+// ---- feature flags (Admin → TOFU → Access renewals → Agents column) ----
+export interface FeatureResult { uid: string; email: string }
+
+export async function setGrantFeatures(uids: string[], features: { careerOps: boolean }, by: string | null): Promise<{ updated: FeatureResult[]; missing: string[] }> {
+  const db = adminDb();
+  const now = Date.now();
+  const unique = Array.from(new Set(uids.filter(Boolean)));
+  const updated: FeatureResult[] = [];
+  const missing: string[] = [];
+  for (let i = 0; i < unique.length; i += 400) {
+    const chunk = unique.slice(i, i + 400);
+    const refs = chunk.map((uid) => db.doc(`accessGrants/${uid}`));
+    const snaps = await db.getAll(...refs);
+    const batch = db.batch();
+    let n = 0;
+    snaps.forEach((snap, j) => {
+      if (!snap.exists) { missing.push(chunk[j]); return; }
+      const g = snap.data() as AccessGrant;
+      batch.set(refs[j], { features: { ...(g.features ?? {}), ...features }, featuresUpdatedAt: now, featuresUpdatedBy: by, updatedAt: now }, { merge: true });
+      updated.push({ uid: chunk[j], email: g.email });
+      n++;
+    });
+    if (n) await batch.commit();
+  }
+  return { updated, missing };
 }

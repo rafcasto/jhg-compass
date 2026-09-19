@@ -13,7 +13,7 @@ import FeedbackGate from "@/components/FeedbackGate";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, emailVerified } = useAuth();
-  const { loading: accessLoading, hasAccess, daysLeft } = useAccess(user?.uid);
+  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled } = useAccess(user?.uid);
   const { data: profile, loading: profileLoading } =
     useLiveDoc<Profile>(user ? paths.profile(user.uid) : null);
   const router = useRouter();
@@ -51,7 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AppShell daysLeft={daysLeft}>
+    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled}>
       {children}
       {/* Expired access blocks everything and takes precedence over feedback. */}
       {!hasAccess && <Paywall />}

@@ -2,8 +2,12 @@ import { describe, it, expect } from "vitest";
 import { TABS, adminHash, firstSub, parseAdminHash } from "@/components/admin/nav";
 
 describe("admin navigation", () => {
-  it("has exactly the four top-level tabs, in order", () => {
-    expect(TABS.map((t) => t.label)).toEqual(["TOFU", "Lead magnet CMS", "User interactions", "Analytics"]);
+  it("has exactly the five top-level tabs, in order", () => {
+    expect(TABS.map((t) => t.label)).toEqual(["TOFU", "Lead magnet CMS", "User interactions", "Analytics", "Agents"]);
+  });
+  it("agents sits after analytics with overview first", () => {
+    expect(TABS[4].subs.map((s) => s.key)).toEqual(["overview", "models", "prompts", "training"]);
+    expect(parseAdminHash("#agents/training")).toEqual({ tab: "agents", sub: "training" });
   });
   it("the CMS mirrors the four member-facing tabs in the same order", () => {
     expect(TABS[1].subs.map((s) => s.key)).toEqual(["compass", "performance", "progress", "coaching"]);

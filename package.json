@@ -15,6 +15,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.4",
     "firebase": "^10.13.2",
     "firebase-admin": "^12.7.0",
     "lucide-react": "^0.441.0",

@@ -40,7 +40,7 @@ describe("renewalPeriod", () => {
 });
 
 const row = (p: Partial<MemberAccessRow> & { uid: string; status: MemberAccessRow["status"] }): MemberAccessRow => ({
-  email: `${p.uid}@x.io`, storedStatus: p.status, durationDays: 60, startsAt: null, expiresAt: null, redeemBy: null, ...p,
+  email: `${p.uid}@x.io`, storedStatus: p.status, durationDays: 60, startsAt: null, expiresAt: null, redeemBy: null, careerOps: false, ...p,
 });
 const rows = [
   row({ uid: "a", status: "expired", firstName: "Ada", lastName: "Lovelace" }),

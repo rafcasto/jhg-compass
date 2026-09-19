@@ -10,6 +10,7 @@ export interface AccessState {
   grant: AccessGrant | null;
   hasAccess: boolean;
   daysLeft: number | null;
+  agentsEnabled: boolean;   // Admin switched features.careerOps on (Agents tab)
 }
 
 function computeHasAccess(g: AccessGrant | null): { ok: boolean; daysLeft: number | null } {
@@ -40,7 +41,7 @@ export function useAccess(uid: string | undefined): AccessState {
   }, [uid]);
 
   const { ok, daysLeft } = computeHasAccess(grant);
-  return { loading, grant, hasAccess: ok, daysLeft };
+  return { loading, grant, hasAccess: ok, daysLeft, agentsEnabled: ok && grant?.features?.careerOps === true };
 }
 
 export const DEFAULT_ADMIN_CONFIG: AdminConfig = {

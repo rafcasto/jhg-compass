@@ -9,12 +9,13 @@ import TofuTab from "@/components/admin/tofu/TofuTab";
 import CmsTab from "@/components/admin/cms/CmsTab";
 import InteractionsTab from "@/components/admin/interactions/InteractionsTab";
 import AnalyticsTab from "@/components/admin/analytics/AnalyticsTab";
+import AgentsTab from "@/components/admin/agents/AgentsTab";
 import {
   TABS, adminHash, firstSub, parseAdminHash,
-  type AdminLocation, type TabKey, type TofuSub, type CmsSub, type InteractionsSub, type AnalyticsSub,
+  type AdminLocation, type TabKey, type TofuSub, type CmsSub, type InteractionsSub, type AnalyticsSub, type AgentsSub,
 } from "@/components/admin/nav";
 
-// Four top-level tabs, each with its own sub-tabs (components/admin/nav.ts).
+// Five top-level tabs, each with its own sub-tabs (components/admin/nav.ts).
 // Location is kept in the URL hash (#cms/compass) so a refresh — or a link in
 // Slack — lands on the same screen.
 export default function AdminPage() {
@@ -86,6 +87,7 @@ export default function AdminPage() {
         {loc.tab === "cms" && <CmsTab sub={loc.sub as CmsSub} onSub={goSub} />}
         {loc.tab === "interactions" && <InteractionsTab sub={loc.sub as InteractionsSub} onSub={goSub} />}
         {loc.tab === "analytics" && <AnalyticsTab sub={loc.sub as AnalyticsSub} onSub={goSub} />}
+        {loc.tab === "agents" && <AgentsTab sub={loc.sub as AgentsSub} onSub={goSub} />}
       </main>
     </div>
   );

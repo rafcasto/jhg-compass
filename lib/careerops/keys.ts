@@ -1,0 +1,85 @@
+// Redis key contract shared with the Pi worker (careerops-worker/worker.js).
+// Pure module — no Upstash, no Firebase — so it is unit-testable and the worker
+// can mirror it verbatim. Change both sides together.
+//
+//   careerops:queue             list    job ids — site LPUSH, worker RPOP (FIFO)
+//   careerops:jobs              zset    job ids scored by createdAt (admin listing)
+//   careerops:job:<id>          hash    the job record (CareerOpsJob)
+//   careerops:user:<uid>:jobs   zset    that member's job ids (member listing)
+//   careerops:quota:<uid>:<day> string  evaluations queued today (EX 2 days)
+//   careerops:worker            string  heartbeat JSON, EX 120 s
+//   careerops:state             string  worker-published snapshot (models, agents, gpu)
+//   careerops:rpc / :rpc:<id>   list / string  short synchronous calls, 60 s reply TTL
+
+export const KEYS = {
+  queue: "careerops:queue",
+  jobs: "careerops:jobs",
+  job: (id: string) => `careerops:job:${id}`,
+  userJobs: (uid: string) => `careerops:user:${uid}:jobs`,
+  quota: (uid: string, day: string) => `careerops:quota:${uid}:${day}`,
+  worker: "careerops:worker",
+  state: "careerops:state",
+  rpc: "careerops:rpc",
+  rpcReply: (id: string) => `careerops:rpc:${id}`,
+} as const;
+
+/** Heartbeats older than this mean the Pi worker is offline. */
+export const WORKER_STALE_MS = 90_000;
+
+// ---- job types ----
+
+// Members queue the first group; only admins may queue the second.
+export const MEMBER_JOB_TYPES = ["evaluate", "scan", "pdf", "cover", "sync_setup"] as const;
+export const ADMIN_JOB_TYPES = ["import_model", "build_dataset", "generate_gold", "finetune", "exam", "promote"] as const;
+export type MemberJobType = (typeof MEMBER_JOB_TYPES)[number];
+export type AdminJobType = (typeof ADMIN_JOB_TYPES)[number];
+export type CareerOpsJobType = MemberJobType | AdminJobType;
+
+export const JOB_TYPE_LABELS: Record<CareerOpsJobType, string> = {
+  evaluate: "Evaluate job",
+  scan: "Scan portals",
+  pdf: "Tailor CV → PDF",
+  cover: "Draft cover letter",
+  sync_setup: "Sync CV & profile",
+  import_model: "Import model",
+  build_dataset: "Build dataset",
+  generate_gold: "Generate gold (Claude)",
+  finetune: "Fine-tune",
+  exam: "Exam",
+  promote: "Promote model",
+};
+
+export const isMemberJobType = (t: unknown): t is MemberJobType => (MEMBER_JOB_TYPES as readonly string[]).includes(t as string);
+export const isAdminJobType = (t: unknown): t is AdminJobType => (ADMIN_JOB_TYPES as readonly string[]).includes(t as string);
+export const isJobType = (t: unknown): t is CareerOpsJobType => isMemberJobType(t) || isAdminJobType(t);
+
+export const JOB_STATUSES = ["queued", "running", "done", "failed", "cancelled"] as const;
+export type CareerOpsJobStatus = (typeof JOB_STATUSES)[number];
+export const isJobStatus = (s: unknown): s is CareerOpsJobStatus => (JOB_STATUSES as readonly string[]).includes(s as string);
+export const isTerminal = (s: CareerOpsJobStatus) => s === "done" || s === "failed" || s === "cancelled";
+
+// ---- agents ----
+
+export const AGENT_KEYS = ["scout", "extractor", "evaluator", "tailor", "writer"] as const;
+export type AgentKey = (typeof AGENT_KEYS)[number];
+export const AGENT_LABELS: Record<AgentKey, { label: string; mode: string; help: string }> = {
+  scout:     { label: "Scout",     mode: "scan.md",                  help: "Finds postings on the member's portals (zero-token where possible)." },
+  extractor: { label: "Extractor", mode: "auto-pipeline.md § 0–0.5", help: "Pulls the JD text from a URL and checks the posting is still live." },
+  evaluator: { label: "Evaluator", mode: "_shared.md + oferta.md",   help: "The A–G evaluation with a 1–5 score. The agent we train first." },
+  tailor:    { label: "Tailor",    mode: "text.md / pdf.md",         help: "Tailors the CV for a posting and renders the ATS-safe PDF." },
+  writer:    { label: "Writer",    mode: "cover.md / email.md",      help: "Drafts cover letters and application emails — never sends." },
+};
+
+// ---- helpers ----
+
+/** UTC day bucket for quotas: "20260919". */
+export const dayKey = (now = Date.now()) => new Date(now).toISOString().slice(0, 10).replace(/-/g, "");
+
+/** Sortable, unique job id: 20260919T031500-1a2b3c4d. */
+export function makeJobId(now = Date.now(), rand = Math.random().toString(16).slice(2, 10)) {
+  const stamp = new Date(now).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "");
+  return `${stamp}-${rand.padEnd(8, "0").slice(0, 8)}`;
+}
+
+export const workerOnline = (heartbeatAt: number | null | undefined, now = Date.now()) =>
+  heartbeatAt != null && now - heartbeatAt < WORKER_STALE_MS;

@@ -17,7 +17,10 @@ users/{uid}                      profile: { email, firstName, lastName, archetyp
                                  // (lib/targets.ts — shared by Performance and onboarding)
 
 accessGrants/{uid}               { email, plan, durationDays, source, status, redeemBy,
-                                   startsAt, expiresAt, renewedAt?, renewedBy?, webhookPayload, createdAt, updatedAt }
+                                   startsAt, expiresAt, renewedAt?, renewedBy?, webhookPayload, createdAt, updatedAt,
+                                   features?: { careerOps }, featuresUpdatedAt?, featuresUpdatedBy? }
+                                 // features.careerOps: the member sees the Agents tab (Admin → TOFU → Access
+                                 // renewals → Agents). Admin SDK writes only; owner reads it via useAccess().
                                  // status: pending | active | expired | revoked. Admin SDK writes only.
                                  // Stored status only flips to expired on the member's next login (syncGrant);
                                  // Admin → TOFU → Access renewals re-derives the effective status from the
@@ -41,6 +44,14 @@ config/segments                  { propensityThreshold, actions{ fit-high|fit-lo
                                    { title, description, owner, channel, automation } }, updatedBy, updatedAt }
                                  // Analytics → Segments: the 4-quadrant matrix (ICP fit × readiness) and the one
                                  // follow-up action per quadrant (lib/segments.ts)
+
+config/agents                    { agents{ scout|extractor|evaluator|tailor|writer:
+                                   { model, numCtx, temperature, systemPrompt, promptVersion, enabled, n8nWorkflowId } },
+                                   dailyEvalQuota, collectLiveData, updatedBy, updatedAt }
+                                 // Admin → Agents. Read by the Pi worker (Admin SDK). See docs/CAREER_OPS_AGENTS.md.
+                                 // Job queue/status live in Upstash Redis (careerops:*), not here.
+
+users/{uid}/careerOps/…          reports/{id}, pipeline/{id}, setup — mirrored by the Pi worker (phase 1+)
 
 config/events                    { events{ [EventKey]: { enabled, tag, stage, label } }, updatedBy, updatedAt }
                                  // Analytics → Pirate metrics → Configurator. stage ∈ AAARRR (lib/tags.ts)
