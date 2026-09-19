@@ -6,14 +6,15 @@ import { useAuth } from "@/components/AuthProvider";
 import { useAccess } from "@/lib/firestore/access";
 import { paths, useLiveCollection, useLiveDoc } from "@/lib/firestore/db";
 import { authed } from "@/components/admin/shared";
-import type { CareerOpsJob, CareerOpsReport, CareerOpsSetup } from "@/lib/careerops/types";
+import type { CareerOpsJob, CareerOpsReport, CareerOpsSetupV2 } from "@/lib/careerops/types";
 import Setup from "@/components/agents/Setup";
 import Evaluate from "@/components/agents/Evaluate";
 import Reports from "@/components/agents/Reports";
 import ReportView from "@/components/agents/ReportView";
+import Scan from "@/components/agents/Scan";
 
 interface MemberStatus { configured: boolean; online: boolean; queueLength: number; quotaUsed: number; jobs: CareerOpsJob[] }
-type View = "evaluate" | "reports" | "setup";
+type View = "setup" | "scan" | "evaluate" | "reports";
 
 // Member → Agents (career-ops on the Pi): Evaluate · Reports · Setup.
 export default function AgentsPage() {
@@ -26,10 +27,12 @@ export default function AgentsPage() {
   const [view, setView] = useState<View>("evaluate");
   const [open, setOpen] = useState<CareerOpsReport | null>(null);
   const [waitingFor, setWaitingFor] = useState<string | null>(null);
+  const [evalJob, setEvalJob] = useState<string | null>(null);
 
-  const { data: setup, loading: setupLoading } = useLiveDoc<CareerOpsSetup>(uid && allowed ? paths.careerOpsSetup(uid) : null);
+  const { data: setup, loading: setupLoading } = useLiveDoc<CareerOpsSetupV2>(uid && allowed ? paths.careerOpsSetup(uid) : null);
   const { data: reports } = useLiveCollection<CareerOpsReport>(allowed ? uid : undefined, paths.careerOpsReports);
   const hasCv = !!setup?.cvMarkdown?.trim();
+  const hasPortals = (setup?.portals?.companies?.length ?? 0) > 0;
 
   useEffect(() => {
     if (!allowed) return;
@@ -84,7 +87,8 @@ export default function AgentsPage() {
         ))}
       </div>
 
-      {view === "evaluate" && <Evaluate hasCv={hasCv} online={!!s?.online} onDone={(id) => setWaitingFor(id)} />}
+      {view === "scan" && uid && <Scan uid={uid} hasPortals={hasCv && hasPortals} online={!!s?.online} onEvaluateQueued={(id) => { setWaitingFor(id); setView("evaluate"); setEvalJob(id); }} />}
+      {view === "evaluate" && <Evaluate hasCv={hasCv} online={!!s?.online} onDone={(id) => setWaitingFor(id)} externalJobId={evalJob} />}
       {view === "reports" && uid && (open ? <ReportView uid={uid} report={open} onClose={() => setOpen(null)} /> : <Reports reports={reports} onOpen={setOpen} />)}
       {view === "setup" && <Setup onReady={() => setView("evaluate")} />}
     </div>

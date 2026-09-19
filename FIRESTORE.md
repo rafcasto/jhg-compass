@@ -56,7 +56,7 @@ config/agents                    { agents{ scout|extractor|evaluator|tailor|writ
 config/agentsDefaults            { agents{…}, workerVersion, updatedAt }
                                  // The worker's built-in prompts/settings, published on boot ("Load worker default").
 
-users/{uid}/careerOps/setup      { cvMarkdown, profileYaml, notes?, updatedAt }
+users/{uid}/careerOps/setup      { cvMarkdown, profileYaml, notes?, portals?{companies[],positive[],negative[]}, portalsYaml?, updatedAt }
                                  // Agents → Setup: owner-writable. profileYaml is generated from Profile + Goal
                                  // (lib/careerops/profile-yaml.ts). The Pi worker copies both into the member's
                                  // career-ops root before every job.
@@ -67,6 +67,16 @@ users/{uid}/careerOpsReports/{jobId}
                                  // Written by the Pi worker (Admin SDK) when an evaluate job finishes; the member
                                  // reads it live. "Add to Progress board" creates users/{uid}/opportunities/{id}
                                  // and stamps addedOpportunityId here.
+users/{uid}/careerOpsPipeline/{id}
+                                 { url, company, title, location, status: pending|evaluated|dismissed, foundAt,
+                                   lastSeenAt, reportJobId?, score? }   // id = sha1(url)[0:20]; Scout-written, owner triages
+users/{uid}/careerOpsDocs/{jobId}
+                                 { kind: cv|cover, reportJobId, company, role, file, storage: drive|bucket|inline,
+                                   driveFileId?, driveLink?, storagePath?, url?, size, pageCount, template?, words?,
+                                   text?, letter?, payload?, keywordsUsed[], keywordsMissing[], model, via, durationMs,
+                                   createdAt, pdfBase64? (inline only) }
+                                 // Tailor / Writer output. PDFs go to the admin's Google Drive folder (one subfolder
+                                 // per member email); /api/agents/docs/{id}/download streams them to the owner.
 
 config/events                    { events{ [EventKey]: { enabled, tag, stage, label } }, updatedBy, updatedAt }
                                  // Analytics → Pirate metrics → Configurator. stage ∈ AAARRR (lib/tags.ts)

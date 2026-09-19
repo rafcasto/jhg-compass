@@ -140,3 +140,53 @@ export interface CareerOpsReport {
 export const scoreTone = (s: number | null) => s == null ? "unknown" : s >= 4.5 ? "strong" : s >= 4 ? "good" : s >= 3.5 ? "maybe" : "skip";
 export const scoreVerdict = (s: number | null) =>
   s == null ? "No score" : s >= 4.5 ? "Strong match — apply now" : s >= 4 ? "Good match — worth applying" : s >= 3.5 ? "Only with a specific reason" : "Skip this one";
+
+// ---- phase 3: Scout pipeline, Tailor / Writer documents ----
+
+// users/{uid}/careerOps/setup also carries the Scout config.
+export interface CareerOpsPortals { companies: { name: string; careersUrl: string; enabled?: boolean }[]; positive: string[]; negative: string[] }
+export interface CareerOpsSetupV2 extends CareerOpsSetup { portals?: CareerOpsPortals; portalsYaml?: string }
+
+// users/{uid}/careerOpsPipeline/{id} — postings the Scout found (worker-written, owner-updatable).
+export type PipelineStatus = "pending" | "evaluated" | "dismissed";
+export interface PipelineItem {
+  id: string;
+  url: string;
+  company: string;
+  title: string;
+  location: string | null;
+  status: PipelineStatus;
+  foundAt: number;
+  lastSeenAt: number;
+  reportJobId?: string;
+  score?: number | null;
+}
+
+// users/{uid}/careerOpsDocs/{jobId} — a tailored CV or a cover letter tied to a report.
+export type DocStorage = "drive" | "bucket" | "inline";
+export interface CareerOpsDoc {
+  id: string;
+  kind: "cv" | "cover";
+  jobId: string;
+  reportJobId: string;
+  company: string;
+  role: string;
+  file: string;
+  storage: DocStorage;
+  driveFileId?: string | null;
+  driveLink?: string | null;
+  storagePath?: string | null;
+  url?: string | null;         // signed URL (bucket) — may expire
+  urlExpires?: number | null;
+  size: number;
+  pageCount: number;
+  template?: string;
+  words?: number;              // cover letters
+  text?: string;               // cover letters — plain text for copy/paste
+  keywordsUsed?: string[];
+  keywordsMissing?: string[];
+  model: string;
+  via: "n8n" | "ollama";
+  durationMs: number;
+  createdAt: number;
+}

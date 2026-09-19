@@ -115,14 +115,14 @@ export async function queuePosition(id: string): Promise<number | null> {
 }
 
 // ---- quota (per member, per UTC day) ----
-export async function bumpQuota(uid: string, now = Date.now()): Promise<number> {
+export async function bumpQuota(uid: string, now = Date.now(), kind = ""): Promise<number> {
   const r = redis();
-  const key = KEYS.quota(uid, dayKey(now));
+  const key = KEYS.quota(uid, dayKey(now) + (kind ? `:${kind}` : ""));
   const n = await r.incr(key);
   if (n === 1) await r.expire(key, 2 * 86_400);
   return n;
 }
-export const getQuotaUsed = async (uid: string, now = Date.now()) => (await redis().get<number>(KEYS.quota(uid, dayKey(now)))) ?? 0;
+export const getQuotaUsed = async (uid: string, now = Date.now(), kind = "") => (await redis().get<number>(KEYS.quota(uid, dayKey(now) + (kind ? `:${kind}` : "")))) ?? 0;
 
 // ---- worker ----
 export const getHeartbeat = async () => json<WorkerHeartbeat>(await redis().get<unknown>(KEYS.worker));
