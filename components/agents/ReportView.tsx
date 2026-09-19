@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ExternalLink, Columns3, Check, FileText, PenLine, Download, Copy } from "lucide-react";
+import { ExternalLink, Columns3, Check, FileText, PenLine, Download, Copy, ThumbsUp, ThumbsDown } from "lucide-react";
 import { updateDoc, doc } from "firebase/firestore";
 import { createDoc, paths, useLiveCollection } from "@/lib/firestore/db";
 import { authed, postJson } from "@/components/admin/shared";
@@ -35,6 +35,12 @@ export default function ReportView({ uid, report, onClose }: { uid: string; repo
   const [askAngle, setAskAngle] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [verdict, setVerdict] = useState<"up" | "down" | null>((report as CareerOpsReport & { feedback?: { verdict: "up" | "down" } }).feedback?.verdict ?? null);
+
+  async function feedback(v: "up" | "down") {
+    setVerdict(v);
+    try { await postJson("/api/agents/feedback", { reportJobId: report.jobId, verdict: v }); } catch {}
+  }
 
   async function queueDoc(kind: "pdf" | "cover") {
     setErr(null);
@@ -115,6 +121,12 @@ export default function ReportView({ uid, report, onClose }: { uid: string; repo
           ))}
         </ul>
       )}
+      <div className="flex items-center gap-2 text-xs text-jh-mute">
+        Was this evaluation fair?
+        <button type="button" onClick={() => feedback("up")} aria-label="Fair" className={`btn-ghost p-1.5 ${verdict === "up" ? "text-rb-green-dark" : ""}`}><ThumbsUp className="h-4 w-4" /></button>
+        <button type="button" onClick={() => feedback("down")} aria-label="Not fair" className={`btn-ghost p-1.5 ${verdict === "down" ? "text-jh-red" : ""}`}><ThumbsDown className="h-4 w-4" /></button>
+        {verdict && <span>Thanks — this helps the agents improve.</span>}
+      </div>
       {!report.summaryFound && <p className="text-xs text-jh-red">The model didn&apos;t produce a clean score block for this one — read the verdict below and treat the score as unknown.</p>}
       <div className="prose prose-sm max-w-none prose-table:text-xs prose-headings:font-display">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{report.markdown}</ReactMarkdown>

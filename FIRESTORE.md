@@ -54,6 +54,17 @@ config/agents                    { agents{ scout|extractor|evaluator|tailor|writ
                                  // worker. Job queue/status live in Upstash Redis (careerops:*), not here.
   ├─ promptVersions/{agent}-{v}  { agent, version, systemPrompt, savedBy, savedAt, note }   // every saved prompt
 config/agentsDefaults            { agents{…}, workerVersion, updatedAt }
+
+trainingExamples/{id}            { agent, source: claude|live, split: train|exam, approved, company, role, market?,
+                                   intendedFit?, notes?, cv, profileYaml, jd, report, summary{}, teacherModel,
+                                   studentPromptVersion, memberUid?, createdAt, createdBy, jobId, reviewedBy?, reviewedAt? }
+                                 // Admin → Agents → Training. id = sha1(jd + cv)[0:20]. Claude gold arrives approved;
+                                 // live examples (member 👍 + collectLiveData on) arrive unapproved and PSEUDONYMISED
+                                 // (lib/careerops/pseudonymise.ts). Client access: none (Admin SDK only).
+trainingDatasets/{name}          { agent, sources[], bySource{}, train, exam, dir, promptVersion, builtAt, builtBy, jobId }
+trainingModels/{tag}             { tag, agent, source: finetune|import|ollama, status, base?, dataset?, epochs?,
+                                   exam?{scoreMae, within05, archetypeAgreement, legitimacyAgreement, summaryRate,
+                                   avgSeconds, cases[]}, error?, startedAt, endedAt }   // doc id = tag with ":" → "__"
                                  // The worker's built-in prompts/settings, published on boot ("Load worker default").
 
 users/{uid}/careerOps/setup      { cvMarkdown, profileYaml, notes?, portals?{companies[],positive[],negative[]}, portalsYaml?, updatedAt }
@@ -63,7 +74,7 @@ users/{uid}/careerOps/setup      { cvMarkdown, profileYaml, notes?, portals?{com
 users/{uid}/careerOpsReports/{jobId}
                                  { jobId, n, file, company, role, url, title, score, archetype, legitimacy,
                                    summaryFound, markdown, agent, model, promptVersion, via, usage, durationMs,
-                                   jdChars, createdAt, addedOpportunityId? }
+                                   jdChars, jd, pipelineId?, createdAt, addedOpportunityId?, feedback?{verdict,note,at} }
                                  // Written by the Pi worker (Admin SDK) when an evaluate job finishes; the member
                                  // reads it live. "Add to Progress board" creates users/{uid}/opportunities/{id}
                                  // and stamps addedOpportunityId here.

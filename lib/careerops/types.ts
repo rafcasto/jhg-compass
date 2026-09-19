@@ -40,6 +40,9 @@ export interface WorkerState {
   datasets: { name: string; examples: number; builtAt: string }[];
   gpu: { host: string | null; reachable: boolean; checkedAt: number };
   careerOpsVersion: string | null;   // ~/career-ops package.json version on the Pi
+  drive?: { configured: boolean; account: string | null; folderId: string | null; ok?: boolean; name?: string; canWrite?: boolean; error?: string };
+  claude?: { configured: boolean; model: string };
+  training?: { examples: { total: number; approved: number; exam: number; bySource: Record<string, number> }; datasets: { name: string; train: number; exam: number; builtAt: number }[] } | null;
   updatedAt: number;
 }
 
@@ -190,3 +193,68 @@ export interface CareerOpsDoc {
   durationMs: number;
   createdAt: number;
 }
+
+// ---- phase 4: training (admin-only collections, Admin SDK writes) ----
+
+export type ExampleSource = "claude" | "live" | "golden";
+export interface TrainingExample {
+  id: string;
+  agent: AgentKey;
+  source: ExampleSource;
+  split: "train" | "exam";
+  approved: boolean;
+  company: string;
+  role: string;
+  market?: string;
+  intendedFit?: string;
+  notes?: string;
+  cv: string;
+  profileYaml: string;
+  jd: string;
+  report: string;
+  summary: { company: string; role: string; score: number | null; archetype: string; legitimacy: string };
+  teacherModel?: string;
+  studentPromptVersion?: number;
+  memberUid?: string;          // live examples only (pseudonymised text; uid kept for deletion requests)
+  createdAt: number;
+  createdBy?: string;
+  jobId?: string;
+}
+export type TrainingExampleRow = Omit<TrainingExample, "cv" | "profileYaml" | "jd" | "report">;
+
+export interface TrainingDataset {
+  name: string;
+  agent: AgentKey;
+  sources: ExampleSource[];
+  bySource: Record<string, number>;
+  train: number;
+  exam: number;
+  dir: string;
+  promptVersion: number;
+  builtAt: number;
+  builtBy?: string;
+}
+
+export interface ExamResult {
+  tag: string; n: number; scored: number;
+  scoreMae: number | null; within05: number | null; archetypeAgreement: number | null; legitimacyAgreement: number | null; summaryRate: number | null;
+  avgSeconds: number | null; at: number; promptVersion: number;
+  cases?: { id: string; company: string; role?: string; seconds?: number; gold?: { score: number | null; archetype: string }; got?: { score: number | null; archetype: string }; scoreDiff?: number | null; archetypeMatch?: boolean; error?: string }[];
+}
+
+export interface TrainingModel {
+  tag: string;
+  agent: AgentKey;
+  source: "finetune" | "import" | "ollama";
+  status: "training" | "importing" | "ready" | "failed";
+  base?: string | null;
+  dataset?: string;
+  epochs?: number;
+  exam?: ExamResult;
+  error?: string;
+  startedAt?: number;
+  endedAt?: number;
+  createdBy?: string;
+}
+
+export const FINETUNE_BASES = ["unsloth/Qwen2.5-1.5B-Instruct", "unsloth/Llama-3.2-3B-Instruct", "unsloth/Qwen2.5-3B-Instruct", "unsloth/Llama-3.2-1B-Instruct"] as const;
