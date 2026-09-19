@@ -8,7 +8,7 @@ import type { AgentsStatus, CareerOpsJob, WorkerHeartbeat, WorkerState } from ".
 
 // Server-side view of the Pi queue. Vercel never runs a model: it LPUSHes job ids
 // here and reads status/log/result back; the worker on the Pi RPOPs and HSETs.
-// Ported from the Terepay training console (same contract shape).
+// The Pi worker (rafcasto/careerops-worker) mirrors this contract in lib/keys.js.
 
 const LIST_LIMIT = 50;
 let client: Redis | null | undefined;

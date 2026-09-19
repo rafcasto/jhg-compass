@@ -9,9 +9,8 @@ tailor CV → track), running on **local models on the Raspberry Pi** through
 **Agents** tab (tab 5, after Analytics) to pick models, edit agent prompts,
 and run / import fine-tuned models.
 
-It deliberately copies the pattern that already works for Terepay
-(`terepay-admin-model-training.patch` + `credit-assessment-agent/console/worker.js`):
-Vercel never runs a model; it queues jobs and reads status back.
+Vercel never runs a model; it queues jobs and reads status back. The Pi side
+lives in its own repo: [rafcasto/careerops-worker](https://github.com/rafcasto/careerops-worker).
 
 ---
 
@@ -22,9 +21,8 @@ Upstash console → database → **Reset token**, then put the new value in
 Vercel env (Production + Preview) and in the Pi's `~/careerops-worker/.env`.
 It must never appear in git, n8n workflow JSON, or a Modelfile.
 
-Decision needed: **same Upstash DB as Terepay or a new one?** Either works —
-all keys below are namespaced `careerops:*` so they can't collide with
-`training:*` / `assessment:*`. A separate DB is cleaner for billing/limits.
+Decision needed: **dedicated Upstash DB or shared?** Either works — all keys
+below are namespaced `careerops:*`. A dedicated DB is cleaner for billing/limits.
 
 ---
 
@@ -251,7 +249,7 @@ modified, and which agents use each tag; "Test" button runs a one-off `exam`.
 career-ops mode file". Saves bump `promptVersion`.
 
 **Training** — see § 7. Worker status must be online; buttons are disabled
-otherwise, exactly like Terepay's console.
+otherwise.
 
 All admin routes: `requireAdmin()` (already in `app/api/admin/access/route.ts`),
 Zod-validated bodies, `logEvent` audit on mutations.
@@ -283,7 +281,7 @@ Jobs (admin only, Training sub-tab):
 |---|---|---|
 | Build dataset | `build_dataset` | Pi |
 | Generate gold with Claude (N) | `generate_gold` | Pi → Anthropic API |
-| Fine-tune `<agent>` from `<base>` | `finetune` | Pi → **ssh gpu** (192.168.1.95:2222, already in `~/.ssh/config`; reuse `credit-assessment-agent/training/finetune/train_lora.py` and `jobs/finetune.sh` with the paths swapped) → GGUF → `ollama create careerops-evaluator:<tag>` |
+| Fine-tune `<agent>` from `<base>` | `finetune` | Pi → **ssh gpu** (192.168.1.95:2222, already in `~/.ssh/config`; `careerops-worker/training/train_lora.py` — unsloth LoRA, 8 GB VRAM is enough) → GGUF → `ollama create careerops-evaluator:<tag>` |
 | Import model | `import_model` | Pi (for models trained elsewhere — Colab/RunPod — upload GGUF via the Models sub-tab) |
 | Exam `<tag>` | `exam` | Pi: `node eval-golden.mjs --live --model <tag>` → archetype agreement %, score MAE |
 | Promote | `promote` | writes `config/agents.<agent>.model` |
@@ -334,7 +332,7 @@ websockets needed.
 ```
 lib/types.ts                              AccessGrant.features, AgentsConfig, CareerOpsJob, CareerOpsReport
 lib/careerops/keys.ts                     Redis key contract (pure, unit-tested)
-lib/careerops/queue.ts                    server-only: enqueue/get/list/cancel/heartbeat/state  (port of Terepay queue.ts)
+lib/careerops/queue.ts                    server-only: enqueue/get/list/cancel/heartbeat/state  (contract mirrored in careerops-worker/lib/keys.js)
 lib/careerops/profile-yaml.ts             Compass Profile+Goal → profile.yml (pure, tested)
 lib/server/grants.ts                      + setGrantFeatures()
 lib/server/agents-config.ts               get/save config/agents
@@ -349,16 +347,16 @@ app/(app)/agents/page.tsx + components/agents/{Setup,Evaluate,Scan,Reports,Repor
 FIRESTORE.md                              new docs; .env.example: UPSTASH_REDIS_REST_URL/TOKEN, CAREEROPS_DAILY_EVALS
 ```
 
-**Pi — new repo `careerops-worker`** (keep `~/career-ops` a clean upstream clone)
+**Pi — [rafcasto/careerops-worker](https://github.com/rafcasto/careerops-worker)** (keep `~/career-ops` a clean upstream clone)
 
 ```
-worker.js                 queue loop, heartbeat, state, rpc (fork of credit-assessment-agent/console/worker.js)
+worker.js                 queue loop, heartbeat, state, rpc
 jobs/{evaluate,scan,pdf,cover,sync_setup,import_model,build_dataset,generate_gold,finetune,exam}.js
 lib/{user-root,firestore,storage,n8n,ollama,gpu}.js
 n8n/*.json                exported agent workflows (Scout, Extractor, Evaluator, Tailor, Writer)
 scripts/seed-agents.mjs   mode file → system prompt
-training/train_lora.py    copied from credit-assessment-agent
-deploy/careerops-worker.service   (same shape as terepay-worker.service)
+training/train_lora.py    unsloth LoRA fine-tune (GPU box)
+deploy/careerops-worker.service   user-level systemd unit
 .env.example              UPSTASH_*, FIREBASE_SERVICE_ACCOUNT_B64, CAREER_OPS_REPO, DATA_BASE, N8N_URL, OLLAMA_BASE_URL, GPU_SSH_HOST, ANTHROPIC_API_KEY (optional)
 ```
 
