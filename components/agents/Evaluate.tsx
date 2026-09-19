@@ -8,7 +8,7 @@ import type { CareerOpsJob } from "@/lib/careerops/types";
 
 // Agents → Evaluate. Paste a URL or the JD → job → live status until the
 // worker's report appears (the parent watches Firestore and swaps to it).
-export default function Evaluate({ hasCv, onQueued, onDone, online }: { hasCv: boolean; onQueued?: (id: string) => void; onDone: (jobId: string) => void; online: boolean }) {
+export default function Evaluate({ hasCv, onQueued, onDone, online, externalJobId }: { hasCv: boolean; onQueued?: (id: string) => void; onDone: (jobId: string) => void; online: boolean; externalJobId?: string | null }) {
   const [mode, setMode] = useState<"url" | "text">("url");
   const [url, setUrl] = useState("");
   const [jd, setJd] = useState("");
@@ -19,6 +19,9 @@ export default function Evaluate({ hasCv, onQueued, onDone, online }: { hasCv: b
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
+  // A job queued from the Scan screen shows its status here.
+  useEffect(() => { if (externalJobId) { setJob({ id: externalJobId, type: "evaluate", status: "queued", uid: "", payload: {}, createdAt: Date.now(), createdBy: "" }); watch(externalJobId); } // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalJobId]);
 
   function watch(id: string) {
     if (timer.current) clearInterval(timer.current);

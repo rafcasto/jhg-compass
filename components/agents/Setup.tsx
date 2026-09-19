@@ -6,7 +6,9 @@ import { Save } from "lucide-react";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { useAuth } from "@/components/AuthProvider";
 import { buildProfileYaml } from "@/lib/careerops/profile-yaml";
-import type { CareerOpsSetup } from "@/lib/careerops/types";
+import { buildPortalsYaml, suggestKeywords, DEFAULT_NEGATIVE } from "@/lib/careerops/portals-yaml";
+import type { CareerOpsPortals, CareerOpsSetupV2 } from "@/lib/careerops/types";
+import Portals from "./Portals";
 import type { Profile } from "@/lib/types";
 
 // Agents → Setup. The CV is the one thing the Evaluator cannot work without;
@@ -14,16 +16,26 @@ import type { Profile } from "@/lib/types";
 export default function Setup({ onReady }: { onReady?: () => void }) {
   const { user } = useAuth();
   const uid = user?.uid;
-  const { data: setup, loading } = useLiveDoc<CareerOpsSetup>(uid ? paths.careerOpsSetup(uid) : null);
+  const { data: setup, loading } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
   const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
   const [cv, setCv] = useState("");
   const [notes, setNotes] = useState("");
+  const [portals, setPortals] = useState<CareerOpsPortals>({ companies: [], positive: [], negative: DEFAULT_NEGATIVE });
+  const [portalsSeeded, setPortalsSeeded] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
 
-  useEffect(() => { if (setup && !dirty) { setCv(setup.cvMarkdown ?? ""); setNotes(setup.notes ?? ""); } }, [setup, dirty]);
+  useEffect(() => {
+    if (setup && !dirty) { setCv(setup.cvMarkdown ?? ""); setNotes(setup.notes ?? ""); if (setup.portals) { setPortals(setup.portals); setPortalsSeeded(true); } }
+  }, [setup, dirty]);
+  // First time: seed the include keywords from the Compass goal role.
+  useEffect(() => {
+    if (portalsSeeded || !profile || setup?.portals) return;
+    const positive = suggestKeywords(profile.goal?.role);
+    if (positive.length) { setPortals((p) => ({ ...p, positive })); setPortalsSeeded(true); }
+  }, [profile, setup, portalsSeeded]);
 
   const yaml = useMemo(() => buildProfileYaml({ profile, goal: profile?.goal, notes }), [profile, notes]);
 
@@ -31,7 +43,7 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
     if (!uid || !cv.trim()) return;
     setBusy(true); setMsg(null);
     try {
-      const doc: CareerOpsSetup = { cvMarkdown: cv.trim(), profileYaml: yaml, notes: notes.trim(), updatedAt: Date.now() };
+      const doc: CareerOpsSetupV2 = { cvMarkdown: cv.trim(), profileYaml: yaml, notes: notes.trim(), portals, portalsYaml: buildPortalsYaml(portals), updatedAt: Date.now() };
       await setDoc(paths.careerOpsSetup(uid), doc);
       setDirty(false); setMsg("Saved. The agents will use this CV from your next evaluation.");
       onReady?.();
@@ -71,6 +83,12 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
         </label>
         <button type="button" onClick={() => setShowYaml((v) => !v)} className="btn-ghost text-xs">{showYaml ? "Hide" : "Show"} generated profile.yml</button>
         {showYaml && <pre className="text-xs bg-jh-mist rounded-md p-3 overflow-auto max-h-64">{yaml}</pre>}
+      </section>
+
+      <section className="card p-5 space-y-3">
+        <h2 className="text-lg">Portals for the Scout</h2>
+        <p className="text-jh-mute text-sm max-w-2xl">Companies whose careers pages the Scout checks for new postings that match your title keywords. Zero AI tokens — it reads the public job boards directly.</p>
+        <Portals value={portals} onChange={(v) => { setPortals(v); setDirty(true); setMsg(null); }} />
       </section>
 
       <div className="flex items-center gap-3 flex-wrap">

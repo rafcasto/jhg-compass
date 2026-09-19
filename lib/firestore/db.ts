@@ -22,6 +22,8 @@ export const paths = {
   // Agents (career-ops on the Pi): the member's setup doc + the worker-written reports
   careerOpsSetup: (uid: string) => doc(db, "users", uid, "careerOps", "setup"),
   careerOpsReports: (uid: string) => collection(db, "users", uid, "careerOpsReports"),
+  careerOpsPipeline: (uid: string) => collection(db, "users", uid, "careerOpsPipeline"),
+  careerOpsDocs: (uid: string) => collection(db, "users", uid, "careerOpsDocs"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
   content: () => doc(db, "config", "content"),
