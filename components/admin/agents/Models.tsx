@@ -30,7 +30,7 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
   const models = status?.state?.models ?? [];
   const usedBy = useMemo(() => {
     const m = new Map<string, AgentKey[]>();
-    if (cfg) for (const k of AGENT_KEYS) { const tag = draft[k].model ?? cfg.agents[k].model; m.set(tag, [...(m.get(tag) ?? []), k]); }
+    if (cfg) for (const k of AGENT_KEYS) { if (AGENT_LABELS[k].kind !== "llm") continue; const tag = draft[k].model ?? cfg.agents[k].model; m.set(tag, [...(m.get(tag) ?? []), k]); }
     return m;
   }, [cfg, draft]);
 
@@ -79,6 +79,9 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
                   </div>
                   <label className="flex items-center gap-2 text-sm text-jh-mute"><Toggle on={a.enabled} onChange={(v) => set(k, { enabled: v })} label={`${AGENT_LABELS[k].label} enabled`} /> {a.enabled ? "On" : "Off"}</label>
                 </div>
+                {AGENT_LABELS[k].kind === "script" ? (
+                  <p className="mt-3 text-sm text-jh-mute rounded-md bg-jh-mist px-3 py-2">Script agent — no model, no prompt. {AGENT_LABELS[k].scriptNote}</p>
+                ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-3 items-end">
                   <label className="block lg:col-span-2">
                     <span className="label">Model</span>
@@ -97,10 +100,11 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
                     <input className="field" type="number" step="0.05" min={LIMITS.temperature.min} max={LIMITS.temperature.max} value={a.temperature} onChange={(e) => set(k, { temperature: Number(e.target.value) })} aria-label={`${AGENT_LABELS[k].label} temperature`} />
                   </label>
                 </div>
+                )}
                 <div className="flex items-center gap-3 mt-3">
                   <button type="button" onClick={() => save(k)} disabled={busy === k || !dirty(k)} className="btn-primary text-xs px-3 py-2 disabled:opacity-50"><Save className="h-3.5 w-3.5" /> {busy === k ? "Saving…" : "Save"}</button>
                   {dirty(k) && <button type="button" onClick={() => setDraft((d) => ({ ...d, [k]: {} }))} className="btn-ghost text-xs">Discard</button>}
-                  <span className="text-xs text-jh-mute-2">prompt v{cfg.agents[k].promptVersion}{cfg.agents[k].promptEditedBy ? ` · edited by ${cfg.agents[k].promptEditedBy}` : " · worker default"}</span>
+                  {AGENT_LABELS[k].kind === "llm" && <span className="text-xs text-jh-mute-2">prompt v{cfg.agents[k].promptVersion}{cfg.agents[k].promptEditedBy ? ` · edited by ${cfg.agents[k].promptEditedBy}` : " · worker default"}</span>}
                 </div>
               </div>
             );

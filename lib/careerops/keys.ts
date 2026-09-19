@@ -62,13 +62,17 @@ export const isTerminal = (s: CareerOpsJobStatus) => s === "done" || s === "fail
 
 export const AGENT_KEYS = ["scout", "extractor", "evaluator", "tailor", "writer"] as const;
 export type AgentKey = (typeof AGENT_KEYS)[number];
-export const AGENT_LABELS: Record<AgentKey, { label: string; mode: string; help: string }> = {
-  scout:     { label: "Scout",     mode: "scan.md",                  help: "Finds postings on the member's portals (zero-token where possible)." },
-  extractor: { label: "Extractor", mode: "auto-pipeline.md § 0–0.5", help: "Pulls the JD text from a URL and checks the posting is still live." },
-  evaluator: { label: "Evaluator", mode: "_shared.md + oferta.md",   help: "The A–G evaluation with a 1–5 score. The agent we train first." },
-  tailor:    { label: "Tailor",    mode: "text.md / pdf.md",         help: "Tailors the CV for a posting and renders the ATS-safe PDF." },
-  writer:    { label: "Writer",    mode: "cover.md / email.md",      help: "Drafts cover letters and application emails — never sends." },
+// kind: "llm" agents run a model with an editable system prompt; "script" agents are
+// career-ops scripts (zero tokens) — no prompt, no model. Scout and Extractor may gain an
+// LLM triage / cleanup step later; until then the admin UI says so instead of showing a blank.
+export const AGENT_LABELS: Record<AgentKey, { label: string; mode: string; help: string; kind: "llm" | "script"; scriptNote?: string }> = {
+  scout:     { label: "Scout",     mode: "scan.mjs",                  kind: "script", help: "Finds postings on the member's portals by reading the public job-board APIs and filtering titles by keywords. Zero tokens.", scriptNote: "Runs career-ops scan.mjs — no model involved. A future version may add an LLM triage step that ranks what it found against the member's profile." },
+  extractor: { label: "Extractor", mode: "fetch + browser-extract.mjs", kind: "script", help: "Pulls the JD text from a posting URL and checks the posting is still live. Zero tokens.", scriptNote: "Plain page fetch with career-ops browser-extract.mjs as fallback — no model involved. A future version may add an LLM cleanup step (clean JD, salary/location fields, closed-posting detection)." },
+  evaluator: { label: "Evaluator", mode: "_shared.md + oferta.md",   kind: "llm", help: "The A–G evaluation with a 1–5 score. The agent we train first." },
+  tailor:    { label: "Tailor",    mode: "text.md / pdf.md",         kind: "llm", help: "Tailors the CV for a posting and renders the ATS-safe PDF." },
+  writer:    { label: "Writer",    mode: "cover.md / email.md",      kind: "llm", help: "Drafts cover letters and application emails — never sends." },
 };
+export const LLM_AGENTS = AGENT_KEYS.filter((k) => AGENT_LABELS[k].kind === "llm");
 
 // ---- helpers ----
 
