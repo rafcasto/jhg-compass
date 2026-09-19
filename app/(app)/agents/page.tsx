@@ -15,7 +15,7 @@ import ReportView from "@/components/agents/ReportView";
 interface MemberStatus { configured: boolean; online: boolean; queueLength: number; quotaUsed: number; jobs: CareerOpsJob[] }
 type View = "evaluate" | "reports" | "setup";
 
-// Member → Agents (career-ops on the Pi): Evaluate · Reports · Setup.
+// Member → Agents (career-ops on the Pi): Setup → Evaluate → Reports.
 export default function AgentsPage() {
   const { user, isAdmin } = useAuth();
   const uid = user?.uid;
@@ -58,7 +58,12 @@ export default function AgentsPage() {
     </div>
   );
 
-  const TABS: { key: View; label: string }[] = [{ key: "evaluate", label: "Evaluate" }, { key: "reports", label: `Reports${reports.length ? ` (${reports.length})` : ""}` }, { key: "setup", label: hasCv ? "Setup" : "Setup · add your CV" }];
+  // Left to right in the order a member uses them: Setup (once) → Evaluate → Reports.
+  const TABS: { key: View; label: string }[] = [
+    { key: "setup", label: hasCv ? "1 · Setup" : "1 · Setup — add your CV" },
+    { key: "evaluate", label: "2 · Evaluate" },
+    { key: "reports", label: `3 · Reports${reports.length ? ` (${reports.length})` : ""}` },
+  ];
 
   return (
     <div className="space-y-6">
