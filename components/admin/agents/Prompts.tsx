@@ -51,12 +51,16 @@ export default function Prompts({ status }: { status: AgentsStatus | null }) {
       <div role="tablist" aria-label="Agent" className="inline-flex flex-wrap gap-1 rounded-pill bg-jh-mist p-1">
         {AGENT_KEYS.map((k) => (
           <button key={k} type="button" role="tab" aria-selected={agent === k} onClick={() => setAgent(k)}
-            className={`px-4 py-2 rounded-pill text-sm font-display font-semibold transition-colors ${agent === k ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}>{AGENT_LABELS[k].label}</button>
+            className={`px-4 py-2 rounded-pill text-sm font-display font-semibold transition-colors ${agent === k ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}>{AGENT_LABELS[k].label}{AGENT_LABELS[k].kind === "script" ? <span className="ml-1 text-[10px] uppercase tracking-wide text-jh-mute-2">script</span> : null}</button>
         ))}
       </div>
       {notice && <p role="status" className={`text-sm ${notice.kind === "ok" ? "text-rb-green-dark" : "text-jh-red"}`}>{notice.text}</p>}
 
-      {!data ? <Loading>Loading prompt…</Loading> : (
+      {AGENT_LABELS[agent].kind === "script" ? (
+        <Section title={`${AGENT_LABELS[agent].label} — script agent`} help={AGENT_LABELS[agent].help}>
+          <p className="text-sm text-jh-mute">{AGENT_LABELS[agent].scriptNote} Nothing to edit here; its behaviour is configured by the member&apos;s Setup (portals and keywords) and by career-ops itself.</p>
+        </Section>
+      ) : !data ? <Loading>Loading prompt…</Loading> : (
         <>
           <Section title={`${AGENT_LABELS[agent].label} — system prompt`}
             help={<>Distilled from career-ops <code className="font-mono">{AGENT_LABELS[agent].mode}</code>. Keep it tight: on the Pi every 1,000 prompt tokens is ~20–50 s before the model writes a word. Currently v{data.current.promptVersion}{data.current.promptEditedBy ? <> · edited by {data.current.promptEditedBy} {data.current.promptEditedAt ? fmtDateTime(data.current.promptEditedAt) : ""}</> : " · worker default (auto-upgrades until you edit it)"}.</>}
