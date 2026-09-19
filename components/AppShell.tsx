@@ -2,7 +2,7 @@
 
 import { useState, type ComponentType } from "react";
 import { usePathname } from "next/navigation";
-import { Compass, Gauge, Columns3, GraduationCap, Shield, type LucideProps } from "lucide-react";
+import { Compass, Gauge, Columns3, GraduationCap, Shield, Bot, type LucideProps } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useContent } from "@/lib/firestore/content";
 import { track } from "@/lib/track-client";
@@ -15,7 +15,7 @@ type NavItem = {
   icon: ComponentType<LucideProps>;
 };
 
-export default function AppShell({ children, daysLeft }: { children: React.ReactNode; daysLeft: number | null }) {
+export default function AppShell({ children, daysLeft, agentsEnabled = false }: { children: React.ReactNode; daysLeft: number | null; agentsEnabled?: boolean }) {
   const pathname = usePathname();
   const { signOut, isAdmin } = useAuth();
   const { t } = useContent();
@@ -39,7 +39,10 @@ export default function AppShell({ children, daysLeft }: { children: React.React
     { href: "/coaching", label: t("nav.coaching"), icon: GraduationCap },
   ];
 
-  const nav: NavItem[] = isAdmin ? [...NAV, { href: "/admin", label: "Admin", icon: Shield }] : NAV;
+  // Agents (career-ops on the Pi) only for members the admin has switched on —
+  // Admin → TOFU → Access renewals. Admins always see it so they can test.
+  const withAgents: NavItem[] = agentsEnabled || isAdmin ? [...NAV, { href: "/agents", label: t("nav.agents"), icon: Bot }] : NAV;
+  const nav: NavItem[] = isAdmin ? [...withAgents, { href: "/admin", label: "Admin", icon: Shield }] : withAgents;
   const isActive = (href: string) => pathname.startsWith(href);
 
   return (

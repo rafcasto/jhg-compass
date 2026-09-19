@@ -10,7 +10,7 @@ vi.mock("@/lib/firebase/client", () => ({
 
 const NOW = Date.now();
 const row = (p: Partial<MemberAccessRow> & { uid: string; status: MemberAccessRow["status"] }): MemberAccessRow => ({
-  email: `${p.uid}@x.io`, storedStatus: p.status, durationDays: 60, startsAt: NOW - 90 * DAY, expiresAt: NOW - 30 * DAY, redeemBy: null, ...p,
+  email: `${p.uid}@x.io`, storedStatus: p.status, durationDays: 60, startsAt: NOW - 90 * DAY, expiresAt: NOW - 30 * DAY, redeemBy: null, careerOps: false, ...p,
 });
 let rows: MemberAccessRow[];
 
@@ -26,7 +26,12 @@ beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
   vi.stubGlobal("confirm", vi.fn(() => true));
-  fetchMock.mockImplementation(async (_url: string, init?: RequestInit) => {
+  fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+    if (init?.method === "POST" && String(url).endsWith("/features")) {
+      const body = JSON.parse(String(init.body));
+      rows = rows.map((r) => body.uids.includes(r.uid) ? { ...r, careerOps: body.careerOps } : r);
+      return { ok: true, json: async () => ({ ok: true, updated: body.uids.map((uid: string) => ({ uid, email: `${uid}@x.io` })), missing: [], rows }) };
+    }
     if (init?.method === "POST") {
       const body = JSON.parse(String(init.body));
       const renewed = body.uids.map((uid: string) => ({ uid, email: `${uid}@x.io`, expiresAt: NOW + body.durationDays * DAY }));
@@ -102,5 +107,21 @@ describe("TOFU → Access renewals", () => {
     const bob = screen.getByText("Bob").closest("tr")!;
     expect(within(bob).getByText("active")).toBeInTheDocument();
     expect(within(bob).getByText(/by admin@jobhackers.global/)).toBeInTheDocument();
+  });
+
+  it("switches the Agents tab on for the selected members from the same screen", async () => {
+    const user = userEvent.setup();
+    render(<AccessRenewals />);
+    await loaded();
+    expect(screen.getByRole("columnheader", { name: "Agents" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enable for selected" })).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: "Select Ada Lovelace" }));
+    await user.click(screen.getByRole("button", { name: "Enable for 1" }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Agents enabled for 1 member"));
+    const [url, init] = posts().find(([u]) => String(u).endsWith("/features"))!;
+    expect(url).toBe("/api/admin/access/features");
+    expect(JSON.parse(String((init as RequestInit).body))).toEqual({ uids: ["ada"], careerOps: true });
+    const ada = screen.getByText("Ada Lovelace").closest("tr")!;
+    expect(within(ada).getByText("on")).toBeInTheDocument();
   });
 });
