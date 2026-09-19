@@ -19,6 +19,9 @@ export const paths = {
   settingsTargets: (uid: string) => doc(db, "users", uid, "settings", "targets"),
   // per-user feedback submissions (owner-writable via users/{uid} rules)
   feedbackResponses: (uid: string) => collection(db, "users", uid, "feedback"),
+  // Agents (career-ops on the Pi): the member's setup doc + the worker-written reports
+  careerOpsSetup: (uid: string) => doc(db, "users", uid, "careerOps", "setup"),
+  careerOpsReports: (uid: string) => collection(db, "users", uid, "careerOpsReports"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
   content: () => doc(db, "config", "content"),
