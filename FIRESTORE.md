@@ -51,7 +51,17 @@ config/agents                    { agents{ scout|extractor|evaluator|tailor|writ
                                  // Admin → Agents. Read by the Pi worker (Admin SDK). See docs/CAREER_OPS_AGENTS.md.
                                  // Job queue/status live in Upstash Redis (careerops:*), not here.
 
-users/{uid}/careerOps/…          reports/{id}, pipeline/{id}, setup — mirrored by the Pi worker (phase 1+)
+users/{uid}/careerOps/setup      { cvMarkdown, profileYaml, notes?, updatedAt }
+                                 // Agents → Setup: owner-writable. profileYaml is generated from Profile + Goal
+                                 // (lib/careerops/profile-yaml.ts). The Pi worker copies both into the member's
+                                 // career-ops root before every job.
+users/{uid}/careerOpsReports/{jobId}
+                                 { jobId, n, file, company, role, url, title, score, archetype, legitimacy,
+                                   summaryFound, markdown, agent, model, promptVersion, via, usage, durationMs,
+                                   jdChars, createdAt, addedOpportunityId? }
+                                 // Written by the Pi worker (Admin SDK) when an evaluate job finishes; the member
+                                 // reads it live. "Add to Progress board" creates users/{uid}/opportunities/{id}
+                                 // and stamps addedOpportunityId here.
 
 config/events                    { events{ [EventKey]: { enabled, tag, stage, label } }, updatedBy, updatedAt }
                                  // Analytics → Pirate metrics → Configurator. stage ∈ AAARRR (lib/tags.ts)
