@@ -46,11 +46,25 @@ export interface WorkerState {
 export interface AgentConfig {
   model: string;               // Ollama tag
   numCtx: number;
+  numPredict: number;          // output cap — small models ramble without one
   temperature: number;
   systemPrompt: string;
   promptVersion: number;
+  promptEditedBy?: string | null;   // set once an admin edits; stops the worker auto-upgrading the default
+  promptEditedAt?: number | null;
   enabled: boolean;
   n8nWorkflowId: string | null;
+}
+
+// config/agents/promptVersions/{agent}-{version} — every saved prompt, for restore.
+export interface PromptVersion {
+  id: string;
+  agent: AgentKey;
+  version: number;
+  systemPrompt: string;
+  savedBy: string | null;
+  savedAt: number;
+  note?: string;
 }
 
 // Stored at config/agents (admin write, worker read via Admin SDK).
@@ -63,7 +77,7 @@ export interface AgentsConfig {
 }
 
 export const DEFAULT_AGENT: AgentConfig = {
-  model: "qwen2.5:1.5b-instruct", numCtx: 8192, temperature: 0.2, systemPrompt: "", promptVersion: 0, enabled: true, n8nWorkflowId: null,
+  model: "qwen2.5:1.5b-instruct", numCtx: 8192, numPredict: 2800, temperature: 0.2, systemPrompt: "", promptVersion: 0, enabled: true, n8nWorkflowId: null,
 };
 
 export const DEFAULT_AGENTS_CONFIG: AgentsConfig = {

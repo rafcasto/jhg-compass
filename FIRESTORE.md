@@ -46,10 +46,15 @@ config/segments                  { propensityThreshold, actions{ fit-high|fit-lo
                                  // follow-up action per quadrant (lib/segments.ts)
 
 config/agents                    { agents{ scout|extractor|evaluator|tailor|writer:
-                                   { model, numCtx, temperature, systemPrompt, promptVersion, enabled, n8nWorkflowId } },
+                                   { model, numCtx, numPredict, temperature, systemPrompt, promptVersion,
+                                     promptEditedBy?, promptEditedAt?, enabled, n8nWorkflowId } },
                                    dailyEvalQuota, collectLiveData, updatedBy, updatedAt }
-                                 // Admin → Agents. Read by the Pi worker (Admin SDK). See docs/CAREER_OPS_AGENTS.md.
-                                 // Job queue/status live in Upstash Redis (careerops:*), not here.
+                                 // Admin → Agents → Models / Prompts. Seeded by the Pi worker; read by it on every
+                                 // job (Admin SDK). A prompt with promptEditedBy set is never auto-upgraded by the
+                                 // worker. Job queue/status live in Upstash Redis (careerops:*), not here.
+  ├─ promptVersions/{agent}-{v}  { agent, version, systemPrompt, savedBy, savedAt, note }   // every saved prompt
+config/agentsDefaults            { agents{…}, workerVersion, updatedAt }
+                                 // The worker's built-in prompts/settings, published on boot ("Load worker default").
 
 users/{uid}/careerOps/setup      { cvMarkdown, profileYaml, notes?, updatedAt }
                                  // Agents → Setup: owner-writable. profileYaml is generated from Profile + Goal
