@@ -46,7 +46,7 @@ export default function Scan({ uid, hasPortals, online, onEvaluateQueued }: { ui
     <div className="space-y-5">
       <section className="card p-5 space-y-3">
         <h2 className="text-lg flex items-center gap-2"><Radar className="h-5 w-5 text-jh-red" strokeWidth={1.5} /> Scout</h2>
-        <p className="text-jh-mute text-sm max-w-2xl">Checks the careers pages in your Setup for postings whose titles match your keywords. New ones land below; evaluate the ones that look right. Nothing is applied to.</p>
+        <p className="text-jh-mute text-sm max-w-2xl">Checks every company on your watchlist for postings whose titles match your keywords — job boards through their API, other careers pages through the Pi&apos;s browser (a minute or so per site). New ones land below; evaluate the ones that look right. Nothing is applied to.</p>
         {!hasPortals && <p className="text-sm text-jh-red">Add at least one company under <strong>Setup → Portals</strong> first.</p>}
         <div className="flex items-center gap-3 flex-wrap">
           <button type="button" onClick={scan} disabled={busy === "scan" || !hasPortals || !!scanJob} className="btn-primary disabled:opacity-60"><Radar className="h-4 w-4" /> {busy === "scan" ? "Starting…" : "Scan now"}</button>

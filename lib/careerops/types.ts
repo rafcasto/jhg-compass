@@ -154,6 +154,12 @@ export const scoreVerdict = (s: number | null) =>
 export interface CareerOpsPortals { companies: { name: string; careersUrl: string; enabled?: boolean }[]; positive: string[]; negative: string[] }
 export interface CareerOpsSetupV2 extends CareerOpsSetup { portals?: CareerOpsPortals; portalsYaml?: string }
 
+// users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last
+// scan. Worker-written. method: "board" = career-ops read the ATS/job-board API directly;
+// "page" = the Pi's browser scraped the careers page (slower, best effort); "none" = nothing worked.
+export interface PortalStatus { name: string; careersUrl: string; method: "board" | "page" | "none"; provider?: string | null; found: number; matched: number; error?: string | null; ms?: number }
+export interface PortalsStatusDoc { at: number; jobId: string; companies: PortalStatus[] }
+
 // users/{uid}/careerOpsPipeline/{id} — postings the Scout found (worker-written, owner-updatable).
 export type PipelineStatus = "pending" | "evaluated" | "dismissed";
 export interface PipelineItem {

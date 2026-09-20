@@ -7,7 +7,7 @@ import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { useAuth } from "@/components/AuthProvider";
 import { buildProfileYaml } from "@/lib/careerops/profile-yaml";
 import { buildPortalsYaml, suggestKeywords, DEFAULT_NEGATIVE } from "@/lib/careerops/portals-yaml";
-import type { CareerOpsPortals, CareerOpsSetupV2 } from "@/lib/careerops/types";
+import type { CareerOpsPortals, CareerOpsSetupV2, PortalsStatusDoc } from "@/lib/careerops/types";
 import Portals from "./Portals";
 import type { Profile } from "@/lib/types";
 
@@ -18,6 +18,7 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
   const uid = user?.uid;
   const { data: setup, loading } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
   const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
+  const { data: portalsStatus } = useLiveDoc<PortalsStatusDoc>(uid ? paths.careerOpsPortalsStatus(uid) : null);
   const [cv, setCv] = useState("");
   const [notes, setNotes] = useState("");
   const [portals, setPortals] = useState<CareerOpsPortals>({ companies: [], positive: [], negative: DEFAULT_NEGATIVE });
@@ -86,9 +87,9 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
       </section>
 
       <section className="card p-5 space-y-3">
-        <h2 className="text-lg">Portals for the Scout</h2>
-        <p className="text-jh-mute text-sm max-w-2xl">Companies whose careers pages the Scout checks for new postings that match your title keywords. Zero AI tokens — it reads the public job boards directly.</p>
-        <Portals value={portals} onChange={(v) => { setPortals(v); setDirty(true); setMsg(null); }} />
+        <h2 className="text-lg">Company watchlist for the Scout</h2>
+        <p className="text-jh-mute text-sm max-w-2xl">Companies whose careers pages the Scout checks for new postings that match your title keywords. Zero AI tokens — job boards are read directly; other careers pages are opened in the Pi&apos;s browser.{portalsStatus?.at ? ` Last scan ${new Date(portalsStatus.at).toLocaleString()}.` : ""}</p>
+        <Portals value={portals} onChange={(v) => { setPortals(v); setDirty(true); setMsg(null); }} status={portalsStatus?.companies ?? []} />
       </section>
 
       <div className="flex items-center gap-3 flex-wrap">
