@@ -57,7 +57,7 @@ export default function Overview({ status, error, onRefresh }: { status: AgentsS
       <Section title="Agents" help="Each agent is an n8n workflow on the Pi. Active means the workflow is switched on in n8n; the model comes from the Models sub-tab."
         aside={<button type="button" onClick={onRefresh} className="btn-secondary text-xs px-3 py-2" aria-label="Refresh status"><RefreshCw className="h-4 w-4" /></button>}>
         {!st ? <Empty>{status?.online ? "Waiting for the worker to publish its state…" : "The worker publishes agent status when it is online."}</Empty> : (
-          <ul className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <ul className="grid sm:grid-cols-2 lg:grid-cols-6 gap-3">
             {st.agents.map((a) => (
               <li key={a.key} className="card p-4">
                 <p className="font-display font-semibold text-jh-ink capitalize">{a.key}</p>

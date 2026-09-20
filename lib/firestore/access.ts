@@ -10,7 +10,7 @@ export interface AccessState {
   grant: AccessGrant | null;
   hasAccess: boolean;
   daysLeft: number | null;
-  agentsEnabled: boolean;   // Admin switched features.careerOps on (Agents tab)
+  agentsEnabled: boolean;   // Admin switched features.careerOps on (CareerOps portal)
 }
 
 function computeHasAccess(g: AccessGrant | null): { ok: boolean; daysLeft: number | null } {

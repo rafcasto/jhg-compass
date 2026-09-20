@@ -3,11 +3,13 @@ import { TABS, adminHash, firstSub, parseAdminHash } from "@/components/admin/na
 
 describe("admin navigation", () => {
   it("has exactly the five top-level tabs, in order", () => {
-    expect(TABS.map((t) => t.label)).toEqual(["TOFU", "Lead magnet CMS", "User interactions", "Analytics", "Agents"]);
+    expect(TABS.map((t) => t.label)).toEqual(["TOFU", "Lead magnet CMS", "User interactions", "Analytics", "CareerOps"]);
   });
-  it("agents sits after analytics with overview first", () => {
+  it("careerops sits after analytics with overview first, and old #agents links still land there", () => {
+    expect(TABS[4].key).toBe("careerops");
     expect(TABS[4].subs.map((s) => s.key)).toEqual(["overview", "models", "prompts", "training"]);
-    expect(parseAdminHash("#agents/training")).toEqual({ tab: "agents", sub: "training" });
+    expect(parseAdminHash("#careerops/training")).toEqual({ tab: "careerops", sub: "training" });
+    expect(parseAdminHash("#agents/models")).toEqual({ tab: "careerops", sub: "models" });
   });
   it("the CMS mirrors the four member-facing tabs in the same order", () => {
     expect(TABS[1].subs.map((s) => s.key)).toEqual(["compass", "performance", "progress", "coaching"]);

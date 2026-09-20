@@ -10,7 +10,7 @@ import Models from "./Models";
 import Prompts from "./Prompts";
 import Training from "./Training";
 
-// Admin → Agents. career-ops agents run on the Raspberry Pi (n8n + Ollama);
+// Admin → CareerOps (tab 5). career-ops agents run on the Raspberry Pi (n8n + Ollama);
 // this tab only talks to the Upstash queue the Pi worker polls. Status is
 // shared by every sub-tab so buttons can be disabled while the worker is offline.
 export default function AgentsTab({ sub, onSub }: { sub: AgentsSub; onSub: (s: AgentsSub) => void }) {
@@ -32,8 +32,8 @@ export default function AgentsTab({ sub, onSub }: { sub: AgentsSub; onSub: (s: A
 
   return (
     <div className="space-y-6">
-      <TabHeader icon={Bot} title="AI agents"
-        intro="career-ops running on the Raspberry Pi — the Scout, Extractor, Evaluator, Tailor and Writer agents. Pick the model each agent uses, edit its prompt, and train new models. The site never runs a model: it queues jobs into Upstash Redis and the Pi worker does the work." />
+      <TabHeader icon={Bot} title="CareerOps"
+        intro="The agents behind the CareerOps portal, running on the Raspberry Pi — Scout, Extractor, Evaluator, Tailor, Writer and Researcher. Pick the model each agent uses, edit its prompt, and train new models. The site never runs a model: it queues jobs into Upstash Redis and the Pi worker does the work." />
       <SubTabs items={AGENTS_SUBTABS} value={sub} onChange={onSub} ariaLabel="Agents sections" />
       {sub === "overview" && <Overview status={status} error={err} onRefresh={refresh} />}
       {sub === "models" && <Models status={status} />}

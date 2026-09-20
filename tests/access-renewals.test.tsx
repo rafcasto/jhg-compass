@@ -109,15 +109,15 @@ describe("TOFU → Access renewals", () => {
     expect(within(bob).getByText(/by admin@jobhackers.global/)).toBeInTheDocument();
   });
 
-  it("switches the Agents tab on for the selected members from the same screen", async () => {
+  it("switches the CareerOps portal on for the selected members from the same screen", async () => {
     const user = userEvent.setup();
     render(<AccessRenewals />);
     await loaded();
-    expect(screen.getByRole("columnheader", { name: "Agents" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "CareerOps" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enable for selected" })).toBeDisabled();
     await user.click(screen.getByRole("checkbox", { name: "Select Ada Lovelace" }));
     await user.click(screen.getByRole("button", { name: "Enable for 1" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Agents enabled for 1 member"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("CareerOps enabled for 1 member"));
     const [url, init] = posts().find(([u]) => String(u).endsWith("/features"))!;
     expect(url).toBe("/api/admin/access/features");
     expect(JSON.parse(String((init as RequestInit).body))).toEqual({ uids: ["ada"], careerOps: true });

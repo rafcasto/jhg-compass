@@ -27,7 +27,7 @@ export interface MemberAccessRow {
   updatedAt?: number | null;
   renewedAt?: number | null;
   renewedBy?: string | null;
-  careerOps: boolean;         // Agents tab enabled for this member
+  careerOps: boolean;         // CareerOps portal enabled for this member
 }
 
 type GrantLike = Pick<AccessGrant, "status" | "startsAt" | "expiresAt" | "redeemBy">;

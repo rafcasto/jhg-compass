@@ -12,8 +12,8 @@ import type { TabItem } from "./MobileChrome";
 export const DESKTOP_SIDEBAR_WIDTH = 232;
 
 export function DesktopSidebar({
-  items, onSignOut, signingOut = false, position = "fixed", footer,
-}: { items: TabItem[]; onSignOut?: () => void; signingOut?: boolean; position?: "fixed" | "static"; footer?: ReactNode }) {
+  items, onSignOut, signingOut = false, position = "fixed", footer, brand,
+}: { items: TabItem[]; onSignOut?: () => void; signingOut?: boolean; position?: "fixed" | "static"; footer?: ReactNode; brand?: ReactNode }) {
   const fixed = position === "fixed";
   return (
     <aside
@@ -21,9 +21,14 @@ export function DesktopSidebar({
       style={{ width: DESKTOP_SIDEBAR_WIDTH }}
       aria-label="Sidebar"
     >
-      <div className="flex items-center gap-2 mb-8 px-2 pt-1">
-        <Image src="/assets/logo-hand.png" alt="JobHackers" width={28} height={28} />
-        <span className="font-display font-bold text-jh-ink">Compass</span>
+      {/* Logo section — the live app passes a portal switcher (Compass ⇄ CareerOps); previews get the static brand. */}
+      <div className="mb-8 px-2 pt-1">
+        {brand ?? (
+          <div className="flex items-center gap-2">
+            <Image src="/assets/logo-hand.png" alt="JobHackers" width={28} height={28} />
+            <span className="font-display font-bold text-jh-ink">Compass</span>
+          </div>
+        )}
       </div>
       <nav className="flex-1 space-y-1" aria-label="Primary">
         {items.map((item) => {

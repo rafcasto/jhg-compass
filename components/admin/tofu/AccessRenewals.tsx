@@ -74,20 +74,20 @@ export default function AccessRenewals() {
     finally { setBusy(false); }
   }
 
-  // Agents tab (career-ops on the Pi) — switch on/off for the selected members.
+  // CareerOps portal (career-ops agents on the Pi) — switch on/off for the selected members.
   async function setAgents(on: boolean) {
     if (!selectedRows.length) return;
     const who = selectedRows.length === 1 ? (memberName(selectedRows[0]) || selectedRows[0].email) : `${selectedRows.length} members`;
-    if (!confirm(`${on ? "Enable" : "Disable"} the Agents tab for ${who}?`)) return;
+    if (!confirm(`${on ? "Enable" : "Disable"} the CareerOps portal for ${who}?`)) return;
     setFeatBusy(true); setNotice(null);
     try {
       const r = await postJson("/api/admin/access/features", { uids: selectedRows.map((x) => x.uid), careerOps: on });
       const d = await r.json();
       if (r.ok && d.ok) {
         setRows(d.rows); setSelected(new Set());
-        setNotice({ kind: "ok", text: `Agents ${on ? "enabled" : "disabled"} for ${d.updated.length} member${d.updated.length === 1 ? "" : "s"}. They'll see the change on their next page load.` });
-      } else setNotice({ kind: "err", text: d.error ? `Couldn't update agents: ${d.error}` : "Couldn't update agents." });
-    } catch { setNotice({ kind: "err", text: "Couldn't update agents." }); }
+        setNotice({ kind: "ok", text: `CareerOps ${on ? "enabled" : "disabled"} for ${d.updated.length} member${d.updated.length === 1 ? "" : "s"}. They'll see the change on their next page load.` });
+      } else setNotice({ kind: "err", text: d.error ? `Couldn't update CareerOps access: ${d.error}` : "Couldn't update CareerOps access." });
+    } catch { setNotice({ kind: "err", text: "Couldn't update CareerOps access." }); }
     finally { setFeatBusy(false); }
   }
 
@@ -114,7 +114,7 @@ export default function AccessRenewals() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-jh-line">
-          <span className="inline-flex items-center gap-1.5 text-sm text-jh-mute"><Bot className="h-4 w-4" /> Agents tab (career-ops on the Pi)</span>
+          <span className="inline-flex items-center gap-1.5 text-sm text-jh-mute"><Bot className="h-4 w-4" /> CareerOps portal (switch via the logo)</span>
           <button type="button" onClick={() => setAgents(true)} disabled={featBusy || selectedRows.length === 0} className="btn-secondary text-xs px-3 py-2 disabled:opacity-40">
             {featBusy ? "Saving…" : `Enable for ${selectedRows.length || "selected"}`}
           </button>
@@ -155,7 +155,7 @@ export default function AccessRenewals() {
                   <th className="px-3 py-2 w-8">
                     <input type="checkbox" aria-label="Select all shown" checked={allVisibleSelected} onChange={toggleAll} className="h-4 w-4 accent-jh-red" />
                   </th>
-                  {["Member", "Status", "Agents", "Access period", "Plan · source", "Last change"].map((h) => (
+                  {["Member", "Status", "CareerOps", "Access period", "Plan · source", "Last change"].map((h) => (
                     <th key={h} className="font-semibold px-3 py-2 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>

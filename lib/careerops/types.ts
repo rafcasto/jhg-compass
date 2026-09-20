@@ -90,6 +90,7 @@ export const DEFAULT_AGENTS_CONFIG: AgentsConfig = {
     evaluator: { ...DEFAULT_AGENT, model: "llama3.2:3b", numCtx: 8192 },
     tailor:    { ...DEFAULT_AGENT, model: "llama3.2:3b" },
     writer:    { ...DEFAULT_AGENT, model: "llama3.2:3b", temperature: 0.5 },
+    researcher:{ ...DEFAULT_AGENT, model: "llama3.2:3b", temperature: 0.3 },
   },
   dailyEvalQuota: 20,
   collectLiveData: false,
@@ -258,3 +259,50 @@ export interface TrainingModel {
 }
 
 export const FINETUNE_BASES = ["unsloth/Qwen2.5-1.5B-Instruct", "unsloth/Llama-3.2-3B-Instruct", "unsloth/Qwen2.5-3B-Instruct", "unsloth/Llama-3.2-1B-Instruct"] as const;
+
+// ---- CareerOps portal: generic agent outputs ----
+
+// users/{uid}/careerOpsNotes/{jobId} — every non-report, non-PDF thing an agent produces:
+// a company deep-dive, an outreach DM, application answers, interview prep, a follow-up
+// draft, a training/project verdict, a patterns analysis. Worker-written, owner-readable.
+export type NoteKind = "deep" | "contacto" | "apply" | "interview_prep" | "followup" | "training" | "project" | "patterns";
+export interface CareerOpsNote {
+  id: string;
+  jobId: string;
+  kind: NoteKind;
+  title: string;
+  company?: string | null;
+  role?: string | null;
+  reportJobId?: string | null;
+  opportunityId?: string | null;
+  markdown: string;             // what the member reads
+  data?: Record<string, unknown>; // structured extras (answers[], dm, stats…)
+  sources?: { title: string; url: string }[];   // web sources when the Researcher used search
+  agent: AgentKey;
+  model: string;
+  via: "n8n" | "ollama" | "claude";
+  durationMs: number;
+  createdAt: number;
+}
+export const NOTE_KIND_LABELS: Record<NoteKind, string> = {
+  deep: "Company deep-dive", contacto: "Outreach", apply: "Application answers", interview_prep: "Interview prep",
+  followup: "Follow-up", training: "Training verdict", project: "Project verdict", patterns: "Patterns",
+};
+
+// users/{uid}/careerOps/followup — cadence rules per Progress-board stage (days of silence before a nudge is due).
+export interface FollowupRules { days: Record<string, number>; updatedAt?: number }
+export const DEFAULT_FOLLOWUP_DAYS: Record<string, number> = { outreach: 5, application: 7, info_interview: 3, job_interview: 2, offer: 2, negotiation: 3 };
+export const CONTACT_TARGETS = [
+  { key: "hiring_manager", label: "Hiring manager" },
+  { key: "recruiter", label: "Recruiter" },
+  { key: "peer", label: "Team peer" },
+  { key: "interviewer", label: "Interviewer" },
+] as const;
+export type ContactTarget = (typeof CONTACT_TARGETS)[number]["key"];
+export const PREP_AUDIENCES = [
+  { key: "recruiter", label: "Recruiter screen" },
+  { key: "hiring_manager", label: "Hiring manager" },
+  { key: "peer", label: "Peer / technical" },
+  { key: "panel", label: "Panel" },
+] as const;
+export type PrepAudience = (typeof PREP_AUDIENCES)[number]["key"];

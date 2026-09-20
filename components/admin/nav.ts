@@ -1,4 +1,4 @@
-// Admin information architecture — five top-level tabs, each with sub-tabs.
+// Admin information architecture — five top-level tabs (TOFU · CMS · Interactions · Analytics · CareerOps), each with sub-tabs.
 // Pure module (no React, no Firebase) so the hash ↔ location parsing is
 // unit-testable and every tab component imports its sub-tab list from here.
 
@@ -46,16 +46,20 @@ export const TABS = [
   { key: "cms", label: "Lead magnet CMS", title: "JHCompass lead magnet CMS", subs: CMS_SUBTABS },
   { key: "interactions", label: "User interactions", title: "User interactions", subs: INTERACTIONS_SUBTABS },
   { key: "analytics", label: "Analytics", title: "Analytics", subs: ANALYTICS_SUBTABS },
-  { key: "agents", label: "Agents", title: "AI agents (career-ops on the Pi)", subs: AGENTS_SUBTABS },
+  { key: "careerops", label: "CareerOps", title: "CareerOps portal — agents on the Pi", subs: AGENTS_SUBTABS },
 ] as const;
 export type TabKey = (typeof TABS)[number]["key"];
 
 export interface AdminLocation { tab: TabKey; sub: string }
 
+// Tab 5 was called "agents" before the CareerOps portal existed; old links keep working.
+const LEGACY_TABS: Record<string, TabKey> = { agents: "careerops" };
+
 // "#cms/compass" → { tab: "cms", sub: "compass" }; unknown parts fall back to the
 // first tab / that tab's first sub-tab.
 export function parseAdminHash(hash: string): AdminLocation {
-  const [rawTab, rawSub] = hash.replace(/^#/, "").split("/");
+  const [rawTabIn, rawSub] = hash.replace(/^#/, "").split("/");
+  const rawTab = LEGACY_TABS[rawTabIn] ?? rawTabIn;
   const tab = TABS.find((t) => t.key === rawTab) ?? TABS[0];
   const sub = (tab.subs as readonly { key: string }[]).some((s) => s.key === rawSub) ? rawSub : tab.subs[0].key;
   return { tab: tab.key, sub };

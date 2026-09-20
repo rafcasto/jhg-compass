@@ -16,10 +16,19 @@ export async function GET(req: NextRequest) {
   catch (e: any) { return NextResponse.json({ ok: false, error: e?.message ?? "list failed" }, { status: e instanceof QueueNotConfigured ? 503 : 500 }); }
 }
 
-// Body: { type: "evaluate", jd?, url?, pipelineId? } | { type: "pdf" | "cover", reportJobId, template?, angle? } | { type: "scan" }
-// evaluate / pdf / cover share the daily LLM quota; scan is zero-token but capped separately.
+// Body (member jobs — see lib/careerops/keys.ts MEMBER_JOB_TYPES):
+//   { type: "evaluate", jd?, url?, pipelineId?, autoPipeline? }      { type: "scan" }
+//   { type: "pdf" | "cover", reportJobId, template?, angle? }
+//   { type: "deep", company, website?, reportJobId? }                 { type: "advise", kind: training|project, title, description, … }
+//   { type: "contacto", reportJobId, target, personName?, personRole? }
+//   { type: "apply", reportJobId, questions[] }                       { type: "interview_prep", reportJobId, audience, extra? }
+//   { type: "followup", opportunityId, company, role, stage, daysSince, channel, lastNote?, reportJobId? }
+//   { type: "patterns" }
+// Every LLM job shares the daily quota; scan is zero-token and capped separately.
 const SCANS_PER_DAY = 6;
 const JOB_ID = /^[0-9T]{15}-[0-9a-z]{8}$/;
+const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+const oneOf = <T extends string>(v: unknown, list: readonly T[], dflt: T): T => (list as readonly string[]).includes(v as string) ? (v as T) : dflt;
 const CV_TEMPLATES = ["cv-template.html", "cv-template.modern.html", "cv-template.compact.html", "cv-template.executive.html", "cv-template.leadership.html", "cv-template.jake.html"];
 
 export async function POST(req: NextRequest) {
@@ -36,7 +45,7 @@ export async function POST(req: NextRequest) {
     if (jd.length > MAX_JD) return NextResponse.json({ ok: false, error: `job description too long (max ${MAX_JD} characters)` }, { status: 400 });
     if (url) { try { const u = new URL(url); if (!/^https?:$/.test(u.protocol)) throw 0; } catch { return NextResponse.json({ ok: false, error: "that doesn't look like a valid http(s) URL" }, { status: 400 }); } }
     const pipelineId = typeof body.pipelineId === "string" && /^[a-f0-9]{20}$/.test(body.pipelineId) ? body.pipelineId : undefined;
-    payload = { ...(jd ? { jd } : {}), ...(url ? { url } : {}), ...(pipelineId ? { pipelineId } : {}) };
+    payload = { ...(jd ? { jd } : {}), ...(url ? { url } : {}), ...(pipelineId ? { pipelineId } : {}), ...(body.autoPipeline === true ? { autoPipeline: true } : {}) };
   } else if (type === "pdf" || type === "cover") {
     const reportJobId = typeof body.reportJobId === "string" ? body.reportJobId : "";
     if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });
@@ -44,6 +53,43 @@ export async function POST(req: NextRequest) {
     if (type === "pdf" && typeof body.template === "string" && CV_TEMPLATES.includes(body.template)) payload.template = body.template;
     if (type === "cover" && typeof body.angle === "string" && body.angle.trim()) payload.angle = body.angle.trim().slice(0, 1500);
   } else if (type === "scan") {
+    payload = {};
+  } else if (type === "deep") {
+    const company = str(body.company, 120);
+    if (!company) return NextResponse.json({ ok: false, error: "company missing" }, { status: 400 });
+    const website = str(body.website, 300);
+    if (website) { try { const u = new URL(website); if (!/^https?:$/.test(u.protocol)) throw 0; } catch { return NextResponse.json({ ok: false, error: "website must be an http(s) URL" }, { status: 400 }); } }
+    const reportJobId = JOB_ID.test(String(body.reportJobId ?? "")) ? String(body.reportJobId) : "";
+    payload = { company, ...(website ? { website } : {}), ...(reportJobId ? { reportJobId } : {}) };
+  } else if (type === "advise") {
+    const kind = oneOf(body.kind, ["training", "project"] as const, "training");
+    const title = str(body.title, 160), description = str(body.description, 4000);
+    if (!title || !description) return NextResponse.json({ ok: false, error: "title and description are required" }, { status: 400 });
+    payload = { kind, title, description, provider: str(body.provider, 160), url: str(body.url, 300), cost: str(body.cost, 40), effort: str(body.effort, 60) };
+  } else if (type === "contacto") {
+    const reportJobId = str(body.reportJobId, 40);
+    if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });
+    payload = { reportJobId, target: oneOf(body.target, ["hiring_manager", "recruiter", "peer", "interviewer"] as const, "hiring_manager"), personName: str(body.personName, 120), personRole: str(body.personRole, 120) };
+  } else if (type === "apply") {
+    const reportJobId = str(body.reportJobId, 40);
+    if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });
+    const questions = Array.isArray(body.questions) ? body.questions.map((q: unknown) => str(q, 600)).filter(Boolean).slice(0, 25) : [];
+    if (!questions.length) return NextResponse.json({ ok: false, error: "paste at least one question" }, { status: 400 });
+    payload = { reportJobId, questions };
+  } else if (type === "interview_prep") {
+    const reportJobId = str(body.reportJobId, 40);
+    if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });
+    payload = { reportJobId, audience: oneOf(body.audience, ["recruiter", "hiring_manager", "peer", "panel"] as const, "recruiter"), extra: str(body.extra, 2000) };
+  } else if (type === "followup") {
+    const company = str(body.company, 120);
+    if (!company) return NextResponse.json({ ok: false, error: "company missing" }, { status: 400 });
+    const reportJobId = JOB_ID.test(String(body.reportJobId ?? "")) ? String(body.reportJobId) : "";
+    payload = {
+      opportunityId: str(body.opportunityId, 40), company, role: str(body.role, 160), stage: str(body.stage, 60),
+      daysSince: Math.max(0, Math.min(365, Math.round(Number(body.daysSince) || 0))), channel: oneOf(body.channel, ["email", "linkedin"] as const, "email"),
+      lastNote: str(body.lastNote, 600), ...(reportJobId ? { reportJobId } : {}),
+    };
+  } else if (type === "patterns") {
     payload = {};
   } else {
     return NextResponse.json({ ok: false, error: "unknown job type" }, { status: 400 });

@@ -18,9 +18,9 @@ export async function requireAdmin(req: NextRequest): Promise<DecodedIdToken | n
   return u?.admin === true ? u : null;
 }
 
-// A member who may use the Agents tab: signed in, access currently active, and
+// A member who may use the CareerOps portal: signed in, access currently active, and
 // the admin has switched features.careerOps on for them. Checked on every
-// member agents route so the flag can't be bypassed by guessing a URL.
+// CareerOps API route so the flag can't be bypassed by guessing a URL.
 export async function requireAgentsMember(req: NextRequest): Promise<{ user: DecodedIdToken; grant: AccessGrant } | null> {
   const user = await requireUser(req);
   if (!user) return null;

@@ -198,7 +198,6 @@ export const TEXT_FIELDS: TextField[] = [
   { group: "Navigation", key: "nav.performance", label: "Performance tab" },
   { group: "Navigation", key: "nav.tracker", label: "Progress tab" },
   { group: "Navigation", key: "nav.coaching", label: "Coaching tab" },
-  { group: "Navigation", key: "nav.agents", label: "Agents tab (members with agents enabled)" },
 
   // ----- Auth: sign in / sign up -----
   { group: "Sign in / sign up", key: "auth.shared.email", label: "“Email” field label" },
@@ -420,7 +419,6 @@ export const DEFAULT_TEXT: Record<string, string> = {
   "nav.performance": "Performance",
   "nav.tracker": "Progress",
   "nav.coaching": "Coaching",
-  "nav.agents": "Agents",
 
   // Auth — sign in / sign up
   "auth.shared.email": "Email",

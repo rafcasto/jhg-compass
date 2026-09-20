@@ -132,7 +132,7 @@ export interface AccessGrant {
   renewedAt?: number | null;   // last admin renewal (Admin → TOFU → Access renewals)
   renewedBy?: string | null;
   // Feature flags the admin switches per member (Admin → TOFU → Access renewals).
-  // careerOps: the member sees the Agents tab (career-ops on the Pi). Admin SDK writes only.
+  // careerOps: the member can switch to the CareerOps portal (career-ops on the Pi). Admin SDK writes only.
   features?: GrantFeatures | null;
   featuresUpdatedAt?: number | null;
   featuresUpdatedBy?: string | null;

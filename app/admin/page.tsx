@@ -87,7 +87,7 @@ export default function AdminPage() {
         {loc.tab === "cms" && <CmsTab sub={loc.sub as CmsSub} onSub={goSub} />}
         {loc.tab === "interactions" && <InteractionsTab sub={loc.sub as InteractionsSub} onSub={goSub} />}
         {loc.tab === "analytics" && <AnalyticsTab sub={loc.sub as AnalyticsSub} onSub={goSub} />}
-        {loc.tab === "agents" && <AgentsTab sub={loc.sub as AgentsSub} onSub={goSub} />}
+        {loc.tab === "careerops" && <AgentsTab sub={loc.sub as AgentsSub} onSub={goSub} />}
       </main>
     </div>
   );

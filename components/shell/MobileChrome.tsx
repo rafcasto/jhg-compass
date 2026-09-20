@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { LogOut, Signal, Wifi, BatteryFull, type LucideProps } from "lucide-react";
@@ -21,14 +21,16 @@ export interface TabItem {
 }
 
 export function MobileHeader({
-  onSignOut, signingOut = false, position = "sticky",
-}: { onSignOut?: () => void; signingOut?: boolean; position?: "sticky" | "static" }) {
+  onSignOut, signingOut = false, position = "sticky", brand,
+}: { onSignOut?: () => void; signingOut?: boolean; position?: "sticky" | "static"; brand?: ReactNode }) {
   return (
     <header className={`${position === "sticky" ? "sticky top-0 z-40" : ""} flex items-center justify-between h-14 px-4 bg-white border-b border-jh-line`}>
-      <div className="flex items-center gap-2">
-        <Image src="/assets/logo-hand.png" alt="JobHackers" width={26} height={26} />
-        <span className="font-display font-bold text-jh-ink text-sm">Compass</span>
-      </div>
+      {brand ?? (
+        <div className="flex items-center gap-2">
+          <Image src="/assets/logo-hand.png" alt="JobHackers" width={26} height={26} />
+          <span className="font-display font-bold text-jh-ink text-sm">Compass</span>
+        </div>
+      )}
       <button type="button" onClick={onSignOut} disabled={signingOut || !onSignOut} tabIndex={onSignOut ? undefined : -1}
         className="flex items-center gap-1.5 min-h-[44px] px-1 font-display font-semibold text-sm text-jh-mute hover:text-jh-red transition-colors duration-200 ease-out disabled:opacity-50">
         <LogOut className="h-5 w-5" strokeWidth={1.5} aria-hidden /> {signingOut ? "Signing out…" : "Sign out"}

@@ -19,7 +19,7 @@ users/{uid}                      profile: { email, firstName, lastName, archetyp
 accessGrants/{uid}               { email, plan, durationDays, source, status, redeemBy,
                                    startsAt, expiresAt, renewedAt?, renewedBy?, webhookPayload, createdAt, updatedAt,
                                    features?: { careerOps }, featuresUpdatedAt?, featuresUpdatedBy? }
-                                 // features.careerOps: the member sees the Agents tab (Admin → TOFU → Access
+                                 // features.careerOps: the member can switch to the CareerOps portal (Admin → TOFU → Access
                                  // renewals → Agents). Admin SDK writes only; owner reads it via useAccess().
                                  // status: pending | active | expired | revoked. Admin SDK writes only.
                                  // Stored status only flips to expired on the member's next login (syncGrant);
@@ -68,7 +68,7 @@ trainingModels/{tag}             { tag, agent, source: finetune|import|ollama, s
                                  // The worker's built-in prompts/settings, published on boot ("Load worker default").
 
 users/{uid}/careerOps/setup      { cvMarkdown, profileYaml, notes?, portals?{companies[],positive[],negative[]}, portalsYaml?, updatedAt }
-                                 // Agents → Setup: owner-writable. profileYaml is generated from Profile + Goal
+                                 // CareerOps → Setup: owner-writable. profileYaml is generated from Profile + Goal
                                  // (lib/careerops/profile-yaml.ts). The Pi worker copies both into the member's
                                  // career-ops root before every job.
 users/{uid}/careerOpsReports/{jobId}
@@ -81,6 +81,14 @@ users/{uid}/careerOpsReports/{jobId}
 users/{uid}/careerOpsPipeline/{id}
                                  { url, company, title, location, status: pending|evaluated|dismissed, foundAt,
                                    lastSeenAt, reportJobId?, score? }   // id = sha1(url)[0:20]; Scout-written, owner triages
+users/{uid}/careerOpsNotes/{jobId}
+                                 { kind: deep|contacto|apply|interview_prep|followup|training|project|patterns, title,
+                                   company?, role?, reportJobId?, opportunityId?, markdown, data?{…}, sources?[{title,url}],
+                                   agent, model, via: n8n|ollama|claude, durationMs, usage?, createdAt }
+                                 // Every non-report agent output of the CareerOps portal. Worker-written (Admin SDK),
+                                 // owner reads live. data carries the structured part: contacto.dm, apply.answers[],
+                                 // followup.body, patterns.stats.
+users/{uid}/careerOps/followup   { days{ <stageId>: number }, updatedAt }   // Tracking → followup cadence rules, owner-writable
 users/{uid}/careerOpsDocs/{jobId}
                                  { kind: cv|cover, reportJobId, company, role, file, storage: drive|bucket|inline,
                                    driveFileId?, driveLink?, storagePath?, url?, size, pageCount, template?, words?,

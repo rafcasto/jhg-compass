@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  KEYS, dayKey, makeJobId, workerOnline, isMemberJobType, isAdminJobType, isTerminal, WORKER_STALE_MS, AGENT_KEYS,
+  KEYS, dayKey, makeJobId, workerOnline, isMemberJobType, isAdminJobType, isTerminal, WORKER_STALE_MS, AGENT_KEYS, MEMBER_JOB_TYPES, JOB_AGENT,
 } from "@/lib/careerops/keys";
 
 describe("career-ops redis contract", () => {
@@ -31,7 +31,11 @@ describe("career-ops redis contract", () => {
     expect(isTerminal("done") && isTerminal("failed") && isTerminal("cancelled")).toBe(true);
     expect(isTerminal("running")).toBe(false);
   });
-  it("names the five agents", () => {
-    expect([...AGENT_KEYS]).toEqual(["scout", "extractor", "evaluator", "tailor", "writer"]);
+  it("names the six agents", () => {
+    expect([...AGENT_KEYS]).toEqual(["scout", "extractor", "evaluator", "tailor", "writer", "researcher"]);
+  });
+  it("routes every member job to an agent", () => {
+    for (const t of MEMBER_JOB_TYPES) expect(AGENT_KEYS).toContain(JOB_AGENT[t]);
+    expect(JOB_AGENT.deep).toBe("researcher");
   });
 });

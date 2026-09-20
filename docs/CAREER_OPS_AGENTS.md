@@ -1,6 +1,19 @@
 # Career-Ops Agents in JobHacker Compass — Design
 
-Status: **proposal** (2026-09-19). Nothing here is built yet.
+Status: built through phase 4; superseded on the member side by the **CareerOps portal** (2026-09-20).
+
+> **2026-09-20 — CareerOps portal.** The member-facing `/agents` tab is gone. career-ops now lives in its
+> own portal at `/careerops`, reached by clicking the logo section (Compass ⇄ CareerOps) — visible only to
+> members the admin has switched on in Admin → TOFU → Access renewals (same `features.careerOps` flag) and
+> to admins. Four sections mirror the CLI: **Sourcing** (scan · pipeline · deep), **Scoring** (oferta ·
+> ofertas · batch · training · project), **Tailoring** (contacto · pdf · apply), **Tracking** (tracker ·
+> interview-prep · followup · patterns). Admin tab 5 is renamed **CareerOps** (`#careerops/…`; `#agents/…`
+> still resolves). New member job types: `deep`, `advise`, `contacto`, `apply`, `interview_prep`,
+> `followup`, `patterns`; new agent **Researcher** (deep + contacto; Claude + web search when the Pi has an
+> Anthropic key, local model otherwise). Outputs land in `users/{uid}/careerOpsNotes/{jobId}`. The
+> `pipeline` tool queues `evaluate` jobs with `autoPipeline: true`: report → pending card on the Progress
+> board → tailored CV when the score clears 4.0. Code: `lib/careerops/portal-nav.ts`,
+> `components/careerops/**`, `app/(careerops)/**`, `careerops-worker/jobs/{deep,advise,contacto,apply,interview_prep,followup,patterns}.js`.
 
 Goal: give a selected group of Compass members a GUI over
 [career-ops](https://github.com/career-ops-hq/career-ops) (scan → evaluate A–G →
