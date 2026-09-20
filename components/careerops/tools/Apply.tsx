@@ -35,22 +35,25 @@ export default function Apply({ ctx }: ToolProps) {
   const fillJob = useNoteJob(ctx.notes, "apply_fill");
   const shown = job.note ?? open;
   const report = ctx.reports.find((r) => r.jobId === reportJobId);
+  // The answers being shown may belong to a report other than the one in the picker (opened from history, or after a reload).
+  const activeReportId = shown?.reportJobId || reportJobId;
+  const activeReport = ctx.reports.find((r) => r.jobId === activeReportId) ?? report;
   const docs = useMemo(() => ctx.docs.filter((d) => d.reportJobId === reportJobId), [ctx.docs, reportJobId]);
   const cv = docs.find((d) => d.kind === "cv"); const cover = docs.find((d) => d.kind === "cover");
   const answers = (Array.isArray(shown?.data?.answers) ? (shown!.data!.answers as Answer[]) : []);
-  const latestForm = useMemo(() => formJob.note ?? ctx.notes.filter((n) => n.kind === "apply_form" && n.reportJobId === reportJobId).sort((a, b) => b.createdAt - a.createdAt)[0] ?? null, [formJob.note, ctx.notes, reportJobId]);
+  const latestForm = useMemo(() => formJob.note ?? ctx.notes.filter((n) => n.kind === "apply_form" && n.reportJobId === activeReportId).sort((a, b) => b.createdAt - a.createdAt)[0] ?? null, [formJob.note, ctx.notes, activeReportId]);
   const form = latestForm?.data as FormData | undefined;
   const { data: vault } = useLiveCollection<VaultAccount>(ctx.uid, paths.careerOpsVault);
   const gateHost = form?.needsAccount ? (form.host ?? "") : "";
   const gateAccount = gateHost ? vault.find((v) => v.id === gateHost) ?? null : null;
   // "Fill it in the portal" needs a saved draft on the portal side, i.e. a candidate account in the vault.
-  const fillHost = form?.host ?? (report?.url ? new URL(report.url).hostname.toLowerCase() : "");
+  const fillHost = form?.host ?? (activeReport?.url ? new URL(activeReport.url).hostname.toLowerCase() : "");
   const fillAccount = fillHost ? vault.find((v) => v.id === fillHost) ?? null : null;
   const fillRunning = !!fillJob.jobId && !fillJob.note && !fillJob.failed;
   const fillResult = fillJob.note?.data as { possible: boolean; outcome?: string; finalUrl?: string; filled: string[]; skipped: string[]; atsHint?: string | null } | undefined;
   async function fillInPortal() {
     const list = answers.map((a, i) => ({ question: a.question, answer: (edits[i] ?? a.answer).trim() })).filter((a) => a.answer);
-    await fillJob.run({ type: "apply_fill", reportJobId: shown?.reportJobId ?? reportJobId, answers: list, ...(applyUrl.trim() ? { applyUrl: applyUrl.trim() } : {}), ...(cv?.file ? { cvFile: cv.file } : {}) });
+    await fillJob.run({ type: "apply_fill", reportJobId: activeReportId, answers: list, ...(applyUrl.trim() ? { applyUrl: applyUrl.trim() } : {}), ...(cv?.file ? { cvFile: cv.file } : {}) });
   }
   useEffect(() => { setEdits({}); setRemembered({}); }, [shown?.id]);
   // A freshly read form fills the questions box (only when it is empty, so a paste is never clobbered).
@@ -187,7 +190,7 @@ export default function Apply({ ctx }: ToolProps) {
           </ol>
         </section>
       )}
-      <NoteHistory notes={ctx.notes} kind="apply" onOpen={(n) => { job.reset(); setOpen(n); }} current={shown?.id} />
+      <NoteHistory notes={ctx.notes} kind="apply" onOpen={(n) => { job.reset(); setOpen(n); if (n.reportJobId) setReportJobId(n.reportJobId); }} current={shown?.id} />
     </div>
   );
 }
