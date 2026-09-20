@@ -153,7 +153,11 @@ export const scoreVerdict = (s: number | null) =>
 // ---- phase 3: Scout pipeline, Tailor / Writer documents ----
 
 // users/{uid}/careerOps/setup also carries the Scout config.
-export interface CareerOpsPortals { companies: { name: string; careersUrl: string; enabled?: boolean }[]; positive: string[]; negative: string[] }
+// One watched company. careersUrl should be the page that LISTS the jobs (the ATS board when there is one),
+// not the marketing "life at …" page. provider / apiUrl map 1:1 to career-ops portals.yml `provider:` / `api:`
+// — needed for branded ATS domains career-ops cannot auto-detect (SuccessFactors, Phenom, …).
+export interface PortalCompany { name: string; careersUrl: string; enabled?: boolean; provider?: string; apiUrl?: string }
+export interface CareerOpsPortals { companies: PortalCompany[]; positive: string[]; negative: string[] }
 export interface CareerOpsSetupV2 extends CareerOpsSetup { portals?: CareerOpsPortals; portalsYaml?: string }
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last

@@ -1,7 +1,7 @@
 "use client";
 
-import { Plus, Trash2, Globe, Rss, AlertTriangle } from "lucide-react";
-import { MAX_COMPANIES } from "@/lib/careerops/portals-yaml";
+import { Plus, Trash2, Globe, Rss, AlertTriangle, Settings2 } from "lucide-react";
+import { MAX_COMPANIES, PROVIDER_ID } from "@/lib/careerops/portals-yaml";
 import type { CareerOpsPortals, PortalStatus } from "@/lib/careerops/types";
 
 // Agents → Setup → Portals: the companies the Scout watches and the title
@@ -16,7 +16,7 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
     <div className="space-y-4">
       <div>
         <p className="label">Companies to watch <span className="font-normal text-jh-mute">({value.companies.length}/{MAX_COMPANIES})</span></p>
-        <p className="text-xs text-jh-mute mb-2">Paste the company&apos;s careers page. If it runs on a known job board (Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Workday, Eightfold and 80+ others) the Scout reads the board directly; otherwise the Pi opens the page in a browser and pulls the job list from it — slower and best-effort, but it works for most bank and corporate career sites. After a scan each row shows what happened.</p>
+        <p className="text-xs text-jh-mute mb-2">Paste the page that <strong>lists the jobs</strong> — usually the &ldquo;search jobs&rdquo; / &ldquo;current vacancies&rdquo; link on the careers site, not the &ldquo;life at …&rdquo; page. If it runs on a known job board (Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Workday, Cornerstone, Eightfold and 80+ others) the Scout reads the board directly; otherwise the Pi opens the page in a browser and pulls the job list from it — slower and best-effort. After a scan each row shows what happened. Branded ATS sites (SuccessFactors, Phenom, Avature…) need the provider set under <em>Advanced</em>.</p>
         <ul className="space-y-2">
           {value.companies.map((c, i) => {
             const st = statusFor(c);
@@ -27,6 +27,15 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
                   <input aria-label={`Company ${i + 1} careers URL`} className="field text-sm font-mono" placeholder="https://jobs.lever.co/xero" value={c.careersUrl} onChange={(e) => setCo(i, { careersUrl: e.target.value })} />
                   <button type="button" onClick={() => set({ companies: value.companies.filter((_, j) => j !== i) })} className="btn-ghost text-jh-red p-2" aria-label={`Remove ${c.name || "company"}`}><Trash2 className="h-4 w-4" /></button>
                 </div>
+                <details className="pl-1">
+                  <summary className="cursor-pointer text-xs text-jh-mute flex items-center gap-1"><Settings2 className="h-3.5 w-3.5" /> Advanced{c.provider || c.apiUrl ? ` — ${[c.provider, c.apiUrl ? "API URL" : ""].filter(Boolean).join(", ")}` : ""}</summary>
+                  <div className="grid sm:grid-cols-2 gap-2 mt-1.5">
+                    <label className="block"><span className="text-xs text-jh-mute">Board provider <span className="text-jh-mute-2">(career-ops id, e.g. successfactors, phenom, smartrecruiters)</span></span>
+                      <input aria-label={`Company ${i + 1} provider`} className={`field text-sm font-mono ${c.provider && !PROVIDER_ID.test(c.provider.trim().toLowerCase()) ? "border-jh-red" : ""}`} placeholder="auto-detect" value={c.provider ?? ""} onChange={(e) => setCo(i, { provider: e.target.value })} /></label>
+                    <label className="block"><span className="text-xs text-jh-mute">API / board URL <span className="text-jh-mute-2">(when the board lives on a different host than the careers page)</span></span>
+                      <input aria-label={`Company ${i + 1} API URL`} className="field text-sm font-mono" placeholder="https://jobs.example.com" value={c.apiUrl ?? ""} onChange={(e) => setCo(i, { apiUrl: e.target.value })} /></label>
+                  </div>
+                </details>
                 {st && <PortalBadge st={st} />}
               </li>
             );

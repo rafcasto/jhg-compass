@@ -8,6 +8,15 @@ describe("portals.yml from the Setup screen", () => {
     expect(y).toContain('  positive:\n    - "Product Owner"');
     expect(y).not.toContain('name: " "');
   });
+  it("emits provider and api for branded ATS boards, dropping junk provider ids", () => {
+    const y = buildPortalsYaml({ companies: [
+      { name: "ANZ", careersUrl: "https://careers.anz.com", provider: " SuccessFactors ", apiUrl: "careers.anz.com" },
+      { name: "ASB", careersUrl: "https://careers.asbgroup.co.nz/search", provider: "rm -rf /", apiUrl: "  " },
+    ], positive: [], negative: [] });
+    expect(y).toContain('  - name: "ANZ"\n    careers_url: "https://careers.anz.com/"\n    provider: "successfactors"\n    api: "https://careers.anz.com/"\n    enabled: true');
+    expect(y).toContain('  - name: "ASB"\n    careers_url: "https://careers.asbgroup.co.nz/search"\n    enabled: true');
+    expect(y).not.toContain("rm -rf");
+  });
   it("caps the company list and tolerates empties", () => {
     const many = Array.from({ length: 40 }, (_, i) => ({ name: `Co${i}`, careersUrl: `https://co${i}.com/jobs` }));
     expect((buildPortalsYaml({ companies: many, positive: [], negative: [] }).match(/- name:/g) ?? []).length).toBe(MAX_COMPANIES);

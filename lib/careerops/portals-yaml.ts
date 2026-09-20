@@ -1,7 +1,11 @@
 // Builds the member's career-ops portals.yml (what the Scout scans) from a
 // simple list of companies + title keywords. Pure — tested.
-export interface PortalCompany { name: string; careersUrl: string; enabled?: boolean }
+import type { PortalCompany } from "./types";
+export type { PortalCompany };
 export interface PortalsInput { companies: PortalCompany[]; positive: string[]; negative: string[] }
+// career-ops provider ids are file names in providers/*.mjs: lower-case, digits, dashes.
+export const PROVIDER_ID = /^[a-z0-9][a-z0-9-]{0,40}$/;
+export const normalizeProvider = (raw: unknown): string | null => { const s = String(raw ?? "").trim().toLowerCase(); return PROVIDER_ID.test(s) ? s : null; };
 
 const q = (v: unknown) => JSON.stringify(String(v ?? "").trim());
 export const MAX_COMPANIES = 25;
@@ -15,8 +19,8 @@ export function normalizeUrl(raw: string): string | null {
 
 export function buildPortalsYaml({ companies, positive, negative }: PortalsInput): string {
   const cos = companies
-    .map((c) => ({ name: c.name.trim(), url: normalizeUrl(c.careersUrl), enabled: c.enabled !== false }))
-    .filter((c): c is { name: string; url: string; enabled: boolean } => !!c.name && !!c.url)
+    .map((c) => ({ name: c.name.trim(), url: normalizeUrl(c.careersUrl), enabled: c.enabled !== false, provider: normalizeProvider(c.provider), api: c.apiUrl?.trim() ? normalizeUrl(c.apiUrl) : null }))
+    .filter((c): c is { name: string; url: string; enabled: boolean; provider: string | null; api: string | null } => !!c.name && !!c.url)
     .slice(0, MAX_COMPANIES);
   const pos = positive.map((k) => k.trim()).filter(Boolean);
   const neg = negative.map((k) => k.trim()).filter(Boolean);
@@ -28,7 +32,7 @@ export function buildPortalsYaml({ companies, positive, negative }: PortalsInput
     "  negative:",
     ...(neg.length ? neg.map((k) => `    - ${q(k)}`) : ["    []"]),
     "tracked_companies:",
-    ...(cos.length ? cos.flatMap((c) => [`  - name: ${q(c.name)}`, `    careers_url: ${q(c.url)}`, `    enabled: ${c.enabled}`]) : ["  []"]),
+    ...(cos.length ? cos.flatMap((c) => [`  - name: ${q(c.name)}`, `    careers_url: ${q(c.url)}`, ...(c.provider ? [`    provider: ${q(c.provider)}`] : []), ...(c.api ? [`    api: ${q(c.api)}`] : []), `    enabled: ${c.enabled}`]) : ["  []"]),
   ];
   return lines.join("\n") + "\n";
 }
