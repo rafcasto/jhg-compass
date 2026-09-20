@@ -25,6 +25,7 @@ export const paths = {
   careerOpsPipeline: (uid: string) => collection(db, "users", uid, "careerOpsPipeline"),
   careerOpsDocs: (uid: string) => collection(db, "users", uid, "careerOpsDocs"),
   careerOpsNotes: (uid: string) => collection(db, "users", uid, "careerOpsNotes"),
+  careerOpsAnswers: (uid: string) => collection(db, "users", uid, "careerOpsAnswers"),
   careerOpsFollowup: (uid: string) => doc(db, "users", uid, "careerOps", "followup"),
   careerOpsPortalsStatus: (uid: string) => doc(db, "users", uid, "careerOps", "portalsStatus"),
   grant: (uid: string) => doc(db, "accessGrants", uid),

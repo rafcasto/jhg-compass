@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
 //   { type: "pdf" | "cover", reportJobId, template?, angle? }
 //   { type: "deep", company, website?, reportJobId? }                 { type: "advise", kind: training|project, title, description, … }
 //   { type: "contacto", reportJobId, target, personName?, personRole? }
-//   { type: "apply", reportJobId, questions[] }                       { type: "interview_prep", reportJobId, audience, extra? }
+//   { type: "apply", reportJobId, questions[] }                       { type: "apply_form", reportJobId, applyUrl? }
+//   { type: "interview_prep", reportJobId, audience, extra? }
 //   { type: "followup", opportunityId, company, role, stage, daysSince, channel, lastNote?, reportJobId? }
 //   { type: "patterns" }
 // Every LLM job shares the daily quota (dailyEvalQuota); scan is zero-token and capped
@@ -76,6 +77,12 @@ export async function POST(req: NextRequest) {
     const questions = Array.isArray(body.questions) ? body.questions.map((q: unknown) => str(q, 600)).filter(Boolean).slice(0, 25) : [];
     if (!questions.length) return NextResponse.json({ ok: false, error: "paste at least one question" }, { status: 400 });
     payload = { reportJobId, questions };
+  } else if (type === "apply_form") {
+    const reportJobId = str(body.reportJobId, 40);
+    if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });
+    const applyUrl = str(body.applyUrl, 600);
+    if (applyUrl) { try { const u = new URL(applyUrl); if (!/^https?:$/.test(u.protocol)) throw 0; } catch { return NextResponse.json({ ok: false, error: "the form URL must be http(s)" }, { status: 400 }); } }
+    payload = { reportJobId, ...(applyUrl ? { applyUrl } : {}) };
   } else if (type === "interview_prep") {
     const reportJobId = str(body.reportJobId, 40);
     if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });

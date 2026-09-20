@@ -283,7 +283,7 @@ export const FINETUNE_BASES = ["unsloth/Qwen2.5-1.5B-Instruct", "unsloth/Llama-3
 // users/{uid}/careerOpsNotes/{jobId} — every non-report, non-PDF thing an agent produces:
 // a company deep-dive, an outreach DM, application answers, interview prep, a follow-up
 // draft, a training/project verdict, a patterns analysis. Worker-written, owner-readable.
-export type NoteKind = "deep" | "contacto" | "apply" | "interview_prep" | "followup" | "training" | "project" | "patterns";
+export type NoteKind = "deep" | "contacto" | "apply" | "apply_form" | "interview_prep" | "followup" | "training" | "project" | "patterns";
 export interface CareerOpsNote {
   id: string;
   jobId: string;
@@ -298,12 +298,12 @@ export interface CareerOpsNote {
   sources?: { title: string; url: string }[];   // web sources when the Researcher used search
   agent: AgentKey;
   model: string;
-  via: "n8n" | "ollama" | "claude" | "claude-cli" | "claude-api";
+  via: "n8n" | "ollama" | "claude" | "claude-cli" | "claude-api" | "bank" | "script";   // bank: every answer came from the answer bank · script: no model (form reader)
   durationMs: number;
   createdAt: number;
 }
 export const NOTE_KIND_LABELS: Record<NoteKind, string> = {
-  deep: "Company deep-dive", contacto: "Outreach", apply: "Application answers", interview_prep: "Interview prep",
+  deep: "Company deep-dive", contacto: "Outreach", apply: "Application answers", apply_form: "Application form", interview_prep: "Interview prep",
   followup: "Follow-up", training: "Training verdict", project: "Project verdict", patterns: "Patterns",
 };
 

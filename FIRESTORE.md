@@ -81,7 +81,8 @@ users/{uid}/careerOpsReports/{jobId}
 users/{uid}/careerOpsPipeline/{id}
                                  { url, company, title, location, status: pending|evaluated|dismissed, foundAt,
                                    lastSeenAt, reportJobId?, score? }   // id = sha1(url)[0:20]; Scout-written, owner triages
-users/{uid}/careerOpsNotes/{jobId}
+users/{uid}/careerOpsAnswers/{id}` — answer bank: `{ question, key, answer, source: you|standard, standardKey?, company?, usedAt[] }` (owner-written from Apply / Setup → Standard answers; worker reads).
+`users/{uid}/careerOpsNotes/{jobId}
                                  { kind: deep|contacto|apply|interview_prep|followup|training|project|patterns, title,
                                    company?, role?, reportJobId?, opportunityId?, markdown, data?{…}, sources?[{title,url}],
                                    agent, model, via: n8n|ollama|claude, durationMs, usage?, createdAt }

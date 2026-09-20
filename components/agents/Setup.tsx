@@ -9,6 +9,7 @@ import { buildProfileYaml } from "@/lib/careerops/profile-yaml";
 import { buildPortalsYaml, suggestKeywords, DEFAULT_NEGATIVE } from "@/lib/careerops/portals-yaml";
 import type { CareerOpsPortals, CareerOpsSetupV2, PortalsStatusDoc } from "@/lib/careerops/types";
 import Portals from "./Portals";
+import StandardAnswers from "./StandardAnswers";
 import type { Profile } from "@/lib/types";
 
 // Agents → Setup. The CV is the one thing the Evaluator cannot work without;
@@ -84,6 +85,12 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
         </label>
         <button type="button" onClick={() => setShowYaml((v) => !v)} className="btn-ghost text-xs">{showYaml ? "Hide" : "Show"} generated profile.yml</button>
         {showYaml && <pre className="text-xs bg-jh-mist rounded-md p-3 overflow-auto max-h-64">{yaml}</pre>}
+      </section>
+
+      <section className="card p-5 space-y-3">
+        <h2 className="text-lg">Standard answers</h2>
+        <p className="text-jh-mute text-sm max-w-2xl">The questions every application form asks and the agents must never guess. Answer once; the Apply screen fills them in on every form and tells you which answer it reused. Anything you type into an answer box on the Apply screen is remembered the same way.</p>
+        {uid && <StandardAnswers uid={uid} />}
       </section>
 
       <section className="card p-5 space-y-3">
