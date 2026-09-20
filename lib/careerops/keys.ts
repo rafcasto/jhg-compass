@@ -29,7 +29,7 @@ export const WORKER_STALE_MS = 90_000;
 // ---- job types ----
 
 // Members queue the first group; only admins may queue the second.
-export const MEMBER_JOB_TYPES = ["evaluate", "scan", "pdf", "cover", "sync_setup", "deep", "advise", "contacto", "apply", "apply_form", "interview_prep", "followup", "patterns"] as const;
+export const MEMBER_JOB_TYPES = ["evaluate", "scan", "pdf", "cover", "sync_setup", "deep", "advise", "contacto", "apply", "apply_form", "apply_fill", "interview_prep", "followup", "patterns"] as const;
 export const ADMIN_JOB_TYPES = ["import_model", "build_dataset", "generate_gold", "finetune", "exam", "promote"] as const;
 export type MemberJobType = (typeof MEMBER_JOB_TYPES)[number];
 export type AdminJobType = (typeof ADMIN_JOB_TYPES)[number];
@@ -46,6 +46,7 @@ export const JOB_TYPE_LABELS: Record<CareerOpsJobType, string> = {
   contacto: "Outreach contact + DM",
   apply: "Application answers",
   apply_form: "Read application form",
+  apply_fill: "Fill application in the portal",
   interview_prep: "Interview prep",
   followup: "Follow-up draft",
   patterns: "Rejection patterns",
@@ -86,7 +87,7 @@ export const AGENT_LABELS: Record<AgentKey, { label: string; mode: string; help:
 export const JOB_AGENT: Record<MemberJobType, AgentKey> = {
   evaluate: "evaluator", scan: "scout", pdf: "tailor", cover: "writer", sync_setup: "extractor",
   deep: "researcher", contacto: "researcher", advise: "evaluator", interview_prep: "evaluator", patterns: "evaluator",
-  apply: "writer", followup: "writer", apply_form: "extractor",
+  apply: "writer", followup: "writer", apply_form: "extractor", apply_fill: "extractor",
 };
 export const LLM_AGENTS = AGENT_KEYS.filter((k) => AGENT_LABELS[k].kind === "llm");
 

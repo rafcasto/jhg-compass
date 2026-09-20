@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, FileText, PenLine, Download, AlertTriangle, ScanSearch, Recycle, Hand, UserRound } from "lucide-react";
+import { ClipboardList, FileText, PenLine, Download, AlertTriangle, ScanSearch, Recycle, Hand, UserRound, MousePointerClick, ExternalLink } from "lucide-react";
 import { doc, setDoc } from "firebase/firestore";
 import { postJson } from "@/components/admin/shared";
 import JobStatus from "@/components/agents/JobStatus";
@@ -32,6 +32,7 @@ export default function Apply({ ctx }: ToolProps) {
   const [remembered, setRemembered] = useState<Record<number, boolean>>({});
   const job = useNoteJob(ctx.notes, "apply");
   const formJob = useNoteJob(ctx.notes, "apply_form");
+  const fillJob = useNoteJob(ctx.notes, "apply_fill");
   const shown = job.note ?? open;
   const report = ctx.reports.find((r) => r.jobId === reportJobId);
   const docs = useMemo(() => ctx.docs.filter((d) => d.reportJobId === reportJobId), [ctx.docs, reportJobId]);
@@ -42,6 +43,15 @@ export default function Apply({ ctx }: ToolProps) {
   const { data: vault } = useLiveCollection<VaultAccount>(ctx.uid, paths.careerOpsVault);
   const gateHost = form?.needsAccount ? (form.host ?? "") : "";
   const gateAccount = gateHost ? vault.find((v) => v.id === gateHost) ?? null : null;
+  // "Fill it in the portal" needs a saved draft on the portal side, i.e. a candidate account in the vault.
+  const fillHost = form?.host ?? (report?.url ? new URL(report.url).hostname.toLowerCase() : "");
+  const fillAccount = fillHost ? vault.find((v) => v.id === fillHost) ?? null : null;
+  const fillRunning = !!fillJob.jobId && !fillJob.note && !fillJob.failed;
+  const fillResult = fillJob.note?.data as { possible: boolean; outcome?: string; finalUrl?: string; filled: string[]; skipped: string[]; atsHint?: string | null } | undefined;
+  async function fillInPortal() {
+    const list = answers.map((a, i) => ({ question: a.question, answer: (edits[i] ?? a.answer).trim() })).filter((a) => a.answer);
+    await fillJob.run({ type: "apply_fill", reportJobId: shown?.reportJobId ?? reportJobId, answers: list, ...(applyUrl.trim() ? { applyUrl: applyUrl.trim() } : {}), ...(cv?.file ? { cvFile: cv.file } : {}) });
+  }
   useEffect(() => { setEdits({}); setRemembered({}); }, [shown?.id]);
   // A freshly read form fills the questions box (only when it is empty, so a paste is never clobbered).
   useEffect(() => { if (formJob.note && form?.questions?.length && !questions.trim()) setQuestions(form.questions.map((q) => q.label).join("\n")); }, [formJob.note]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -142,6 +152,23 @@ export default function Apply({ ctx }: ToolProps) {
         <section className="card p-5 space-y-4">
           <header className="flex items-start justify-between gap-3 flex-wrap"><div><h3 className="font-display font-bold text-jh-ink">{shown.title}</h3><p className="text-xs text-jh-mute">{shown.model} · {new Date(shown.createdAt).toLocaleString()}{typeof shown.data?.reused === "number" ? ` · ${shown.data.reused as number} reused from your bank` : ""} · edit inline — edits are remembered for the next form</p></div><CopyButton text={answers.map((a, i) => `${a.question}\n${edits[i] ?? a.answer}`).join("\n\n")} label="Copy all" /></header>
           {answers.length === 0 && <div className="prose prose-sm max-w-none"><pre className="whitespace-pre-wrap">{shown.markdown}</pre></div>}
+          {answers.length > 0 && (
+            <div className="rounded-md bg-jh-mist p-3 space-y-2 text-sm">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button type="button" onClick={fillInPortal} disabled={fillJob.busy || fillRunning || !fillAccount} className="btn-primary text-xs px-3 py-2 disabled:opacity-60"><MousePointerClick className="h-4 w-4" /> {fillJob.busy ? "Queuing…" : fillRunning ? "Filling…" : "Fill it in the portal"}</button>
+                <span className="text-xs text-jh-mute">{fillAccount ? `The Pi signs in to ${fillHost} as ${fillAccount.email}, types these answers and your details into the form, attaches the tailored CV, and stops at Review — you press Submit.` : fillHost ? `Save your ${fillHost} account under Portal accounts (or at the gate above) and the Pi can type these into the portal for you.` : "Read the form first so Compass knows which portal to fill."}</span>
+                {fillJob.err && <p role="alert" className="text-xs text-jh-red">{fillJob.err}</p>}
+              </div>
+              {fillJob.status}
+              {fillResult && (
+                <div className="text-xs space-y-1">
+                  <p className={fillResult.possible ? "text-jh-ink" : "text-jh-red"}>{fillResult.possible ? fillResult.outcome : `${fillResult.atsHint ?? "This"} form keeps no draft without an account — copy the answers in.`}{fillResult.possible && fillResult.finalUrl && <> <a href={fillResult.finalUrl} target="_blank" rel="noreferrer" className="underline inline-flex items-center gap-1">open the portal <ExternalLink className="h-3 w-3" /></a></>}</p>
+                  {fillResult.filled?.length > 0 && <p className="text-jh-mute">Filled: {fillResult.filled.join(" · ")}</p>}
+                  {fillResult.skipped?.length > 0 && <p className="text-jh-red">Left for you: {fillResult.skipped.join(" · ")}</p>}
+                </div>
+              )}
+            </div>
+          )}
           <ol className="space-y-4">
             {answers.map((a, i) => {
               const val = edits[i] ?? a.answer;

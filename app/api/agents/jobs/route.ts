@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
 //   { type: "pdf" | "cover", reportJobId, template?, angle? }
 //   { type: "deep", company, website?, reportJobId? }                 { type: "advise", kind: training|project, title, description, … }
 //   { type: "contacto", reportJobId, target, personName?, personRole? }
-//   { type: "apply", reportJobId, questions[] }                       { type: "apply_form", reportJobId, applyUrl? }
+//   { type: "apply", reportJobId, questions[] }                       { type: "apply_form", reportJobId, applyUrl?, cvFile? }
+//   { type: "apply_fill", reportJobId, answers[{question,answer}], applyUrl?, cvFile? }
 //   { type: "interview_prep", reportJobId, audience, extra? }
 //   { type: "followup", opportunityId, company, role, stage, daysSince, channel, lastNote?, reportJobId? }
 //   { type: "patterns" }
@@ -84,6 +85,15 @@ export async function POST(req: NextRequest) {
     if (applyUrl) { try { const u = new URL(applyUrl); if (!/^https?:$/.test(u.protocol)) throw 0; } catch { return NextResponse.json({ ok: false, error: "the form URL must be http(s)" }, { status: 400 }); } }
     const cvFile = str(body.cvFile, 200);
     payload = { reportJobId, ...(applyUrl ? { applyUrl } : {}), ...(/^[\w.-]+\.pdf$/.test(cvFile) ? { cvFile } : {}) };
+  } else if (type === "apply_fill") {
+    const reportJobId = str(body.reportJobId, 40);
+    if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });
+    const answers = Array.isArray(body.answers) ? body.answers.map((a: any) => ({ question: str(a?.question, 600), answer: str(a?.answer, 4000) })).filter((a: { question: string; answer: string }) => a.question && a.answer).slice(0, 40) : [];
+    if (!answers.length) return NextResponse.json({ ok: false, error: "answer the questions first" }, { status: 400 });
+    const applyUrl = str(body.applyUrl, 600);
+    if (applyUrl) { try { const u = new URL(applyUrl); if (!/^https?:$/.test(u.protocol)) throw 0; } catch { return NextResponse.json({ ok: false, error: "the form URL must be http(s)" }, { status: 400 }); } }
+    const cvFile = str(body.cvFile, 200);
+    payload = { reportJobId, answers, ...(applyUrl ? { applyUrl } : {}), ...(/^[\w.-]+\.pdf$/.test(cvFile) ? { cvFile } : {}) };
   } else if (type === "interview_prep") {
     const reportJobId = str(body.reportJobId, 40);
     if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });
