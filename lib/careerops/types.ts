@@ -163,7 +163,10 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup { portals?: CareerOpsPo
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last
 // scan. Worker-written. method: "board" = career-ops read the ATS/job-board API directly;
 // "page" = the Pi's browser scraped the careers page (slower, best effort); "none" = nothing worked.
-export interface PortalStatus { name: string; careersUrl: string; method: "board" | "page" | "none"; provider?: string | null; found: number; matched: number; error?: string | null; ms?: number; sample?: string[] }   // sample: titles seen that did NOT match the keywords
+// suggested: the job board the Scout found behind a marketing careers page (Workday link, branded
+// SuccessFactors host, …). It was already used for that scan; "Use this" copies it onto the row so it sticks.
+export interface PortalSuggestion { careersUrl: string; provider: string | null; apiUrl: string | null; live: number | null; via: "link" | "fingerprint" }
+export interface PortalStatus { name: string; careersUrl: string; method: "board" | "page" | "none"; provider?: string | null; found: number; matched: number; error?: string | null; hint?: string | null; ms?: number; sample?: string[]; suggested?: PortalSuggestion }   // sample: titles seen that did NOT match the keywords
 export interface PortalsStatusDoc { at: number; jobId: string; companies: PortalStatus[] }
 
 // users/{uid}/careerOpsPipeline/{id} — postings the Scout found (worker-written, owner-updatable).

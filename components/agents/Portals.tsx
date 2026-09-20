@@ -1,8 +1,8 @@
 "use client";
 
-import { Plus, Trash2, Globe, Rss, AlertTriangle, Settings2 } from "lucide-react";
+import { Plus, Trash2, Globe, Rss, AlertTriangle, Settings2, Sparkles } from "lucide-react";
 import { MAX_COMPANIES, PROVIDER_ID } from "@/lib/careerops/portals-yaml";
-import type { CareerOpsPortals, PortalStatus } from "@/lib/careerops/types";
+import type { CareerOpsPortals, PortalStatus, PortalSuggestion } from "@/lib/careerops/types";
 
 // Agents → Setup → Portals: the companies the Scout watches and the title
 // keywords that decide which postings are worth listing.
@@ -16,7 +16,7 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
     <div className="space-y-4">
       <div>
         <p className="label">Companies to watch <span className="font-normal text-jh-mute">({value.companies.length}/{MAX_COMPANIES})</span></p>
-        <p className="text-xs text-jh-mute mb-2">Paste the page that <strong>lists the jobs</strong> — usually the &ldquo;search jobs&rdquo; / &ldquo;current vacancies&rdquo; link on the careers site, not the &ldquo;life at …&rdquo; page. If it runs on a known job board (Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Workday, Cornerstone, Eightfold and 80+ others) the Scout reads the board directly; otherwise the Pi opens the page in a browser and pulls the job list from it — slower and best-effort. After a scan each row shows what happened. Branded ATS sites (SuccessFactors, Phenom, Avature…) need the provider set under <em>Advanced</em>.</p>
+        <p className="text-xs text-jh-mute mb-2">Paste the page that <strong>lists the jobs</strong> — usually the &ldquo;search jobs&rdquo; / &ldquo;current vacancies&rdquo; link on the careers site, not the &ldquo;life at …&rdquo; page. If it runs on a known job board (Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Workday, Cornerstone, Eightfold and 80+ others) the Scout reads the board directly; otherwise the Pi opens the page in a browser and pulls the job list from it — slower and best-effort. After a scan each row shows what happened — and when a careers page hides its job board, the Scout finds it and offers it here with one click. Branded ATS sites (SuccessFactors, Phenom, Avature…) can also be set by hand under <em>Advanced</em>.</p>
         <ul className="space-y-2">
           {value.companies.map((c, i) => {
             const st = statusFor(c);
@@ -36,7 +36,7 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
                       <input aria-label={`Company ${i + 1} API URL`} className="field text-sm font-mono" placeholder="https://jobs.example.com" value={c.apiUrl ?? ""} onChange={(e) => setCo(i, { apiUrl: e.target.value })} /></label>
                   </div>
                 </details>
-                {st && <PortalBadge st={st} />}
+                {st && <PortalBadge st={st} onUse={st.suggested && !sameAs(c, st.suggested) ? (s) => setCo(i, { careersUrl: s.careersUrl, provider: s.provider ?? "", apiUrl: s.apiUrl ?? "" }) : undefined} />}
               </li>
             );
           })}
@@ -68,8 +68,12 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
   );
 }
 
+const norm = (u: string | null | undefined) => (u ?? "").trim().replace(/\/$/, "").toLowerCase();
+const sameAs = (c: CareerOpsPortals["companies"][number], s: PortalSuggestion) => norm(c.careersUrl) === norm(s.careersUrl) && norm(c.provider) === norm(s.provider) && norm(c.apiUrl) === norm(s.apiUrl);
+
 // Last-scan outcome for one company: how it was read, how many postings, how many matched the title filter.
-export function PortalBadge({ st }: { st: PortalStatus }) {
+// onUse: present when the Scout found a board this row does not yet point at — "Use this" copies it in.
+export function PortalBadge({ st, onUse }: { st: PortalStatus; onUse?: (s: PortalSuggestion) => void }) {
   if (st.method === "none") return (
     <p className="text-xs text-jh-red flex items-center gap-1.5 pl-1"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Last scan: nothing readable{st.error ? ` — ${st.error}` : ""}. Try the company&apos;s job-search page (the one that lists roles) or its board URL.</p>
   );
@@ -79,8 +83,14 @@ export function PortalBadge({ st }: { st: PortalStatus }) {
     <div className="text-xs text-jh-mute pl-1 space-y-0.5">
       <p className="flex items-center gap-1.5">
         <Icon className={`h-3.5 w-3.5 shrink-0 ${st.found > 0 ? "text-rb-green-dark" : "text-jh-mute"}`} />
-        Last scan: {st.method === "board" ? `job board${st.provider ? ` (${st.provider})` : ""}` : "careers page via browser"} · {st.found} posting{st.found === 1 ? "" : "s"} · <span className={st.matched === 0 && st.found > 0 ? "text-jh-red" : ""}>{st.matched} matched your keywords</span>{st.error ? ` · ${st.error}` : ""}
+        Last scan: {st.method === "board" ? `job board${st.provider ? ` (${st.provider}${st.suggested ? ", found by the Scout" : ""})` : ""}` : "careers page via browser"} · {st.found} posting{st.found === 1 ? "" : "s"} · <span className={st.matched === 0 && st.found > 0 ? "text-jh-red" : ""}>{st.matched} matched your keywords</span>{st.error ? ` · ${st.error}` : ""}{st.hint ? ` · ${st.hint}` : ""}
       </p>
+      {st.suggested && onUse && (
+        <p className="flex items-center gap-2 flex-wrap text-jh-ink">
+          <Sparkles className="h-3.5 w-3.5 shrink-0 text-jh-red" /> The Scout found this company&apos;s job board: <code className="font-mono">{st.suggested.provider}</code> at <code className="font-mono break-all">{st.suggested.careersUrl.replace(/^https?:\/\//, "")}</code>{st.suggested.live != null ? ` (${st.suggested.live} posting${st.suggested.live === 1 ? "" : "s"})` : ""}.
+          <button type="button" onClick={() => onUse(st.suggested!)} className="btn-secondary text-xs px-2.5 py-1">Use this</button>
+        </p>
+      )}
       {nearMiss && <details><summary className="cursor-pointer">None matched — titles seen there (tune your keywords)</summary><p className="mt-1 pl-3 text-jh-mute-2">{st.sample!.join(" · ")}</p></details>}
     </div>
   );

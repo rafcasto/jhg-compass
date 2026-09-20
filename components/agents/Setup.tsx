@@ -88,7 +88,7 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
 
       <section className="card p-5 space-y-3">
         <h2 className="text-lg">Company watchlist for the Scout</h2>
-        <p className="text-jh-mute text-sm max-w-2xl">Companies whose careers pages the Scout checks for new postings that match your title keywords. Zero AI tokens — job boards are read directly; other careers pages are opened in the Pi&apos;s browser.{portalsStatus?.at ? ` Last scan ${new Date(portalsStatus.at).toLocaleString()}.` : ""}</p>
+        <p className="text-jh-mute text-sm max-w-2xl">Companies whose careers pages the Scout checks for new postings that match your title keywords. Zero AI tokens — job boards are read directly; other careers pages are opened in the Pi&apos;s browser. Paste the careers page you&apos;d find on Google: if it hides a job board, the Scout finds it and offers it on the row.{portalsStatus?.at ? ` Last scan ${new Date(portalsStatus.at).toLocaleString()}.` : ""}</p>
         <Portals value={portals} onChange={(v) => { setPortals(v); setDirty(true); setMsg(null); }} status={portalsStatus?.companies ?? []} suggested={suggestKeywords(profile?.goal?.role)} />
       </section>
 
