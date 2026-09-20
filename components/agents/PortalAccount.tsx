@@ -18,8 +18,10 @@ export function PortalAccountForm({ uid, host: hostIn = "", company, publicKey, 
   const [msg, setMsg] = useState<string | null>(null);
   const h = hostOf(host.includes("://") ? host : `https://${host}`);
 
-  async function save(e: React.FormEvent) {
-    e.preventDefault(); setMsg(null);
+  // Not a <form>: this component also renders inside the Apply screen's step-2 form, and a nested
+  // <form> is dropped by the browser (its Save would submit the outer form and never reach here).
+  async function save() {
+    setMsg(null);
     if (!publicKey) { setMsg("The Pi hasn't published its vault key yet — is the worker online?"); return; }
     if (!h || !email.trim() || !password) { setMsg("Portal host, email and password are all needed."); return; }
     setBusy(true);
@@ -28,24 +30,26 @@ export function PortalAccountForm({ uid, host: hostIn = "", company, publicKey, 
       const now = Date.now();
       await setDoc(doc(paths.careerOpsVault(uid), h), { host: h, portal: portalFor(h), company: company ?? existing?.company ?? null, email: email.trim(), passwordEnc, status: "pending", lastError: null, updatedAt: now, ...(existing ? {} : { createdAt: now }) }, { merge: true });
       setPassword(""); setMsg("Saved — encrypted for the Pi. Read the form again to use it."); onSaved?.();
-    } catch { setMsg("Couldn't save the account."); }
+    } catch (e) { setMsg(`Couldn't save the account: ${(e as Error)?.message ?? "unknown error"}`); }
     finally { setBusy(false); }
   }
+  const onEnter = (e: React.KeyboardEvent) => { if (e.key === "Enter") { e.preventDefault(); save(); } };
   return (
-    <form onSubmit={save} className="space-y-2">
+    <div className="space-y-2" onKeyDown={onEnter}>
       <div className="grid sm:grid-cols-[1.4fr_1fr_1fr_auto] gap-2 items-end">
         <label className="block"><span className="text-xs text-jh-mute">Portal host</span><input aria-label="Portal host" className="field text-sm font-mono" placeholder="westpacnz.wd105.myworkdayjobs.com" value={host} onChange={(e) => setHost(e.target.value)} disabled={!!hostIn} /></label>
         <label className="block"><span className="text-xs text-jh-mute">Email used on the portal</span><input aria-label="Portal email" type="email" className="field text-sm" placeholder="you+westpac@example.com" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
         <label className="block"><span className="text-xs text-jh-mute">{existing ? "New password" : "Password"}</span><input aria-label="Portal password" type="password" className="field text-sm font-mono" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" /></label>
-        <button type="submit" disabled={busy || !publicKey} className="btn-primary text-xs px-3 py-2 h-[42px] disabled:opacity-60"><KeyRound className="h-4 w-4" /> {busy ? "Saving…" : existing ? "Replace" : "Save"}</button>
+        <button type="button" onClick={save} disabled={busy} title={publicKey ? undefined : "Waiting for the Pi's vault key…"} className="btn-primary text-xs px-3 py-2 h-[42px] disabled:opacity-60"><KeyRound className="h-4 w-4" /> {busy ? "Saving…" : existing ? "Replace" : "Save"}</button>
       </div>
       <div className="flex items-center gap-3 flex-wrap text-xs text-jh-mute">
         <button type="button" onClick={() => { const p = generatePassword(); setPassword(p); setGenerated(p); }} className="btn-ghost text-xs">Generate a password for this portal</button>
         {generated && <span className="flex items-center gap-2">Use this when you create the account — it is shown once: <code className="font-mono text-jh-ink">{generated}</code> <CopyButton text={generated} /></span>}
         <span>{h ? `${PORTAL_LABELS[portalFor(h)]} · ` : ""}encrypted in your browser for the Pi only; Compass can&apos;t read it back.</span>
         {msg && <span className={msg.startsWith("Saved") ? "text-rb-green-dark" : "text-jh-red"}>{msg}</span>}
+        {!publicKey && <span className="text-jh-mute">waiting for the Pi&apos;s vault key…</span>}
       </div>
-    </form>
+    </div>
   );
 }
 
