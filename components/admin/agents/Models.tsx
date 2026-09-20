@@ -101,7 +101,7 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
                       </select>
                     ) : <input className="field font-mono" value={a.model} onChange={(e) => set(k, { model: e.target.value })} aria-label={`${AGENT_LABELS[k].label} model`} />}
                     {!known && models.length > 0 && <span className="flex items-center gap-1 text-xs text-jh-red mt-1"><AlertTriangle className="h-3 w-3" /> {isClaude(a.model) ? "Claude isn't set up on the Pi (claude auth login / ANTHROPIC_API_KEY) — jobs will fail" : "not installed on the Pi — jobs will fail until it is pulled"}</span>}
-                    {known && isClaude(a.model) && <span className="block text-xs text-jh-mute mt-1">Runs on Claude via {a.model.startsWith("claude-api") ? "the Anthropic API" : "Claude Code on the Pi"} — the member's CV and the JD leave the Pi for this agent. Context / output caps below don't apply.</span>}
+                    {known && isClaude(a.model) && <span className="block text-xs text-jh-mute mt-1">Runs on Claude via {a.model.startsWith("claude-api") ? "the Anthropic API" : "Claude Code on the Pi"} — the member&apos;s CV and the JD leave the Pi for this agent. Context / output caps below don&apos;t apply.</span>}
                   </label>
                   <NumberField label="Context (tokens)" min={LIMITS.numCtx.min} max={LIMITS.numCtx.max} value={a.numCtx} onChange={(v) => set(k, { numCtx: v })} />
                   <NumberField label="Output cap (tokens)" min={LIMITS.numPredict.min} max={LIMITS.numPredict.max} value={a.numPredict} onChange={(v) => set(k, { numPredict: v })} />
