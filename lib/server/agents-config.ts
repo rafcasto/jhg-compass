@@ -30,7 +30,8 @@ export async function saveAgentSettings(agent: AgentKey, patch: AgentSettingsPat
   await adminDb().doc(DOC).update(upd);
 }
 
-export async function saveGlobalSettings(patch: { dailyEvalQuota?: number; collectLiveData?: boolean }, by: string | null) {
+export type GlobalSettingsPatch = { dailyEvalQuota?: number; dailyScanQuota?: number; collectLiveData?: boolean };
+export async function saveGlobalSettings(patch: GlobalSettingsPatch, by: string | null) {
   await adminDb().doc(DOC).set({ ...patch, updatedAt: Date.now(), updatedBy: by }, { merge: true });
 }
 

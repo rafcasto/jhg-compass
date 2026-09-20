@@ -7,6 +7,7 @@ export const LIMITS = {
   numPredict: { min: 256, max: 8192 },
   temperature: { min: 0, max: 1.5 },
   dailyEvalQuota: { min: 1, max: 500 },
+  dailyScanQuota: { min: 1, max: 100 },
   promptMax: 20_000,
 } as const;
 
@@ -53,9 +54,10 @@ export function validatePrompt(raw: unknown): { ok: true; prompt: string } | { o
   return { ok: true, prompt: p };
 }
 
-export function validateQuota(raw: unknown): number | null {
+export type QuotaKey = "dailyEvalQuota" | "dailyScanQuota";
+export function validateQuota(raw: unknown, key: QuotaKey = "dailyEvalQuota"): number | null {
   const n = Math.round(Number(raw));
-  return Number.isFinite(n) && n >= LIMITS.dailyEvalQuota.min && n <= LIMITS.dailyEvalQuota.max ? n : null;
+  return Number.isFinite(n) && n >= LIMITS[key].min && n <= LIMITS[key].max ? n : null;
 }
 
 /** ≈ tokens for a prompt (3.6 chars/token is a fair average for English + Markdown). */

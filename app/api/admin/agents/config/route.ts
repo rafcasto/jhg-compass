@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
-import { getAgentsConfig, saveAgentSettings, saveGlobalSettings } from "@/lib/server/agents-config";
-import { isAgentKey, validateAgentPatch, validateQuota } from "@/lib/careerops/config-validate";
+import { getAgentsConfig, saveAgentSettings, saveGlobalSettings, type GlobalSettingsPatch } from "@/lib/server/agents-config";
+import { isAgentKey, validateAgentPatch, validateQuota, LIMITS } from "@/lib/careerops/config-validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 }
 
 // Body: { agent, patch: { model?, numCtx?, numPredict?, temperature?, enabled? } }
-//    or { global: { dailyEvalQuota?, collectLiveData? } }
+//    or { global: { dailyEvalQuota?, dailyScanQuota?, collectLiveData? } }
 export async function POST(req: NextRequest) {
   const admin = await requireAdmin(req);
   if (!admin) return NextResponse.json({ ok: false }, { status: 403 });
@@ -21,11 +21,12 @@ export async function POST(req: NextRequest) {
   const by = admin.email ?? admin.uid;
   try {
     if (body.global && typeof body.global === "object") {
-      const g: { dailyEvalQuota?: number; collectLiveData?: boolean } = {};
-      if ("dailyEvalQuota" in body.global) {
-        const q = validateQuota(body.global.dailyEvalQuota);
-        if (q === null) return NextResponse.json({ ok: false, error: "dailyEvalQuota must be 1–500" }, { status: 400 });
-        g.dailyEvalQuota = q;
+      const g: GlobalSettingsPatch = {};
+      for (const key of ["dailyEvalQuota", "dailyScanQuota"] as const) {
+        if (!(key in body.global)) continue;
+        const q = validateQuota(body.global[key], key);
+        if (q === null) return NextResponse.json({ ok: false, error: `${key} must be ${LIMITS[key].min}–${LIMITS[key].max}` }, { status: 400 });
+        g[key] = q;
       }
       if ("collectLiveData" in body.global) {
         if (typeof body.global.collectLiveData !== "boolean") return NextResponse.json({ ok: false, error: "collectLiveData must be a boolean" }, { status: 400 });

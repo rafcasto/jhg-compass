@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
 //   { type: "apply", reportJobId, questions[] }                       { type: "interview_prep", reportJobId, audience, extra? }
 //   { type: "followup", opportunityId, company, role, stage, daysSince, channel, lastNote?, reportJobId? }
 //   { type: "patterns" }
-// Every LLM job shares the daily quota; scan is zero-token and capped separately.
-const SCANS_PER_DAY = 6;
+// Every LLM job shares the daily quota (dailyEvalQuota); scan is zero-token and capped
+// separately by dailyScanQuota — both are set in Admin → CareerOps → Models.
 const JOB_ID = /^[0-9T]{15}-[0-9a-z]{8}$/;
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const oneOf = <T extends string>(v: unknown, list: readonly T[], dflt: T): T => (list as readonly string[]).includes(v as string) ? (v as T) : dflt;
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     const cfg = await getAgentsConfig();
     let used = 0, quota = cfg.dailyEvalQuota;
     if (type === "scan") {
-      quota = SCANS_PER_DAY;
+      quota = cfg.dailyScanQuota;
       used = await getQuotaUsed(m.user.uid, Date.now(), "scan");
       if (used >= quota) return NextResponse.json({ ok: false, error: `daily limit reached (${quota} scans) — try again tomorrow` }, { status: 429 });
       await bumpQuota(m.user.uid, Date.now(), "scan");

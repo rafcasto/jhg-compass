@@ -77,6 +77,7 @@ export interface PromptVersion {
 export interface AgentsConfig {
   agents: Record<AgentKey, AgentConfig>;
   dailyEvalQuota: number;
+  dailyScanQuota: number;      // Scout runs per member per UTC day (zero tokens; a browser pass can take minutes per site)
   collectLiveData: boolean;    // approved live-member reports may enter training datasets (pseudonymised)
   updatedAt?: number;
   updatedBy?: string | null;
@@ -96,6 +97,7 @@ export const DEFAULT_AGENTS_CONFIG: AgentsConfig = {
     researcher:{ ...DEFAULT_AGENT, model: "claude-cli", temperature: 0.3 },
   },
   dailyEvalQuota: 20,
+  dailyScanQuota: 6,
   collectLiveData: false,
 };
 

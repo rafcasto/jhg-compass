@@ -23,6 +23,9 @@ describe("agent settings validation", () => {
     expect(validateQuota(20)).toBe(20);
     expect(validateQuota(0)).toBeNull();
     expect(validateQuota("abc")).toBeNull();
+    expect(validateQuota(12, "dailyScanQuota")).toBe(12);
+    expect(validateQuota(101, "dailyScanQuota")).toBeNull();
+    expect(validateQuota(0, "dailyScanQuota")).toBeNull();
   });
   it("estimates tokens and knows the agent keys", () => {
     expect(estimateTokens("a".repeat(360))).toBe(100);

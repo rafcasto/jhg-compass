@@ -20,9 +20,10 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const [quota, setQuota] = useState<number | null>(null);
+  const [scanQuota, setScanQuota] = useState<number | null>(null);
 
   async function load() {
-    try { const d = await (await authed("/api/admin/agents/config")).json(); if (d.ok) { setCfg(d.config); setQuota(d.config.dailyEvalQuota); } }
+    try { const d = await (await authed("/api/admin/agents/config")).json(); if (d.ok) { setCfg(d.config); setQuota(d.config.dailyEvalQuota); setScanQuota(d.config.dailyScanQuota); } }
     catch { setNotice({ kind: "err", text: "Couldn't load the agents config." }); }
   }
   useEffect(() => { load(); }, []);
@@ -49,12 +50,12 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
     } catch { setNotice({ kind: "err", text: "Save failed." }); }
     finally { setBusy(null); }
   }
-  async function saveGlobal(patch: { dailyEvalQuota?: number; collectLiveData?: boolean }) {
+  async function saveGlobal(patch: { dailyEvalQuota?: number; dailyScanQuota?: number; collectLiveData?: boolean }) {
     setBusy("global"); setNotice(null);
     try {
       const r = await postJson("/api/admin/agents/config", { global: patch });
       const d = await r.json();
-      if (r.ok && d.ok) { setCfg(d.config); setQuota(d.config.dailyEvalQuota); setNotice({ kind: "ok", text: "Settings saved." }); }
+      if (r.ok && d.ok) { setCfg(d.config); setQuota(d.config.dailyEvalQuota); setScanQuota(d.config.dailyScanQuota); setNotice({ kind: "ok", text: "Settings saved." }); }
       else setNotice({ kind: "err", text: d.error ?? "Save failed." });
     } catch { setNotice({ kind: "err", text: "Save failed." }); }
     finally { setBusy(null); }
@@ -144,10 +145,12 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
         )}
       </Section>
 
-      <Section title="Limits & training data" help="The quota protects the Pi: one evaluation takes several minutes. Live-data collection is off by default — when on, reports the admin approves may be copied (pseudonymised) into training datasets in phase 4.">
+      <Section title="Limits & training data" help="The quotas protect the Pi: one evaluation takes several minutes, and a scan can spend a minute per careers page in the browser. Live-data collection is off by default — when on, reports the admin approves may be copied (pseudonymised) into training datasets in phase 4.">
         <div className="flex flex-wrap items-end gap-4">
           <NumberField id="agents-quota" label="Evaluations per member per day" min={LIMITS.dailyEvalQuota.min} max={LIMITS.dailyEvalQuota.max} value={quota ?? cfg.dailyEvalQuota} onChange={setQuota} className="w-56" />
           <button type="button" onClick={() => quota != null && saveGlobal({ dailyEvalQuota: quota })} disabled={busy === "global" || quota === cfg.dailyEvalQuota} className="btn-secondary text-xs px-3 py-2 h-[46px] disabled:opacity-50">Save quota</button>
+          <NumberField id="agents-scan-quota" label="Scans per member per day" min={LIMITS.dailyScanQuota.min} max={LIMITS.dailyScanQuota.max} value={scanQuota ?? cfg.dailyScanQuota} onChange={setScanQuota} className="w-56" />
+          <button type="button" onClick={() => scanQuota != null && saveGlobal({ dailyScanQuota: scanQuota })} disabled={busy === "global" || scanQuota === cfg.dailyScanQuota} className="btn-secondary text-xs px-3 py-2 h-[46px] disabled:opacity-50">Save scan quota</button>
           <label className="flex items-center gap-2 text-sm text-jh-mute h-[46px]">
             <Toggle on={cfg.collectLiveData} onChange={(v) => saveGlobal({ collectLiveData: v })} label="Collect training data from live users" /> Collect training data from live users
           </label>
