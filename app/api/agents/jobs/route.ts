@@ -82,7 +82,8 @@ export async function POST(req: NextRequest) {
     if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });
     const applyUrl = str(body.applyUrl, 600);
     if (applyUrl) { try { const u = new URL(applyUrl); if (!/^https?:$/.test(u.protocol)) throw 0; } catch { return NextResponse.json({ ok: false, error: "the form URL must be http(s)" }, { status: 400 }); } }
-    payload = { reportJobId, ...(applyUrl ? { applyUrl } : {}) };
+    const cvFile = str(body.cvFile, 200);
+    payload = { reportJobId, ...(applyUrl ? { applyUrl } : {}), ...(/^[\w.-]+\.pdf$/.test(cvFile) ? { cvFile } : {}) };
   } else if (type === "interview_prep") {
     const reportJobId = str(body.reportJobId, 40);
     if (!JOB_ID.test(reportJobId)) return NextResponse.json({ ok: false, error: "reportJobId missing" }, { status: 400 });

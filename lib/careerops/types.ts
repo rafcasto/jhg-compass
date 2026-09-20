@@ -40,6 +40,7 @@ export interface WorkerState {
   datasets: { name: string; examples: number; builtAt: string }[];
   gpu: { host: string | null; reachable: boolean; checkedAt: number };
   careerOpsVersion: string | null;   // ~/career-ops package.json version on the Pi
+  vaultPublicKey?: string | null;    // RSA-OAEP public key (SPKI, base64) — the browser encrypts portal passwords for this worker
   drive?: { configured: boolean; account: string | null; folderId: string | null; ok?: boolean; name?: string; canWrite?: boolean; error?: string };
   claude?: { configured: boolean; model: string; via?: "api" | "cli" | "none"; bin?: string; hint?: string };   // via: API key · Claude Code CLI (`claude login`) · nothing
   // Non-Ollama model tags any LLM agent may run on: "claude-cli[:sonnet|opus|haiku]" (Claude Code, your

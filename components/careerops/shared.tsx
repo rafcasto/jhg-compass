@@ -13,7 +13,7 @@ import { ScoreBadge } from "@/components/agents/ReportView";
 import JobStatus from "@/components/agents/JobStatus";
 
 // ---- one context object every CareerOps tool receives ----
-export interface MemberStatus { configured: boolean; online: boolean; queueLength: number; quotaUsed: number }
+export interface MemberStatus { configured: boolean; online: boolean; queueLength: number; quotaUsed: number; vaultPublicKey?: string | null }
 export interface CareerOpsCtx {
   uid: string;
   isAdmin: boolean;

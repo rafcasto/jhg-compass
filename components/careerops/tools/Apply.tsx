@@ -10,10 +10,13 @@ import { normalizeQuestion, questionId, standardId, standardLabel } from "@/lib/
 import type { CareerOpsNote } from "@/lib/careerops/types";
 import type { ToolProps } from "../SectionScreen";
 import { CopyButton, NoteHistory, ReportPicker, downloadDoc, isHttp, splitLines, useNoteJob } from "../shared";
+import { PortalAccountForm } from "@/components/agents/PortalAccount";
+import { useLiveCollection } from "@/lib/firestore/db";
+import type { VaultAccount } from "@/lib/careerops/vault";
 
 interface Answer { question: string; answer: string; knockout?: string | null; maxChars?: number | null; from?: { source: "you" | "standard" | "profile" | "drafted"; company?: string | null; at?: number | null } | null; needsYou?: boolean; standardKey?: string | null; standardLabel?: string | null }
 interface FormQuestion { label: string; type: string; required: boolean; options: string[]; maxLength: number | null }
-interface FormData { url: string; finalUrl: string; atsHint: string | null; needsAccount: boolean; note: string; questions: FormQuestion[]; identity: { label: string; type: string }[]; files: { label: string; kind: "cv" | "cover" | "other"; required: boolean }[] }
+interface FormData { url: string; finalUrl: string; atsHint: string | null; needsAccount: boolean; note: string; questions: FormQuestion[]; identity: { label: string; type: string }[]; files: { label: string; kind: "cv" | "cover" | "other"; required: boolean }[]; host?: string; signedIn?: { host: string; email: string; pages: { title: string; url: string; questions: number; filled: string[]; skipped: string[] }[]; stoppedAt: string } | null }
 
 // Tailoring → apply: assemble the package for a posting, read the form off the apply page (or paste
 // its questions), then answer every question — from your answer bank first, the model second, and
@@ -36,6 +39,9 @@ export default function Apply({ ctx }: ToolProps) {
   const answers = (Array.isArray(shown?.data?.answers) ? (shown!.data!.answers as Answer[]) : []);
   const latestForm = useMemo(() => formJob.note ?? ctx.notes.filter((n) => n.kind === "apply_form" && n.reportJobId === reportJobId).sort((a, b) => b.createdAt - a.createdAt)[0] ?? null, [formJob.note, ctx.notes, reportJobId]);
   const form = latestForm?.data as FormData | undefined;
+  const { data: vault } = useLiveCollection<VaultAccount>(ctx.uid, paths.careerOpsVault);
+  const gateHost = form?.needsAccount ? (form.host ?? "") : "";
+  const gateAccount = gateHost ? vault.find((v) => v.id === gateHost) ?? null : null;
   useEffect(() => { setEdits({}); setRemembered({}); }, [shown?.id]);
   // A freshly read form fills the questions box (only when it is empty, so a paste is never clobbered).
   useEffect(() => { if (formJob.note && form?.questions?.length && !questions.trim()) setQuestions(form.questions.map((q) => q.label).join("\n")); }, [formJob.note]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -52,7 +58,7 @@ export default function Apply({ ctx }: ToolProps) {
       setPkgJob({ id: d.job.id, kind });
     } catch { setErr("Couldn't queue that."); }
   }
-  async function readForm() { await formJob.run({ type: "apply_form", reportJobId, ...(applyUrl.trim() ? { applyUrl: applyUrl.trim() } : {}) }); }
+  async function readForm() { await formJob.run({ type: "apply_form", reportJobId, ...(applyUrl.trim() ? { applyUrl: applyUrl.trim() } : {}), ...(cv?.file ? { cvFile: cv.file } : {}) }); }
   async function draft(e: React.FormEvent) {
     e.preventDefault(); setOpen(null);
     await job.run({ type: "apply", reportJobId, questions: qs.slice(0, 25) });
@@ -111,6 +117,13 @@ export default function Apply({ ctx }: ToolProps) {
           <div className="rounded-md bg-jh-mist p-3 text-xs text-jh-mute space-y-1">
             <p className="text-jh-ink font-semibold">Form read{form.atsHint ? ` · ${form.atsHint}` : ""} · {form.questions.length} question{form.questions.length === 1 ? "" : "s"}, {form.files.length} file slot{form.files.length === 1 ? "" : "s"}, {form.identity.length} identity field{form.identity.length === 1 ? "" : "s"} <a href={form.finalUrl} target="_blank" rel="noreferrer" className="underline font-normal">open</a></p>
             {form.needsAccount && <p className="text-jh-red flex items-start gap-1.5"><UserRound className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {form.note}</p>}
+            {form.needsAccount && gateHost && (
+              <div className="rounded-md border border-jh-line bg-white p-3 space-y-2">
+                <p className="text-jh-ink font-semibold">{gateAccount ? `Your ${gateHost} account (${gateAccount.email}) is in the vault${gateAccount.status === "failed" ? ` — last sign-in failed: ${gateAccount.lastError}` : ""}. ${gateAccount.status === "failed" ? "Fix it below, then" : "Press"} "Read the form" again and the Pi signs in to read the whole wizard.` : `Save your ${gateHost} account and the Pi signs in as you to read the whole form. No account yet? Create one on the portal first — generate a password for it below.`}</p>
+                <PortalAccountForm uid={ctx.uid} host={gateHost} company={report?.company ?? null} publicKey={ctx.status?.vaultPublicKey ?? null} existing={gateAccount} />
+              </div>
+            )}
+            {form.signedIn && <p>Signed in as {form.signedIn.email} · read {form.signedIn.pages.length} page{form.signedIn.pages.length === 1 ? "" : "s"}: {form.signedIn.pages.map((p) => p.title || "page").join(" → ")}{form.signedIn.pages.some((p) => p.skipped.length) ? ` · could not fill: ${form.signedIn.pages.flatMap((p) => p.skipped).join(", ")}` : ""}</p>}
             {!form.needsAccount && form.note && <p>{form.note}</p>}
             {form.files.length > 0 && <p>Files: {form.files.map((f) => `${f.label}${f.kind === "cv" && cv ? " → your tailored CV" : f.kind === "cover" && cover ? " → your cover letter" : ""}`).join(" · ")}</p>}
             {form.questions.length > 0 && qs.length === 0 && <button type="button" onClick={() => setQuestions(form.questions.map((q) => q.label).join("\n"))} className="btn-ghost text-xs">Fill the questions in</button>}
