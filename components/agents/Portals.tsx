@@ -6,7 +6,7 @@ import type { CareerOpsPortals, PortalStatus } from "@/lib/careerops/types";
 
 // Agents → Setup → Portals: the companies the Scout watches and the title
 // keywords that decide which postings are worth listing.
-export default function Portals({ value, onChange, status = [] }: { value: CareerOpsPortals; onChange: (v: CareerOpsPortals) => void; status?: PortalStatus[] }) {
+export default function Portals({ value, onChange, status = [], suggested = [] }: { value: CareerOpsPortals; onChange: (v: CareerOpsPortals) => void; status?: PortalStatus[]; suggested?: string[] }) {
   const set = (patch: Partial<CareerOpsPortals>) => onChange({ ...value, ...patch });
   const statusFor = (c: CareerOpsPortals["companies"][number]) => status.find((s) => s.careersUrl === c.careersUrl.trim() || (s.name && s.name === c.name.trim()));
   const setCo = (i: number, patch: Partial<CareerOpsPortals["companies"][number]>) => set({ companies: value.companies.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
@@ -40,7 +40,14 @@ export default function Portals({ value, onChange, status = [] }: { value: Caree
         <label className="block">
           <span className="label">Title keywords — include</span>
           <textarea aria-label="Include keywords" className="field text-sm min-h-[4.5rem]" placeholder="Product Owner, Product Manager" value={value.positive.join(", ")} onChange={(e) => set({ positive: list(e.target.value) })} />
-          <span className="text-xs text-jh-mute-2">A posting is listed when its title contains any of these. Comma-separated.</span>
+          <span className="text-xs text-jh-mute-2">A posting is listed when its title <em>contains</em> any of these (case-insensitive). Short stems catch more: <code className="font-mono">Test</code> finds Test Lead, Test Analyst and Test Automation; <code className="font-mono">QA Manager</code> only finds that exact phrase. Comma-separated.</span>
+          {suggested.filter((k) => !value.positive.some((p) => p.toLowerCase() === k.toLowerCase())).length > 0 && (
+            <span className="block mt-1.5 text-xs text-jh-mute">Suggested for your goal:{" "}
+              {suggested.filter((k) => !value.positive.some((p) => p.toLowerCase() === k.toLowerCase())).map((k) => (
+                <button key={k} type="button" onClick={() => set({ positive: [...value.positive, k] })} className="inline-flex items-center rounded-pill border border-jh-line px-2 py-0.5 mr-1 mb-1 text-xs text-jh-ink hover:border-jh-red hover:text-jh-red">+ {k}</button>
+              ))}
+            </span>
+          )}
         </label>
         <label className="block">
           <span className="label">Title keywords — exclude</span>
@@ -58,10 +65,14 @@ export function PortalBadge({ st }: { st: PortalStatus }) {
     <p className="text-xs text-jh-red flex items-center gap-1.5 pl-1"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Last scan: nothing readable{st.error ? ` — ${st.error}` : ""}. Try the company&apos;s job-search page (the one that lists roles) or its board URL.</p>
   );
   const Icon = st.method === "board" ? Rss : Globe;
+  const nearMiss = st.matched === 0 && (st.sample?.length ?? 0) > 0;
   return (
-    <p className="text-xs text-jh-mute flex items-center gap-1.5 pl-1">
-      <Icon className="h-3.5 w-3.5 shrink-0 text-rb-green-dark" />
-      Last scan: {st.method === "board" ? `job board${st.provider ? ` (${st.provider})` : ""}` : "careers page via browser"} · {st.found} posting{st.found === 1 ? "" : "s"} · {st.matched} matched your keywords{st.error ? ` · ${st.error}` : ""}
-    </p>
+    <div className="text-xs text-jh-mute pl-1 space-y-0.5">
+      <p className="flex items-center gap-1.5">
+        <Icon className={`h-3.5 w-3.5 shrink-0 ${st.found > 0 ? "text-rb-green-dark" : "text-jh-mute"}`} />
+        Last scan: {st.method === "board" ? `job board${st.provider ? ` (${st.provider})` : ""}` : "careers page via browser"} · {st.found} posting{st.found === 1 ? "" : "s"} · <span className={st.matched === 0 && st.found > 0 ? "text-jh-red" : ""}>{st.matched} matched your keywords</span>{st.error ? ` · ${st.error}` : ""}
+      </p>
+      {nearMiss && <details><summary className="cursor-pointer">None matched — titles seen there (tune your keywords)</summary><p className="mt-1 pl-3 text-jh-mute-2">{st.sample!.join(" · ")}</p></details>}
+    </div>
   );
 }

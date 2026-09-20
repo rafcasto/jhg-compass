@@ -33,14 +33,26 @@ export function buildPortalsYaml({ companies, positive, negative }: PortalsInput
   return lines.join("\n") + "\n";
 }
 
-// Sensible starting keywords from the member's goal role: "Senior Product Owner" → ["Product Owner", "Product Manager"].
+// Sensible starting keywords from the member's goal role. Keywords are case-insensitive
+// SUBSTRINGS of the posting title, so short stems catch the family of titles a company
+// actually uses: "Test" → Test Lead, Test Analyst, Test Automation, Testing; "QA" → QA Manager,
+// QA Engineer. "Senior Product Owner" → ["Product Owner", "Product Manager"].
+const FAMILIES: { when: RegExp; add: string[] }[] = [
+  { when: /\b(qa|test(ing|er)?|quality)\b/i, add: ["Test", "QA", "Quality Engineer", "Quality Assurance"] },
+  { when: /product owner/i, add: ["Product Manager"] },
+  { when: /product manager/i, add: ["Product Owner"] },
+  { when: /\bscrum master|delivery (lead|manager)|agile coach/i, add: ["Scrum Master", "Delivery Lead", "Delivery Manager", "Agile Coach"] },
+  { when: /\bdata (analyst|scientist|engineer)/i, add: ["Data Analyst", "Data Engineer", "Analytics"] },
+  { when: /\b(software|frontend|front-end|backend|back-end|full[- ]?stack) (engineer|developer)/i, add: ["Software Engineer", "Developer"] },
+  { when: /\bbusiness analyst/i, add: ["Business Analyst", "BA "] },
+  { when: /\b(engineering|tech(nical)?) (manager|lead)|chapter lead/i, add: ["Engineering Manager", "Chapter Lead", "Technical Lead"] },
+];
 export function suggestKeywords(role: string | undefined): string[] {
   const r = (role ?? "").replace(/^(intern|junior|graduate|mid|senior|staff|principal|lead|head of|director of|vp of)\s+/i, "").trim();
   if (!r) return [];
   const out = [r];
-  if (/product owner/i.test(r)) out.push("Product Manager");
-  if (/product manager/i.test(r)) out.push("Product Owner");
-  return out;
+  for (const f of FAMILIES) if (f.when.test(role ?? "")) out.push(...f.add);
+  return Array.from(new Set(out.map((k) => k.trim()).filter(Boolean)));
 }
 
 export const DEFAULT_NEGATIVE = ["Junior", "word:Intern", "Internship", "Graduate"];

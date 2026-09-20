@@ -20,6 +20,8 @@ describe("portals.yml from the Setup screen", () => {
   });
   it("suggests keywords from the goal role", () => {
     expect(suggestKeywords("Senior Product Owner")).toEqual(["Product Owner", "Product Manager"]);
+    expect(suggestKeywords("QA Manager")).toEqual(["QA Manager", "Test", "QA", "Quality Engineer", "Quality Assurance"]);
+    expect(suggestKeywords("Test Lead")).toContain("Test");
     expect(suggestKeywords("")).toEqual([]);
   });
 });
