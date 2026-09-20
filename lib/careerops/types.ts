@@ -41,7 +41,7 @@ export interface WorkerState {
   gpu: { host: string | null; reachable: boolean; checkedAt: number };
   careerOpsVersion: string | null;   // ~/career-ops package.json version on the Pi
   drive?: { configured: boolean; account: string | null; folderId: string | null; ok?: boolean; name?: string; canWrite?: boolean; error?: string };
-  claude?: { configured: boolean; model: string };
+  claude?: { configured: boolean; model: string; via?: "api" | "cli" | "none"; bin?: string; hint?: string };   // via: API key · Claude Code CLI (`claude login`) · nothing
   training?: { examples: { total: number; approved: number; exam: number; bySource: Record<string, number> }; datasets: { name: string; train: number; exam: number; builtAt: number }[] } | null;
   updatedAt: number;
 }

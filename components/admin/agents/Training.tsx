@@ -71,13 +71,13 @@ export default function Training({ status }: { status: AgentsStatus | null }) {
       {notice && <p role="status" className={`text-sm ${notice.kind === "ok" ? "text-rb-green-dark" : "text-jh-red"}`}>{notice.text}</p>}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[["Examples", `${counts.approved}/${counts.total}`, "approved / total"], ["Held-out exam", counts.exam, "15% of gold"], ["Claude teacher", claudeOk ? "Ready" : "No key", st?.claude?.model ?? "ANTHROPIC_API_KEY on the Pi"], ["GPU box", gpuOk ? "Reachable" : "Off", st?.gpu?.host ?? "ssh gpu"]].map(([l, v, h]) => (
+        {[["Examples", `${counts.approved}/${counts.total}`, "approved / total"], ["Held-out exam", counts.exam, "15% of gold"], ["Claude teacher", claudeOk ? (st?.claude?.via === "cli" ? "Ready · Claude Code" : "Ready · API") : "Not set up", claudeOk ? st?.claude?.model ?? "" : st?.claude?.hint ?? "API key or `claude login` on the Pi"], ["GPU box", gpuOk ? "Reachable" : "Off", st?.gpu?.host ?? "ssh gpu"]].map(([l, v, h]) => (
           <div key={String(l)} className="card p-5"><div className="font-display font-extrabold text-2xl text-jh-ink tabular-nums">{v}</div><div className="text-sm text-jh-mute mt-1">{l}</div><div className="text-[11px] text-jh-mute-2 mt-0.5">{h}</div></div>
         ))}
       </div>
 
       <Section title="1 · Generate gold with Claude" help={<>Claude ({st?.claude?.model ?? "claude-fable-5-1"}) invents a candidate and a posting per case, then evaluates it with the full career-ops rubric in the exact format the Pi model must learn. Every case is stored approved; 15% are held out for the exam. Roughly 25k tokens per case.</>}>
-        {!claudeOk && <p className="text-sm text-jh-red mb-3">Add <code className="font-mono">ANTHROPIC_API_KEY</code> to the worker&apos;s <code className="font-mono">.env</code> on the Pi and restart it.</p>}
+        {!claudeOk && <p className="text-sm text-jh-red mb-3">No Claude on the Pi yet. Either add <code className="font-mono">ANTHROPIC_API_KEY</code> to the worker&apos;s <code className="font-mono">.env</code>, or install Claude Code and run <code className="font-mono">claude login</code> as the worker&apos;s user (no key, uses your subscription) — then restart the worker.{st?.claude?.hint ? <> {st.claude.hint}.</> : null}</p>}
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
           <NumberField label="Cases" min={1} max={20} value={gold.count} onChange={(v) => setGold({ ...gold, count: v })} />
           <label className="block lg:col-span-2"><span className="label">Role families (comma-separated)</span><input className="field" value={gold.roles} onChange={(e) => setGold({ ...gold, roles: e.target.value })} /></label>
