@@ -28,6 +28,8 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
   useEffect(() => { load(); }, []);
 
   const models = status?.state?.models ?? [];
+  const claudeModels = status?.state?.claudeModels ?? [];
+  const isClaude = (tag: string) => /^claude-(cli|api)(:|$)/.test(tag);
   const usedBy = useMemo(() => {
     const m = new Map<string, AgentKey[]>();
     if (cfg) for (const k of AGENT_KEYS) { if (AGENT_LABELS[k].kind !== "llm") continue; const tag = draft[k].model ?? cfg.agents[k].model; m.set(tag, [...(m.get(tag) ?? []), k]); }
@@ -65,11 +67,11 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
       <WorkerBanner status={status} error={null} />
       {notice && <p role="status" className={`text-sm ${notice.kind === "ok" ? "text-rb-green-dark" : "text-jh-red"}`}>{notice.text}</p>}
 
-      <Section title="Agents" help={<>Which model each agent runs on. The list comes from <code className="font-mono">ollama list</code> on the Pi{models.length === 0 ? " — the worker hasn't reported any yet, so tags must be typed" : ""}. Context is how much the model reads (prompt + CV + JD), output cap is how much it may write; both cost time on a Pi.</>}>
+      <Section title="Agents" help={<>Which model each agent runs on — an Ollama model on the Pi (from <code className="font-mono">ollama list</code>{models.length === 0 ? "; the worker hasn't reported any yet, so tags must be typed" : ""}) or Claude through your subscription{claudeModels.length === 0 ? " (not set up on the Pi yet — claude auth login)" : ""}. Context is how much the model reads (prompt + CV + JD), output cap is how much it may write; both cost time on a Pi and are ignored for Claude.</>}>
         <div className="space-y-4">
           {AGENT_KEYS.map((k) => {
             const a = { ...cfg.agents[k], ...draft[k] };
-            const known = models.some((m) => m.name === a.model);
+            const known = models.some((m) => m.name === a.model) || claudeModels.some((m) => m.name === a.model && m.available);
             return (
               <div key={k} className={`rounded-md border p-4 ${a.enabled ? "border-jh-line bg-white" : "border-jh-line bg-jh-mist/40"}`}>
                 <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -87,11 +89,19 @@ export default function Models({ status }: { status: AgentsStatus | null }) {
                     <span className="label">Model</span>
                     {models.length > 0 ? (
                       <select className="field" value={a.model} onChange={(e) => set(k, { model: e.target.value })} aria-label={`${AGENT_LABELS[k].label} model`}>
-                        {!known && <option value={a.model}>{a.model} (not on the Pi)</option>}
-                        {models.map((m) => <option key={m.name} value={m.name}>{m.name} · {m.sizeGb} GB{m.params ? ` · ${m.params}` : ""}</option>)}
+                        {!known && <option value={a.model}>{a.model} ({isClaude(a.model) ? "Claude not set up on the Pi" : "not on the Pi"})</option>}
+                        <optgroup label="On the Pi · Ollama (private, free, slow)">
+                          {models.map((m) => <option key={m.name} value={m.name}>{m.name} · {m.sizeGb} GB{m.params ? ` · ${m.params}` : ""}</option>)}
+                        </optgroup>
+                        {claudeModels.length > 0 && (
+                          <optgroup label="Claude · your subscription (fast, best quality, leaves the Pi)">
+                            {claudeModels.map((m) => <option key={m.name} value={m.name} disabled={!m.available}>{m.label}</option>)}
+                          </optgroup>
+                        )}
                       </select>
                     ) : <input className="field font-mono" value={a.model} onChange={(e) => set(k, { model: e.target.value })} aria-label={`${AGENT_LABELS[k].label} model`} />}
-                    {!known && models.length > 0 && <span className="flex items-center gap-1 text-xs text-jh-red mt-1"><AlertTriangle className="h-3 w-3" /> not installed on the Pi — jobs will fail until it is pulled</span>}
+                    {!known && models.length > 0 && <span className="flex items-center gap-1 text-xs text-jh-red mt-1"><AlertTriangle className="h-3 w-3" /> {isClaude(a.model) ? "Claude isn't set up on the Pi (claude auth login / ANTHROPIC_API_KEY) — jobs will fail" : "not installed on the Pi — jobs will fail until it is pulled"}</span>}
+                    {known && isClaude(a.model) && <span className="block text-xs text-jh-mute mt-1">Runs on Claude via {a.model.startsWith("claude-api") ? "the Anthropic API" : "Claude Code on the Pi"} — the member's CV and the JD leave the Pi for this agent. Context / output caps below don't apply.</span>}
                   </label>
                   <NumberField label="Context (tokens)" min={LIMITS.numCtx.min} max={LIMITS.numCtx.max} value={a.numCtx} onChange={(v) => set(k, { numCtx: v })} />
                   <NumberField label="Output cap (tokens)" min={LIMITS.numPredict.min} max={LIMITS.numPredict.max} value={a.numPredict} onChange={(v) => set(k, { numPredict: v })} />

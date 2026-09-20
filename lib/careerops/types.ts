@@ -42,6 +42,9 @@ export interface WorkerState {
   careerOpsVersion: string | null;   // ~/career-ops package.json version on the Pi
   drive?: { configured: boolean; account: string | null; folderId: string | null; ok?: boolean; name?: string; canWrite?: boolean; error?: string };
   claude?: { configured: boolean; model: string; via?: "api" | "cli" | "none"; bin?: string; hint?: string };   // via: API key · Claude Code CLI (`claude login`) · nothing
+  // Non-Ollama model tags any LLM agent may run on: "claude-cli[:sonnet|opus|haiku]" (Claude Code, your
+  // subscription) and "claude-api" (Anthropic key). Absent/empty when neither is set up on the Pi.
+  claudeModels?: { name: string; label: string; family: "claude"; available: boolean }[];
   training?: { examples: { total: number; approved: number; exam: number; bySource: Record<string, number> }; datasets: { name: string; train: number; exam: number; builtAt: number }[] } | null;
   updatedAt: number;
 }
@@ -90,7 +93,7 @@ export const DEFAULT_AGENTS_CONFIG: AgentsConfig = {
     evaluator: { ...DEFAULT_AGENT, model: "llama3.2:3b", numCtx: 8192 },
     tailor:    { ...DEFAULT_AGENT, model: "llama3.2:3b" },
     writer:    { ...DEFAULT_AGENT, model: "llama3.2:3b", temperature: 0.5 },
-    researcher:{ ...DEFAULT_AGENT, model: "llama3.2:3b", temperature: 0.3 },
+    researcher:{ ...DEFAULT_AGENT, model: "claude-cli", temperature: 0.3 },
   },
   dailyEvalQuota: 20,
   collectLiveData: false,
@@ -133,7 +136,7 @@ export interface CareerOpsReport {
   agent: AgentKey;
   model: string;
   promptVersion: number;
-  via: "n8n" | "ollama";
+  via: "n8n" | "ollama" | "claude-cli";
   usage: { prompt: number | null; completion: number | null } | null;
   durationMs: number;
   jdChars: number;
@@ -190,7 +193,7 @@ export interface CareerOpsDoc {
   keywordsUsed?: string[];
   keywordsMissing?: string[];
   model: string;
-  via: "n8n" | "ollama";
+  via: "n8n" | "ollama" | "claude-cli";
   durationMs: number;
   createdAt: number;
 }
@@ -280,7 +283,7 @@ export interface CareerOpsNote {
   sources?: { title: string; url: string }[];   // web sources when the Researcher used search
   agent: AgentKey;
   model: string;
-  via: "n8n" | "ollama" | "claude";
+  via: "n8n" | "ollama" | "claude" | "claude-cli" | "claude-api";
   durationMs: number;
   createdAt: number;
 }

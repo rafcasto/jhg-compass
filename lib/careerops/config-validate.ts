@@ -22,7 +22,7 @@ export function validateAgentPatch(raw: unknown): { ok: true; patch: AgentSettin
   const r = raw as Record<string, unknown>;
   const patch: AgentSettingsPatch = {};
   if ("model" in r) {
-    if (typeof r.model !== "string" || !MODEL_TAG.test(r.model.trim()) || r.model.length > 120) return { ok: false, error: "model must be an Ollama tag like llama3.2:3b" };
+    if (typeof r.model !== "string" || !MODEL_TAG.test(r.model.trim()) || r.model.length > 120) return { ok: false, error: "model must be an Ollama tag like llama3.2:3b, or claude-cli / claude-cli:sonnet" };
     patch.model = r.model.trim();
   }
   for (const k of ["numCtx", "numPredict"] as const) {
