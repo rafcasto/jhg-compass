@@ -12,7 +12,7 @@ describe("answer bank helpers (mirror of the worker's lib/answers.js)", () => {
     expect(standardId("salary")).toBe("standard_salary");
   });
   it("has the standard families the worker matches on", () => {
-    expect(STANDARD_ANSWERS.map((s) => s.key)).toEqual(["right_to_work", "sponsorship", "salary", "notice_period", "start_date", "location", "work_arrangement", "relocation", "drivers_licence", "background_check", "how_heard"]);
+    expect(STANDARD_ANSWERS.map((s) => s.key)).toEqual(["right_to_work", "sponsorship", "salary", "notice_period", "start_date", "location", "work_arrangement", "relocation", "drivers_licence", "background_check", "how_heard", "title", "phone", "street_address", "postcode"]);
     expect(standardLabel("notice_period")).toBe("Notice period");
   });
 });

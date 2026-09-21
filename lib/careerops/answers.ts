@@ -41,5 +41,9 @@ export const STANDARD_ANSWERS: { key: string; label: string; placeholder: string
   { key: "drivers_licence",  label: "Driver's licence",                 placeholder: "Full NZ licence" },
   { key: "background_check", label: "Background / police check",        placeholder: "Happy to undergo one" },
   { key: "how_heard",        label: "How you heard about the role",     placeholder: "Company careers page" },
+  { key: "title",            label: "Title (Mr / Ms / Mx …)",           placeholder: "Mr" },
+  { key: "phone",            label: "Mobile phone",                     placeholder: "+64 21 000 0000" },
+  { key: "street_address",   label: "Street address",                   placeholder: "12 Example Street, Ponsonby" },
+  { key: "postcode",         label: "Postcode",                         placeholder: "1011" },
 ];
 export const standardLabel = (key: string) => STANDARD_ANSWERS.find((s) => s.key === key)?.label ?? key;

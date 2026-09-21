@@ -50,7 +50,7 @@ export default function Apply({ ctx }: ToolProps) {
   const fillHost = form?.host ?? (activeReport?.url ? new URL(activeReport.url).hostname.toLowerCase() : "");
   const fillAccount = fillHost ? vault.find((v) => v.id === fillHost) ?? null : null;
   const fillRunning = !!fillJob.jobId && !fillJob.note && !fillJob.failed;
-  const fillResult = fillJob.note?.data as { possible: boolean; outcome?: string; finalUrl?: string; filled: string[]; skipped: string[]; atsHint?: string | null } | undefined;
+  const fillResult = fillJob.note?.data as { possible: boolean; outcome?: string; finalUrl?: string; draftUrl?: string; filled: string[]; skipped: string[]; atsHint?: string | null } | undefined;
   async function fillInPortal() {
     const list = answers.map((a, i) => ({ question: a.question, answer: (edits[i] ?? a.answer).trim() })).filter((a) => a.answer);
     await fillJob.run({ type: "apply_fill", reportJobId: activeReportId, answers: list, ...(applyUrl.trim() ? { applyUrl: applyUrl.trim() } : {}), ...(cv?.file ? { cvFile: cv.file } : {}) });
@@ -136,7 +136,7 @@ export default function Apply({ ctx }: ToolProps) {
                 <PortalAccountForm uid={ctx.uid} host={gateHost} company={report?.company ?? null} publicKey={ctx.status?.vaultPublicKey ?? null} existing={gateAccount} />
               </div>
             )}
-            {form.signedIn && <p>Signed in as {form.signedIn.email} · read {form.signedIn.pages.length} page{form.signedIn.pages.length === 1 ? "" : "s"}: {form.signedIn.pages.map((p) => p.title || "page").join(" → ")}{form.signedIn.pages.some((p) => p.skipped.length) ? ` · could not fill: ${form.signedIn.pages.flatMap((p) => p.skipped).join(", ")}` : ""}</p>}
+            {form.signedIn && <p>Signed in as {form.signedIn.email} · read {form.signedIn.pages.length} page{form.signedIn.pages.length === 1 ? "" : "s"}: {form.signedIn.pages.map((p) => p.title || "page").join(" → ")}{form.signedIn.pages.some((p) => p.skipped.length) ? ` · could not fill: ${form.signedIn.pages.flatMap((p) => p.skipped).join(", ")}` : ""}{(form as FormData & { draftUrl?: string }).draftUrl && <> · <a href={(form as FormData & { draftUrl?: string }).draftUrl} target="_blank" rel="noreferrer" className="underline">your draft on the portal</a></>}</p>}
             {!form.needsAccount && form.note && <p>{form.note}</p>}
             {form.files.length > 0 && <p>Files: {form.files.map((f) => `${f.label}${f.kind === "cv" && cv ? " → your tailored CV" : f.kind === "cover" && cover ? " → your cover letter" : ""}`).join(" · ")}</p>}
             {form.questions.length > 0 && qs.length === 0 && <button type="button" onClick={() => setQuestions(form.questions.map((q) => q.label).join("\n"))} className="btn-ghost text-xs">Fill the questions in</button>}
@@ -165,7 +165,7 @@ export default function Apply({ ctx }: ToolProps) {
               {fillJob.status}
               {fillResult && (
                 <div className="text-xs space-y-1">
-                  <p className={fillResult.possible ? "text-jh-ink" : "text-jh-red"}>{fillResult.possible ? fillResult.outcome : `${fillResult.atsHint ?? "This"} form keeps no draft without an account — copy the answers in.`}{fillResult.possible && fillResult.finalUrl && <> <a href={fillResult.finalUrl} target="_blank" rel="noreferrer" className="underline inline-flex items-center gap-1">open the portal <ExternalLink className="h-3 w-3" /></a></>}</p>
+                  <p className={fillResult.possible ? "text-jh-ink" : "text-jh-red"}>{fillResult.possible ? fillResult.outcome : `${fillResult.atsHint ?? "This"} form keeps no draft without an account — copy the answers in.`}{fillResult.possible && (fillResult.draftUrl || fillResult.finalUrl) && <> <a href={fillResult.draftUrl ?? fillResult.finalUrl} target="_blank" rel="noreferrer" className="underline inline-flex items-center gap-1">open your draft on the portal <ExternalLink className="h-3 w-3" /></a>{fillResult.finalUrl && fillResult.draftUrl && fillResult.draftUrl !== fillResult.finalUrl && <> · <a href={fillResult.finalUrl} target="_blank" rel="noreferrer" className="underline">jump to the page it stopped on</a></>}</>}</p>
                   {fillResult.filled?.length > 0 && <p className="text-jh-mute">Filled: {fillResult.filled.join(" · ")}</p>}
                   {fillResult.skipped?.length > 0 && <p className="text-jh-red">Left for you: {fillResult.skipped.join(" · ")}</p>}
                 </div>
