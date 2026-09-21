@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, FileText, PenLine, Download, AlertTriangle, ScanSearch, Recycle, Hand, UserRound, MousePointerClick, ExternalLink } from "lucide-react";
+import { ClipboardList, FileText, PenLine, Download, AlertTriangle, ScanSearch, Recycle, Hand, UserRound, MousePointerClick, ExternalLink, KeyRound } from "lucide-react";
 import { doc, setDoc } from "firebase/firestore";
 import { postJson } from "@/components/admin/shared";
 import JobStatus from "@/components/agents/JobStatus";
@@ -130,11 +130,12 @@ export default function Apply({ ctx }: ToolProps) {
           <div className="rounded-md bg-jh-mist p-3 text-xs text-jh-mute space-y-1">
             <p className="text-jh-ink font-semibold">Form read{form.atsHint ? ` · ${form.atsHint}` : ""} · {form.questions.length} question{form.questions.length === 1 ? "" : "s"}, {form.files.length} file slot{form.files.length === 1 ? "" : "s"}, {form.identity.length} identity field{form.identity.length === 1 ? "" : "s"} <a href={form.finalUrl} target="_blank" rel="noreferrer" className="underline font-normal">open</a></p>
             {form.needsAccount && <p className="text-jh-red flex items-start gap-1.5"><UserRound className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {form.note}</p>}
-            {form.needsAccount && gateHost && (
-              <div className="rounded-md border border-jh-line bg-white p-3 space-y-2">
-                <p className="text-jh-ink font-semibold">{gateAccount ? `Your ${gateHost} account (${gateAccount.email}) is in the vault${gateAccount.status === "failed" ? ` — last sign-in failed: ${gateAccount.lastError}` : ""}. ${gateAccount.status === "failed" ? "Fix it below, then" : "Press"} "Read the form" again and the Pi signs in to read the whole wizard.` : `Save your ${gateHost} account and the Pi signs in as you to read the whole form. No account yet? Create one on the portal first — generate a password for it below.`}</p>
-                <PortalAccountForm uid={ctx.uid} host={gateHost} company={report?.company ?? null} publicKey={ctx.status?.vaultPublicKey ?? null} existing={gateAccount} />
-              </div>
+            {(gateHost || fillHost) && (
+              <details open={form.needsAccount && !gateAccount} className="rounded-md border border-jh-line bg-white p-3">
+                <summary className="cursor-pointer text-jh-ink font-semibold flex items-center gap-2"><KeyRound className="h-3.5 w-3.5 text-jh-red" /> Portal account for {gateHost || fillHost}: {(gateAccount ?? fillAccount) ? <>{(gateAccount ?? fillAccount)!.email} · <span className={(gateAccount ?? fillAccount)!.status === "failed" ? "text-jh-red" : "text-rb-green-dark"}>{(gateAccount ?? fillAccount)!.status === "ok" ? "signs in" : (gateAccount ?? fillAccount)!.status === "failed" ? `sign-in failed — ${(gateAccount ?? fillAccount)!.lastError}` : "saved, not used yet"}</span> <span className="font-normal text-jh-mute">(change)</span></> : <span className="text-jh-red">none saved — add it</span>}</summary>
+                <p className="mt-2">{form.needsAccount ? "This portal hides the form behind a candidate account. Save yours and the Pi signs in as you to read and fill the whole wizard. No account yet? Create one on the portal first — generate a password for it below." : "The Pi signs in with this account to read and fill the form. Replace the password here if you change it on the portal."}</p>
+                <div className="mt-2"><PortalAccountForm uid={ctx.uid} host={gateHost || fillHost} company={report?.company ?? null} publicKey={ctx.status?.vaultPublicKey ?? null} existing={gateAccount ?? fillAccount} /></div>
+              </details>
             )}
             {form.signedIn && <p>Signed in as {form.signedIn.email} · read {form.signedIn.pages.length} page{form.signedIn.pages.length === 1 ? "" : "s"}: {form.signedIn.pages.map((p) => p.title || "page").join(" → ")}{form.signedIn.pages.some((p) => p.skipped.length) ? ` · could not fill: ${form.signedIn.pages.flatMap((p) => p.skipped).join(", ")}` : ""}{(form as FormData & { draftUrl?: string }).draftUrl && <> · <a href={(form as FormData & { draftUrl?: string }).draftUrl} target="_blank" rel="noreferrer" className="underline">your draft on the portal</a></>}</p>}
             {!form.needsAccount && form.note && <p>{form.note}</p>}
