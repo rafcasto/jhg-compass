@@ -113,11 +113,15 @@ describe("IntakeScreen — the first-timer path", () => {
     expect(screen.getByLabelText(/Upload \.md \/ \.txt/i)).toHaveAttribute("accept", ".md,.txt,.markdown,text/plain,text/markdown");
   });
 
-  it("says so plainly when a dropped file isn't readable here", async () => {
+  it("names the format it takes when a dropped file isn't one", async () => {
     render(<IntakeScreen />);
     const file = new File(["%PDF-1.4"], "cv.pdf", { type: "application/pdf" });
     fireEvent.drop(dropZone(), { dataTransfer: { files: [file] } });
-    expect(await screen.findByRole("alert")).toHaveTextContent(/can't be read here yet/i);
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/Markdown or plain text/i);
+    expect(alert).toHaveTextContent(/\.md or \.txt/i);
+    // Not "not yet" — .md IS the format, so the copy must not promise more later.
+    expect(alert.textContent).not.toMatch(/\byet\b/i);
     expect(screen.queryByRole("heading", { name: /review and save/i })).not.toBeInTheDocument();
   });
 

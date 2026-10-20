@@ -73,11 +73,12 @@ export default function IntakeScreen() {
 
   function takeFile(file: File | undefined) {
     if (!file) return;
-    // Plain text and Markdown read in the browser, instantly, with nothing on
-    // the Pi involved. A PDF has to become text first — we say so rather than
-    // silently saving a blob the agents cannot quote.
+    // Markdown and plain text are the format: they read in the browser
+    // instantly, and the agents quote lines straight out of them. Anything else
+    // would be a blob nothing downstream can cite, so we say what we take
+    // rather than saving it.
     if (!isTextCvFile(file.name)) {
-      setErr("That file type can't be read here yet. Export or copy your CV as text and paste it in, or drop a .md / .txt file.");
+      setErr("CVs come in as Markdown or plain text — a .md or .txt file. Save or export yours as one and drop it here, or just paste the text above.");
       return;
     }
     file.text()
@@ -128,7 +129,7 @@ export default function IntakeScreen() {
         <p className="text-jh-mute mt-1 max-w-2xl">
           {phase === "done"
             ? "Everything the agents know about you comes from these. Fill the gaps whenever you like — nothing here is ever submitted on your behalf."
-            : "Paste it, or drop a .md / .txt file. Keep the detail — dates, numbers, tools — because the Evaluator quotes lines from it as evidence. It stays on our own hardware."}
+            : "Paste the text, or drop it in as a Markdown or plain-text file (.md / .txt). Keep the detail — dates, numbers, tools — because the Evaluator quotes lines from it as evidence. It stays on our own hardware."}
         </p>
       </header>
 
