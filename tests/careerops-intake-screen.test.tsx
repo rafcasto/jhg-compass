@@ -1,69 +1,61 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-// ---- the edges IntakeScreen talks to ----
-// Forwards the options arg too: the maleta and the cards write with { merge: true },
-// and dropping it here would hide whether they do.
+// IntakeScreen is now just the front door: pick one of the three ways in, then
+// hand off to the wizard. The CV flow lives in CvPanel (see
+// careerops-cv-panel.test.tsx) and the tabs in IntakeWizard (see
+// careerops-intake-wizard-screen.test.tsx).
+
 const setDoc = vi.fn<(ref: unknown, data: Record<string, unknown>, opts?: unknown) => Promise<void>>(async () => {});
 const replace = vi.fn();
 let careerOps: { ctx: unknown; loading: boolean; allowed: boolean };
 let profile: unknown = { firstName: "Jane", lastName: "Smith", email: "jane@example.com", goal: { role: "Product Owner", city: "Auckland" } };
-let answerDocs: unknown[] = [];
 
-vi.mock("firebase/firestore", () => ({ setDoc: (ref: unknown, data: Record<string, unknown>, opts?: unknown) => setDoc(ref, data, opts) }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace, push: vi.fn() }) }));
+vi.mock("firebase/firestore", () => ({
+  setDoc: (ref: unknown, data: Record<string, unknown>, opts?: unknown) => setDoc(ref, data, opts),
+}));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace, push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("@/components/AuthProvider", () => ({ useAuth: () => ({ user: { uid: "u1" }, isAdmin: false }) }));
 vi.mock("@/lib/firestore/db", () => ({
-  paths: { profile: (uid: string) => `users/${uid}/profile`, careerOpsAnswers: (uid: string) => `users/${uid}/answers`, careerOpsSetup: (uid: string) => `users/${uid}/setup` },
-  useLiveDoc: () => ({ data: profile, loading: false }),
-  useLiveCollection: () => ({ data: answerDocs, loading: false }),
+  paths: {
+    profile: (uid: string) => `users/${uid}/profile`,
+    careerOpsAnswers: (uid: string) => `users/${uid}/answers`,
+    careerOpsSetup: (uid: string) => `users/${uid}/setup`,
+    careerOpsPortalsStatus: (uid: string) => `users/${uid}/portalsStatus`,
+  },
+  useLiveDoc: (path: string | null) => ({ data: path?.endsWith("/profile") ? profile : null, loading: false }),
+  useLiveCollection: () => ({ data: [], loading: false }),
 }));
 vi.mock("@/components/careerops/shared", () => ({ useCareerOps: () => careerOps }));
-// ESM-only renderer; the preview pane is not what these tests are about.
 vi.mock("react-markdown", () => ({ default: ({ children }: { children: string }) => <div data-testid="preview">{children}</div> }));
 vi.mock("remark-gfm", () => ({ default: () => undefined }));
 
 import IntakeScreen from "@/components/careerops/IntakeScreen";
-import { PORTAL_HOME } from "@/lib/careerops/portal-nav";
 
 const ctxWith = (over: Record<string, unknown> = {}) => ({
   uid: "u1", isAdmin: false, setup: null, setupLoading: false, hasCv: false, hasPortals: false,
   reports: [], notes: [], docs: [], status: null, statusError: false, online: false, ...over,
 });
 
-// The drag-and-drop surface is the box the paste textarea sits in.
-const dropZone = () => screen.getByLabelText("Your CV").parentElement as HTMLElement;
-
-const REAL_CV = `# Jane Smith\n\n## Experience\n**Acme — Product Owner (2021–2025)**\n` + "- shipped the discovery pipeline and cut lead time 40%\n".repeat(12);
-
 beforeEach(() => {
   setDoc.mockClear();
   replace.mockClear();
-  answerDocs = [];
   profile = { firstName: "Jane", lastName: "Smith", email: "jane@example.com", goal: { role: "Product Owner", city: "Auckland" } };
   careerOps = { ctx: ctxWith(), loading: false, allowed: true };
 });
 
-// A first-timer now meets the three-ways chooser before anything else, so the
-// CV tests walk through it. Path 2 ("Go through intake") is the one that leads
-// to the CV ask followed by the full set of cards.
-async function renderAtCvAsk() {
-  const user = userEvent.setup();
-  render(<IntakeScreen />);
-  await user.click(screen.getByRole("button", { name: /Go through intake/i }));
-  return user;
-}
-
-describe("IntakeScreen — the first-timer path", () => {
-  it("offers the three ways in before asking anything", () => {
+describe("IntakeScreen — the three ways in", () => {
+  it("asks how they want to start, before asking for anything", () => {
     render(<IntakeScreen />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Let's get you set up");
     expect(screen.getByRole("button", { name: /Use what Compass already knows/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Go through intake/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Upload la maleta/i })).toBeInTheDocument();
-    // Nothing is asked for yet.
-    expect(screen.queryByLabelText("Your CV")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
   });
 
   it("names the North Star Compass already has, so the light path is an informed choice", () => {
@@ -71,202 +63,33 @@ describe("IntakeScreen — the first-timer path", () => {
     expect(screen.getByText(/Your North Star is already set/i)).toHaveTextContent("Product Owner");
   });
 
-  it("asks for the CV and nothing else once a path is picked", async () => {
-    await renderAtCvAsk();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Start with your CV");
-    expect(screen.getByLabelText("Your CV")).toBeInTheDocument();
-    // The whole Setup screen is not what a first-timer meets.
-    expect(screen.queryByText(/Portal accounts/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/What the agents need from you/i)).not.toBeInTheDocument();
-  });
-
-  it("lets them back out to the other ways in", async () => {
-    const user = await renderAtCvAsk();
-    await user.click(screen.getByRole("button", { name: /Other ways to start/i }));
-    expect(screen.getByRole("button", { name: /Upload la maleta/i })).toBeInTheDocument();
-  });
-
-  it("proposes the CV back for review before anything is written", async () => {
-    const user = await renderAtCvAsk();
-    await user.click(screen.getByLabelText("Your CV"));
-    await user.paste(REAL_CV);
-    await user.click(screen.getByRole("button", { name: /Read my CV/i }));
-
-    expect(screen.getByRole("heading", { name: /review and save/i })).toBeInTheDocument();
-    expect(screen.getByText("Ready to score")).toBeInTheDocument();
-    expect(screen.getByTestId("preview")).toHaveTextContent("Acme");
-    expect(setDoc).not.toHaveBeenCalled(); // confirm gate
-  });
-
-  it("saves the reviewed CV and seeds the Scout keywords from the North Star", async () => {
-    const user = await renderAtCvAsk();
-    await user.click(screen.getByLabelText("Your CV"));
-    await user.paste(REAL_CV);
-    await user.click(screen.getByRole("button", { name: /Read my CV/i }));
-    await user.click(screen.getByRole("button", { name: /Save my CV/i }));
-
-    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
-    const written = setDoc.mock.calls[0][1];
-    expect(written.cvMarkdown).toContain("Acme — Product Owner");
-    expect(written.profileYaml).toContain("Product Owner");
-    const portals = written.portals as { companies: unknown[]; positive: string[] };
-    expect(portals.companies).toEqual([]);
-    expect(portals.positive.length).toBeGreaterThan(0);
-    expect(written.portalsYaml).toContain("Product Owner");
-    expect(typeof written.updatedAt).toBe("number");
-  });
-
-  it("flags a thin CV without blocking the save", async () => {
-    const user = await renderAtCvAsk();
-    await user.click(screen.getByLabelText("Your CV"));
-    await user.paste("Jane Smith, Product Owner, Auckland.");
-    await user.click(screen.getByRole("button", { name: /Read my CV/i }));
-
-    expect(screen.getByText("A bit thin")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Save my CV/i })).toBeEnabled();
-  });
-
-  it("will not move on from an empty paste", async () => {
-    const user = await renderAtCvAsk();
-    expect(screen.getByRole("button", { name: /Read my CV/i })).toBeDisabled();
-    await user.click(screen.getByLabelText("Your CV"));
-    await user.paste("   ");
-    await user.click(screen.getByRole("button", { name: /Read my CV/i }));
-    expect(screen.queryByRole("heading", { name: /review and save/i })).not.toBeInTheDocument();
-  });
-
-  it("only offers the file types it can actually read", async () => {
-    await renderAtCvAsk();
-    // The picker filters for us; drag-and-drop does not, which is why the
-    // component checks the name itself (the next test).
-    expect(screen.getByLabelText(/Upload \.md \/ \.txt/i)).toHaveAttribute("accept", ".md,.txt,.markdown,text/plain,text/markdown");
-  });
-
-  it("names the format it takes when a dropped file isn't one", async () => {
-    await renderAtCvAsk();
-    const file = new File(["%PDF-1.4"], "cv.pdf", { type: "application/pdf" });
-    fireEvent.drop(dropZone(), { dataTransfer: { files: [file] } });
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/Markdown or plain text/i);
-    expect(alert).toHaveTextContent(/\.md or \.txt/i);
-    // Not "not yet" — .md IS the format, so the copy must not promise more later.
-    expect(alert.textContent).not.toMatch(/\byet\b/i);
-    expect(screen.queryByRole("heading", { name: /review and save/i })).not.toBeInTheDocument();
-  });
-
-  it("reads a dropped .md file straight through to review", async () => {
-    await renderAtCvAsk();
-    const file = new File([REAL_CV], "cv.md", { type: "text/markdown" });
-    fireEvent.drop(dropZone(), { dataTransfer: { files: [file] } });
-    expect(await screen.findByRole("heading", { name: /review and save/i })).toBeInTheDocument();
-  });
-
-  it("reads a picked .md file straight through to review", async () => {
-    const user = await renderAtCvAsk();
-    const file = new File([REAL_CV], "cv.md", { type: "text/markdown" });
-    await user.upload(screen.getByLabelText(/Upload \.md \/ \.txt/i), file);
-    expect(await screen.findByRole("heading", { name: /review and save/i })).toBeInTheDocument();
-  });
-});
-
-describe("IntakeScreen — the checklist", () => {
-  it("skips the ask for a member who already has a CV", () => {
-    careerOps = { ctx: ctxWith({ hasCv: true, setup: { cvMarkdown: "x", portals: { companies: [], positive: [], negative: [] } } }), loading: false, allowed: true };
+  it("hands off to the wizard for the two form paths", async () => {
+    const user = userEvent.setup();
     render(<IntakeScreen />);
+    await user.click(screen.getByRole("button", { name: /Go through intake/i }));
+    expect(screen.getByRole("tablist", { name: /Intake steps/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Your CareerOps intake");
-    expect(screen.queryByLabelText("Your CV")).not.toBeInTheDocument();
   });
 
-  it("counts only the required steps and links each gap where it can be closed", () => {
-    careerOps = { ctx: ctxWith({ hasCv: true, setup: { cvMarkdown: "x", portals: { companies: [], positive: [], negative: [] } } }), loading: false, allowed: true };
+  it("tells the light path which tabs actually matter, so six tabs don't imply six obligations", async () => {
+    const user = userEvent.setup();
     render(<IntakeScreen />);
-    expect(screen.getByText("2/3")).toBeInTheDocument(); // CV + North Star done, watchlist open
-    const items = within(screen.getByRole("list")).getAllByRole("listitem");
-    expect(items.map((li) => li.textContent?.includes("done"))).toEqual([true, true, false, false]);
-    expect(screen.getByRole("link", { name: /Full setup/i })).toHaveAttribute("href", "/careerops/setup");
+    await user.click(screen.getByRole("button", { name: /Use what Compass already knows/i }));
+    expect(screen.getByText(/Only CV, North Star and Watchlist are needed/i)).toBeInTheDocument();
   });
 
-  it("lets them into the portal with gaps open, and says what happens if they do", async () => {
-    careerOps = { ctx: ctxWith({ hasCv: true, setup: { cvMarkdown: "x", portals: { companies: [], positive: [], negative: [] } } }), loading: false, allowed: true };
+  it("does not show that note to someone who chose the full form", async () => {
+    const user = userEvent.setup();
     render(<IntakeScreen />);
-    expect(screen.getByText(/will say so and link you back here/i)).toBeInTheDocument();
-    await userEvent.setup().click(screen.getByRole("button", { name: /Enter the portal anyway/i }));
-    expect(replace).toHaveBeenCalledWith(PORTAL_HOME);
+    await user.click(screen.getByRole("button", { name: /Go through intake/i }));
+    expect(screen.queryByText(/Only CV, North Star and Watchlist are needed/i)).not.toBeInTheDocument();
   });
 
-  it("drops the hedging once every required step is done", () => {
-    careerOps = { ctx: ctxWith({ hasCv: true, setup: { cvMarkdown: "x", portals: { companies: [{ name: "Acme", careersUrl: "https://acme.com/jobs" }], positive: [], negative: [] } } }), loading: false, allowed: true };
+  it("skips the chooser entirely for a member who already has a CV", () => {
+    careerOps = { ctx: ctxWith({ hasCv: true, setup: { cvMarkdown: "# Jane" } }), loading: false, allowed: true };
     render(<IntakeScreen />);
-    expect(screen.getByText("3/3")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Enter the portal$/i })).toBeInTheDocument();
-    expect(screen.queryByText(/will say so and link you back here/i)).not.toBeInTheDocument();
-  });
-});
-
-describe("IntakeScreen — gates", () => {
-  it("renders nothing of its own when the portal isn't switched on", () => {
-    careerOps = { ctx: ctxWith(), loading: false, allowed: false };
-    const { container } = render(<IntakeScreen />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("waits rather than guessing while the setup doc is still loading", () => {
-    careerOps = { ctx: ctxWith({ setupLoading: true }), loading: false, allowed: true };
-    render(<IntakeScreen />);
-    expect(screen.getByText("Loading…")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Your CV")).not.toBeInTheDocument();
-  });
-});
-
-describe("IntakeScreen — either process can own the North Star", () => {
-  const withCv = (over: Record<string, unknown> = {}) => ({
-    ctx: ctxWith({ hasCv: true, setup: { cvMarkdown: "x", portals: { companies: [], positive: [], negative: [] }, ...over } }),
-    loading: false,
-    allowed: true,
-  });
-
-  it("offers the choice on the checklist, so it is switchable at any stage", () => {
-    careerOps = withCv();
-    render(<IntakeScreen />);
-    expect(screen.getByRole("heading", { name: /Which North Star do the agents use/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Use my Compass North Star/i })).toBeChecked();
-  });
-
-  it("keeps the chooser out of the way while the CV is still the question", () => {
-    careerOps = { ctx: ctxWith(), loading: false, allowed: true };
-    render(<IntakeScreen />);
-    expect(screen.queryByRole("heading", { name: /Which North Star/i })).not.toBeInTheDocument();
-  });
-
-  it("reads the checklist off the intake goal once it overrides Compass", () => {
-    careerOps = withCv({ goalSource: "intake", intakeGoal: { role: "Senior Product Owner" } });
-    render(<IntakeScreen />);
-    // profile.goal.role is "Product Owner"; the intake goal wins.
-    expect(screen.getByText(/Target role: Senior Product Owner/)).toBeInTheDocument();
-    expect(screen.getByText(/overrides your Compass goal/)).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Set it here in intake/i })).toBeChecked();
-  });
-
-  it("still counts the North Star done when it came from intake", () => {
-    careerOps = withCv({ goalSource: "intake", intakeGoal: { role: "Senior Product Owner" } });
-    render(<IntakeScreen />);
-    expect(screen.getByText("2/3")).toBeInTheDocument(); // CV + North Star; watchlist still open
-  });
-
-  it("falls back to the Compass goal when the override has no role", () => {
-    careerOps = withCv({ goalSource: "intake", intakeGoal: { role: "" } });
-    render(<IntakeScreen />);
-    expect(screen.getByText(/Target role: Product Owner/)).toBeInTheDocument();
-    expect(screen.getByText(/Change it any time on the Compass tab/)).toBeInTheDocument();
-    expect(screen.getByText("2/3")).toBeInTheDocument();
-  });
-
-  it("leaves the North Star step open when neither process has a role", () => {
-    profile = { firstName: "Jane", lastName: "Smith", email: "jane@example.com", goal: {} };
-    careerOps = withCv({ goalSource: "intake", intakeGoal: {} });
-    render(<IntakeScreen />);
-    expect(screen.getByText("1/3")).toBeInTheDocument();
-    expect(screen.getByText(/Set the role, industry, geography and salary/)).toBeInTheDocument();
+    expect(screen.getByRole("tablist", { name: /Intake steps/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Upload la maleta/i })).not.toBeInTheDocument();
   });
 });
 
@@ -282,11 +105,11 @@ describe("IntakeScreen — path 3: la maleta", () => {
     fireEvent.drop(zone, { dataTransfer: { files: [new File([text], name, { type: "text/markdown" })] } });
   };
 
-  it("offers the upload instead of the CV box", async () => {
+  it("offers the upload instead of the wizard", async () => {
     await pickMaleta();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Upload la maleta");
     expect(screen.getByText(/Drop your maleta here/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText("Your CV")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
   });
 
   it("shows what it found and writes nothing until confirmed", async () => {
@@ -294,11 +117,10 @@ describe("IntakeScreen — path 3: la maleta", () => {
     drop("la-maleta.md", "## North Star\n\n- role: Senior Product Owner\n\n## Your Exit Narrative\n\nBuilt and sold a SaaS.");
     expect(await screen.findByText(/Found in/i)).toBeInTheDocument();
     expect(screen.getByText(/North Star \(Senior Product Owner\)/)).toBeInTheDocument();
-    expect(screen.getByText(/targeting \(1\/8 sections\)/)).toBeInTheDocument();
-    expect(setDoc).not.toHaveBeenCalled(); // confirm gate
+    expect(setDoc).not.toHaveBeenCalled();
   });
 
-  it("unpacks it into the setup document and rebuilds profile.yml", async () => {
+  it("unpacks it and lands in the wizard", async () => {
     const user = await pickMaleta();
     drop("la-maleta.md", "## North Star\n\n- role: Senior Product Owner\n\n## Contact\n\n- phone: +64 21 000 0000");
     await user.click(await screen.findByRole("button", { name: /Unpack it/i }));
@@ -306,10 +128,8 @@ describe("IntakeScreen — path 3: la maleta", () => {
     const [, data, opts] = setDoc.mock.calls[0];
     expect(opts).toEqual({ merge: true });
     expect(data.goalSource).toBe("intake");
-    expect((data.intakeGoal as Record<string, unknown>).role).toBe("Senior Product Owner");
-    expect(data.contact).toEqual({ phone: "+64 21 000 0000" });
     expect(String(data.profileYaml)).toContain('phone: "+64 21 000 0000"');
-    expect(String(data.profileYaml)).toContain('- "Senior Product Owner"');
+    expect(await screen.findByRole("tablist", { name: /Intake steps/i })).toBeInTheDocument();
   });
 
   it("refuses a file type that is not a maleta", async () => {
@@ -333,35 +153,17 @@ describe("IntakeScreen — path 3: la maleta", () => {
   });
 });
 
-describe("IntakeScreen — path 1: the light one", () => {
-  it("stops after the essentials, and offers more without insisting", async () => {
-    const user = userEvent.setup();
-    render(<IntakeScreen />);
-    await user.click(screen.getByRole("button", { name: /Use what Compass already knows/i }));
-    await user.click(screen.getByLabelText("Your CV"));
-    await user.paste(REAL_CV);
-    await user.click(screen.getByRole("button", { name: /Read my CV/i }));
-    await user.click(screen.getByRole("button", { name: /Save my CV/i }));
-    await waitFor(() => expect(setDoc).toHaveBeenCalled());
-
-    // The North Star chooser is essential; the deeper cards are folded away.
-    expect(screen.getByRole("heading", { name: /Which North Star/i })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /What evaluations score against/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /Contact details and logistics/i })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /Go deeper/i }));
-    expect(screen.getByRole("heading", { name: /What evaluations score against/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Contact details and logistics/i })).toBeInTheDocument();
+describe("IntakeScreen — gates", () => {
+  it("renders nothing of its own when the portal isn't switched on", () => {
+    careerOps = { ctx: ctxWith(), loading: false, allowed: false };
+    const { container } = render(<IntakeScreen />);
+    expect(container.textContent).toBe("");
   });
 
-  it("path 2 shows everything straight away, because that is what they chose", async () => {
-    const user = await renderAtCvAsk();
-    await user.click(screen.getByLabelText("Your CV"));
-    await user.paste(REAL_CV);
-    await user.click(screen.getByRole("button", { name: /Read my CV/i }));
-    await user.click(screen.getByRole("button", { name: /Save my CV/i }));
-    await waitFor(() => expect(setDoc).toHaveBeenCalled());
-    expect(screen.getByRole("heading", { name: /What evaluations score against/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Contact details and logistics/i })).toBeInTheDocument();
+  it("waits rather than guessing while the setup doc is still loading", () => {
+    careerOps = { ctx: ctxWith({ setupLoading: true }), loading: false, allowed: true };
+    render(<IntakeScreen />);
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
   });
 });
