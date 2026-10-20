@@ -4,7 +4,8 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Settings2 } from "lucide-react";
 import Setup from "@/components/agents/Setup";
-import { PORTAL_HOME } from "@/lib/careerops/portal-nav";
+import Link from "next/link";
+import { INTAKE_HREF, PORTAL_HOME } from "@/lib/careerops/portal-nav";
 import { useCareerOps } from "./shared";
 
 function Inner() {
@@ -21,6 +22,10 @@ function Inner() {
         <h1 className="flex items-center gap-2"><Settings2 className="h-6 w-6 text-jh-red" strokeWidth={1.5} /> Your CV, North Star and watchlist</h1>
         <p className="text-jh-mute mt-1 max-w-2xl">{first ? "First time here. " : ""}Every tool in this portal works from three things: your CV (the only source of truth about you), the North Star goal you set on the Compass tab, and the companies you want to be found by. Everything stays on our own hardware, and nothing is ever submitted on your behalf.</p>
       </header>
+      <p className="text-sm text-jh-mute">
+        Prefer to be walked through it one thing at a time, or want to set a North Star here instead of on the Compass tab?{" "}
+        <Link href={INTAKE_HREF} className="underline underline-offset-2 hover:text-jh-red">Run intake</Link>.
+      </p>
       <Setup onReady={() => { if (first) router.replace(PORTAL_HOME); }} />
     </div>
   );

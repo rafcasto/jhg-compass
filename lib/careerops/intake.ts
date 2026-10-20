@@ -17,6 +17,9 @@
 // No React, no Firebase imports: the URL/step/readiness logic is unit-testable
 // and every screen reads its step list from here.
 
+import type { Goal } from "@/lib/goal";
+import type { GoalSource } from "./types";
+
 /** Files we can read in the browser with zero help: plain text and Markdown. */
 export const TEXT_CV_RE = /\.(md|markdown|txt)$/i;
 
@@ -56,6 +59,67 @@ export function cvReadiness(md: string): CvReadiness {
   return { words, hasExperience, hasSkills, scoreable, hint };
 }
 
+// ---- which North Star is in effect ----
+
+export const DEFAULT_GOAL_SOURCE: GoalSource = "compass";
+
+/** Anything but an explicit "intake" means the Compass tab stays in charge. */
+export const resolveGoalSource = (raw: unknown): GoalSource =>
+  raw === "intake" ? "intake" : DEFAULT_GOAL_SOURCE;
+
+/** A goal is only usable if it names a role — everything downstream keys off it. */
+export const hasGoalRole = (goal: Goal | null | undefined): boolean => !!goal?.role?.trim();
+
+export interface GoalResolutionInput {
+  /** setup.goalSource — the member's choice. */
+  source: unknown;
+  /** profile.goal — what the Compass tab holds. */
+  compassGoal: Goal | null | undefined;
+  /** setup.intakeGoal — what intake captured. */
+  intakeGoal: Goal | null | undefined;
+}
+
+export interface GoalResolution {
+  /** The source actually in effect (not merely the one chosen). */
+  source: GoalSource;
+  /** The goal the agents should be given. */
+  goal: Goal;
+  /** True when intake's goal is standing in front of the Compass one. */
+  overriding: boolean;
+  /** True when "intake" was chosen but had no role, so Compass carried it. */
+  fellBack: boolean;
+}
+
+const EMPTY: Goal = {};
+
+/**
+ * Decide which North Star the agents work from. Either process can drive at any
+ * stage, and switching back is lossless because neither goal is written over
+ * the other — intake's goal lives on the CareerOps setup doc, Compass's on the
+ * profile.
+ *
+ * One safety rule: choosing intake and then leaving it blank must not strand
+ * the agents with no goal at all, so an intake goal with no role falls back to
+ * Compass and says it did.
+ */
+export function effectiveGoal({ source, compassGoal, intakeGoal }: GoalResolutionInput): GoalResolution {
+  if (resolveGoalSource(source) === "intake") {
+    if (hasGoalRole(intakeGoal)) {
+      return { source: "intake", goal: intakeGoal as Goal, overriding: true, fellBack: false };
+    }
+    return { source: "compass", goal: compassGoal ?? EMPTY, overriding: false, fellBack: true };
+  }
+  return { source: "compass", goal: compassGoal ?? EMPTY, overriding: false, fellBack: false };
+}
+
+/** The other option, for the "switch to…" control. */
+export const otherGoalSource = (s: GoalSource): GoalSource => (s === "intake" ? "compass" : "intake");
+
+export const GOAL_SOURCE_LABELS: Record<GoalSource, string> = {
+  compass: "Your Compass North Star",
+  intake: "A North Star set here in intake",
+};
+
 // ---- the intake checklist ----
 
 export type IntakeStepKey = "cv" | "northstar" | "watchlist" | "answers";
@@ -64,8 +128,10 @@ export type IntakeStepKey = "cv" | "northstar" | "watchlist" | "answers";
 export interface IntakeSignals {
   /** setup.cvMarkdown has real content. */
   hasCv: boolean;
-  /** profile.goal.role from the Compass tab — the North Star. */
+  /** The role from whichever North Star is in effect (see effectiveGoal). */
   goalRole?: string | null;
+  /** Which source that role came from, so the step can say where to change it. */
+  goalSource?: GoalSource;
   /** setup.portals.companies.length */
   companies: number;
   /** How many standard answers are saved. */
@@ -92,6 +158,7 @@ export const INTAKE_HREF = "/careerops/intake";
  * member reaches the Apply screen.
  */
 export function intakeSteps(s: IntakeSignals): IntakeStep[] {
+  const fromIntake = resolveGoalSource(s.goalSource) === "intake";
   return [
     {
       key: "cv",
@@ -105,9 +172,10 @@ export function intakeSteps(s: IntakeSignals): IntakeStep[] {
       key: "northstar",
       label: "Your North Star goal",
       detail: s.goalRole
-        ? `Target role: ${s.goalRole}. Change it any time on the Compass tab.`
+        ? `Target role: ${s.goalRole}. ${fromIntake ? "Set here in intake — it overrides your Compass goal." : "Change it any time on the Compass tab."}`
         : "Set the role, industry, geography and salary you're aiming at — scoring is relative to it.",
-      href: "/compass",
+      // Send them where the goal in effect actually lives.
+      href: fromIntake ? INTAKE_HREF : "/compass",
       done: !!s.goalRole?.trim(),
       optional: false,
     },

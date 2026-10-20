@@ -189,3 +189,55 @@ describe("IntakeScreen — gates", () => {
     expect(screen.queryByLabelText("Your CV")).not.toBeInTheDocument();
   });
 });
+
+describe("IntakeScreen — either process can own the North Star", () => {
+  const withCv = (over: Record<string, unknown> = {}) => ({
+    ctx: ctxWith({ hasCv: true, setup: { cvMarkdown: "x", portals: { companies: [], positive: [], negative: [] }, ...over } }),
+    loading: false,
+    allowed: true,
+  });
+
+  it("offers the choice on the checklist, so it is switchable at any stage", () => {
+    careerOps = withCv();
+    render(<IntakeScreen />);
+    expect(screen.getByRole("heading", { name: /Which North Star do the agents use/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Use my Compass North Star/i })).toBeChecked();
+  });
+
+  it("keeps the chooser out of the way while the CV is still the question", () => {
+    careerOps = { ctx: ctxWith(), loading: false, allowed: true };
+    render(<IntakeScreen />);
+    expect(screen.queryByRole("heading", { name: /Which North Star/i })).not.toBeInTheDocument();
+  });
+
+  it("reads the checklist off the intake goal once it overrides Compass", () => {
+    careerOps = withCv({ goalSource: "intake", intakeGoal: { role: "Senior Product Owner" } });
+    render(<IntakeScreen />);
+    // profile.goal.role is "Product Owner"; the intake goal wins.
+    expect(screen.getByText(/Target role: Senior Product Owner/)).toBeInTheDocument();
+    expect(screen.getByText(/overrides your Compass goal/)).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Set it here in intake/i })).toBeChecked();
+  });
+
+  it("still counts the North Star done when it came from intake", () => {
+    careerOps = withCv({ goalSource: "intake", intakeGoal: { role: "Senior Product Owner" } });
+    render(<IntakeScreen />);
+    expect(screen.getByText("2/3")).toBeInTheDocument(); // CV + North Star; watchlist still open
+  });
+
+  it("falls back to the Compass goal when the override has no role", () => {
+    careerOps = withCv({ goalSource: "intake", intakeGoal: { role: "" } });
+    render(<IntakeScreen />);
+    expect(screen.getByText(/Target role: Product Owner/)).toBeInTheDocument();
+    expect(screen.getByText(/Change it any time on the Compass tab/)).toBeInTheDocument();
+    expect(screen.getByText("2/3")).toBeInTheDocument();
+  });
+
+  it("leaves the North Star step open when neither process has a role", () => {
+    profile = { firstName: "Jane", lastName: "Smith", email: "jane@example.com", goal: {} };
+    careerOps = withCv({ goalSource: "intake", intakeGoal: {} });
+    render(<IntakeScreen />);
+    expect(screen.getByText("1/3")).toBeInTheDocument();
+    expect(screen.getByText(/Set the role, industry, geography and salary/)).toBeInTheDocument();
+  });
+});

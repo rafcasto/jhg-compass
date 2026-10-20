@@ -11,11 +11,12 @@ import { useAuth } from "@/components/AuthProvider";
 import { paths, useLiveCollection, useLiveDoc } from "@/lib/firestore/db";
 import { buildProfileYaml } from "@/lib/careerops/profile-yaml";
 import { buildPortalsYaml, suggestKeywords, DEFAULT_NEGATIVE } from "@/lib/careerops/portals-yaml";
-import { cvReadiness, intakeComplete, intakeProgress, intakeSteps, isTextCvFile } from "@/lib/careerops/intake";
+import { cvReadiness, effectiveGoal, intakeComplete, intakeProgress, intakeSteps, isTextCvFile } from "@/lib/careerops/intake";
 import { PORTAL_HOME, SETUP_HREF } from "@/lib/careerops/portal-nav";
 import type { CareerOpsAnswer } from "@/lib/careerops/answers";
 import type { CareerOpsPortals, CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
+import NorthStarSource from "./NorthStarSource";
 import { useCareerOps } from "./shared";
 
 // CareerOps intake — the portal's onboarding. One thing at a time: the CV,
@@ -51,14 +52,21 @@ export default function IntakeScreen() {
     if (ctx && !ctx.setupLoading && ctx.hasCv && phase === "ask") setPhase("done");
   }, [ctx, phase]);
 
+  // Either process can own the goal, so the checklist reads the one in effect
+  // rather than assuming Compass.
+  const goal = useMemo(
+    () => effectiveGoal({ source: ctx?.setup?.goalSource, compassGoal: profile?.goal, intakeGoal: ctx?.setup?.intakeGoal }),
+    [ctx?.setup?.goalSource, ctx?.setup?.intakeGoal, profile?.goal],
+  );
   const steps = useMemo(
     () => intakeSteps({
       hasCv: !!ctx?.hasCv,
-      goalRole: profile?.goal?.role ?? null,
+      goalRole: goal.goal.role ?? null,
+      goalSource: goal.source,
       companies: ctx?.setup?.portals?.companies?.length ?? 0,
       answers: answers.length,
     }),
-    [ctx?.hasCv, ctx?.setup, profile?.goal?.role, answers.length],
+    [ctx?.hasCv, ctx?.setup, goal, answers.length],
   );
   const progress = intakeProgress(steps);
   const readiness = md.trim() ? cvReadiness(md) : null;
@@ -96,12 +104,12 @@ export default function IntakeScreen() {
       // watchlist step has something sensible in it the moment they get there.
       const portals: CareerOpsPortals = existing?.portals ?? {
         companies: [],
-        positive: suggestKeywords(profile?.goal?.role),
+        positive: suggestKeywords(goal.goal.role),
         negative: DEFAULT_NEGATIVE,
       };
       const doc: CareerOpsSetupV2 = {
         cvMarkdown: md.trim(),
-        profileYaml: buildProfileYaml({ profile, goal: profile?.goal, notes: existing?.notes ?? "" }),
+        profileYaml: buildProfileYaml({ profile, goal: goal.goal, notes: existing?.notes ?? "" }),
         notes: existing?.notes ?? "",
         portals,
         portalsYaml: buildPortalsYaml(portals),
@@ -254,6 +262,9 @@ export default function IntakeScreen() {
           )}
         </section>
       )}
+
+      {/* Switchable at any stage, not just on the way in. */}
+      {phase === "done" && uid && <NorthStarSource uid={uid} setup={ctx.setup} profile={profile} />}
     </div>
   );
 }

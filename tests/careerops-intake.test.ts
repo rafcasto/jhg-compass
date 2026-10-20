@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   cvReadiness,
+  effectiveGoal,
+  hasGoalRole,
+  otherGoalSource,
+  resolveGoalSource,
+  DEFAULT_GOAL_SOURCE,
   intakeComplete,
   intakeProgress,
   intakeSteps,
@@ -134,5 +139,88 @@ describe("CareerOps intake — routing", () => {
   it("is one route, exported from both modules", () => {
     expect(INTAKE_HREF).toBe("/careerops/intake");
     expect(NAV_INTAKE_HREF).toBe(INTAKE_HREF);
+  });
+});
+
+describe("CareerOps intake — which North Star is in effect", () => {
+  const compass = { role: "Programme Manager", city: "Wellington" };
+  const intake = { role: "Senior Product Owner", subsector: "climate-tech", city: "Auckland" };
+
+  it("defaults to Compass, and only an explicit \"intake\" changes that", () => {
+    expect(DEFAULT_GOAL_SOURCE).toBe("compass");
+    expect(resolveGoalSource(undefined)).toBe("compass");
+    expect(resolveGoalSource(null)).toBe("compass");
+    expect(resolveGoalSource("compass")).toBe("compass");
+    expect(resolveGoalSource("Intake")).toBe("compass"); // not a loose match
+    expect(resolveGoalSource("")).toBe("compass");
+    expect(resolveGoalSource("intake")).toBe("intake");
+  });
+
+  it("leaves a member who predates the choice on their Compass goal", () => {
+    const r = effectiveGoal({ source: undefined, compassGoal: compass, intakeGoal: undefined });
+    expect(r).toEqual({ source: "compass", goal: compass, overriding: false, fellBack: false });
+  });
+
+  it("lets intake override Compass once it names a role", () => {
+    const r = effectiveGoal({ source: "intake", compassGoal: compass, intakeGoal: intake });
+    expect(r.source).toBe("intake");
+    expect(r.goal).toEqual(intake);
+    expect(r.overriding).toBe(true);
+    expect(r.fellBack).toBe(false);
+  });
+
+  it("does not strand the agents when intake is chosen but blank", () => {
+    for (const blank of [undefined, null, {}, { role: "" }, { role: "   " }, { city: "Auckland" }]) {
+      const r = effectiveGoal({ source: "intake", compassGoal: compass, intakeGoal: blank });
+      expect(r.source).toBe("compass");
+      expect(r.goal).toEqual(compass);
+      expect(r.overriding).toBe(false);
+      expect(r.fellBack).toBe(true);
+    }
+  });
+
+  it("switching back to Compass restores it untouched — neither goal is destroyed", () => {
+    const back = effectiveGoal({ source: "compass", compassGoal: compass, intakeGoal: intake });
+    expect(back.goal).toEqual(compass);
+    expect(back.overriding).toBe(false);
+    // and forward again, with the intake goal still intact
+    expect(effectiveGoal({ source: "intake", compassGoal: compass, intakeGoal: intake }).goal).toEqual(intake);
+  });
+
+  it("never hands back null, so callers can read .role safely", () => {
+    expect(effectiveGoal({ source: "compass", compassGoal: null, intakeGoal: null }).goal).toEqual({});
+    expect(effectiveGoal({ source: "intake", compassGoal: undefined, intakeGoal: undefined }).goal).toEqual({});
+  });
+
+  it("knows a goal is only usable once it names a role", () => {
+    expect(hasGoalRole({ role: "PO" })).toBe(true);
+    expect(hasGoalRole({ role: " " })).toBe(false);
+    expect(hasGoalRole({ city: "Auckland" })).toBe(false);
+    expect(hasGoalRole(null)).toBe(false);
+  });
+
+  it("offers the other source for the switch control", () => {
+    expect(otherGoalSource("compass")).toBe("intake");
+    expect(otherGoalSource("intake")).toBe("compass");
+  });
+});
+
+describe("CareerOps intake — the checklist follows the source in effect", () => {
+  it("sends them to the Compass tab when Compass owns the goal", () => {
+    const step = intakeSteps({ hasCv: true, goalRole: "Programme Manager", goalSource: "compass", companies: 1, answers: 0 })[1];
+    expect(step.href).toBe("/compass");
+    expect(step.detail).toMatch(/Change it any time on the Compass tab/);
+  });
+
+  it("sends them back to intake when intake owns the goal, and says it overrides", () => {
+    const step = intakeSteps({ hasCv: true, goalRole: "Senior Product Owner", goalSource: "intake", companies: 1, answers: 0 })[1];
+    expect(step.href).toBe(INTAKE_HREF);
+    expect(step.detail).toMatch(/overrides your Compass goal/);
+    expect(step.detail).toContain("Senior Product Owner");
+  });
+
+  it("counts the step done from the effective role, whatever the source", () => {
+    expect(intakeSteps({ hasCv: true, goalRole: "PO", goalSource: "intake", companies: 1, answers: 0 })[1].done).toBe(true);
+    expect(intakeSteps({ hasCv: true, goalRole: null, goalSource: "intake", companies: 1, answers: 0 })[1].done).toBe(false);
   });
 });
