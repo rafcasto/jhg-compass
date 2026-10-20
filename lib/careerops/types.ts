@@ -166,6 +166,36 @@ export interface CareerOpsPortals { companies: PortalCompany[]; positive: string
 // "compass", so every member who predates intake is unaffected.
 export type GoalSource = "compass" | "intake";
 
+// candidate.* fields career-ops' profile.yml carries and the Pi worker ALREADY
+// reads (careerops-worker/lib/profile.js → parseProfile). They reach the
+// generated CV PDF header, the cover-letter contact block and the application
+// form autofill, so leaving them unset silently degrades all three.
+export interface CareerOpsContact {
+  /** candidate.title — professional headline under the name on the CV. */
+  title?: string;
+  phone?: string;
+  linkedin?: string;
+  github?: string;
+  /** candidate.portfolio_url */
+  portfolio?: string;
+}
+
+// compensation.* and location.* beyond the five Compass goal fields. These were
+// previously hardcoded to "" in buildProfileYaml even when the member had
+// answered them elsewhere.
+export interface CareerOpsPolicy {
+  /** compensation.minimum — the walk-away number. */
+  minimumSalary?: string;
+  /** compensation.location_flexibility */
+  locationFlexibility?: string;
+  /** location.visa_status — free text. */
+  visaStatus?: string;
+  /** location.needs_sponsorship — hard blocker when a JD says it won't sponsor. */
+  needsSponsorship?: boolean;
+  /** location.authorized_in — countries where work authorization is already held. */
+  authorizedIn?: string[];
+}
+
 export interface CareerOpsSetupV2 extends CareerOpsSetup {
   portals?: CareerOpsPortals;
   portalsYaml?: string;
@@ -173,6 +203,8 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   /** Captured in intake. Only in effect while goalSource is "intake". */
   intakeGoal?: Goal;
   goalUpdatedAt?: number;
+  contact?: CareerOpsContact;
+  policy?: CareerOpsPolicy;
 }
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last

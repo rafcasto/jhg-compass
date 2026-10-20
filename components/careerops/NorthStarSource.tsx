@@ -6,8 +6,8 @@ import { setDoc } from "firebase/firestore";
 import { Check, Compass, Save, Sparkles, TriangleAlert } from "lucide-react";
 import GoalFields from "@/components/compass/GoalFields";
 import { paths } from "@/lib/firestore/db";
-import { buildProfileYaml } from "@/lib/careerops/profile-yaml";
 import { effectiveGoal, hasGoalRole, resolveGoalSource } from "@/lib/careerops/intake";
+import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import { EMPTY_GOAL, GOAL_KEYS, type Goal } from "@/lib/goal";
 import type { CareerOpsSetupV2, GoalSource } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
@@ -53,7 +53,7 @@ export default function NorthStarSource({ uid, setup, profile }: { uid: string; 
           intakeGoal,
           // Rebuild the agents' profile.yml from whichever goal now wins, or the
           // override would be invisible to every tool.
-          profileYaml: buildProfileYaml({ profile, goal: next.goal, notes: setup?.notes ?? "" }),
+          profileYaml: buildSetupProfileYaml({ profile, setup, overrides: { goalSource: choice, intakeGoal } }),
           goalUpdatedAt: Date.now(),
           updatedAt: Date.now(),
         },

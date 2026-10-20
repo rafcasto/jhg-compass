@@ -9,13 +9,14 @@ import remarkGfm from "remark-gfm";
 import { ArrowRight, Check, Circle, FileText, Lock, RotateCcw, Upload, TriangleAlert, Sparkles } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { paths, useLiveCollection, useLiveDoc } from "@/lib/firestore/db";
-import { buildProfileYaml } from "@/lib/careerops/profile-yaml";
 import { buildPortalsYaml, suggestKeywords, DEFAULT_NEGATIVE } from "@/lib/careerops/portals-yaml";
 import { cvReadiness, effectiveGoal, intakeComplete, intakeProgress, intakeSteps, isTextCvFile } from "@/lib/careerops/intake";
 import { PORTAL_HOME, SETUP_HREF } from "@/lib/careerops/portal-nav";
 import type { CareerOpsAnswer } from "@/lib/careerops/answers";
 import type { CareerOpsPortals, CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
+import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
+import ContactPolicy from "./ContactPolicy";
 import NorthStarSource from "./NorthStarSource";
 import { useCareerOps } from "./shared";
 
@@ -109,7 +110,7 @@ export default function IntakeScreen() {
       };
       const doc: CareerOpsSetupV2 = {
         cvMarkdown: md.trim(),
-        profileYaml: buildProfileYaml({ profile, goal: goal.goal, notes: existing?.notes ?? "" }),
+        profileYaml: buildSetupProfileYaml({ profile, setup: existing }),
         notes: existing?.notes ?? "",
         portals,
         portalsYaml: buildPortalsYaml(portals),
@@ -265,6 +266,7 @@ export default function IntakeScreen() {
 
       {/* Switchable at any stage, not just on the way in. */}
       {phase === "done" && uid && <NorthStarSource uid={uid} setup={ctx.setup} profile={profile} />}
+      {phase === "done" && uid && <ContactPolicy uid={uid} setup={ctx.setup} profile={profile} />}
     </div>
   );
 }
