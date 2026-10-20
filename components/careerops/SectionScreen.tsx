@@ -4,7 +4,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Wifi, WifiOff, Settings2 } from "lucide-react";
-import { findSection, parseTool, SETUP_HREF, type SectionKey } from "@/lib/careerops/portal-nav";
+import { findSection, parseTool, INTAKE_HREF, SETUP_HREF, type SectionKey } from "@/lib/careerops/portal-nav";
 import { useCareerOps, type CareerOpsCtx } from "./shared";
 import ScanTool from "./tools/ScanTool";
 import MultiEvaluate from "./tools/MultiEvaluate";
@@ -38,9 +38,10 @@ export default function SectionScreen({ section }: { section: SectionKey }) {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
 
-  // No CV yet → the tools have nothing to work with; send first-timers to Setup once.
+  // No CV yet → the tools have nothing to work with; send first-timers through
+  // intake once (one question at a time), not into the full Setup screen.
   useEffect(() => {
-    if (ctx && !ctx.setupLoading && ctx.setup === null) router.replace(`${SETUP_HREF}?first=1`);
+    if (ctx && !ctx.setupLoading && ctx.setup === null) router.replace(INTAKE_HREF);
   }, [ctx, router]);
 
   if (loading || !ctx || !hydrated) return <p className="text-jh-mute animate-pulse">Loading…</p>;
@@ -62,7 +63,7 @@ export default function SectionScreen({ section }: { section: SectionKey }) {
           : s.online ? <span className="inline-flex items-center gap-1.5 text-rb-green-dark font-semibold"><Wifi className="h-4 w-4" /> Agents awake</span>
           : <span className="inline-flex items-center gap-1.5 text-jh-mute font-semibold"><WifiOff className="h-4 w-4" /> Agents asleep — jobs wait in the queue</span>}
           {s && <p className="text-xs text-jh-mute">{s.queueLength} in queue · {s.quotaUsed} agent runs today</p>}
-          <Link href={SETUP_HREF} className="inline-flex items-center gap-1 text-xs text-jh-mute hover:text-jh-red underline underline-offset-2"><Settings2 className="h-3.5 w-3.5" /> {ctx.hasCv ? "CV, North Star & watchlist" : "Add your CV to start"}</Link>
+          <Link href={ctx.hasCv ? SETUP_HREF : INTAKE_HREF} className="inline-flex items-center gap-1 text-xs text-jh-mute hover:text-jh-red underline underline-offset-2"><Settings2 className="h-3.5 w-3.5" /> {ctx.hasCv ? "CV, North Star & watchlist" : "Add your CV to start"}</Link>
         </div>
       </header>
 
