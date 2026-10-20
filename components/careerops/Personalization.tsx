@@ -113,11 +113,10 @@ export default function Personalization({ uid, setup, profile }: { uid: string; 
   }
 
   return (
-    <section className="card p-5 space-y-5">
+    <div className="space-y-5">
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="flex items-center gap-2 text-lg"><Target className="h-4 w-4 text-jh-red" /> What evaluations score against</h2>
-          <p className="text-jh-mute text-sm mt-1 max-w-2xl">
+          <p className="text-jh-mute text-sm max-w-2xl">
             Your CV says what you&apos;ve done. This says what you&apos;re going for and how to argue it — the agents score every
             posting against it. Leave a section blank and it is treated as unknown, never guessed.
           </p>
@@ -217,6 +216,6 @@ export default function Personalization({ uid, setup, profile }: { uid: string; 
           </p>
         )}
       </div>
-    </section>
+    </div>
   );
 }

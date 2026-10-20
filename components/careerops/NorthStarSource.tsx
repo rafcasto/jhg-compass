@@ -74,10 +74,9 @@ export default function NorthStarSource({ uid, setup, profile }: { uid: string; 
   }
 
   return (
-    <section className="card p-5 space-y-4">
+    <div className="space-y-4">
       <div>
-        <h2 className="text-lg">Which North Star do the agents use?</h2>
-        <p className="text-jh-mute text-sm mt-1 max-w-2xl">
+        <p className="text-jh-mute text-sm max-w-2xl">
           Scoring is relative to your goal, so something has to own it. Use the one on your Compass tab, or set one here in
           intake — you can switch at any time, and neither is overwritten by the other.
         </p>
@@ -147,6 +146,6 @@ export default function NorthStarSource({ uid, setup, profile }: { uid: string; 
           {msg.startsWith("Saved") ? <Check className="h-4 w-4 shrink-0 mt-0.5" /> : <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />} {msg}
         </p>
       )}
-    </section>
+    </div>
   );
 }

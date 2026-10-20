@@ -70,10 +70,9 @@ export default function ContactPolicy({ uid, setup, profile }: { uid: string; se
   }
 
   return (
-    <section className="card p-5 space-y-4">
+    <div className="space-y-4">
       <div>
-        <h2 className="flex items-center gap-2 text-lg"><Link2 className="h-4 w-4 text-jh-red" /> Contact details and logistics</h2>
-        <p className="text-jh-mute text-sm mt-1 max-w-2xl">
+        <p className="text-jh-mute text-sm max-w-2xl">
           These go straight onto your generated CV and cover letter, and into application forms the agents fill for you.
           All optional — but anything you leave blank is simply missing from those documents.
         </p>
@@ -158,6 +157,6 @@ export default function ContactPolicy({ uid, setup, profile }: { uid: string; se
           </p>
         )}
       </div>
-    </section>
+    </div>
   );
 }
