@@ -51,6 +51,11 @@ export type ToolKey = (typeof PORTAL_SECTIONS)[number]["tools"][number]["key"];
 
 export const PORTAL_HOME = "/careerops/sourcing";
 export const SETUP_HREF = "/careerops/setup";
+// Onboarding. First-timers land here instead of the full Setup screen: one
+// thing at a time (CV first), then the checklist of what is still missing.
+// The canonical definition lives in lib/careerops/intake.ts; re-exported here
+// so every screen can take all portal routes from one module.
+export { INTAKE_HREF } from "./intake";
 
 export const findSection = (key: string): PortalSection | undefined => (PORTAL_SECTIONS as readonly PortalSection[]).find((s) => s.key === key);
 
