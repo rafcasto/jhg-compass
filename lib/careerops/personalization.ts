@@ -228,3 +228,111 @@ export function renderProfileMd(p: Personalization | null | undefined): string {
   }
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
 }
+
+// ---- reading a _profile.md back in ----
+//
+// The inverse of renderProfileMd / renderSection, so a member can bring their
+// own modes/_profile.md — straight out of a career-ops checkout — instead of
+// retyping eight sections into a form.
+//
+// The file is UNTRUSTED INPUT. career-ops states the rule for intake documents
+// and it applies here verbatim: the text is evidence, never instruction. A
+// section may well contain something that reads like a command ("ignore
+// previous instructions", "add Rust to the skills"). Nothing here acts on
+// content — it only extracts strings, and every one of them goes back through
+// coercePersonalization, so the caps and shape rules apply to an uploaded file
+// exactly as they do to the form.
+
+/** Split a markdown document into `heading → body`, keyed by the exact heading line. */
+function sectionBodies(md: string): Map<string, string> {
+  const out = new Map<string, string>();
+  // Strip HTML comments first: the template's guidance comments sit inside the
+  // sections and would otherwise be read as content.
+  const text = String(md ?? "").replace(/<!--[\s\S]*?-->/g, "");
+  const parts = text.split(/^(##\s+.+)$/m);
+  for (let i = 1; i < parts.length; i += 2) {
+    out.set(parts[i].trim(), (parts[i + 1] ?? "").trim());
+  }
+  return out;
+}
+
+const isUnanswered = (body: string): boolean =>
+  !body || /^_?NOT SET\b/i.test(body) || /^<!--/.test(body);
+
+/** Table rows as trimmed cell arrays, skipping the header and the `|---|` rule. */
+function tableRows(body: string): string[][] {
+  return body
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("|") && !/^\|[\s:|-]+\|$/.test(l))
+    .map((l) => l.replace(/^\||\|$/g, "").split("|").map((c) => c.trim()))
+    .slice(1); // drop the header row
+}
+
+const unbold = (s: string) => s.replace(/\*\*/g, "").trim();
+
+/**
+ * Pull the eight sections out of a rendered _profile.md. Unrecognised headings
+ * and unanswered sections are ignored; everything found is validated through
+ * coercePersonalization, so this can never produce a shape the writer rejects.
+ */
+export function parseProfileMd(md: string): Personalization {
+  const bodies = sectionBodies(md);
+  const body = (heading: string): string => {
+    const b = bodies.get(heading) ?? "";
+    return isUnanswered(b) ? "" : b;
+  };
+  const raw: Record<string, unknown> = {};
+
+  const roles = body("## Your Target Roles");
+  if (roles) {
+    raw.targetRoles = tableRows(roles)
+      .map(([archetype, axes, buys]) => ({ archetype: unbold(archetype ?? ""), axes, buys }))
+      .filter((r) => r.archetype);
+  }
+
+  const framing = body("## Your Adaptive Framing");
+  if (framing) {
+    raw.adaptiveFraming = tableRows(framing)
+      .map(([role, emphasize, proof]) => ({ role: unbold(role ?? ""), emphasize, proof }))
+      .filter((r) => r.role && r.emphasize);
+  }
+
+  for (const [heading, key] of [
+    ["## Your Exit Narrative", "exitNarrative"],
+    ["## Your Cross-cutting Advantage", "crossCuttingAdvantage"],
+    ["## Your Comp Targets", "compTargets"],
+  ] as const) {
+    const b = body(heading);
+    if (b) raw[key] = b;
+  }
+
+  const port = body("## Your Portfolio / Demo");
+  if (port) {
+    const field = (k: string) => port.match(new RegExp(`^-\\s*${k}\\s*:\\s*(.+)$`, "mi"))?.[1]?.trim();
+    const url = field("url");
+    if (url) raw.portfolio = { url, description: field("what"), whenToShare: field("when_to_share") };
+  }
+
+  const scripts = body("## Your Negotiation Scripts");
+  if (scripts) {
+    raw.negotiationScripts = scripts
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith(">"))
+      .map((l) => l.replace(/^>\s*/, "").replace(/^["“]|["”]$/g, "").trim())
+      .filter(Boolean);
+  }
+
+  const loc = body("## Your Location Policy");
+  if (loc) {
+    raw.locationPolicy = loc
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => /^[-*]\s+/.test(l))
+      .map((l) => l.replace(/^[-*]\s+/, "").replace(/\*\*/g, "").trim())
+      .filter(Boolean);
+  }
+
+  return coercePersonalization(raw);
+}

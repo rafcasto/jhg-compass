@@ -16,7 +16,10 @@ import type { CareerOpsAnswer } from "@/lib/careerops/answers";
 import type { CareerOpsPortals, CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
+import { type StartPathKey } from "@/lib/careerops/maleta";
 import ContactPolicy from "./ContactPolicy";
+import MaletaUpload from "./MaletaUpload";
+import StartChooser from "./StartChooser";
 import Personalization from "./Personalization";
 import NorthStarSource from "./NorthStarSource";
 import { useCareerOps } from "./shared";
@@ -31,7 +34,8 @@ import { useCareerOps } from "./shared";
 // single input, propose → review → confirm, readiness as a hint and never a
 // gate, and the "what comes next" checklist visible from the first second.
 
-type Phase = "ask" | "review" | "saving" | "done";
+// "choose" → the three ways in; "maleta" → path 3's upload.
+type Phase = "choose" | "ask" | "maleta" | "review" | "saving" | "done";
 
 export default function IntakeScreen() {
   const router = useRouter();
@@ -41,7 +45,10 @@ export default function IntakeScreen() {
   const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
   const { data: answers } = useLiveCollection<CareerOpsAnswer>(uid, paths.careerOpsAnswers);
 
-  const [phase, setPhase] = useState<Phase>("ask");
+  const [phase, setPhase] = useState<Phase>("choose");
+  const [path, setPath] = useState<StartPathKey | null>(null);
+  // The light path shows only the essentials until the member asks for more.
+  const [deeper, setDeeper] = useState(false);
   const [paste, setPaste] = useState("");
   const [md, setMd] = useState("");
   const [over, setOver] = useState(false);
@@ -51,7 +58,7 @@ export default function IntakeScreen() {
   // A member who already has a CV (or comes back after saving one) skips the
   // ask: intake becomes the checklist of what is still missing.
   useEffect(() => {
-    if (ctx && !ctx.setupLoading && ctx.hasCv && phase === "ask") setPhase("done");
+    if (ctx && !ctx.setupLoading && ctx.hasCv && phase === "choose") setPhase("done");
   }, [ctx, phase]);
 
   // Either process can own the goal, so the checklist reads the one in effect
@@ -134,12 +141,16 @@ export default function IntakeScreen() {
         <p className="eyebrow">CareerOps · Intake</p>
         <h1 className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-jh-red" strokeWidth={1.5} />
-          {phase === "done" ? "Your CareerOps intake" : "Start with your CV"}
+          {phase === "done" ? "Your CareerOps intake" : phase === "choose" ? "Let's get you set up" : phase === "maleta" ? "Upload la maleta" : "Start with your CV"}
         </h1>
         <p className="text-jh-mute mt-1 max-w-2xl">
           {phase === "done"
             ? "Everything the agents know about you comes from these. Fill the gaps whenever you like — nothing here is ever submitted on your behalf."
-            : "Paste the text, or drop it in as a Markdown or plain-text file (.md / .txt). Keep the detail — dates, numbers, tools — because the Evaluator quotes lines from it as evidence. It stays on our own hardware."}
+            : phase === "choose"
+              ? "Three ways in, and they all end up in the same place. Everything stays on our own hardware, and nothing is ever submitted on your behalf."
+              : phase === "maleta"
+                ? "One file with everything in it. We read it in your browser and show you what we found before saving anything."
+                : "Paste the text, or drop it in as a Markdown or plain-text file (.md / .txt). Keep the detail — dates, numbers, tools — because the Evaluator quotes lines from it as evidence. It stays on our own hardware."}
         </p>
       </header>
 
@@ -147,6 +158,25 @@ export default function IntakeScreen() {
         <p role="alert" className="flex items-start gap-2 rounded-[10px] border border-jh-red/30 bg-jh-red/5 px-3 py-2.5 text-sm text-jh-red">
           <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" /> {err}
         </p>
+      )}
+
+      {/* ── choose: the three ways in ── */}
+      {phase === "choose" && (
+        <StartChooser
+          goalRole={goal.goal.role ?? null}
+          onPick={(k) => { setPath(k); setErr(null); setPhase(k === "maleta" ? "maleta" : "ask"); }}
+        />
+      )}
+
+      {/* ── path 3: upload la maleta ── */}
+      {phase === "maleta" && uid && (
+        <MaletaUpload
+          uid={uid}
+          setup={ctx.setup}
+          profile={profile}
+          onDone={() => setPhase("done")}
+          onBack={() => { setPath(null); setErr(null); setPhase("choose"); }}
+        />
       )}
 
       {/* ── ask: one input ── */}
@@ -175,6 +205,9 @@ export default function IntakeScreen() {
               <button type="button" disabled={!paste.trim()} onClick={() => takeText(paste)} className="btn-primary ml-auto text-sm disabled:opacity-60">
                 Read my CV <ArrowRight className="h-4 w-4" />
               </button>
+            </div>
+            <div className="pt-2">
+              <button type="button" onClick={() => { setPath(null); setErr(null); setPhase("choose"); }} className="btn-ghost text-xs">Other ways to start</button>
             </div>
           </div>
         </section>
@@ -267,8 +300,23 @@ export default function IntakeScreen() {
 
       {/* Switchable at any stage, not just on the way in. */}
       {phase === "done" && uid && <NorthStarSource uid={uid} setup={ctx.setup} profile={profile} />}
-      {phase === "done" && uid && <ContactPolicy uid={uid} setup={ctx.setup} profile={profile} />}
-      {phase === "done" && uid && <Personalization uid={uid} setup={ctx.setup} profile={profile} />}
+      {/* The light path (path 1) stops here until the member asks to go further;
+          the other two show everything, because that is what they chose. */}
+      {phase === "done" && uid && (path === "compass" && !deeper ? (
+        <section className="card p-5 space-y-2">
+          <h2 className="text-lg">Want the agents to argue your case better?</h2>
+          <p className="text-jh-mute text-sm max-w-2xl">
+            There is more you can tell them — contact details for your generated CV, your walk-away number, and the
+            targeting every posting is scored against. None of it is required, and you can come back any time.
+          </p>
+          <button type="button" onClick={() => setDeeper(true)} className="btn-secondary text-sm">Go deeper <ArrowRight className="h-4 w-4" /></button>
+        </section>
+      ) : (
+        <>
+          <ContactPolicy uid={uid} setup={ctx.setup} profile={profile} />
+          <Personalization uid={uid} setup={ctx.setup} profile={profile} />
+        </>
+      ))}
     </div>
   );
 }

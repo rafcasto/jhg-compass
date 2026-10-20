@@ -8,3 +8,6 @@ out/
 .vercel
 next-env.d.ts
 *.tsbuildinfo
+
+# Install-shield audit log (machine-local)
+.ccmb/
