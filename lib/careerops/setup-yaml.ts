@@ -10,10 +10,11 @@
 import type { Profile } from "@/lib/types";
 import { buildProfileYaml } from "./profile-yaml";
 import { effectiveGoal } from "./intake";
+import { renderProfileMd } from "./personalization";
 import type { CareerOpsSetupV2 } from "./types";
 
 /** The slice of the setup document that reaches profile.yml. */
-export type SetupYamlFields = Pick<CareerOpsSetupV2, "goalSource" | "intakeGoal" | "contact" | "policy" | "notes">;
+export type SetupYamlFields = Pick<CareerOpsSetupV2, "goalSource" | "intakeGoal" | "contact" | "policy" | "notes" | "personalization">;
 
 export interface SetupYamlInput {
   profile: Profile | null | undefined;
@@ -36,6 +37,7 @@ export function resolveSetupFields({ setup, overrides = {} }: Pick<SetupYamlInpu
     contact: pick("contact"),
     policy: pick("policy"),
     notes: pick("notes"),
+    personalization: pick("personalization"),
   };
 }
 
@@ -49,7 +51,21 @@ export function buildSetupProfileYaml({ profile, setup, overrides }: SetupYamlIn
     notes: f.notes ?? "",
     contact: f.contact,
     policy: f.policy,
+    personalization: f.personalization,
   });
+}
+
+/**
+ * The rendered modes/_profile.md for this member.
+ *
+ * NOTE: the Pi worker does not read this yet — its prompt builders take `cv`
+ * and `profileYaml` only (careerops-worker/lib/prompts). The sections that have
+ * a profile.yml home (exit_story, superpowers, dashboard) therefore DO reach
+ * the agents today via buildSetupProfileYaml; the rest are stored ready for a
+ * worker change. Storing it now means the member only fills it in once.
+ */
+export function buildSetupProfileMd({ setup, overrides }: Pick<SetupYamlInput, "setup" | "overrides">): string {
+  return renderProfileMd(resolveSetupFields({ setup, overrides }).personalization);
 }
 
 /**
@@ -63,5 +79,6 @@ export function preserveSetupFields(setup: CareerOpsSetupV2 | null | undefined):
   if (setup?.intakeGoal) out.intakeGoal = setup.intakeGoal;
   if (setup?.contact) out.contact = setup.contact;
   if (setup?.policy) out.policy = setup.policy;
+  if (setup?.personalization) out.personalization = setup.personalization;
   return out;
 }

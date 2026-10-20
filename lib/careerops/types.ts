@@ -1,5 +1,6 @@
 // Client-safe types for the career-ops integration (no Upstash / Firebase imports).
 import type { Goal } from "@/lib/goal";
+import type { Personalization } from "./personalization";
 import type { AgentKey, CareerOpsJobStatus, CareerOpsJobType } from "./keys";
 
 export interface CareerOpsJob {
@@ -205,6 +206,10 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   goalUpdatedAt?: number;
   contact?: CareerOpsContact;
   policy?: CareerOpsPolicy;
+  /** The eight `## Your …` sections of career-ops' modes/_profile.md. */
+  personalization?: Personalization;
+  /** Rendered modes/_profile.md, stored for the worker and for transparency. */
+  profileMd?: string;
 }
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last

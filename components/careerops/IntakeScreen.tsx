@@ -17,6 +17,7 @@ import type { CareerOpsPortals, CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import ContactPolicy from "./ContactPolicy";
+import Personalization from "./Personalization";
 import NorthStarSource from "./NorthStarSource";
 import { useCareerOps } from "./shared";
 
@@ -267,6 +268,7 @@ export default function IntakeScreen() {
       {/* Switchable at any stage, not just on the way in. */}
       {phase === "done" && uid && <NorthStarSource uid={uid} setup={ctx.setup} profile={profile} />}
       {phase === "done" && uid && <ContactPolicy uid={uid} setup={ctx.setup} profile={profile} />}
+      {phase === "done" && uid && <Personalization uid={uid} setup={ctx.setup} profile={profile} />}
     </div>
   );
 }

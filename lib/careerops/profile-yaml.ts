@@ -24,6 +24,7 @@
 // asked".
 import type { Profile } from "@/lib/types";
 import type { Goal } from "@/lib/goal";
+import type { Personalization } from "./personalization";
 import type { CareerOpsContact, CareerOpsPolicy } from "./types";
 
 const q = (v: unknown) => JSON.stringify(String(v ?? "").trim()); // JSON strings are valid YAML scalars
@@ -42,9 +43,15 @@ export interface ProfileYamlInput {
   contact?: CareerOpsContact | null;
   /** compensation.* / location.* extras — see CareerOpsPolicy. */
   policy?: CareerOpsPolicy | null;
+  /**
+   * The _profile.md sections. A few of them have a home in profile.yml too
+   * (career-ops' own `narrative:` block), and that is the half the Pi worker
+   * reads today — so put them there as well as in the rendered markdown.
+   */
+  personalization?: Personalization | null;
 }
 
-export function buildProfileYaml({ profile, goal, notes, contact, policy }: ProfileYamlInput): string {
+export function buildProfileYaml({ profile, goal, notes, contact, policy, personalization }: ProfileYamlInput): string {
   const name = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ").trim();
   const role = goal?.role?.trim() ?? "";
 
@@ -74,6 +81,16 @@ export function buildProfileYaml({ profile, goal, notes, contact, policy }: Prof
     ...(role ? [`    - name: ${q(role)}`, `      level: ${q(seniority(role))}`, "      fit: \"primary\""] : ["    []"]),
     "narrative:",
     `  headline: ${q(role ? `${role}${goal?.subsector ? ` in ${goal.subsector}` : ""}` : "")}`,
+    ...opt("  ", "exit_story", personalization?.exitNarrative),
+    // career-ops' narrative.superpowers is a list; the cross-cutting advantage
+    // is exactly that question ("what do you do that others can't") so it goes
+    // in as the first entry rather than inventing a parallel field.
+    ...(clean(personalization?.crossCuttingAdvantage)
+      ? ["  superpowers:", `    - ${q(personalization?.crossCuttingAdvantage)}`]
+      : []),
+    ...(personalization?.portfolio?.url
+      ? ["  dashboard:", `    url: ${q(personalization.portfolio.url)}`]
+      : []),
     "compensation:",
     `  target_range: ${q(goal?.salary)}`,
     ...opt("  ", "minimum", policy?.minimumSalary),
