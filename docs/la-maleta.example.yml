@@ -1,0 +1,170 @@
+# La Maleta — reference example (schema version 1)
+#
+# Everything CareerOps knows about one member, in one file. This example is
+# PARSED BY THE TEST SUITE (tests/careerops-maleta-example.test.ts), so it
+# cannot drift from the parser: if the schema changes and this file is not
+# updated, the build fails.
+#
+# Every key is optional. A maleta with only a `cv:` is valid, and so is one with
+# only `goal:`. Absent means "leave whatever is already there alone" — never
+# "clear it".
+#
+# Code: lib/careerops/maleta.ts · Spec: docs/LA_MALETA.md
+
+version: 1
+
+# ── goal ─────────────────────────────────────────────────────────────────────
+# The North Star. The five fields are exactly the ones on the Compass tab, so a
+# maleta and the Compass goal are interchangeable. A `goal.role` present here
+# OVERRIDES the Compass goal (goalSource becomes "intake"), because the member
+# brought it deliberately.
+goal:
+  role: Senior Product Owner # seniority + job title. Required for the goal to count.
+  subsector: climate-tech SaaS # industry
+  companyType: Startup (early stage) # one of lib/goal.ts COMPANY_TYPES; free text is kept as-is
+  city: Auckland, New Zealand # geography — country, region, city or area
+  salary: NZ$180,000 – 220,000 # target range, free text (currency included)
+
+# ── contact ──────────────────────────────────────────────────────────────────
+# candidate.* in career-ops' config/profile.yml. The Pi worker reads every one
+# of these and puts them on the generated CV header, the cover-letter contact
+# block, and application-form autofill. Blank means missing from those
+# documents — there is no fallback.
+contact:
+  title: Product leader, climate tech # candidate.title — the line under your name on the CV
+  phone: "+64 21 000 0000" # quote it: a leading + is not a YAML string otherwise
+  linkedin: linkedin.com/in/janesmith
+  portfolio: https://jane.dev # → candidate.portfolio_url
+  github: github.com/janesmith
+
+# ── policy ───────────────────────────────────────────────────────────────────
+# compensation.* and location.* beyond the goal.
+policy:
+  minimumSalary: NZ$160,000 # compensation.minimum — the walk-away number
+  locationFlexibility: Remote preferred; 1 week/month on-site possible
+  visaStatus: NZ citizen — no sponsorship needed # free text
+  needsSponsorship: false # true only if you need sponsorship OUTSIDE authorizedIn
+  authorizedIn: # where you ALREADY hold work authorisation
+    - New Zealand
+    - Australia
+
+# ── personalization ──────────────────────────────────────────────────────────
+# The eight `## Your …` sections of career-ops' modes/_profile.md — what
+# evaluations are actually scored against. Leave a section out and it is
+# treated as unknown, never guessed. Caps are enforced on import; see the spec.
+personalization:
+  targetRoles: # ≤ 8 rows; archetype required
+    - archetype: AI Platform / LLMOps Engineer
+      axes: Evaluation, observability, reliability, pipelines
+      buys: Someone who puts AI in production with metrics
+    - archetype: Technical AI Product Manager
+      axes: GenAI/agents, PRDs, discovery, delivery
+      buys: Someone who translates business need into AI product
+
+  adaptiveFraming: # ≤ 8 rows; role AND emphasize both required
+    - role: Platform / LLMOps
+      emphasize: Production systems builder, observability, evals
+      proof: cv.md — Acme platform work # omit and it defaults to "cv.md"
+    - role: Technical AI PM
+      emphasize: Product discovery, PRDs, metrics
+      proof: cv.md — discovery pipeline
+
+  exitNarrative: > # ≤ 1200 chars. Frames every summary, cover letter and STAR answer.
+    Built and sold a SaaS after five years. Now focused on applied AI at
+    scale, where the measurement problem is the interesting part.
+
+  crossCuttingAdvantage: > # ≤ 600 chars. Your signature move.
+    Technical builder with real-world proof — I ship, and I can show the
+    metrics that say it worked.
+
+  portfolio:
+    url: https://jane.dev/demo # MUST be absolute http(s), or the whole section is dropped
+    description: Agent monitoring dashboard
+    whenToShare: LLMOps and AI platform roles
+
+  compTargets: > # ≤ 800 chars
+    NZ$180–220k base for senior PO roles in Auckland (Levels.fyi, Hays 2026).
+    Contract rates typically 30–50% higher.
+
+  negotiationScripts: # ≤ 6 entries, ≤ 300 chars each
+    - I'm targeting 200k. I'm flexible on structure — what matters is the total package and the opportunity.
+    - The roles I'm competitive for are output-based, not location-based.
+
+  locationPolicy: # ≤ 8 entries
+    - Auckland or fully remote
+    - Up to one week per month of travel
+    - No relocation outside New Zealand
+
+# ── watchlist ────────────────────────────────────────────────────────────────
+# Companies the Scout checks for new postings, plus title keyword filters.
+# careersUrl should be the page that LISTS jobs (the ATS board when there is one).
+watchlist:
+  companies: # ≤ 25
+    - name: Acme Climate
+      careersUrl: https://acme.example/careers
+    - name: Beta Energy
+      careersUrl: https://beta.example/jobs
+  positive: # include these title keywords
+    - Product Owner
+    - Product Manager
+  negative: # exclude these
+    - Junior
+    - Intern
+
+# ── notes ────────────────────────────────────────────────────────────────────
+# Anything else the agents should know. Free text, carried into profile.yml.
+notes: |
+  Avoid agencies — direct applications only.
+  Walk away from anything requiring more than two unpaid take-home rounds.
+
+# ── cv ───────────────────────────────────────────────────────────────────────
+# cv.md, as Markdown. The only source of truth about what you have DONE; the
+# sections above are about what you are GOING FOR. Keep the detail — dates,
+# numbers, tools — because the Evaluator quotes lines from it as evidence.
+cv: |
+  # Jane Smith
+
+  Senior Product Owner · Auckland, New Zealand
+
+  ## Experience
+
+  **Acme Climate — Senior Product Owner (2021–2025)**
+  - Owned the climate-reporting product line (NZ$4M ARR); 14 releases/year with a squad of 7.
+  - Cut onboarding from 21 to 6 days by redesigning activation (measured on 1,200 accounts).
+
+  **Beta Bank — Business Analyst (2017–2021)**
+  - Led requirements for a core-banking migration (Jira, Confluence, SQL).
+
+  ## Skills
+
+  Product discovery, roadmaps, OKRs, Jira, SQL, stakeholder management, Scrum.
+
+  ## Education
+
+  BCom (Information Systems), University of Auckland, 2016
+
+# ── not yet read, reserved for later ────────────────────────────────────────
+# These exist in career-ops' config/profile.yml and are NOT parsed today. They
+# are listed so the shape is agreed before anything depends on it — see
+# docs/LA_MALETA.md "Fields I would want next". An unknown key is ignored, so
+# adding them to a file early is harmless.
+#
+# cultureScreen:
+#   require:
+#     - Small, flat teams (under 15 engineers)
+#     - Async-first, low meeting overhead
+#   deprioritizeIfAbsent: true
+# coverLetter:
+#   noticePeriodDays: 30
+#   primaryDomain: climate tech
+# contactPreferences:
+#   preferredChannel: email          # email | phone | either
+#   note: Screens unknown numbers — please email first
+# language:
+#   output: en                       # ISO code; zh-CN also enables Chinese PDF typography
+#   modesDir: modes/de               # market vocabulary, independent of output language
+# spendTier: standard                # economy | standard | premium
+# reApplyWindows:
+#   - company: Acme Climate
+#     sameRoleDays: 180
+#     lastApplyDate: "2026-01-01"

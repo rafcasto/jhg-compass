@@ -3,13 +3,15 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 
 // ---- the edges IntakeScreen talks to ----
-const setDoc = vi.fn<(ref: unknown, data: Record<string, unknown>) => Promise<void>>(async () => {});
+// Forwards the options arg too: the maleta and the cards write with { merge: true },
+// and dropping it here would hide whether they do.
+const setDoc = vi.fn<(ref: unknown, data: Record<string, unknown>, opts?: unknown) => Promise<void>>(async () => {});
 const replace = vi.fn();
 let careerOps: { ctx: unknown; loading: boolean; allowed: boolean };
 let profile: unknown = { firstName: "Jane", lastName: "Smith", email: "jane@example.com", goal: { role: "Product Owner", city: "Auckland" } };
 let answerDocs: unknown[] = [];
 
-vi.mock("firebase/firestore", () => ({ setDoc: (ref: unknown, data: Record<string, unknown>) => setDoc(ref, data) }));
+vi.mock("firebase/firestore", () => ({ setDoc: (ref: unknown, data: Record<string, unknown>, opts?: unknown) => setDoc(ref, data, opts) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace, push: vi.fn() }) }));
 vi.mock("@/components/AuthProvider", () => ({ useAuth: () => ({ user: { uid: "u1" }, isAdmin: false }) }));
 vi.mock("@/lib/firestore/db", () => ({
@@ -43,9 +45,34 @@ beforeEach(() => {
   careerOps = { ctx: ctxWith(), loading: false, allowed: true };
 });
 
+// A first-timer now meets the three-ways chooser before anything else, so the
+// CV tests walk through it. Path 2 ("Go through intake") is the one that leads
+// to the CV ask followed by the full set of cards.
+async function renderAtCvAsk() {
+  const user = userEvent.setup();
+  render(<IntakeScreen />);
+  await user.click(screen.getByRole("button", { name: /Go through intake/i }));
+  return user;
+}
+
 describe("IntakeScreen — the first-timer path", () => {
-  it("asks for the CV and nothing else", () => {
+  it("offers the three ways in before asking anything", () => {
     render(<IntakeScreen />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Let's get you set up");
+    expect(screen.getByRole("button", { name: /Use what Compass already knows/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Go through intake/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Upload la maleta/i })).toBeInTheDocument();
+    // Nothing is asked for yet.
+    expect(screen.queryByLabelText("Your CV")).not.toBeInTheDocument();
+  });
+
+  it("names the North Star Compass already has, so the light path is an informed choice", () => {
+    render(<IntakeScreen />);
+    expect(screen.getByText(/Your North Star is already set/i)).toHaveTextContent("Product Owner");
+  });
+
+  it("asks for the CV and nothing else once a path is picked", async () => {
+    await renderAtCvAsk();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Start with your CV");
     expect(screen.getByLabelText("Your CV")).toBeInTheDocument();
     // The whole Setup screen is not what a first-timer meets.
@@ -53,9 +80,14 @@ describe("IntakeScreen — the first-timer path", () => {
     expect(screen.queryByText(/What the agents need from you/i)).not.toBeInTheDocument();
   });
 
+  it("lets them back out to the other ways in", async () => {
+    const user = await renderAtCvAsk();
+    await user.click(screen.getByRole("button", { name: /Other ways to start/i }));
+    expect(screen.getByRole("button", { name: /Upload la maleta/i })).toBeInTheDocument();
+  });
+
   it("proposes the CV back for review before anything is written", async () => {
-    const user = userEvent.setup();
-    render(<IntakeScreen />);
+    const user = await renderAtCvAsk();
     await user.click(screen.getByLabelText("Your CV"));
     await user.paste(REAL_CV);
     await user.click(screen.getByRole("button", { name: /Read my CV/i }));
@@ -67,8 +99,7 @@ describe("IntakeScreen — the first-timer path", () => {
   });
 
   it("saves the reviewed CV and seeds the Scout keywords from the North Star", async () => {
-    const user = userEvent.setup();
-    render(<IntakeScreen />);
+    const user = await renderAtCvAsk();
     await user.click(screen.getByLabelText("Your CV"));
     await user.paste(REAL_CV);
     await user.click(screen.getByRole("button", { name: /Read my CV/i }));
@@ -86,8 +117,7 @@ describe("IntakeScreen — the first-timer path", () => {
   });
 
   it("flags a thin CV without blocking the save", async () => {
-    const user = userEvent.setup();
-    render(<IntakeScreen />);
+    const user = await renderAtCvAsk();
     await user.click(screen.getByLabelText("Your CV"));
     await user.paste("Jane Smith, Product Owner, Auckland.");
     await user.click(screen.getByRole("button", { name: /Read my CV/i }));
@@ -97,8 +127,7 @@ describe("IntakeScreen — the first-timer path", () => {
   });
 
   it("will not move on from an empty paste", async () => {
-    const user = userEvent.setup();
-    render(<IntakeScreen />);
+    const user = await renderAtCvAsk();
     expect(screen.getByRole("button", { name: /Read my CV/i })).toBeDisabled();
     await user.click(screen.getByLabelText("Your CV"));
     await user.paste("   ");
@@ -106,15 +135,15 @@ describe("IntakeScreen — the first-timer path", () => {
     expect(screen.queryByRole("heading", { name: /review and save/i })).not.toBeInTheDocument();
   });
 
-  it("only offers the file types it can actually read", () => {
-    render(<IntakeScreen />);
+  it("only offers the file types it can actually read", async () => {
+    await renderAtCvAsk();
     // The picker filters for us; drag-and-drop does not, which is why the
     // component checks the name itself (the next test).
     expect(screen.getByLabelText(/Upload \.md \/ \.txt/i)).toHaveAttribute("accept", ".md,.txt,.markdown,text/plain,text/markdown");
   });
 
   it("names the format it takes when a dropped file isn't one", async () => {
-    render(<IntakeScreen />);
+    await renderAtCvAsk();
     const file = new File(["%PDF-1.4"], "cv.pdf", { type: "application/pdf" });
     fireEvent.drop(dropZone(), { dataTransfer: { files: [file] } });
     const alert = await screen.findByRole("alert");
@@ -126,15 +155,14 @@ describe("IntakeScreen — the first-timer path", () => {
   });
 
   it("reads a dropped .md file straight through to review", async () => {
-    render(<IntakeScreen />);
+    await renderAtCvAsk();
     const file = new File([REAL_CV], "cv.md", { type: "text/markdown" });
     fireEvent.drop(dropZone(), { dataTransfer: { files: [file] } });
     expect(await screen.findByRole("heading", { name: /review and save/i })).toBeInTheDocument();
   });
 
   it("reads a picked .md file straight through to review", async () => {
-    const user = userEvent.setup();
-    render(<IntakeScreen />);
+    const user = await renderAtCvAsk();
     const file = new File([REAL_CV], "cv.md", { type: "text/markdown" });
     await user.upload(screen.getByLabelText(/Upload \.md \/ \.txt/i), file);
     expect(await screen.findByRole("heading", { name: /review and save/i })).toBeInTheDocument();
@@ -239,5 +267,101 @@ describe("IntakeScreen — either process can own the North Star", () => {
     render(<IntakeScreen />);
     expect(screen.getByText("1/3")).toBeInTheDocument();
     expect(screen.getByText(/Set the role, industry, geography and salary/)).toBeInTheDocument();
+  });
+});
+
+describe("IntakeScreen — path 3: la maleta", () => {
+  const pickMaleta = async () => {
+    const user = userEvent.setup();
+    render(<IntakeScreen />);
+    await user.click(screen.getByRole("button", { name: /Upload la maleta/i }));
+    return user;
+  };
+  const drop = (name: string, text: string) => {
+    const zone = screen.getByText(/Drop your maleta here/i).closest("div") as HTMLElement;
+    fireEvent.drop(zone, { dataTransfer: { files: [new File([text], name, { type: "text/markdown" })] } });
+  };
+
+  it("offers the upload instead of the CV box", async () => {
+    await pickMaleta();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Upload la maleta");
+    expect(screen.getByText(/Drop your maleta here/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Your CV")).not.toBeInTheDocument();
+  });
+
+  it("shows what it found and writes nothing until confirmed", async () => {
+    await pickMaleta();
+    drop("la-maleta.md", "## North Star\n\n- role: Senior Product Owner\n\n## Your Exit Narrative\n\nBuilt and sold a SaaS.");
+    expect(await screen.findByText(/Found in/i)).toBeInTheDocument();
+    expect(screen.getByText(/North Star \(Senior Product Owner\)/)).toBeInTheDocument();
+    expect(screen.getByText(/targeting \(1\/8 sections\)/)).toBeInTheDocument();
+    expect(setDoc).not.toHaveBeenCalled(); // confirm gate
+  });
+
+  it("unpacks it into the setup document and rebuilds profile.yml", async () => {
+    const user = await pickMaleta();
+    drop("la-maleta.md", "## North Star\n\n- role: Senior Product Owner\n\n## Contact\n\n- phone: +64 21 000 0000");
+    await user.click(await screen.findByRole("button", { name: /Unpack it/i }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
+    const [, data, opts] = setDoc.mock.calls[0];
+    expect(opts).toEqual({ merge: true });
+    expect(data.goalSource).toBe("intake");
+    expect((data.intakeGoal as Record<string, unknown>).role).toBe("Senior Product Owner");
+    expect(data.contact).toEqual({ phone: "+64 21 000 0000" });
+    expect(String(data.profileYaml)).toContain('phone: "+64 21 000 0000"');
+    expect(String(data.profileYaml)).toContain('- "Senior Product Owner"');
+  });
+
+  it("refuses a file type that is not a maleta", async () => {
+    await pickMaleta();
+    drop("cv.pdf", "%PDF-1.4");
+    expect(await screen.findByRole("alert")).toHaveTextContent(/\.md or \.yml file/i);
+    expect(setDoc).not.toHaveBeenCalled();
+  });
+
+  it("explains an unrecognisable file rather than saving an empty maleta", async () => {
+    await pickMaleta();
+    drop("notes.md", "# Hello\n\nJust some prose.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(/## North Star/);
+    expect(screen.queryByRole("button", { name: /Unpack it/i })).not.toBeInTheDocument();
+  });
+
+  it("can go back to the other ways in", async () => {
+    const user = await pickMaleta();
+    await user.click(screen.getByRole("button", { name: /Other ways to start/i }));
+    expect(screen.getByRole("button", { name: /Go through intake/i })).toBeInTheDocument();
+  });
+});
+
+describe("IntakeScreen — path 1: the light one", () => {
+  it("stops after the essentials, and offers more without insisting", async () => {
+    const user = userEvent.setup();
+    render(<IntakeScreen />);
+    await user.click(screen.getByRole("button", { name: /Use what Compass already knows/i }));
+    await user.click(screen.getByLabelText("Your CV"));
+    await user.paste(REAL_CV);
+    await user.click(screen.getByRole("button", { name: /Read my CV/i }));
+    await user.click(screen.getByRole("button", { name: /Save my CV/i }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalled());
+
+    // The North Star chooser is essential; the deeper cards are folded away.
+    expect(screen.getByRole("heading", { name: /Which North Star/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /What evaluations score against/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Contact details and logistics/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Go deeper/i }));
+    expect(screen.getByRole("heading", { name: /What evaluations score against/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Contact details and logistics/i })).toBeInTheDocument();
+  });
+
+  it("path 2 shows everything straight away, because that is what they chose", async () => {
+    const user = await renderAtCvAsk();
+    await user.click(screen.getByLabelText("Your CV"));
+    await user.paste(REAL_CV);
+    await user.click(screen.getByRole("button", { name: /Read my CV/i }));
+    await user.click(screen.getByRole("button", { name: /Save my CV/i }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalled());
+    expect(screen.getByRole("heading", { name: /What evaluations score against/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Contact details and logistics/i })).toBeInTheDocument();
   });
 });

@@ -6,9 +6,9 @@ import { setDoc } from "firebase/firestore";
 import { Save } from "lucide-react";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { useAuth } from "@/components/AuthProvider";
-import { buildProfileYaml } from "@/lib/careerops/profile-yaml";
 import { buildPortalsYaml, suggestKeywords, DEFAULT_NEGATIVE } from "@/lib/careerops/portals-yaml";
 import { effectiveGoal } from "@/lib/careerops/intake";
+import { buildSetupProfileYaml, preserveSetupFields } from "@/lib/careerops/setup-yaml";
 import { INTAKE_HREF } from "@/lib/careerops/portal-nav";
 import type { CareerOpsPortals, CareerOpsSetupV2, PortalsStatusDoc } from "@/lib/careerops/types";
 import Portals from "./Portals";
@@ -51,19 +51,19 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
     if (positive.length) { setPortals((p) => ({ ...p, positive })); setPortalsSeeded(true); }
   }, [profile, setup, portalsSeeded, goal.goal.role]);
 
-  const yaml = useMemo(() => buildProfileYaml({ profile, goal: goal.goal, notes }), [profile, notes, goal]);
+  const yaml = useMemo(() => buildSetupProfileYaml({ profile, setup, overrides: { notes } }), [profile, setup, notes]);
 
   async function save() {
     if (!uid || !cv.trim()) return;
     setBusy(true); setMsg(null);
     try {
-      // setDoc replaces the whole document, so the intake North Star has to be
-      // carried across explicitly or choosing intake would silently revert.
+      // setDoc replaces the whole document, so everything the other CareerOps
+      // screens own has to be carried across explicitly or an unrelated save
+      // here would silently revert it.
       const doc: CareerOpsSetupV2 = {
         cvMarkdown: cv.trim(), profileYaml: yaml, notes: notes.trim(), portals,
         portalsYaml: buildPortalsYaml(portals), updatedAt: Date.now(),
-        ...(setup?.goalSource ? { goalSource: setup.goalSource } : {}),
-        ...(setup?.intakeGoal ? { intakeGoal: setup.intakeGoal } : {}),
+        ...preserveSetupFields(setup),
         ...(setup?.goalUpdatedAt ? { goalUpdatedAt: setup.goalUpdatedAt } : {}),
       };
       await setDoc(paths.careerOpsSetup(uid), doc);
