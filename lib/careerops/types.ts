@@ -1,4 +1,5 @@
 // Client-safe types for the career-ops integration (no Upstash / Firebase imports).
+import type { Goal } from "@/lib/goal";
 import type { AgentKey, CareerOpsJobStatus, CareerOpsJobType } from "./keys";
 
 export interface CareerOpsJob {
@@ -159,7 +160,20 @@ export const scoreVerdict = (s: number | null) =>
 // — needed for branded ATS domains career-ops cannot auto-detect (SuccessFactors, Phenom, …).
 export interface PortalCompany { name: string; careersUrl: string; enabled?: boolean; provider?: string; apiUrl?: string }
 export interface CareerOpsPortals { companies: PortalCompany[]; positive: string[]; negative: string[] }
-export interface CareerOpsSetupV2 extends CareerOpsSetup { portals?: CareerOpsPortals; portalsYaml?: string }
+// Which North Star the agents work from. The Compass tab owns the member's goal;
+// intake can capture its own and override it, and the choice is reversible at any
+// time — the Compass goal is never overwritten, only out-ranked. Absent means
+// "compass", so every member who predates intake is unaffected.
+export type GoalSource = "compass" | "intake";
+
+export interface CareerOpsSetupV2 extends CareerOpsSetup {
+  portals?: CareerOpsPortals;
+  portalsYaml?: string;
+  goalSource?: GoalSource;
+  /** Captured in intake. Only in effect while goalSource is "intake". */
+  intakeGoal?: Goal;
+  goalUpdatedAt?: number;
+}
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last
 // scan. Worker-written. method: "board" = career-ops read the ATS/job-board API directly;

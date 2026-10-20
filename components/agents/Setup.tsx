@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { setDoc } from "firebase/firestore";
 import { Save } from "lucide-react";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { useAuth } from "@/components/AuthProvider";
 import { buildProfileYaml } from "@/lib/careerops/profile-yaml";
 import { buildPortalsYaml, suggestKeywords, DEFAULT_NEGATIVE } from "@/lib/careerops/portals-yaml";
+import { effectiveGoal } from "@/lib/careerops/intake";
+import { INTAKE_HREF } from "@/lib/careerops/portal-nav";
 import type { CareerOpsPortals, CareerOpsSetupV2, PortalsStatusDoc } from "@/lib/careerops/types";
 import Portals from "./Portals";
 import StandardAnswers from "./StandardAnswers";
@@ -30,23 +33,39 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
 
+  // Intake may have overridden the Compass goal. Saving Setup must not quietly
+  // put the Compass goal back — it rebuilds profile.yml from whichever North
+  // Star is actually in effect.
+  const goal = useMemo(
+    () => effectiveGoal({ source: setup?.goalSource, compassGoal: profile?.goal, intakeGoal: setup?.intakeGoal }),
+    [setup?.goalSource, setup?.intakeGoal, profile?.goal],
+  );
+
   useEffect(() => {
     if (setup && !dirty) { setCv(setup.cvMarkdown ?? ""); setNotes(setup.notes ?? ""); if (setup.portals) { setPortals(setup.portals); setPortalsSeeded(true); } }
   }, [setup, dirty]);
-  // First time: seed the include keywords from the Compass goal role.
+  // First time: seed the include keywords from whichever North Star is in effect.
   useEffect(() => {
     if (portalsSeeded || !profile || setup?.portals) return;
-    const positive = suggestKeywords(profile.goal?.role);
+    const positive = suggestKeywords(goal.goal.role);
     if (positive.length) { setPortals((p) => ({ ...p, positive })); setPortalsSeeded(true); }
-  }, [profile, setup, portalsSeeded]);
+  }, [profile, setup, portalsSeeded, goal.goal.role]);
 
-  const yaml = useMemo(() => buildProfileYaml({ profile, goal: profile?.goal, notes }), [profile, notes]);
+  const yaml = useMemo(() => buildProfileYaml({ profile, goal: goal.goal, notes }), [profile, notes, goal]);
 
   async function save() {
     if (!uid || !cv.trim()) return;
     setBusy(true); setMsg(null);
     try {
-      const doc: CareerOpsSetupV2 = { cvMarkdown: cv.trim(), profileYaml: yaml, notes: notes.trim(), portals, portalsYaml: buildPortalsYaml(portals), updatedAt: Date.now() };
+      // setDoc replaces the whole document, so the intake North Star has to be
+      // carried across explicitly or choosing intake would silently revert.
+      const doc: CareerOpsSetupV2 = {
+        cvMarkdown: cv.trim(), profileYaml: yaml, notes: notes.trim(), portals,
+        portalsYaml: buildPortalsYaml(portals), updatedAt: Date.now(),
+        ...(setup?.goalSource ? { goalSource: setup.goalSource } : {}),
+        ...(setup?.intakeGoal ? { intakeGoal: setup.intakeGoal } : {}),
+        ...(setup?.goalUpdatedAt ? { goalUpdatedAt: setup.goalUpdatedAt } : {}),
+      };
       await setDoc(paths.careerOpsSetup(uid), doc);
       setDirty(false); setMsg("Saved. The agents will use this CV from your next evaluation.");
       onReady?.();
@@ -79,7 +98,7 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
 
       <section className="card p-5 space-y-3">
         <h2 className="text-lg">Profile for the agents</h2>
-        <p className="text-jh-mute text-sm max-w-2xl">Built from your Compass goal — role <strong className="text-jh-ink">{profile?.goal?.role || "—"}</strong>, industry <strong className="text-jh-ink">{profile?.goal?.subsector || "—"}</strong>, geography <strong className="text-jh-ink">{profile?.goal?.city || "—"}</strong>, salary <strong className="text-jh-ink">{profile?.goal?.salary || "—"}</strong>. Change those on the Compass tab.</p>
+        <p className="text-jh-mute text-sm max-w-2xl">Built from {goal.source === "intake" ? "the North Star you set in intake" : "your Compass goal"} — role <strong className="text-jh-ink">{goal.goal.role || "—"}</strong>, industry <strong className="text-jh-ink">{goal.goal.subsector || "—"}</strong>, geography <strong className="text-jh-ink">{goal.goal.city || "—"}</strong>, salary <strong className="text-jh-ink">{goal.goal.salary || "—"}</strong>. {goal.source === "intake" ? <>It overrides your Compass goal; switch back in <Link href={INTAKE_HREF} className="underline underline-offset-2 hover:text-jh-red">intake</Link>.</> : <>Change those on the Compass tab, or <Link href={INTAKE_HREF} className="underline underline-offset-2 hover:text-jh-red">set one in intake</Link> to override them.</>}</p>
         <label className="block">
           <span className="label">Anything else the agents should know <span className="font-normal text-jh-mute">(optional)</span></span>
           <textarea className="field text-sm min-h-[5rem]" placeholder="e.g. Need visa sponsorship outside NZ. Remote only. Walk-away salary 150k. Avoid agencies." value={notes} onChange={(e) => { setNotes(e.target.value); setDirty(true); setMsg(null); }} />
@@ -103,7 +122,7 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
       <section className="card p-5 space-y-3">
         <h2 className="text-lg">Company watchlist for the Scout</h2>
         <p className="text-jh-mute text-sm max-w-2xl">Companies whose careers pages the Scout checks for new postings that match your title keywords. Zero AI tokens — job boards are read directly; other careers pages are opened in the Pi&apos;s browser. Paste the careers page you&apos;d find on Google: if it hides a job board, the Scout finds it and offers it on the row.{portalsStatus?.at ? ` Last scan ${new Date(portalsStatus.at).toLocaleString()}.` : ""}</p>
-        <Portals value={portals} onChange={(v) => { setPortals(v); setDirty(true); setMsg(null); }} status={portalsStatus?.companies ?? []} suggested={suggestKeywords(profile?.goal?.role)} />
+        <Portals value={portals} onChange={(v) => { setPortals(v); setDirty(true); setMsg(null); }} status={portalsStatus?.companies ?? []} suggested={suggestKeywords(goal.goal.role)} />
       </section>
 
       <div className="flex items-center gap-3 flex-wrap">
