@@ -37,6 +37,10 @@ const config: Config = {
       borderRadius: {
         xs: "4px", sm: "8px", md: "12px", lg: "16px", xl: "24px", pill: "999px",
       },
+      keyframes: {
+        "sheet-in": { from: { opacity: "0", transform: "translateY(16px)" }, to: { opacity: "1", transform: "none" } },
+      },
+      animation: { "sheet-in": "sheet-in 180ms ease-out" },
       boxShadow: {
         "jh-1": "0 1px 2px rgba(25,28,39,.06)",
         "jh-2": "0 4px 12px rgba(25,28,39,.08)",

@@ -11,3 +11,4 @@ next-env.d.ts
 
 # Install-shield audit log (machine-local)
 .ccmb/
+serviceAccountKey.json
