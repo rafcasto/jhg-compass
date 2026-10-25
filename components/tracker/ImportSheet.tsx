@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Upload } from "lucide-react";
-import { Sheet } from "./Sheet";
+import { AlertCircle, CheckCircle2, ChevronDown, Download, FileSpreadsheet, Upload } from "lucide-react";
+import { Sheet, SheetFooter } from "./Sheet";
 import { useContent } from "@/lib/firestore/content";
 import { fillTemplate } from "@/lib/content";
 import { importRecords, attachContactsToOpportunities } from "@/lib/firestore/db";
@@ -76,7 +76,7 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
     e.target.value = "";
     if (!f) return;
     try { parse(await readText(f)); }
-    catch { setReadError("Couldn't read that file."); }
+    catch { setReadError(t("import.readError")); }
   }
 
   function download() {
@@ -113,18 +113,21 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
   }
 
   const title = t(`import.${kind}.title`);
+  const step = (n: number, key: string) => fillTemplate(t("import.step"), { n, label: t(key) });
 
   // ---- done ----
   if (imported !== null) {
     return (
-      <Sheet title={title} onClose={onClose}>
-        <div className="py-6 text-center space-y-3">
-          <CheckCircle2 className="mx-auto h-10 w-10 text-rb-green-dark" />
-          <p className="text-sm text-jh-ink">
+      <Sheet size="lg" eyebrow={step(3, "import.stepDone")} title={title} onClose={onClose}
+        footer={<SheetFooter primary={{ label: t("import.close"), onClick: onClose }} />}>
+        <div className="space-y-3 py-6 text-center">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-jh-mist text-rb-green-dark">
+            <CheckCircle2 className="h-6 w-6" aria-hidden />
+          </span>
+          <p className="mx-auto max-w-sm text-sm text-jh-ink">
             {fillTemplate(t(`import.${kind}.done`), { n: imported.n })}
             {imported.linked > 0 && <> {fillTemplate(t(`import.${kind}.linked`), { n: imported.linked })}</>}
           </p>
-          <button onClick={onClose} className="btn-primary w-full">{t("import.close")}</button>
         </div>
       </Sheet>
     );
@@ -134,7 +137,12 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
   if (result) {
     const blocked = result.missingColumns.length > 0 || result.totalRows === 0;
     return (
-      <Sheet title={title} onClose={onClose} wide>
+      <Sheet size="lg" eyebrow={step(2, "import.stepReview")} title={title} onClose={onClose} dirty
+        footer={<SheetFooter
+          secondary={{ label: t("import.back"), onClick: () => { setResult(null); setPasted(""); setPasting(false); } }}
+          primary={blocked
+            ? { label: t("import.nothing"), disabled: true }
+            : { label: toImport.length === 0 ? t("import.nothing") : fillTemplate(t("import.submit"), { n: toImport.length }), onClick: doImport, disabled: toImport.length === 0, busy, busyLabel: t("import.busy") }} />}>
         <div className="space-y-4">
           {result.missingColumns.length > 0 && (
             <Issue>{fillTemplate(t("import.missingColumns"), { cols: result.missingColumns.join(", ") })}</Issue>
@@ -154,18 +162,22 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
                 )}
               </div>
               {result.tooMany && <p className="text-xs text-jh-mute">{fillTemplate(t("import.tooMany"), { n: MAX_IMPORT_ROWS })}</p>}
-              {dupCount > 0 && (
-                <label className="flex items-center gap-2 text-sm text-jh-ink">
-                  <input type="checkbox" checked={skipDup} onChange={(e) => setSkipDup(e.target.checked)} className="h-4 w-4 accent-jh-red" />
-                  {fillTemplate(t("import.duplicates"), { n: dupCount })}
-                </label>
-              )}
-              {canAutoLink && (
-                <label className="flex items-center gap-2 text-sm text-jh-ink">
-                  <input type="checkbox" checked={autoLink} className="h-4 w-4 accent-jh-red"
-                    onChange={(e) => { setAutoLink(e.target.checked); parse(rawText, e.target.checked); }} />
-                  {t(`import.${kind}.autoLink`)}
-                </label>
+              {(dupCount > 0 || canAutoLink) && (
+                <div className="-my-2">
+                  {dupCount > 0 && (
+                    <label className="flex min-h-10 cursor-pointer items-center gap-3 py-2 text-sm text-jh-ink">
+                      <input type="checkbox" checked={skipDup} onChange={(e) => setSkipDup(e.target.checked)} className="h-4 w-4 shrink-0 accent-jh-red" />
+                      {fillTemplate(t("import.duplicates"), { n: dupCount })}
+                    </label>
+                  )}
+                  {canAutoLink && (
+                    <label className="flex min-h-10 cursor-pointer items-center gap-3 py-2 text-sm text-jh-ink">
+                      <input type="checkbox" checked={autoLink} className="h-4 w-4 shrink-0 accent-jh-red"
+                        onChange={(e) => { setAutoLink(e.target.checked); parse(rawText, e.target.checked); }} />
+                      {t(`import.${kind}.autoLink`)}
+                    </label>
+                  )}
+                </div>
               )}
 
               {/* sample rows */}
@@ -199,15 +211,6 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
               )}
             </>
           )}
-
-          <div className="flex gap-2">
-            <button type="button" onClick={() => { setResult(null); setPasted(""); setPasting(false); }} className="btn-secondary flex-1">{t("import.back")}</button>
-            {!blocked && (
-              <button type="button" onClick={doImport} disabled={busy || toImport.length === 0} className="btn-primary flex-1 disabled:opacity-60">
-                {busy ? t("import.busy") : toImport.length === 0 ? t("import.nothing") : fillTemplate(t("import.submit"), { n: toImport.length })}
-              </button>
-            )}
-          </div>
         </div>
       </Sheet>
     );
@@ -215,10 +218,8 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
 
   // ---- pick ----
   return (
-    <Sheet title={title} onClose={onClose} wide>
-      <div className="space-y-4">
-        <p className="text-sm text-jh-mute">{t(`import.${kind}.intro`)}</p>
-
+    <Sheet size="lg" eyebrow={step(1, "import.stepPick")} title={title} description={t(`import.${kind}.intro`)} onClose={onClose} dirty={pasted.trim().length > 0}>
+      <div className="space-y-6">
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="btn-primary flex-1 cursor-pointer">
             <Upload className="h-4 w-4" /> {t("import.chooseFile")}
@@ -242,12 +243,15 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
           </div>
         )}
 
-        {/* column guide */}
-        <div>
-          <p className="section-label mb-1.5">{t("import.columns")}</p>
-          <ul className="divide-y divide-jh-line rounded-sm border border-jh-line text-xs">
+        {/* column guide — closed by default; the template download covers the common path */}
+        <details className="group">
+          <summary className="section-label flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden">
+            {t("import.columns")} <span className="text-jh-mute-2">{columns.length}</span>
+            <ChevronDown className="h-4 w-4 transition-transform duration-200 group-open:rotate-180" aria-hidden />
+          </summary>
+          <ul className="mt-2 divide-y divide-jh-line rounded-sm border border-jh-line text-xs">
             {columns.map((c) => (
-              <li key={c.key} className="flex gap-2 px-3 py-1.5">
+              <li key={c.key} className="flex gap-2 px-3 py-2">
                 <span className="w-24 shrink-0 font-semibold text-jh-ink">
                   {c.header}
                   {c.required && <span className="ml-1 rounded-pill bg-jh-red-soft px-1.5 text-[11px] text-jh-red">{t("import.required")}</span>}
@@ -256,7 +260,7 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       </div>
     </Sheet>
   );
@@ -277,9 +281,9 @@ function IssueList({ title, tone, items, lineLabel }: {
   const [open, setOpen] = useState(tone === "error");
   return (
     <div className="text-xs">
-      <button type="button" onClick={() => setOpen((o) => !o)}
-        className={`font-display font-semibold ${tone === "error" ? "text-jh-red" : "text-jh-mute"}`}>
-        {open ? "▾" : "▸"} {title}
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+        className={`inline-flex min-h-8 items-center gap-1 font-display font-semibold ${tone === "error" ? "text-jh-red" : "text-rb-orange"}`}>
+        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden /> {title}
       </button>
       {open && (
         <ul className="mt-1 space-y-0.5 text-jh-mute">
