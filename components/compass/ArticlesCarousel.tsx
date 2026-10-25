@@ -67,7 +67,7 @@ export default function ArticlesCarousel({ articles, eyebrow = "Sharpen your lan
       <div className="flex items-end justify-between gap-4">
         <div>
           <span className="eyebrow">{eyebrow}</span>
-          <h2 id="articles-title" className="mt-1 text-2xl md:text-[26px]">{title}</h2>
+          <h2 id="articles-title" className="mt-1 text-2xl">{title}</h2>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => step(-1)} disabled={bounds.atStart} aria-label="Previous articles" className="cbtn-icon">
@@ -102,7 +102,7 @@ function ArticleCard({ article }: { article: Article }) {
       target="_blank"
       rel="noopener noreferrer"
       data-testid="article-card"
-      className="group flex shrink-0 flex-col overflow-hidden rounded-lg border border-jh-line bg-white shadow-jh-1 transition-shadow duration-200 ease-out hover:shadow-jh-3"
+      className="group flex shrink-0 flex-col overflow-hidden rounded-md border border-jh-line bg-white shadow-jh-1 transition-shadow duration-200 ease-out hover:shadow-jh-3"
       style={{ width: CARD_WIDTH, scrollSnapAlign: "start" }}
     >
       {showImage ? (
@@ -112,11 +112,11 @@ function ArticleCard({ article }: { article: Article }) {
       ) : (
         <div aria-hidden className="h-[150px] w-full bg-jh-mist" />
       )}
-      <div className="flex flex-1 flex-col gap-2 px-[18px] py-4">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         {article.step && (
           <div className="flex items-center gap-2">
             <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: article.step.color }} />
-            <span className="font-display text-[11px] font-semibold uppercase tracking-[0.08em] text-jh-mute-2">{article.step.label}</span>
+            <span className="section-label">{article.step.label}</span>
           </div>
         )}
         <h3 className="font-display text-[16px] font-semibold leading-[1.35] text-jh-ink group-hover:text-jh-red transition-colors duration-200 ease-out"

@@ -5,6 +5,7 @@ import { Compass as CompassIcon, Pencil } from "lucide-react";
 import { EMPTY_GOAL, normalizeGoal, type Goal } from "@/lib/goal";
 import GoalStatement from "./GoalStatement";
 import GoalFields from "./GoalFields";
+import PageHeader from "@/components/shell/PageHeader";
 
 export interface CompassGoalLabels {
   eyebrow: string;
@@ -60,19 +61,14 @@ export default function CompassGoal({ goal, onSave, labels }: Props) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* ---- Page header ---- */}
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <span className="eyebrow">{L.eyebrow}</span>
-          <h1 className="mt-1">{L.title}</h1>
-        </div>
-        {!editing && (
-          <button type="button" onClick={startEdit} className="cbtn cbtn-secondary" aria-label="Edit objective">
+      <PageHeader eyebrow={L.eyebrow} title={L.title}
+        actions={!editing && (
+          <button type="button" onClick={startEdit} className="btn-secondary btn-sm" aria-label="Edit objective">
             <Pencil className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Edit
           </button>
-        )}
-      </header>
+        )} />
 
       {/* ---- Goal statement card ---- */}
       <section
@@ -94,7 +90,7 @@ export default function CompassGoal({ goal, onSave, labels }: Props) {
 
       {/* ---- Edit form (edit mode only) ---- */}
       {editing && (
-        <form onSubmit={save} className="card rounded-lg p-5 md:p-7 space-y-5" aria-label="Edit objective">
+        <form onSubmit={save} className="card p-5 md:p-7 space-y-6" aria-label="Edit objective">
           <div>
             <h3>{L.editTitle}</h3>
             <p className="mt-1 text-sm text-jh-mute">{L.editIntro}</p>
@@ -103,10 +99,10 @@ export default function CompassGoal({ goal, onSave, labels }: Props) {
           <GoalFields value={draft} onChange={setDraft} variant="compass" idPrefix="goal" />
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
-            <button type="submit" className="cbtn cbtn-primary" disabled={busy}>
+            <button type="submit" className="btn-primary" disabled={busy}>
               {busy ? "Saving…" : "Save objective"}
             </button>
-            <button type="button" className="cbtn cbtn-secondary" onClick={cancel} disabled={busy}>
+            <button type="button" className="btn-secondary" onClick={cancel} disabled={busy}>
               Cancel
             </button>
           </div>

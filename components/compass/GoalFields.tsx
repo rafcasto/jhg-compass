@@ -38,11 +38,9 @@ export default function GoalFields({ value, onChange, variant = "compass", idPre
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => onChange({ ...value, [k]: e.target.value });
 
   return (
-    <div
-      className="grid gap-4"
-      style={variant === "compass" ? { gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" } : undefined}
-    >
-      <div>
+    <div className={`grid gap-4 ${variant === "compass" ? "sm:grid-cols-2" : ""}`}>
+      {/* Role is the longest value — full width, then a clean 2×2 (no orphan). */}
+      <div className={variant === "compass" ? "sm:col-span-2" : undefined}>
         <label htmlFor={`${idPrefix}-role`} className={labelCls}>{GOAL_LABELS.role}</label>
         <input id={`${idPrefix}-role`} className={fieldCls} value={value.role ?? ""} onChange={set("role")}
           placeholder={PLACEHOLDERS.role} autoComplete="organization-title" />
@@ -66,7 +64,7 @@ export default function GoalFields({ value, onChange, variant = "compass", idPre
       </div>
       <div>
         <label htmlFor={`${idPrefix}-salary`} className={labelCls}>{GOAL_LABELS.salary}</label>
-        <input id={`${idPrefix}-salary`} className={`${fieldCls} text-rb-green-dark font-medium`} value={value.salary ?? ""}
+        <input id={`${idPrefix}-salary`} className={fieldCls} value={value.salary ?? ""}
           onChange={set("salary")} placeholder={PLACEHOLDERS.salary} />
       </div>
     </div>
