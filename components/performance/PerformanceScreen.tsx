@@ -8,20 +8,20 @@ import {
   type Period, rangeYmd, shift, periodLabel, scaleTarget, toWeekly, inRange, ymd,
 } from "@/lib/period";
 import { resolveWeeklyTarget } from "@/lib/targets";
-
-// Design tokens lifted from the handoff (JobHackers design system).
-const C = {
-  red: "#c2001f", ink: "#191c27", green: "#2f7a3a",
-  mute: "#6b7280", muteLight: "#9aa0ad", slash: "#c5c9d2", disabled: "#d4d8e2",
-  track: "#e3e9f4", line: "#eef0f5", circle: "#e6e8ef",
-  toggleBg: "#f3f5fa", bannerBlue: "#e2ebfb", bannerRed: "#fbe3e6", pillRed: "#f6e0e3",
-};
+import PageHeader from "@/components/shell/PageHeader";
+import Segmented from "@/components/shell/Segmented";
 
 const PERIODS: Period[] = ["day", "week", "month"];
 
 // The Performance tab, minus the data plumbing. The page (app/(app)/performance)
 // feeds it live Firestore data; Admin → CMS → Performance feeds it draft copy and
 // sample data so what the editor previews is the real screen, not a mock.
+//
+// Styling is brand tokens only (tailwind.config.ts) — no local colour table — so
+// the tab can't drift from Compass / Progress. Colour rules (red budget):
+//   • ink while a period is in progress, green once the target is met,
+//   • red only when the period has CLOSED below target (a genuine negative state),
+//   • one red button on screen at most: "Edit targets" while editing.
 export interface PerformanceScreenProps {
   /** Editable-string lookup (config/content.text). */
   t: (key: string) => string;
@@ -62,6 +62,8 @@ export default function PerformanceScreen({
 
   const todayKey = ymd(now ?? new Date());
   const logOn = period === "day" ? range.start : inRange(todayKey, range) ? todayKey : range.end;
+  // A period that has fully elapsed: "below target" is now a result, not a status.
+  const closed = range.end < todayKey;
 
   async function add(catId: string) { await onLog?.(catId, logOn, period); }
   async function remove(catId: string) {
@@ -84,80 +86,66 @@ export default function PerformanceScreen({
   const finishRow = (id: string) => setEditRows((r) => { const n = { ...r }; delete n[id]; return n; });
 
   const rowProps = {
-    editAll, editRows, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow,
+    editAll, editRows, closed, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow,
     actualLabel: t("perf.actual"), targetLabel: t("perf.target"),
     setGoalLabel: t("perf.setGoal"), setTargetHint: t("perf.setTargetHint"),
   };
 
   return (
-    <div className="mx-auto max-w-md space-y-5">
-      {/* header */}
-      <div>
-        <div className="font-display font-semibold uppercase" style={{ fontSize: 11, letterSpacing: ".09em", color: C.red }}>
-          {t("perf.eyebrow")}
-        </div>
-        <div className="flex items-center justify-between mt-0.5">
-          <h1 className="font-display font-bold" style={{ fontSize: 27, letterSpacing: "-.02em", color: C.ink }}>{t("perf.title")}</h1>
-          <button onClick={toggleEditAll}
-            className="font-display font-semibold rounded-full transition"
-            style={editAll
-              ? { fontSize: 12.5, padding: "8px 15px", background: C.red, color: "#fff", border: `1.5px solid ${C.red}` }
-              : { fontSize: 12.5, padding: "8px 15px", background: "#fff", color: C.ink, border: `1.5px solid ${C.disabled}` }}>
-            {editAll ? t("perf.done") : t("perf.editTargets")}
-          </button>
-        </div>
-
-        {/* period toggle */}
-        <div className="flex gap-1 rounded-full p-1 mt-4" style={{ background: C.toggleBg }}>
-          {PERIODS.map((p) => (
-            <button key={p} onClick={() => setPeriod(p)}
-              className="flex-1 text-center font-display font-semibold capitalize rounded-full"
-              style={period === p
-                ? { fontSize: 13.5, padding: "8px 0", background: "#fff", color: C.ink, boxShadow: "0 1px 2px rgba(25,28,39,.08)" }
-                : { fontSize: 13.5, padding: "8px 0", color: C.muteLight }}>
-              {p}
+    <div className="mx-auto max-w-xl space-y-6">
+      <div className="space-y-4">
+        <PageHeader
+          eyebrow={t("perf.eyebrow")}
+          title={t("perf.title")}
+          actions={
+            <button type="button" onClick={toggleEditAll} aria-pressed={editAll}
+              className={`${editAll ? "btn-primary" : "btn-secondary"} btn-sm`}>
+              {editAll ? t("perf.done") : t("perf.editTargets")}
             </button>
-          ))}
-        </div>
+          }
+        />
 
-        {/* date nav */}
-        <div className="flex items-center justify-center gap-6 mt-4 mb-1">
-          <button onClick={() => setAnchor(shift(period, anchor, -1))} aria-label="Previous"><ChevronLeft className="h-5 w-5" style={{ color: C.muteLight }} /></button>
-          <span className="font-display font-semibold" style={{ fontSize: 16, color: C.ink }}>{periodLabel(period, anchor)}</span>
-          <button onClick={() => setAnchor(shift(period, anchor, 1))} aria-label="Next"><ChevronRight className="h-5 w-5" style={{ color: C.muteLight }} /></button>
+        <Segmented fill label="Period" value={period} onChange={setPeriod}
+          items={PERIODS.map((p) => ({ key: p, label: p[0].toUpperCase() + p.slice(1) }))} />
+
+        <div className="flex items-center justify-center gap-4">
+          <button type="button" onClick={() => setAnchor(shift(period, anchor, -1))} aria-label="Previous" className="icon-btn">
+            <ChevronLeft className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+          </button>
+          <span className="min-w-[10rem] text-center font-display text-base font-semibold text-jh-ink">{periodLabel(period, anchor)}</span>
+          <button type="button" onClick={() => setAnchor(shift(period, anchor, 1))} aria-label="Next" className="icon-btn">
+            <ChevronRight className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+          </button>
         </div>
       </div>
 
       {/* Hidden job market — the bulk of success (top) */}
       <section>
         <Banner emoji={t("perf.hiddenEmoji")} main={t("perf.hiddenTitle")}
-          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} bg={C.bannerBlue} />
+          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} tint="blue" />
         <Rows cats={hidden} {...rowProps} />
       </section>
 
-      {/* Visible job market (bottom) */}
+      {/* Visible job market (bottom) — neutral tint: nothing is wrong with it, it's just the smaller share. */}
       <section>
         <Banner emoji={t("perf.visibleEmoji")} main={t("perf.visibleTitle")}
-          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} bg={C.bannerRed} />
+          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} tint="mist" />
         <Rows cats={visible} {...rowProps} />
       </section>
 
-      <p className="text-center italic" style={{ fontSize: 12.5, color: C.muteLight }}>
-        {t("perf.footer")}
-      </p>
+      <p className="text-center text-[13px] text-jh-mute">{t("perf.footer")}</p>
     </div>
   );
 }
 
-function Banner({ emoji, main, sub, subtitle, bg }: { emoji: string; main: string; sub?: string; subtitle: string; bg: string }) {
+function Banner({ emoji, main, subtitle, tint }: { emoji: string; main: string; subtitle: string; tint: "blue" | "mist" }) {
   return (
-    <div className="rounded-2xl flex items-center gap-3" style={{ background: bg, padding: "15px 18px" }}>
-      <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
-      <div>
-        <div className="font-display font-bold" style={{ fontSize: 16, lineHeight: 1.2, color: C.ink }}>
-          {main}{sub ? <> <span className="font-semibold" style={{ color: C.mute }}>{sub}</span></> : null}
-        </div>
-        <div style={{ fontSize: 13, color: C.mute, marginTop: 2 }}>{subtitle}</div>
+    <div className={`flex items-center gap-3 rounded-md p-4 ${tint === "blue" ? "bg-jh-blue-grey" : "bg-jh-mist"}`}>
+      {/* Emoji is admin-authored content; the circle gives it a consistent footprint next to the Lucide set. */}
+      <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/70 text-xl leading-none">{emoji}</span>
+      <div className="min-w-0">
+        <div className="font-display text-base font-bold leading-tight text-jh-ink">{main}</div>
+        <div className="mt-0.5 text-[13px] text-jh-body">{subtitle}</div>
       </div>
     </div>
   );
@@ -167,6 +155,7 @@ interface RowProps {
   cats: Activity[];
   editAll: boolean;
   editRows: Record<string, boolean>;
+  closed: boolean;
   periodTarget: (id: string) => number;
   actuals: Record<string, number>;
   add: (id: string) => void;
@@ -180,7 +169,7 @@ interface RowProps {
   setTargetHint: string;
 }
 
-function Rows({ cats, editAll, editRows, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow, actualLabel, targetLabel, setGoalLabel, setTargetHint }: RowProps) {
+function Rows({ cats, editAll, editRows, closed, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow, actualLabel, targetLabel, setGoalLabel, setTargetHint }: RowProps) {
   return (
     <div>
       {cats.map((c) => {
@@ -188,57 +177,60 @@ function Rows({ cats, editAll, editRows, periodTarget, actuals, add, remove, set
         const t = periodTarget(c.id);
         const hasGoal = t > 0;
         const done = hasGoal && a >= t;
+        const missed = hasGoal && closed && !done;
         const editing = editAll || !!editRows[c.id];
         const perRowEdit = !editAll && !!editRows[c.id];
 
-        const actualColor = done ? C.green : hasGoal ? C.red : C.slash;
+        const actualCls = done ? "text-rb-green-dark" : missed ? "text-jh-red" : "text-jh-ink";
         const targetText = hasGoal || editing ? String(t) : "—";
-        const targetColor = hasGoal || editing ? C.ink : C.slash;
-        const incColor = editing ? C.ink : done ? C.green : C.red;
-        const incShadow = editing ? "rgba(25,28,39,.20)" : "rgba(194,0,31,.28)";
-        const decColor = editing ? (t > 0 ? C.mute : C.disabled) : (a > 0 ? C.mute : C.disabled);
+        const decDisabled = editing ? t <= 0 : a <= 0;
         const onDec = () => (editing ? setGoal(c.id, t - 1) : remove(c.id));
         const onInc = () => (editing ? setGoal(c.id, t + 1) : add(c.id));
 
         return (
-          <div key={c.id} className="flex gap-4 items-start" style={{ padding: "18px 0", borderBottom: `1px solid ${C.line}` }}>
-            <div className="flex-1 min-w-0">
-              <div className="font-display font-semibold" style={{ fontSize: 15, lineHeight: 1.3, color: C.ink }}>{c.label}</div>
+          <div key={c.id} className="flex items-start gap-4 border-b border-jh-line py-4">
+            <div className="min-w-0 flex-1">
+              <div className="font-display text-base font-semibold leading-snug text-jh-ink">{c.label}</div>
 
-              {hasGoal && !editing && <div style={{ marginTop: 13 }}><Bar a={a} t={t} done={done} /></div>}
+              {hasGoal && !editing && <div className="mt-3"><Bar a={a} t={t} done={done} missed={missed} /></div>}
 
               {!hasGoal && !editing && (
-                <button onClick={() => startEdit(c.id)}
-                  className="inline-flex items-center gap-1 font-display font-semibold rounded-full"
-                  style={{ marginTop: 11, fontSize: 12.5, color: C.red, background: C.pillRed, padding: "6px 12px" }}>
-                  <Plus className="h-3.5 w-3.5" /> {setGoalLabel}
+                <button type="button" onClick={() => startEdit(c.id)}
+                  className="mt-2 inline-flex items-center gap-1 rounded-pill bg-jh-mist px-3 py-1.5 font-display text-xs font-semibold text-jh-ink transition-colors duration-200 ease-out hover:bg-jh-blue-grey">
+                  <Plus className="h-3.5 w-3.5" aria-hidden /> {setGoalLabel}
                 </button>
               )}
 
-              {editing && <div className="italic" style={{ marginTop: 11, fontSize: 12.5, color: C.muteLight }}>{setTargetHint}</div>}
+              {editing && <div className="mt-2 text-xs text-jh-mute">{setTargetHint}</div>}
             </div>
 
-            <div className="flex-none" style={{ width: 156 }}>
-              <div className="grid items-center" style={{ gridTemplateColumns: "1fr 16px 1fr" }}>
+            <div className="w-40 flex-none">
+              {/* Actual leads (24/700); target is context (16/500 mute). */}
+              <div className="grid items-end" style={{ gridTemplateColumns: "1fr 16px 1fr" }}>
                 <Label>{actualLabel}</Label>
                 <div />
                 <Label>{targetLabel}</Label>
-                <div className="text-center font-display font-bold" style={{ fontSize: 24, marginTop: 3, color: actualColor }}>{a}</div>
-                <div className="text-center font-display font-light" style={{ fontSize: 22, marginTop: 3, color: C.slash }}>/</div>
-                <div className="text-center font-display font-bold" style={{ fontSize: 24, marginTop: 3, color: targetColor }}>{targetText}</div>
+                <div className={`mt-1 text-center font-display text-2xl font-bold leading-none ${actualCls}`}>{a}</div>
+                <div aria-hidden className="mt-1 text-center font-display text-lg font-light leading-none text-jh-mute-2">/</div>
+                <div className={`mt-1 text-center font-display text-base font-medium leading-none ${hasGoal || editing ? "text-jh-mute" : "text-jh-mute-2"}`}>{targetText}</div>
               </div>
 
-              <div className="flex justify-end items-center" style={{ gap: 11, marginTop: 12 }}>
+              <div className="mt-3 flex items-center justify-end gap-2">
                 {perRowEdit && (
-                  <button onClick={() => finishRow(c.id)} className="font-display font-semibold" style={{ fontSize: 12.5, color: C.red }}>Done</button>
+                  <button type="button" onClick={() => finishRow(c.id)} className="btn-ghost btn-sm">Done</button>
                 )}
-                <button onClick={onDec} className="grid place-items-center rounded-full"
-                  style={{ width: 36, height: 36, border: `1.5px solid ${C.circle}`, background: "#fff", color: decColor }}>
-                  <Minus className="h-5 w-5" />
+                <button type="button" onClick={onDec} disabled={decDisabled}
+                  aria-label={`${editing ? "Lower target" : "Remove one"}: ${c.label}`}
+                  className="grid h-10 w-10 place-items-center rounded-pill border border-jh-line-2 bg-white text-jh-mute transition-colors duration-200 ease-out hover:border-jh-ink hover:text-jh-ink disabled:opacity-40 disabled:hover:border-jh-line-2 disabled:hover:text-jh-mute">
+                  <Minus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
                 </button>
-                <button onClick={onInc} className="grid place-items-center rounded-full text-white"
-                  style={{ width: 36, height: 36, background: incColor, boxShadow: `0 4px 12px ${incShadow}` }}>
-                  <Plus className="h-5 w-5" />
+                <button type="button" onClick={onInc}
+                  aria-label={`${editing ? "Raise target" : "Log one"}: ${c.label}`}
+                  className={`grid h-10 w-10 place-items-center rounded-pill border bg-white transition-colors duration-200 ease-out
+                    ${done && !editing
+                      ? "border-rb-green-dark text-rb-green-dark hover:bg-rb-green-dark hover:text-white"
+                      : "border-jh-ink text-jh-ink hover:bg-jh-ink hover:text-white"}`}>
+                  <Plus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
                 </button>
               </div>
             </div>
@@ -250,24 +242,22 @@ function Rows({ cats, editAll, editRows, periodTarget, actuals, add, remove, set
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-center font-display font-semibold uppercase" style={{ fontSize: 10.5, letterSpacing: ".07em", color: C.muteLight }}>
-      {children}
-    </div>
-  );
+  return <div className="section-label text-center">{children}</div>;
 }
 
-// Bullet bar: track + value fill + target tick. Matches the handoff exactly.
-function Bar({ a, t, done }: { a: number; t: number; done: boolean }) {
+// Bullet bar: track + value fill + target tick. Fill is ink while in progress,
+// green when met, red only once the period has closed short.
+function Bar({ a, t, done, missed }: { a: number; t: number; done: boolean; missed: boolean }) {
   const maxScale = Math.max(Math.ceil(t * 1.6), a, 4);
   const fillPct = Math.min(a / maxScale, 1) * 100;
   const tickPct = Math.min(t / maxScale, 1) * 100;
-  const color = done ? C.green : C.red;
+  const fill = done ? "bg-rb-green-dark" : missed ? "bg-jh-red" : "bg-jh-ink";
   return (
-    <div className="relative" style={{ height: 22 }}>
-      <div className="absolute rounded-full" style={{ top: 5, left: 0, right: 0, height: 12, background: C.track }} />
-      <div className="absolute rounded-full" style={{ top: 5, left: 0, height: 12, width: `${fillPct}%`, background: color, transition: "width .45s cubic-bezier(.2,.7,.2,1)" }} />
-      <div className="absolute" style={{ top: 0, left: `${tickPct}%`, transform: "translateX(-50%)", width: 3, height: 22, background: C.ink, borderRadius: 2 }} title={`Target ${t}`} />
+    <div className="relative h-[22px]" role="img" aria-label={`${a} of ${t}`}>
+      <div className="absolute inset-x-0 top-[5px] h-3 rounded-pill bg-jh-blue-grey" />
+      <div className={`absolute left-0 top-[5px] h-3 rounded-pill ${fill}`}
+        style={{ width: `${fillPct}%`, transition: "width .45s cubic-bezier(.2,.7,.2,1)" }} />
+      <div className="absolute top-0 h-[22px] w-[3px] rounded-[2px] bg-jh-ink" style={{ left: `${tickPct}%`, transform: "translateX(-50%)" }} title={`Target ${t}`} />
     </div>
   );
 }

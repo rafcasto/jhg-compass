@@ -32,17 +32,45 @@
 }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center gap-2 font-display font-semibold rounded-[10px] px-5 py-3 text-[15px] leading-none transition-all duration-200; }
-  .btn-primary { @apply btn bg-jh-red text-white shadow-cta hover:bg-jh-red-hover hover:-translate-y-px; }
-  .btn-secondary { @apply btn bg-white text-jh-ink border-[1.5px] border-jh-ink hover:bg-jh-ink hover:text-white; }
+  /* ---- Buttons: ONE system. 8px radius (--radius-sm), Poppins 600, 15px, colour/shadow
+     transitions only (no transform). `.cbtn-*` are aliases kept for the Compass tab. ---- */
+  .btn { @apply inline-flex items-center justify-center gap-2 font-display font-semibold rounded-sm px-4 py-3 text-[15px] leading-none border border-transparent transition-colors duration-200 ease-out disabled:opacity-60 disabled:cursor-not-allowed; }
+  .btn-sm { @apply px-3 py-2 text-sm; }
+  .btn-primary { @apply btn bg-jh-red text-white shadow-cta hover:bg-jh-red-hover; }
+  .btn-secondary { @apply btn bg-white text-jh-ink border-jh-ink hover:bg-jh-ink hover:text-white; }
   .btn-ghost { @apply btn bg-transparent text-jh-red hover:text-jh-red-hover px-2; }
-  .card { @apply bg-white border border-jh-line rounded-lg shadow-jh-1; }
-  .field { @apply w-full rounded-[10px] border border-jh-line-2 bg-white px-4 py-3 text-jh-ink font-body text-[15px] outline-none focus:border-jh-red focus:ring-2 focus:ring-jh-red/15 transition; }
-  .label { @apply block font-display font-semibold text-sm text-jh-ink mb-1.5; }
-  .eyebrow { @apply font-display font-semibold text-[13px] tracking-[0.08em] uppercase text-jh-red; }
+  .cbtn { @apply btn; }
+  .cbtn-primary { @apply btn-primary; }
+  .cbtn-secondary { @apply btn-secondary; }
+
+  /* Icon-only buttons: 16–20px glyph inside a 40px hit target. The negative margin keeps
+     the visual footprint of the bare icon so rows don't get taller. Always pair with aria-label. */
+  .icon-btn { @apply inline-grid h-10 w-10 shrink-0 place-items-center rounded-sm text-jh-mute transition-colors duration-200 ease-out hover:bg-jh-mist hover:text-jh-ink disabled:opacity-40 disabled:hover:bg-transparent; }
+  .icon-btn-danger { @apply hover:text-jh-red; }
+  .icon-btn-tight { @apply -m-2; }
+
+  .link { @apply font-display font-semibold text-jh-red underline-offset-2 hover:text-jh-red-hover hover:underline; }
+
+  /* Surfaces: 12px cards; rows/fields/buttons inside them sit at 8px so nested radii stay ≤ outer − padding. */
+  .card { @apply bg-white border border-jh-line rounded-md shadow-jh-1; }
+
+  /* ---- Forms: ONE system. Labels recede (Roboto 500 13px mute), values lead. ---- */
+  .field { @apply w-full rounded-sm border border-jh-line bg-white px-4 py-3 text-jh-ink font-body text-[15px] leading-[1.4] outline-none placeholder:text-jh-mute hover:border-jh-line-2 focus:border-jh-red focus:ring-2 focus:ring-jh-red/15 transition-colors duration-200 ease-out; }
+  .label { @apply block font-body font-medium text-[13px] text-jh-mute mb-1.5; }
+  .cfield { @apply field; }
+  .clabel { @apply label; }
+
+  /* Eyebrow: muted, not red — red is reserved for the primary action, the active nav item
+     and genuine negative states (see docs/UX_AUDIT_COMPASS_TABS.md §0.4). */
+  .eyebrow { @apply font-display font-semibold text-[13px] tracking-[0.08em] uppercase text-jh-mute; }
+  /* Small uppercase section label (replaces ad-hoc 12px mute-2 headings). */
+  .section-label { @apply block font-display font-semibold text-xs tracking-[0.08em] uppercase text-jh-mute; }
+
   .pill { @apply inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-semibold; }
-  .pill-hidden { @apply pill bg-jh-red-soft text-jh-red; }
-  .pill-visible { @apply pill bg-jh-blue-grey text-rb-blue; }
+  /* Market pills carry no warning — hidden = violet on blue-grey, visible = ink on mist. */
+  .pill-hidden { @apply pill bg-jh-blue-grey text-rb-violet; }
+  .pill-visible { @apply pill bg-jh-mist text-jh-ink; }
+  .pill-neutral { @apply pill bg-jh-mist text-jh-mute; }
 }
 
 /* ===== Normalize native date inputs so they match .field on mobile =====
@@ -79,19 +107,6 @@ input[type="date"].date-empty::-webkit-datetime-edit { color: transparent; }
 }
 @media (min-width: 768px) { .goal-statement { font-size: 23px; } }
 
-/* Buttons: 8px radius, Poppins 600, 200ms ease-out on colour + shadow only (no transform) */
-.cbtn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 15px; line-height: 1;
-  border-radius: 8px; padding: 12px 18px; border: 1px solid transparent; cursor: pointer;
-  transition: background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out;
-}
-.cbtn:disabled { opacity: .55; cursor: not-allowed; }
-.cbtn-primary { background: #c2001f; color: #fff; box-shadow: 0 6px 18px rgba(194, 0, 31, .25); }
-.cbtn-primary:hover:not(:disabled) { background: #8a0016; }
-.cbtn-secondary { background: #fff; color: #191c27; border-color: #191c27; }
-.cbtn-secondary:hover:not(:disabled) { background: #191c27; color: #fff; }
-
 /* Carousel arrows: 40px circles, white, 1px border, shadow-1 -> shadow-2 on hover */
 .cbtn-icon {
   display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 999px;
@@ -102,20 +117,8 @@ input[type="date"].date-empty::-webkit-datetime-edit { color: transparent; }
 .cbtn-icon:hover:not(:disabled) { box-shadow: 0 10px 24px rgba(25, 28, 39, .10); color: #c2001f; }
 .cbtn-icon:disabled { opacity: .4; cursor: not-allowed; }
 
-/* Form fields: Roboto labels, 8px-radius inputs, 1px #e6e8ef border */
-.clabel {
-  display: block; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 500;
-  font-size: 13px; color: #6b7280; margin-bottom: 6px;
-}
-.cfield {
-  width: 100%; background: #fff; color: #191c27; border: 1px solid #e6e8ef; border-radius: 8px;
-  padding: 11px 14px; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.4;
-  transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
-}
-.cfield::placeholder { color: #9aa0ad; }
-.cfield:hover { border-color: #d4d8e2; }
-.cfield:focus { border-color: #c2001f; }
-select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
+/* Native selects share the field chrome and get a chevron. */
+select.field, select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat; background-position: right 12px center; }
 
@@ -163,10 +166,10 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
 .coaching-headline {
   display: flex; flex-direction: column;
   font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1.02;
-  margin: 0 0 10px;
+  margin: 0 0 12px;
 }
 .coaching-headline-1 { font-size: 36px; color: #191c27; }
-.coaching-headline-2 { font-size: 18px; font-weight: 600; color: #191c27; margin: 2px 0; }
+.coaching-headline-2 { font-size: 18px; font-weight: 600; color: #191c27; margin: 4px 0; }
 .coaching-headline-3 { font-size: 44px; color: #c2001f; }
 
 .coaching-subhead {
@@ -177,13 +180,15 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
 /* Benefit rows: emoji + title + one line of body, 3px red left rule. flex:1 +
    space-evenly distributes whatever height is left across the rows. */
 .coaching-benefits {
-  list-style: none; margin: 0 0 12px; padding: 0;
+  list-style: none; margin: 0 0 16px; padding: 0;
   flex: 1 1 auto; min-height: 0;
-  display: flex; flex-direction: column; justify-content: space-evenly; gap: 8px;
+  /* Slack is shared evenly but capped: in-group gaps must stay smaller than the
+     16px boundary to the entitlement card below (groups > within-group). */
+  display: flex; flex-direction: column; justify-content: space-evenly; gap: 8px; max-height: 320px;
 }
 .coaching-benefit {
   display: flex; align-items: flex-start; gap: 10px;
-  border-left: 3px solid #c2001f; padding-left: 11px;
+  border-left: 3px solid #191c27; padding-left: 12px;
 }
 .coaching-benefit-emoji { font-size: 22px; line-height: 1; width: 26px; flex: 0 0 26px; text-align: center; padding-top: 1px; }
 .coaching-benefit-title { margin: 0 0 2px; font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 15px; line-height: 1.3; color: #191c27; }
@@ -192,7 +197,7 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
 /* Entitlement card on the blue-grey tint. Body is #3a3f4d (not #6b7280) — the
    tint drops #6b7280 to ~4.0:1, under the 4.5:1 floor. */
 .coaching-card {
-  list-style: none; margin: 0 0 14px; padding: 14px;
+  list-style: none; margin: 0 0 16px; padding: 16px;
   background: #e2ebfb; border-radius: 12px;
   display: flex; flex-direction: column; gap: 10px;
 }
@@ -237,7 +242,7 @@ select.cfield { appearance: none; -webkit-appearance: none; padding-right: 36px;
   .coaching-entitlement-title { font-size: 18px; }
   .coaching-entitlement-body { font-size: 15px; line-height: 1.5; }
   .coaching-cta { min-height: 52px; padding: 14px 24px; font-size: 17px; }
-  .coaching-caption { font-size: 14px; margin-top: 10px; }
+  .coaching-caption { font-size: 14px; margin-top: 12px; text-align: left; }
 }
 
 /* Admin preview frames: a true-size 390×844 phone (and a 1280×800 desktop, scaled

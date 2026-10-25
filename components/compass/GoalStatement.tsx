@@ -17,7 +17,7 @@ function V({ value, placeholder, name }: { value?: string; placeholder: string; 
     <em
       data-field={name}
       data-empty={v ? undefined : "true"}
-      className={v ? "italic text-white" : "italic text-white/45"}
+      className={v ? "italic text-white" : "italic text-white/55"}
     >
       {v || placeholder}
     </em>

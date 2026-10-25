@@ -170,7 +170,7 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
 
               {/* sample rows */}
               {toImport.length > 0 && (
-                <div className="overflow-x-auto rounded-[10px] border border-jh-line">
+                <div className="overflow-x-auto rounded-sm border border-jh-line">
                   <table className="w-full text-xs">
                     <thead className="bg-jh-mist/60 text-left text-jh-mute">
                       <tr>{previewHeaders(kind, t).map((h) => <th key={h} className="px-2 py-1.5 font-semibold whitespace-nowrap">{h}</th>)}</tr>
@@ -185,7 +185,7 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
                       ))}
                     </tbody>
                   </table>
-                  {toImport.length > PREVIEW_ROWS && <p className="px-2 py-1.5 text-[11px] text-jh-mute border-t border-jh-line">+{toImport.length - PREVIEW_ROWS}</p>}
+                  {toImport.length > PREVIEW_ROWS && <p className="px-2 py-1.5 text-xs text-jh-mute border-t border-jh-line">+{toImport.length - PREVIEW_ROWS}</p>}
                 </div>
               )}
 
@@ -244,13 +244,13 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
 
         {/* column guide */}
         <div>
-          <p className="mb-1.5 text-xs font-display font-semibold uppercase tracking-wide text-jh-mute-2">{t("import.columns")}</p>
-          <ul className="divide-y divide-jh-line rounded-[10px] border border-jh-line text-xs">
+          <p className="section-label mb-1.5">{t("import.columns")}</p>
+          <ul className="divide-y divide-jh-line rounded-sm border border-jh-line text-xs">
             {columns.map((c) => (
               <li key={c.key} className="flex gap-2 px-3 py-1.5">
                 <span className="w-24 shrink-0 font-semibold text-jh-ink">
                   {c.header}
-                  {c.required && <span className="ml-1 rounded-full bg-jh-red-soft px-1.5 text-[10px] text-jh-red">{t("import.required")}</span>}
+                  {c.required && <span className="ml-1 rounded-pill bg-jh-red-soft px-1.5 text-[11px] text-jh-red">{t("import.required")}</span>}
                 </span>
                 <span className="text-jh-mute">{c.help}</span>
               </li>
@@ -265,7 +265,7 @@ export default function ImportSheet({ kind, uid, contacts, opps, onClose }: {
 /* ---------------- bits ---------------- */
 function Issue({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex items-start gap-2 rounded-[10px] bg-jh-red-soft px-3 py-2 text-sm text-jh-red">
+    <p className="flex items-start gap-2 rounded-sm bg-jh-red-soft px-3 py-2 text-sm text-jh-red">
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> <span>{children}</span>
     </p>
   );
@@ -284,9 +284,9 @@ function IssueList({ title, tone, items, lineLabel }: {
       {open && (
         <ul className="mt-1 space-y-0.5 text-jh-mute">
           {items.slice(0, MAX_ISSUES).map((it, i) => (
-            <li key={i}><span className="text-jh-mute-2">{lineLabel(it.line)} · </span>{it.message}</li>
+            <li key={i}><span className="text-jh-mute">{lineLabel(it.line)} · </span>{it.message}</li>
           ))}
-          {items.length > MAX_ISSUES && <li className="text-jh-mute-2">+{items.length - MAX_ISSUES}</li>}
+          {items.length > MAX_ISSUES && <li className="text-jh-mute">+{items.length - MAX_ISSUES}</li>}
         </ul>
       )}
     </div>

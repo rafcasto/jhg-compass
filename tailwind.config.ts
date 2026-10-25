@@ -10,6 +10,7 @@ const config: Config = {
           red: "#c2001f",
           "red-hover": "#8a0016",
           ink: "#191c27",
+          body: "#3a3f4d", // default body text; the only grey that passes 4.5:1 on the blue-grey tint
           "red-soft": "#f6e0e3",
           "blue-grey": "#e2ebfb",
           paper: "#fafafa",
