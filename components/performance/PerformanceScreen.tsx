@@ -4,12 +4,13 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import type { Activity, ActivityLog } from "@/lib/types";
 import {
-  type Period, rangeYmd, shift, periodLabel, scaleTarget, toWeekly, inRange, ymd,
+  type Period, rangeYmd, shift, periodLabel, displayTarget, isWorkday, inRange, ymd,
 } from "@/lib/period";
-import { resolveWeeklyTarget } from "@/lib/targets";
+import { resolveWeeklyTarget, type WeeklyTargets } from "@/lib/targets";
 import PageHeader from "@/components/shell/PageHeader";
 import Segmented from "@/components/shell/Segmented";
 import { MarketSection, marketSections } from "@/components/performance/MarketSection";
+import TargetsSheet from "@/components/performance/TargetsSheet";
 
 const PERIODS: Period[] = ["day", "week", "month"];
 
@@ -17,14 +18,18 @@ const PERIODS: Period[] = ["day", "week", "month"];
 // feeds it live Firestore data; Admin → CMS → Performance feeds it draft copy and
 // sample data so what the editor previews is the real screen, not a mock.
 //
-// Styling is brand tokens only (tailwind.config.ts) — no local colour table — so
-// the tab can't drift from Compass / Progress. The market sections (order, tints,
-// row list) come from MarketSection, shared with onboarding step 3. Each row is
-// a CSS grid (.perf-row): stacked on a phone, one table-like line from 800px of
-// screen width with the ACTUAL / TARGET labels once per section. Colour rules (red budget):
-//   • ink while a period is in progress, green once the target is met,
-//   • red only when the period has CLOSED below target (a genuine negative state),
-//   • one red button on screen at most: "Edit targets" while editing.
+// Targets are WEEKLY, logging is DAILY (docs/UX_PERFORMANCE_TARGETS.md):
+//   • − / + on a row only ever log an actual. There is no edit mode.
+//   • Targets are set in one place — the Targets sheet — opened by "Edit targets"
+//     or by tapping a row's target figure (the number you want to change).
+//   • Day and month targets are derived from the weekly base for display (shown
+//     with a ~). A row whose weekly target is under 5 (or on a weekend) shows the
+//     weekly figure with its unit and tracks the week, so no target ever reads "0".
+//   • Week is the default period: it is the stored unit and nothing is rounded.
+// Styling is brand tokens only (tailwind.config.ts). Each row is a CSS grid
+// (.perf-row): stacked on a phone, one table-like line from 800px of screen width.
+// Colour (red budget): ink while in progress, green once met, red only when the
+// period has CLOSED below target; the one primary button is the sheet's Done.
 export interface PerformanceScreenProps {
   /** Editable-string lookup (config/content.text). */
   t: (key: string) => string;
@@ -32,42 +37,55 @@ export interface PerformanceScreenProps {
   visible: Activity[];
   effortSplit: { hidden: number; visible: number };
   /** Admin default weekly targets, by activity id. */
-  weeklyTargets: Record<string, number>;
+  weeklyTargets: WeeklyTargets;
   /** The member's own overrides, by activity id. */
-  userTargets: Record<string, number>;
+  userTargets: WeeklyTargets;
   logs: ActivityLog[];
   onLog?: (categoryId: string, loggedOn: string, period: Period) => void | Promise<void>;
   onUnlog?: (latest: ActivityLog, period: Period) => void | Promise<void>;
-  onSetWeeklyTarget?: (categoryId: string, weekly: number, meta: { period: Period; value: number }) => void | Promise<void>;
+  /** Weekly rows to write (set) and overrides to drop (unset) when the Targets sheet closes with changes. */
+  onSaveTargets?: (edits: { set: WeeklyTargets; unset: string[] }) => void | Promise<void>;
   /** Fix "today" — used by previews/tests so the header date is stable. */
   now?: Date;
 }
 
 export default function PerformanceScreen({
   t, hidden, visible, effortSplit, weeklyTargets, userTargets, logs,
-  onLog, onUnlog, onSetWeeklyTarget, now,
+  onLog, onUnlog, onSaveTargets, now,
 }: PerformanceScreenProps) {
-  const [period, setPeriod] = useState<Period>("day");
+  const [period, setPeriod] = useState<Period>("week");
   const [anchor, setAnchor] = useState(() => now ?? new Date());
-  const [editAll, setEditAll] = useState(false);
-  const [editRows, setEditRows] = useState<Record<string, boolean>>({});
+  const [sheet, setSheet] = useState<{ focusId?: string } | null>(null);
 
   const range = rangeYmd(period, anchor);
+  const weekRange = rangeYmd("week", anchor);
+  const todayKey = ymd(now ?? new Date());
+
   // Source of truth for target resolution — shared with onboarding (lib/targets.ts).
   const weeklyTarget = (id: string) => resolveWeeklyTarget(id, userTargets, weeklyTargets);
-  const periodTarget = (id: string) => scaleTarget(weeklyTarget(id), period, anchor);
 
-  const actuals = useMemo(() => {
+  const sumIn = (r: { start: string; end: string }) => {
     const acc: Record<string, number> = {};
-    for (const l of logs) if (inRange(l.loggedOn, range)) acc[l.categoryId] = (acc[l.categoryId] ?? 0) + (l.count ?? 1);
+    for (const l of logs) if (inRange(l.loggedOn, r)) acc[l.categoryId] = (acc[l.categoryId] ?? 0) + (l.count ?? 1);
     return acc;
-  }, [logs, range]);
+  };
+  const actuals = useMemo(() => sumIn(range), [logs, range.start, range.end]); // eslint-disable-line react-hooks/exhaustive-deps
+  const actualsWeek = useMemo(() => sumIn(weekRange), [logs, weekRange.start, weekRange.end]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const todayKey = ymd(now ?? new Date());
+  // Per row: the target to show and the window the ACTUAL counts over. A row that
+  // falls back to its weekly figure in Day view counts the week so the two agree.
+  function rowModel(id: string) {
+    const disp = displayTarget(weeklyTarget(id), period, anchor);
+    const weekly = period === "day" && disp.unit === "week";
+    const r = weekly ? weekRange : range;
+    const a = (weekly ? actualsWeek : actuals)[id] ?? 0;
+    // A window that has fully elapsed: "below target" is a result, not a status.
+    // A weekend day in Day view never closes short — it carries no daily share.
+    const closed = r.end < todayKey && (period !== "day" || weekly || isWorkday(anchor));
+    return { disp, a, closed, unitSuffix: weekly ? " / wk" : "" };
+  }
+
   const logOn = period === "day" ? range.start : inRange(todayKey, range) ? todayKey : range.end;
-  // A period that has fully elapsed: "below target" is now a result, not a status.
-  const closed = range.end < todayKey;
-
   async function add(catId: string) { await onLog?.(catId, logOn, period); }
   async function remove(catId: string) {
     const latest = logs
@@ -76,22 +94,10 @@ export default function PerformanceScreen({
     if (!latest) return;
     await onUnlog?.(latest, period);
   }
-  // Edit the goal for the CURRENT period; stored as one weekly base so day/week/month all reflect it.
-  async function setGoal(catId: string, enteredForPeriod: number) {
-    const weekly = toWeekly(Math.max(0, enteredForPeriod), period, anchor);
-    await onSetWeeklyTarget?.(catId, weekly, { period, value: enteredForPeriod });
-  }
-
-  function toggleEditAll() {
-    setEditAll((prev) => { if (prev) setEditRows({}); return !prev; });
-  }
-  const startEdit = (id: string) => setEditRows((r) => ({ ...r, [id]: true }));
-  const finishRow = (id: string) => setEditRows((r) => { const n = { ...r }; delete n[id]; return n; });
 
   const rowProps = {
-    editAll, editRows, closed, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow,
-    actualLabel: t("perf.actual"), targetLabel: t("perf.target"),
-    setGoalLabel: t("perf.setGoal"), setTargetHint: t("perf.setTargetHint"),
+    rowModel, add, remove, openTargets: (id?: string) => setSheet({ focusId: id }),
+    actualLabel: t("perf.actual"), targetLabel: t("perf.target"), setGoalLabel: t("perf.setGoal"),
   };
 
   return (
@@ -101,9 +107,8 @@ export default function PerformanceScreen({
           eyebrow={t("perf.eyebrow")}
           title={t("perf.title")}
           actions={
-            <button type="button" onClick={toggleEditAll} aria-pressed={editAll}
-              className={`${editAll ? "btn-primary" : "btn-secondary"} btn-sm`}>
-              {editAll ? t("perf.done") : t("perf.editTargets")}
+            <button type="button" onClick={() => setSheet({})} className="btn-secondary btn-sm">
+              {t("perf.editTargets")}
             </button>
           }
         />
@@ -133,27 +138,24 @@ export default function PerformanceScreen({
         </MarketSection>
       ))}
 
-      <p className="text-center text-[13px] text-jh-mute">{t("perf.footer")}</p>
+      {sheet && (
+        <TargetsSheet t={t} hidden={hidden} visible={visible} effortSplit={effortSplit}
+          weeklyTargets={weeklyTargets} userTargets={userTargets} focusId={sheet.focusId}
+          onClose={() => setSheet(null)} onSave={onSaveTargets} />
+      )}
     </div>
   );
 }
 
 interface RowProps {
   cats: Activity[];
-  editAll: boolean;
-  editRows: Record<string, boolean>;
-  closed: boolean;
-  periodTarget: (id: string) => number;
-  actuals: Record<string, number>;
+  rowModel: (id: string) => { disp: { value: number; derived: boolean }; a: number; closed: boolean; unitSuffix: string };
   add: (id: string) => void;
   remove: (id: string) => void;
-  setGoal: (id: string, v: number) => void;
-  startEdit: (id: string) => void;
-  finishRow: (id: string) => void;
+  openTargets: (id?: string) => void;
   actualLabel: string;
   targetLabel: string;
   setGoalLabel: string;
-  setTargetHint: string;
 }
 
 // Column labels shown once per section on desktop (.perf-head is display:none on a
@@ -168,61 +170,55 @@ function PerfHead({ actualLabel, targetLabel }: { actualLabel: string; targetLab
 
 // Rows are direct children of the section's `.market-rows`. Each row is one grid
 // (.perf-row): areas label · bar · nums · actions, re-flowed by the container query.
-function Rows({ cats, editAll, editRows, closed, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow, actualLabel, targetLabel, setGoalLabel, setTargetHint }: RowProps) {
+function Rows({ cats, rowModel, add, remove, openTargets, actualLabel, targetLabel, setGoalLabel }: RowProps) {
   return (
     <>
       {cats.map((c) => {
-        const a = actuals[c.id] ?? 0;
-        const t = periodTarget(c.id);
-        const hasGoal = t > 0;
-        const done = hasGoal && a >= t;
+        const { disp, a, closed, unitSuffix } = rowModel(c.id);
+        const tv = disp.value;
+        const hasGoal = tv > 0;
+        const done = hasGoal && a >= tv;
         const missed = hasGoal && closed && !done;
-        const editing = editAll || !!editRows[c.id];
-        const perRowEdit = !editAll && !!editRows[c.id];
-
         const actualCls = done ? "text-rb-green-dark" : missed ? "text-jh-red" : "text-jh-ink";
-        const targetText = hasGoal || editing ? String(t) : "—";
-        const decDisabled = editing ? t <= 0 : a <= 0;
-        const onDec = () => (editing ? setGoal(c.id, t - 1) : remove(c.id));
-        const onInc = () => (editing ? setGoal(c.id, t + 1) : add(c.id));
+        const targetText = hasGoal ? `${disp.derived ? "~" : ""}${tv}${unitSuffix}` : "—";
 
         return (
           <div key={c.id} className="perf-row border-b border-jh-line">
             <div className="perf-row-label font-display text-base font-semibold leading-snug text-jh-ink">{c.label}</div>
 
-            {/* Bar slot: the bullet bar, or the quiet "set a goal" action, or the edit hint. */}
+            {/* Bar slot: the bullet bar, or the quiet "set a target" action for a row without one. */}
             <div className="perf-row-bar">
-              {hasGoal && !editing && <Bar a={a} t={t} done={done} missed={missed} />}
-              {!hasGoal && !editing && (
-                <button type="button" onClick={() => startEdit(c.id)}
+              {hasGoal && <Bar a={a} t={tv} done={done} missed={missed} />}
+              {!hasGoal && (
+                <button type="button" onClick={() => openTargets(c.id)}
                   className="perf-set-goal bg-jh-mist font-display text-xs font-semibold text-jh-ink hover:bg-jh-blue-grey">
                   <Plus className="h-3.5 w-3.5" aria-hidden /> {setGoalLabel}
                 </button>
               )}
-              {editing && <div className="text-xs text-jh-mute">{setTargetHint}</div>}
             </div>
 
-            {/* Actual leads (24/700); target is context (16/500 mute). */}
+            {/* Actual leads (24/700); target is context (16/500 mute) and is the way in to change it. */}
             <div className="perf-row-nums">
               <div className="perf-row-labels"><Label>{actualLabel}</Label><div /><Label>{targetLabel}</Label></div>
               <div className={`text-center font-display text-2xl font-bold leading-none ${actualCls}`}>{a}</div>
               <div aria-hidden className="text-center font-display text-lg font-light leading-none text-jh-mute-2">/</div>
-              <div className={`text-center font-display text-base font-medium leading-none ${hasGoal || editing ? "text-jh-mute" : "text-jh-mute-2"}`}>{targetText}</div>
+              <button type="button" onClick={() => openTargets(c.id)} aria-label={`Change target: ${c.label}`}
+                title={`${targetLabel} ${targetText}`}
+                className={`-my-2 min-h-[40px] rounded-xs px-1 text-center font-display text-base font-medium leading-none transition-colors duration-200 ease-out hover:bg-jh-mist hover:text-jh-ink whitespace-nowrap ${hasGoal ? "text-jh-mute" : "text-jh-mute-2"}`}>
+                {targetText}
+              </button>
             </div>
 
             <div className="perf-row-actions">
-              {perRowEdit && (
-                <button type="button" onClick={() => finishRow(c.id)} className="btn-ghost btn-sm">Done</button>
-              )}
-              <button type="button" onClick={onDec} disabled={decDisabled}
-                aria-label={`${editing ? "Lower target" : "Remove one"}: ${c.label}`}
+              <button type="button" onClick={() => remove(c.id)} disabled={a <= 0}
+                aria-label={`Remove one: ${c.label}`}
                 className="grid h-10 w-10 place-items-center rounded-pill border border-jh-line-2 bg-white text-jh-mute transition-colors duration-200 ease-out hover:border-jh-ink hover:text-jh-ink disabled:opacity-40 disabled:hover:border-jh-line-2 disabled:hover:text-jh-mute">
                 <Minus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
               </button>
-              <button type="button" onClick={onInc}
-                aria-label={`${editing ? "Raise target" : "Log one"}: ${c.label}`}
+              <button type="button" onClick={() => add(c.id)}
+                aria-label={`Log one: ${c.label}`}
                 className={`grid h-10 w-10 place-items-center rounded-pill border bg-white transition-colors duration-200 ease-out
-                  ${done && !editing
+                  ${done
                     ? "border-rb-green-dark text-rb-green-dark hover:bg-rb-green-dark hover:text-white"
                     : "border-jh-ink text-jh-ink hover:bg-jh-ink hover:text-white"}`}>
                 <Plus className="h-5 w-5" strokeWidth={1.5} aria-hidden />

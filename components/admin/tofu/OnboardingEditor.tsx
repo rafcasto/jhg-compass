@@ -47,7 +47,7 @@ export default function OnboardingEditor() {
     <div className="space-y-6">
       <EditorLayout
         form={
-          <Section title="Onboarding copy" help="Step 1 asks for identity, step 2 the goal statement (same fields as the Compass tab), step 3 the daily targets (same activities as Performance).">
+          <Section title="Onboarding copy" help="Step 1 asks for identity, step 2 the goal statement (same fields as the Compass tab), step 3 the recommended weekly plan (same activities and targets as Performance).">
             <TextFields fields={FIELDS} text={cfg.text} onChange={setText} idPrefix="onb" />
           </Section>
         }
@@ -86,14 +86,15 @@ export default function OnboardingEditor() {
                   </div>
                   <div className="px-4">
                     {hidden.map((a) => (
-                      <div key={a.id} className="flex items-center justify-between py-3 border-b border-jh-line last:border-0">
+                      <div key={a.id} className="flex items-center justify-between gap-3 py-3 border-b border-jh-line last:border-0">
                         <span className="font-display font-semibold text-sm text-jh-ink">{a.label}</span>
-                        <span className="text-[10.5px] uppercase tracking-wider text-jh-mute-2 font-display font-semibold">{t("onb.perDay")}</span>
+                        <span className="whitespace-nowrap font-display text-sm font-semibold text-jh-ink">{a.defaultWeekly} <span className="text-xs font-normal text-jh-mute">{t("onb.perWeek")}</span></span>
                       </div>
                     ))}
                   </div>
                 </div>
-                <button type="button" tabIndex={-1} className="btn-primary w-full">{t("onb.finish")} <Check className="h-4 w-4" /></button>
+                <button type="button" tabIndex={-1} className="btn-primary w-full">{t("onb.usePlan")} <Check className="h-4 w-4" /></button>
+                <button type="button" tabIndex={-1} className="btn-ghost w-full text-jh-ink">{t("onb.adjust")}</button>
               </div>
             </PhoneFrame>
           </PreviewAside>

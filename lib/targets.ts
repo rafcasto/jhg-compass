@@ -17,10 +17,20 @@ export function resolveWeeklyTarget(id: string, userTargets: WeeklyTargets, defa
 }
 
 /**
- * The document payload to write after the user edits some rows: existing
- * overrides plus the edited ones. Untouched rows are deliberately NOT copied
- * from the admin defaults, so later admin changes keep flowing through.
+ * Split the values a member leaves in the Targets sheet into what to write:
+ *   set   — rows whose value differs from the admin default (the member's override)
+ *   unset — rows the member had overridden but has now put back on the default,
+ *           so the override is removed and later admin changes reach them again.
+ * Rows equal to the default with no existing override are untouched (not written).
  */
-export function withTargetEdits(userTargets: WeeklyTargets, edits: WeeklyTargets): WeeklyTargets {
-  return { ...userTargets, ...edits };
+export function targetEdits(userTargets: WeeklyTargets, defaults: WeeklyTargets, values: WeeklyTargets): { set: WeeklyTargets; unset: string[] } {
+  const set: WeeklyTargets = {};
+  const unset: string[] = [];
+  for (const [id, v] of Object.entries(values)) {
+    const def = defaults[id] ?? 0;
+    const current = resolveWeeklyTarget(id, userTargets, defaults);
+    if (v === def) { if (id in userTargets) unset.push(id); continue; }
+    if (v !== current || !(id in userTargets)) set[id] = v;
+  }
+  return { set, unset };
 }

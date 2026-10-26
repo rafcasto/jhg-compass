@@ -83,6 +83,38 @@ export function toWeekly(entered: number, period: Period, anchor: Date): number 
   return Math.max(0, Math.round((entered * 7) / periodDays(period, anchor)));
 }
 
+/** Monday–Friday. The 5-workday week means a weekend day carries no daily share of a target. */
+export function isWorkday(d: Date): boolean {
+  const day = d.getDay();
+  return day !== 0 && day !== 6;
+}
+
+export type TargetUnit = "day" | "week" | "month";
+export interface DisplayTarget {
+  /** The figure to show. Never 0 for a row that has a weekly target. */
+  value: number;
+  /** The unit the figure is in — may differ from the period (a 1/wk row in Day view shows "1 / wk"). */
+  unit: TargetUnit;
+  /** True when the figure is computed from the weekly base rather than the base itself. */
+  derived: boolean;
+}
+
+// What the TARGET cell shows for the selected period. Targets are stored and edited
+// per WEEK; day and month figures are derived for display only (the lossy reverse
+// conversion was how a "1 / day" tap used to write 5 / wk). Rules:
+//   • week  → the stored figure.
+//   • day   → weekly / 5 workdays when that is ≥ 1 and the day is a workday;
+//             otherwise the weekly figure itself, with its unit, so a 1 / wk row
+//             never reads as "0" (or as having no target at all).
+//   • month → weekly × days-in-month / 7.
+export function displayTarget(weekly: number, period: Period, anchor: Date): DisplayTarget {
+  const w = Math.max(0, Math.round(weekly));
+  if (period === "week") return { value: w, unit: "week", derived: false };
+  if (period === "month") return { value: scaleTarget(w, "month", anchor), unit: "month", derived: true };
+  if (w >= WORKDAYS_PER_WEEK && isWorkday(anchor)) return { value: scaleTarget(w, "day", anchor), unit: "day", derived: true };
+  return { value: w, unit: "week", derived: false };
+}
+
 export function inRange(loggedOn: string, r: { start: string; end: string }): boolean {
   return loggedOn >= r.start && loggedOn <= r.end;
 }

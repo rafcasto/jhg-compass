@@ -1,12 +1,12 @@
 "use client";
 
+import { deleteField } from "firebase/firestore";
 import { useAuth } from "@/components/AuthProvider";
 import {
   paths, createDoc, updateRecord, deleteRecord, setDoc, useLiveCollection, useLiveDoc,
 } from "@/lib/firestore/db";
 import { useContent } from "@/lib/firestore/content";
 import type { ActivityLog } from "@/lib/types";
-import { withTargetEdits } from "@/lib/targets";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 import PerformanceScreen from "@/components/performance/PerformanceScreen";
@@ -37,10 +37,15 @@ export default function PerformancePage() {
         else await deleteRecord(uid, "activityLogs", latest.id);
         track(TAGS.UNLOG_ACTIVITY, { props: { categoryId: latest.categoryId, period } });
       }}
-      onSetWeeklyTarget={async (categoryId, weekly, { period, value }) => {
+      onSaveTargets={async ({ set, unset }) => {
         if (!uid) return;
-        await setDoc(paths.settingsTargets(uid), { targets: withTargetEdits(userTargets, { [categoryId]: weekly }) }, { merge: true });
-        track(TAGS.SET_TARGET, { props: { categoryId, period, value } });
+        // Overrides are a WEEKLY number per row. A row put back on the admin default
+        // loses its override (deleteField) so later admin changes reach it again.
+        const targets: Record<string, unknown> = { ...set };
+        for (const id of unset) targets[id] = deleteField();
+        await setDoc(paths.settingsTargets(uid), { targets }, { merge: true });
+        for (const [categoryId, value] of Object.entries(set)) track(TAGS.SET_TARGET, { props: { categoryId, period: "week", value } });
+        for (const categoryId of unset) track(TAGS.SET_TARGET, { props: { categoryId, period: "week", value: weeklyTargets[categoryId] ?? 0 } });
       }}
     />
   );
