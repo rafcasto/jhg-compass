@@ -70,7 +70,7 @@ export default function SectionScreen({ section }: { section: SectionKey }) {
       <div role="tablist" aria-label={`${sec.label} tools`} className="inline-flex flex-wrap gap-1 rounded-pill bg-jh-mist p-1">
         {sec.tools.map((t) => (
           <Link key={t.key} role="tab" aria-selected={tool === t.key} href={`${sec.href}?tool=${t.key}`} scroll={false}
-            className={`px-4 py-2 rounded-pill text-sm font-mono font-semibold transition-colors ${tool === t.key ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}>{t.label}</Link>
+            className={`px-4 py-2 rounded-pill text-sm font-mono font-semibold transition-colors ${tool === t.key ? "bg-white text-jh-ink" : "text-jh-mute hover:text-jh-ink"}`}>{t.label}</Link>
         ))}
       </div>
 

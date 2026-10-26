@@ -55,7 +55,7 @@ export function SubTabs<K extends string>({ items, value, onChange, ariaLabel }:
         return (
           <button key={it.key} type="button" role="tab" aria-selected={active} title={it.hint}
             onClick={() => onChange(it.key)}
-            className={`px-4 py-2 rounded-pill text-sm font-display font-semibold transition-colors duration-200 ease-out ${active ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}>
+            className={`px-4 py-2 rounded-pill text-sm font-display font-semibold transition-colors duration-200 ease-out ${active ? "bg-white text-jh-ink" : "text-jh-mute hover:text-jh-ink"}`}>
             {it.label}
           </button>
         );
@@ -120,7 +120,7 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boo
   return (
     <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)}
       className={`relative h-6 w-11 rounded-pill transition shrink-0 ${on ? "bg-rb-green-dark" : "bg-jh-line-2"}`}>
-      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${on ? "left-[22px]" : "left-0.5"}`} />
+      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${on ? "left-[22px]" : "left-0.5"}`} />
     </button>
   );
 }

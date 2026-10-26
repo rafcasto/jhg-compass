@@ -128,7 +128,7 @@ function RowOfTiles({ row, buckets, total, cfg, open, onOpen }: {
         const n = buckets[q.key].length;
         return (
           <button key={q.key} type="button" onClick={() => onOpen(q.key)} aria-pressed={open === q.key}
-            className={`text-left rounded-md border p-4 transition ${TILE_STYLE[q.key]} ${open === q.key ? "ring-2 ring-jh-red/40" : "hover:shadow-jh-2"}`}>
+            className={`text-left rounded-md border p-4 transition ${TILE_STYLE[q.key]} ${open === q.key ? "ring-2 ring-jh-red/40" : ""}`}>
             <p className="font-display font-bold text-jh-ink">{q.name}</p>
             <p className="font-display font-extrabold text-3xl text-jh-ink tabular-nums mt-1">{n} <span className="text-sm font-semibold text-jh-mute">· {Math.round((n / total) * 100)}%</span></p>
             <p className="text-xs text-jh-mute mt-2 line-clamp-2">→ {cfg.actions[q.key].title}</p>

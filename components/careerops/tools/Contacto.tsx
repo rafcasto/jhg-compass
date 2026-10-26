@@ -30,7 +30,7 @@ export default function Contacto({ ctx }: ToolProps) {
         <h3 className="font-display font-bold text-jh-ink flex items-center gap-2"><MessageSquare className="h-5 w-5 text-jh-red" strokeWidth={1.5} /> Who, for which role?</h3>
         <ReportPicker reports={ctx.reports} value={reportJobId} onChange={setReportJobId} />
         <div role="radiogroup" aria-label="Contact type" className="inline-flex flex-wrap gap-1 rounded-pill bg-jh-mist p-1">
-          {CONTACT_TARGETS.map((t) => <button key={t.key} type="button" role="radio" aria-checked={target === t.key} onClick={() => setTarget(t.key)} className={`px-4 py-1.5 rounded-pill text-sm font-display font-semibold ${target === t.key ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute"}`}>{t.label}</button>)}
+          {CONTACT_TARGETS.map((t) => <button key={t.key} type="button" role="radio" aria-checked={target === t.key} onClick={() => setTarget(t.key)} className={`px-4 py-1.5 rounded-pill text-sm font-display font-semibold ${target === t.key ? "bg-white text-jh-ink" : "text-jh-mute"}`}>{t.label}</button>)}
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="block"><span className="label">Already know who? Name <span className="font-normal text-jh-mute">(optional)</span></span><input className="field" value={personName} onChange={(e) => setPersonName(e.target.value)} maxLength={120} /></label>

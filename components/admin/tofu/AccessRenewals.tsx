@@ -132,7 +132,7 @@ export default function AccessRenewals() {
               const active = f.key === filter;
               return (
                 <button key={f.key} type="button" role="tab" aria-selected={active} onClick={() => setFilter(f.key)}
-                  className={`px-3 py-1.5 rounded-pill text-sm font-display font-semibold transition-colors ${active ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}>
+                  className={`px-3 py-1.5 rounded-pill text-sm font-display font-semibold transition-colors ${active ? "bg-white text-jh-ink" : "text-jh-mute hover:text-jh-ink"}`}>
                   {f.label} <span className="ml-1 text-xs tabular-nums opacity-70">{counts[f.key]}</span>
                 </button>
               );

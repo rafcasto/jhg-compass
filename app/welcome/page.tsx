@@ -59,18 +59,18 @@ export default function WelcomePage() {
 const CSS = `
 .ct-root{font-family:"Roboto","Helvetica Neue",Arial,sans-serif;color:#3a3f4d;background:#f5f6fa;min-height:100vh;-webkit-font-smoothing:antialiased;}
 .ct-root h1{font-family:"Poppins",Arial,sans-serif;color:#191c27;margin:0;letter-spacing:-.025em;}
-.ct-topbar{height:5px;background:#c2001f;}
+.ct-topbar{height:5px;background:#e12120;}
 .ct-shell{display:flex;align-items:center;justify-content:center;padding:48px 24px 56px;min-height:calc(100vh - 5px);}
 .ct-card{background:#fff;border:1px solid #e9ebf1;border-radius:24px;box-shadow:0 18px 50px rgba(25,28,39,.10);width:100%;max-width:540px;padding:46px 46px 42px;text-align:center;}
 .ct-brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:26px;}
-.ct-brand__mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#c2001f;color:#fff;font-size:18px;}
+.ct-brand__mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#e12120;color:#fff;font-size:18px;}
 .ct-brand__name{font-family:"Poppins",Arial,sans-serif;font-weight:700;font-size:14px;color:#191c27;}
-.ct-brand__name span{color:#c2001f;}
-.ct-check{width:58px;height:58px;border-radius:99px;background:#f6e0e3;color:#c2001f;display:grid;place-items:center;font-size:27px;margin:0 auto 22px;}
-.ct-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#c2001f;display:block;margin-bottom:12px;}
+.ct-brand__name span{color:#e12120;}
+.ct-check{width:58px;height:58px;border-radius:99px;background:#f6e0e3;color:#e12120;display:grid;place-items:center;font-size:27px;margin:0 auto 22px;}
+.ct-eyebrow{font-family:"Poppins",Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#e12120;display:block;margin-bottom:12px;}
 .ct-h1{font-size:30px;font-weight:700;line-height:1.22;margin-bottom:14px;}
 .ct-lede{font-size:16.5px;line-height:1.6;color:#3a3f4d;margin:0 auto 30px;max-width:30em;}
-.ct-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:#fff;background:#c2001f;border:0;border-radius:99px;padding:18px;text-decoration:none;cursor:pointer;box-shadow:0 10px 26px rgba(194,0,31,.3);transition:all .22s cubic-bezier(.2,.7,.2,1);}
-.ct-cta:hover{background:#8a0016;transform:translateY(-2px);box-shadow:0 14px 32px rgba(194,0,31,.36);}
+.ct-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font-family:"Poppins",Arial,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:#fff;background:#e12120;border:0;border-radius:99px;padding:18px;text-decoration:none;cursor:pointer;transition:all .22s cubic-bezier(.2,.7,.2,1);}
+.ct-cta:hover{background:#8a0016;transform:translateY(-2px);}
 .ct-fine{margin-top:16px;font-size:13px;color:#9aa0ad;}
 `;

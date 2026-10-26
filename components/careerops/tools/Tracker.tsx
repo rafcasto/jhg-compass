@@ -62,7 +62,7 @@ export default function Tracker({ ctx }: ToolProps) {
       <section className="card divide-y divide-jh-line">
         <div className="px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
           <div role="tablist" className="inline-flex gap-1 rounded-pill bg-jh-mist p-1">
-            {(["all", "board", "unboarded"] as const).map((f) => <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)} className={`px-3 py-1 rounded-pill text-xs font-display font-semibold ${filter === f ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute"}`}>{f === "all" ? "All" : f === "board" ? "On the board" : "Not on the board"}</button>)}
+            {(["all", "board", "unboarded"] as const).map((f) => <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)} className={`px-3 py-1 rounded-pill text-xs font-display font-semibold ${filter === f ? "bg-white text-jh-ink" : "text-jh-mute"}`}>{f === "all" ? "All" : f === "board" ? "On the board" : "Not on the board"}</button>)}
           </div>
           <Link href="/tracker" className="btn-ghost text-xs"><Columns3 className="h-3.5 w-3.5" /> Open the Progress board</Link>
         </div>

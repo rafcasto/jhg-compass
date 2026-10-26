@@ -94,7 +94,7 @@ export default function ProgressCms() {
                   <button type="button" tabIndex={-1} className="btn-primary shrink-0 text-sm px-3 py-2"><Plus className="h-4 w-4" /> {t("tracker.addJob")}</button>
                 </div>
                 <div className="flex gap-1 rounded-pill bg-jh-mist p-1 text-xs font-display font-semibold">
-                  <span className="flex-1 flex items-center justify-center gap-1 rounded-pill bg-white py-2 text-jh-ink shadow-jh-1"><Columns3 className="h-3.5 w-3.5" /> {t("tracker.view.board")}</span>
+                  <span className="flex-1 flex items-center justify-center gap-1 rounded-pill bg-white py-2 text-jh-ink"><Columns3 className="h-3.5 w-3.5" /> {t("tracker.view.board")}</span>
                   <span className="flex-1 flex items-center justify-center gap-1 py-2 text-jh-mute"><Bell className="h-3.5 w-3.5" /> {t("tracker.view.reminders")}</span>
                   <span className="flex-1 flex items-center justify-center gap-1 py-2 text-jh-mute"><Users className="h-3.5 w-3.5" /> {t("tracker.view.contacts")}</span>
                 </div>
