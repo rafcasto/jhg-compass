@@ -68,13 +68,12 @@ async function goToTargetsStep(user: ReturnType<typeof userEvent.setup>) {
   expect(screen.getByText(DEFAULT_TEXT["onb.targetsTitle"])).toBeInTheDocument();
 }
 
-// The per-day number shown next to an activity label (rounded weekly/5 workdays, like Performance "day").
-function dailyShown(label: string): number {
-  const row = screen.getByText(label).parentElement as HTMLElement;
-  const btns = within(row).getAllByRole("button");
-  // [minus, plus] — the value sits between them
-  return Number(btns[0].nextElementSibling!.textContent);
+// The weekly figure shown next to an activity label on the read-only plan.
+function weeklyShown(label: string): number {
+  const row = screen.getByText(label).parentElement!.parentElement as HTMLElement;
+  return Number(within(row).getByText(DEFAULT_TEXT["onb.perWeek"]).previousElementSibling!.textContent);
 }
+const usePlan = () => screen.getByRole("button", { name: new RegExp(DEFAULT_TEXT["onb.usePlan"]) });
 const COLD = "Contact prospects — cold / no referral";
 const THANKS = "Thank-you notes";
 
@@ -85,61 +84,64 @@ beforeEach(() => {
 });
 
 // ---- tests -------------------------------------------------------------------
-describe("Onboarding → Set daily targets (synced with Performance)", () => {
-  it("shows admin-set defaults, not the static code defaults", async () => {
+describe("Onboarding → Your weekly plan (synced with Performance)", () => {
+  it("shows admin-set defaults, per week, not the static code defaults", async () => {
     contentState = { loading: false, config: adminContent({ outreach_cold: 20, thank_you: 0 }) };
     const user = userEvent.setup();
     render(<OnboardingPage />);
     await goToTargetsStep(user);
-    expect(dailyShown(COLD)).toBe(4);   // 20 / wk → 4 / day (5-workday week)
-    expect(dailyShown(THANKS)).toBe(0); // admin cleared it
+    expect(weeklyShown(COLD)).toBe(20);
+    expect(weeklyShown(THANKS)).toBe(0); // admin cleared it
   });
 
   it("reflects admin defaults that arrive AFTER first render (the reported bug)", async () => {
-    // First paint: still on static defaults (outreach_cold 8/wk → 2/day)
     const user = userEvent.setup();
     const { rerender } = render(<OnboardingPage />);
     await goToTargetsStep(user);
-    expect(dailyShown(COLD)).toBe(2);
-    // config/content snapshot lands with the admin's value
+    expect(weeklyShown(COLD)).toBe(8);
     contentState = { loading: false, config: adminContent({ outreach_cold: 35 }) };
     rerender(<OnboardingPage />);
-    expect(dailyShown(COLD)).toBe(7);
+    expect(weeklyShown(COLD)).toBe(35);
   });
 
-  it("prefers the user's existing override over the admin default", async () => {
+  it("prefers the user's existing override over the admin default and tags it", async () => {
     contentState = { loading: false, config: adminContent({ outreach_cold: 35 }) };
     targetDocData = { targets: { outreach_cold: 15 } };
     const user = userEvent.setup();
     render(<OnboardingPage />);
     await goToTargetsStep(user);
-    expect(dailyShown(COLD)).toBe(3);
+    expect(weeklyShown(COLD)).toBe(15);
+    expect(screen.getByText(DEFAULT_TEXT["onb.customised"])).toBeInTheDocument();
   });
 
-  it("Finish persists ONLY the rows the user touched, on top of existing overrides", async () => {
+  it("Adjust targets → sheet (weekly stepper) → Use this plan persists ONLY the changed rows, on top of existing overrides", async () => {
     contentState = { loading: false, config: adminContent({ outreach_cold: 20 }) };
     targetDocData = { targets: { thank_you: 7 } };
     const user = userEvent.setup();
     render(<OnboardingPage />);
     await goToTargetsStep(user);
 
-    const row = screen.getByText(COLD).parentElement as HTMLElement;
-    await user.click(within(row).getAllByRole("button")[1]); // plus → 4/day → 5/day
-    expect(dailyShown(COLD)).toBe(5);
-    await user.click(screen.getByRole("button", { name: new RegExp(DEFAULT_TEXT["onb.finish"]) }));
+    await user.click(screen.getByRole("button", { name: DEFAULT_TEXT["onb.adjust"] }));
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: `Raise weekly target: ${COLD}` }));
+    await user.click(within(dialog).getByRole("button", { name: DEFAULT_TEXT["perf.done"] }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(weeklyShown(COLD)).toBe(21);
+    await user.click(usePlan());
 
     const targetsWrite = setDoc.mock.calls.find((c: any[]) => c[0].path.endsWith("settings/targets"));
     expect(targetsWrite).toBeTruthy();
-    // 5/day → toWeekly = 5 * 5 workdays = 25. thank_you override kept; no admin defaults copied in.
-    expect(targetsWrite![1]).toEqual({ targets: { thank_you: 7, outreach_cold: 25 } });
+    // Only the edited row; thank_you override untouched; no admin defaults copied in.
+    expect(targetsWrite![1]).toEqual({ targets: { outreach_cold: 21 } });
+    expect(targetsWrite![2]).toEqual({ merge: true });
     expect(replace).toHaveBeenCalledWith("/compass");
   });
 
-  it("Finish without touching targets does not write the targets doc at all", async () => {
+  it("Use this plan without adjusting does not write the targets doc at all", async () => {
     const user = userEvent.setup();
     render(<OnboardingPage />);
     await goToTargetsStep(user);
-    await user.click(screen.getByRole("button", { name: new RegExp(DEFAULT_TEXT["onb.finish"]) }));
+    await user.click(usePlan());
     expect(setDoc.mock.calls.some((c: any[]) => c[0].path.endsWith("settings/targets"))).toBe(false);
     expect(setDoc.mock.calls.some((c: any[]) => c[0].path === "users/u1")).toBe(true);
   });

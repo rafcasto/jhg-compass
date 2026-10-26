@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveWeeklyTarget, withTargetEdits } from "@/lib/targets";
+import { resolveWeeklyTarget, targetEdits } from "@/lib/targets";
 import { mergeContent, weeklyTargetsFrom, DEFAULT_ACTIVITIES } from "@/lib/content";
 import { DEFAULT_WEEKLY_TARGETS } from "@/lib/categories";
 
@@ -20,12 +20,20 @@ describe("resolveWeeklyTarget — the one rule shared by Performance and onboard
   });
 });
 
-describe("withTargetEdits", () => {
-  it("layers edits over existing overrides without touching other rows", () => {
-    expect(withTargetEdits({ a: 1, b: 2 }, { b: 5, c: 7 })).toEqual({ a: 1, b: 5, c: 7 });
+describe("targetEdits — what the Targets sheet writes", () => {
+  const defaults = { a: 5, b: 3, c: 1 };
+
+  it("sets only rows that differ from the admin default", () => {
+    expect(targetEdits({}, defaults, { a: 6, b: 3 })).toEqual({ set: { a: 6 }, unset: [] });
   });
-  it("never copies admin defaults in — only what was passed", () => {
-    expect(withTargetEdits({}, { b: 5 })).toEqual({ b: 5 });
+  it("a row put back on the default drops its override so admin changes flow again", () => {
+    expect(targetEdits({ a: 9 }, defaults, { a: 5 })).toEqual({ set: {}, unset: ["a"] });
+  });
+  it("an unchanged override is not rewritten", () => {
+    expect(targetEdits({ a: 9 }, defaults, { a: 9 })).toEqual({ set: {}, unset: [] });
+  });
+  it("0 is a real target (not 'unset') when it differs from the default", () => {
+    expect(targetEdits({}, defaults, { c: 0 })).toEqual({ set: { c: 0 }, unset: [] });
   });
 });
 

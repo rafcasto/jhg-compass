@@ -164,7 +164,7 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
   .perf-head-nums { grid-column: 3; display: grid; grid-template-columns: 1fr 16px 1fr; }
   .perf-row { grid-template-areas: "label bar nums actions"; align-items: center; row-gap: 0; padding: 12px 0; }
   .perf-row-labels { display: none; }
-  /* nine "set a goal" pills become quiet text — the one strong action on screen stays Edit targets */
+  /* "Set a target" pills become quiet text on the wide row — the strong action is the sheet's Done */
   .perf-set-goal { background: transparent; padding: 0; color: #6b7280; }
   .perf-set-goal:hover { background: transparent; color: #191c27; }
 }

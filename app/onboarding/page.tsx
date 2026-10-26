@@ -3,24 +3,26 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Compass, ArrowRight, ArrowLeft, Check, Plus, Minus } from "lucide-react";
+import { Compass, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { deleteField } from "firebase/firestore";
 import { useAuth } from "@/components/AuthProvider";
 import CountrySelect from "@/components/CountrySelect";
 import GoalStatement from "@/components/compass/GoalStatement";
 import GoalFields from "@/components/compass/GoalFields";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
 import { useContent } from "@/lib/firestore/content";
-import { scaleTarget, toWeekly } from "@/lib/period";
 import { MarketSection, marketSections } from "@/components/performance/MarketSection";
-import { resolveWeeklyTarget, withTargetEdits } from "@/lib/targets";
+import TargetsSheet from "@/components/performance/TargetsSheet";
+import { resolveWeeklyTarget, type WeeklyTargets } from "@/lib/targets";
 import type { Profile } from "@/lib/types";
 import { EMPTY_GOAL, goalFromProfile, normalizeGoal, type Goal } from "@/lib/goal";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
-// Styling is brand tokens only. Step 3 (targets) is the Performance tab's market
-// sections (components/performance/MarketSection) with a per-day stepper per row,
-// so order, tints and the responsive row grid are the same on both screens.
+// Styling is brand tokens only. Step 3 ("Your weekly plan") is the Performance tab's
+// market sections (components/performance/MarketSection) as a READ-ONLY list of the
+// recommended weekly targets — one decision: "Use this plan", or "Adjust targets",
+// which opens the same Targets sheet the Performance tab uses. 15 steppers → 1 choice.
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -43,11 +45,12 @@ export default function OnboardingPage() {
   // Step 2 — goal statement (same model + form as the Compass tab)
   const [goal, setGoal] = useState<Goal>(EMPTY_GOAL);
 
-  // Step 3 — targets. Only the rows the user actually touches live here (as the
-  // canonical WEEKLY base). Everything else is derived live from the same rule the
-  // Performance tab uses: user override -> admin default -> 0. No local copy, so
-  // admin-set defaults show up even if config/content loads after first render.
-  const [edits, setEdits] = useState<Record<string, number>>({});
+  // Step 3 — targets. Only what the member changed in the Targets sheet lives here
+  // (WEEKLY numbers to set, overrides to drop). Everything else is derived live from
+  // the same rule the Performance tab uses: user override -> admin default -> 0. No
+  // local copy, so admin-set defaults show up even if config/content loads after first render.
+  const [plan, setPlan] = useState<{ set: WeeklyTargets; unset: string[] }>({ set: {}, unset: [] });
+  const [adjusting, setAdjusting] = useState(false);
 
   // Route guards + prefill from any existing profile.
   useEffect(() => {
@@ -67,12 +70,12 @@ export default function OnboardingPage() {
   }, [profile, router]);
 
   const userTargets = targetDoc?.targets ?? {};
-  const weekly = (id: string) => edits[id] ?? resolveWeeklyTarget(id, userTargets, weeklyTargets);
-
-  // Per-day view of the weekly target — identical maths to Performance in "day" mode.
-  const daily = (id: string) => scaleTarget(weekly(id), "day", new Date());
-  const setDaily = (id: string, d: number) =>
-    setEdits((e) => ({ ...e, [id]: toWeekly(Math.max(0, d), "day", new Date()) }));
+  const weekly = (id: string) =>
+    plan.set[id] ?? (plan.unset.includes(id) ? weeklyTargets[id] ?? 0 : resolveWeeklyTarget(id, userTargets, weeklyTargets));
+  const customised = (id: string) => weekly(id) !== (weeklyTargets[id] ?? 0);
+  // The sheet starts from the member's current figures (existing overrides + this session's edits).
+  const sheetUserTargets: WeeklyTargets = { ...userTargets, ...plan.set };
+  for (const id of plan.unset) delete sheetUserTargets[id];
 
   const step1Valid = firstName.trim() && lastName.trim() && country.trim();
   const step2Valid = goal.role?.trim();
@@ -81,10 +84,12 @@ export default function OnboardingPage() {
     if (!user) return;
     setBusy(true);
     try {
-      // Same write shape as Performance's setGoal: existing overrides + edited rows.
+      // Same write shape as the Performance tab: only the rows the member changed.
       // Untouched rows are NOT written, so admin default changes keep reaching this user.
-      if (Object.keys(edits).length) {
-        await setDoc(paths.settingsTargets(user.uid), { targets: withTargetEdits(userTargets, edits) }, { merge: true });
+      if (Object.keys(plan.set).length || plan.unset.length) {
+        const targets: Record<string, unknown> = { ...plan.set };
+        for (const id of plan.unset) targets[id] = deleteField();
+        await setDoc(paths.settingsTargets(user.uid), { targets }, { merge: true });
       }
       await setDoc(paths.profile(user.uid), {
         firstName: firstName.trim(),
@@ -144,16 +149,30 @@ export default function OnboardingPage() {
             {marketSections({ t, hidden, visible, effortSplit }).map((section) => (
               <MarketSection key={section.market} section={section}>
                 {section.cats.map((c) => (
-                  <TargetRow key={c.id} label={c.label} perDayLabel={t("onb.perDay")} value={daily(c.id)} onChange={(d) => setDaily(c.id, d)} />
+                  <PlanRow key={c.id} label={c.label} value={weekly(c.id)} unit={t("onb.perWeek")}
+                    tag={customised(c.id) ? t("onb.customised") : undefined} />
                 ))}
               </MarketSection>
             ))}
 
-            <div className="mx-auto w-full max-w-lg">
+            <div className="mx-auto w-full max-w-lg space-y-3">
               <Nav onBack={() => setStep(1)}
-                onNext={finish} nextLabel={busy ? "Setting up…" : t("onb.finish")}
+                onNext={finish} nextLabel={busy ? "Setting up…" : t("onb.usePlan")}
                 nextDisabled={busy} nextIcon={<Check className="h-4 w-4" />} />
+              <button type="button" onClick={() => setAdjusting(true)} className="btn-ghost w-full text-jh-ink hover:bg-jh-mist hover:text-jh-ink">
+                {t("onb.adjust")}
+              </button>
             </div>
+
+            {adjusting && (
+              <TargetsSheet t={t} hidden={hidden} visible={visible} effortSplit={effortSplit}
+                weeklyTargets={weeklyTargets} userTargets={sheetUserTargets}
+                onClose={() => setAdjusting(false)}
+                onSave={({ set, unset }) => setPlan((p) => ({
+                  set: Object.fromEntries(Object.entries({ ...p.set, ...set }).filter(([id]) => !unset.includes(id))),
+                  unset: [...p.unset.filter((id) => !(id in set)), ...unset.filter((id) => !p.unset.includes(id))],
+                }))} />
+            )}
           </div>
         )}
       </div>
@@ -209,26 +228,18 @@ function Field({ label, value, onChange, placeholder }:
   );
 }
 
-// One activity row: label + per-day stepper. Same anatomy as a Performance row
-// (16/600 label, section-label over the number, 40px pill buttons, ink outline on +).
-// The label is a direct child of the row and the value sits right after the − button.
-function TargetRow({ label, perDayLabel, value, onChange }: { label: string; perDayLabel: string; value: number; onChange: (d: number) => void }) {
+// One activity row of the plan: label + the weekly figure, read-only (16/600 ink,
+// unit 13px mute). A row the member changed in the sheet carries a small tag.
+function PlanRow({ label, value, unit, tag }: { label: string; value: number; unit: string; tag?: string }) {
   return (
     <div className="flex items-center gap-4 border-b border-jh-line py-4">
-      <div className="min-w-0 flex-1 font-display text-base font-semibold leading-snug text-jh-ink">{label}</div>
-      <div className="flex-none">
-        <div className="section-label text-center">{perDayLabel}</div>
-        <div className="mt-2 flex items-center justify-end gap-2">
-          <button type="button" onClick={() => onChange(value - 1)} disabled={value <= 0} aria-label={`Lower: ${label}`}
-            className="grid h-10 w-10 place-items-center rounded-pill border border-jh-line-2 bg-white text-jh-mute transition-colors duration-200 ease-out hover:border-jh-ink hover:text-jh-ink disabled:opacity-40 disabled:hover:border-jh-line-2 disabled:hover:text-jh-mute">
-            <Minus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-          </button>
-          <span className={`w-8 text-center font-display text-2xl font-bold leading-none ${value > 0 ? "text-jh-ink" : "text-jh-mute"}`}>{value}</span>
-          <button type="button" onClick={() => onChange(value + 1)} aria-label={`Raise: ${label}`}
-            className="grid h-10 w-10 place-items-center rounded-pill border border-jh-ink bg-white text-jh-ink transition-colors duration-200 ease-out hover:bg-jh-ink hover:text-white">
-            <Plus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-          </button>
-        </div>
+      <div className="min-w-0 flex-1">
+        <div className="font-display text-base font-semibold leading-snug text-jh-ink">{label}</div>
+        {tag && <span className="section-label mt-1 normal-case tracking-normal">{tag}</span>}
+      </div>
+      <div className="flex flex-none items-baseline gap-1 whitespace-nowrap">
+        <span className={`font-display text-base font-semibold leading-none ${value > 0 ? "text-jh-ink" : "text-jh-mute"}`}>{value}</span>
+        <span className="text-[13px] text-jh-mute">{unit}</span>
       </div>
     </div>
   );

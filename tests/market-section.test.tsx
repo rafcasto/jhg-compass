@@ -1,8 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import PerformanceScreen from "@/components/performance/PerformanceScreen";
 import { MARKET_ORDER, MARKET_TINT, marketSections } from "@/components/performance/MarketSection";
-import { DEFAULT_CONTENT, weeklyTargetsFrom } from "@/lib/content";
+import { DEFAULT_CONTENT, DEFAULT_TEXT, weeklyTargetsFrom } from "@/lib/content";
+
+// PerformanceScreen hosts the Targets sheet (tracker/Sheet), which reads its labels from content.
+vi.mock("@/lib/firestore/content", () => ({
+  useContent: () => ({ t: (k: string) => DEFAULT_TEXT[k] ?? k, stages: [] }),
+}));
 
 const t = (k: string) => DEFAULT_CONTENT.text[k] ?? "";
 const hidden = DEFAULT_CONTENT.activities.filter((a) => a.market === "hidden");
