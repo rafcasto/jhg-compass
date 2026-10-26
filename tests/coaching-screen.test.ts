@@ -184,7 +184,7 @@ describe("390×844 layout model", () => {
 
 describe("1280×800 layout model", () => {
   it("is a 232px sidebar plus a 640px column inside 44px / 48px padding", () => {
-    expect(COACHING_DESKTOP).toMatchObject({ width: 1280, height: 800, sidebar: 232, padX: 48, padY: 44, columnMax: 960, column: 952, gridMin: 720 });
+    expect(COACHING_DESKTOP).toMatchObject({ width: 1280, height: 800, sidebar: 232, padX: 48, padY: 44, columnMax: 960, column: 952, splitMin: 720 });
     expect(COACHING_DESKTOP_COLUMN_HEIGHT).toBe(800 - 88);
     // the column plus padding fits the main area at 1280
     // the column is exactly the main area at 1280×800 (and never wider than the CSS cap)
@@ -212,8 +212,11 @@ describe("1280×800 layout model", () => {
     expect(e.fits).toBe(false);
   });
 
-  it("the desktop scale is larger than the phone scale for the same copy", () => {
-    expect(estimateCoachingScreenHeight(seed(), { layout: "desktop" }).height)
-      .toBeGreaterThan(estimateCoachingScreenHeight(seed(), { layout: "mobile" }).height * 0.9);
+  it("the desktop scale is larger than the phone scale for the same copy, and the side-by-side split is shorter than the stack", () => {
+    const stacked = estimateCoachingScreenHeight(seed(), { layout: "desktop", width: COACHING_DESKTOP.splitMin - 1 });
+    expect(stacked.height).toBeGreaterThan(estimateCoachingScreenHeight(seed(), { layout: "mobile" }).height * 0.9);
+    const split = estimateCoachingScreenHeight(seed(), { layout: "desktop" });
+    expect(split.height).toBeLessThan(stacked.height);
+    expect(split.fits).toBe(true);
   });
 });

@@ -65,12 +65,13 @@ export function MarketBanner({ emoji, main, subtitle, tint }: { emoji: string; m
   );
 }
 
-/** Banner + a responsive grid of rows. Children are the rows themselves (one element per activity). */
-export function MarketSection({ section, children }: { section: MarketSectionModel; children: ReactNode }) {
+/** Banner, an optional head row (e.g. column labels), then the rows. Children are the rows themselves (one element per activity). */
+export function MarketSection({ section, head, children }: { section: MarketSectionModel; head?: ReactNode; children: ReactNode }) {
   const { emoji, main, subtitle, tint } = section;
   return (
     <section>
       <MarketBanner emoji={emoji} main={main} subtitle={subtitle} tint={tint} />
+      {head}
       <div className="market-rows">{children}</div>
     </section>
   );

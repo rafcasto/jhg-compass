@@ -254,10 +254,12 @@ export const COACHING_DESKTOP = {
   columnMax: 960,
   /** The column at 1280×800: main area minus its horizontal padding (952px). */
   column: Math.min(960, 1280 - 232 - 48 * 2),
-  /** From this column width benefits and entitlements lay out two-up (the @container coaching (min-width: 720px) rule). */
-  gridMin: 720,
-  /** Gap between the two columns of benefits / entitlements. */
-  colGap: 32,
+  /** From this column width the pitch (headline, subhead, CTA) sits left of the offer (benefits, entitlements) — the @container coaching (min-width: 720px) rule. */
+  splitMin: 720,
+  /** Flex shares of the two groups (equal halves) and the gap between them. */
+  pitch: 1,
+  offer: 1,
+  colGap: 48,
   /** The subhead wraps narrower than the column. */
   subheadMax: 520,
 } as const;
@@ -301,19 +303,12 @@ const TYPE: Record<CoachingLayout, TypeScale> = {
 // Vertical rhythm per layout (margins / gaps / fixed boxes), also mirrored from the CSS.
 const RHYTHM = {
   mobile:  { afterHeadline: 10, afterSubhead: 12, benefitRows: 8,  afterBenefits: 12, cardPad: 14, entRows: 10, afterCard: 14, cta: 48, ctaToCaption: 8,  rowRule: 14, rowEmoji: 36, cardEmoji: 30 },
-  desktop: { afterHeadline: 16, afterSubhead: 24, benefitRows: 18, afterBenefits: 24, cardPad: 20, entRows: 14, afterCard: 20, cta: 52, ctaToCaption: 10, rowRule: 17, rowEmoji: 44, cardEmoji: 40 },
+  desktop: { afterHeadline: 16, afterSubhead: 32, benefitRows: 24, afterBenefits: 32, cardPad: 20, entRows: 14, afterCard: 20, cta: 52, ctaToCaption: 10, rowRule: 17, rowEmoji: 44, cardEmoji: 40 },
 } as const;
 
 function textHeight(text: string, t: Metric, width: number): number {
   const lines = Math.max(1, Math.ceil((charCount(text) * t.size * t.cw) / width));
   return lines * t.size * t.lh;
-}
-
-/** Total height of items laid out `cols` per row with `gap` between rows: each row is as tall as its tallest item. */
-function stackInColumns(heights: number[], cols: number, gap: number): number {
-  let h = 0; let rows = 0;
-  for (let i = 0; i < heights.length; i += cols) { h += Math.max(...heights.slice(i, i + cols)); rows++; }
-  return h + Math.max(0, rows - 1) * gap;
 }
 
 export interface CoachingHeightEstimate {
@@ -336,35 +331,44 @@ export function estimateCoachingScreenHeight(
   const available = layout === "mobile"
     ? (viewport.columnHeight ?? COACHING_COLUMN_HEIGHT) - COACHING_VIEWPORT.padY * 2
     : (viewport.columnHeight ?? COACHING_DESKTOP_COLUMN_HEIGHT);
-  const subheadWidth = layout === "desktop" ? Math.min(width, COACHING_DESKTOP.subheadMax) : width;
-  // Wide desktop column: benefits and entitlements sit two-up; each grid row is as tall as its taller item.
-  const cols = layout === "desktop" && width >= COACHING_DESKTOP.gridMin ? 2 : 1;
-  const colGap = cols > 1 ? COACHING_DESKTOP.colGap : 0;
+  const pitchStack = (w: number) => {
+    let h = 0;
+    h += textHeight(content.headline.line1, T.line1, w);
+    h += textHeight(content.headline.line2, T.line2, w);
+    h += textHeight(content.headline.line3, T.line3, w);
+    h += R.afterHeadline;
+    h += textHeight(content.subhead, T.subhead, layout === "desktop" ? Math.min(w, COACHING_DESKTOP.subheadMax) : w);
+    h += R.afterSubhead;
+    return h;
+  };
+  const offerStack = (w: number) => {
+    let h = 0;
+    const rowWidth = w - R.rowRule - R.rowEmoji;
+    content.benefits.forEach((b, i) => {
+      h += textHeight(b.title, T.benefitTitle, rowWidth) + 2 + textHeight(b.body, T.benefitBody, rowWidth);
+      if (i > 0) h += R.benefitRows;
+    });
+    h += R.afterBenefits;
+    const cardWidth = w - R.cardPad * 2 - R.cardEmoji;
+    h += R.cardPad * 2;
+    content.entitlements.forEach((e, i) => {
+      h += textHeight(e.title, T.entTitle, cardWidth) + 4 + textHeight(e.body, T.entBody, cardWidth);
+      if (i > 0) h += R.entRows;
+    });
+    return h;
+  };
+  const ctaStack = (w: number) => R.cta + R.ctaToCaption + textHeight(content.ctaCaption, T.caption, w);
 
-  let h = 0;
-  h += textHeight(content.headline.line1, T.line1, width);
-  h += textHeight(content.headline.line2, T.line2, width);
-  h += textHeight(content.headline.line3, T.line3, width);
-  h += R.afterHeadline;
-  h += textHeight(content.subhead, T.subhead, subheadWidth);
-  h += R.afterSubhead;
-
-  const rowWidth = (width - colGap * (cols - 1)) / cols - R.rowRule - R.rowEmoji;
-  h += stackInColumns(
-    content.benefits.map((b) => textHeight(b.title, T.benefitTitle, rowWidth) + 2 + textHeight(b.body, T.benefitBody, rowWidth)),
-    cols, R.benefitRows,
-  );
-  h += R.afterBenefits;
-
-  const cardWidth = (width - R.cardPad * 2 - colGap * (cols - 1)) / cols - R.cardEmoji;
-  h += R.cardPad * 2;
-  h += stackInColumns(
-    content.entitlements.map((e) => textHeight(e.title, T.entTitle, cardWidth) + 4 + textHeight(e.body, T.entBody, cardWidth)),
-    cols, R.entRows,
-  );
-  h += R.afterCard;
-
-  h += R.cta + R.ctaToCaption + textHeight(content.ctaCaption, T.caption, width);
+  let h: number;
+  if (layout === "desktop" && width >= COACHING_DESKTOP.splitMin) {
+    // Side by side: the pitch (with the CTA under it) left, the offer right; the column is as tall as the taller group.
+    const { pitch, offer, colGap } = COACHING_DESKTOP;
+    const pitchW = ((width - colGap) * pitch) / (pitch + offer);
+    const offerW = ((width - colGap) * offer) / (pitch + offer);
+    h = Math.max(pitchStack(pitchW) + ctaStack(pitchW), offerStack(offerW));
+  } else {
+    h = pitchStack(width) + offerStack(width) + R.afterCard + ctaStack(width);
+  }
 
   const height = Math.round(h);
   return { height, available, fits: height <= available };

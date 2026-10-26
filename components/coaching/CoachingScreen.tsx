@@ -19,11 +19,13 @@ interface Props {
 
 // The Coaching tab. Renders whatever content it's given — the page passes the
 // published copy, the admin editor passes the draft — so the preview is exactly
-// what ships. The layout is a fixed-height column: vertical slack is absorbed by
-// the benefit rows (flex:1 + space-evenly), never dumped above the CTA. On a phone
-// the column is the space between header and tab bar; on desktop it is a single
-// 640px column centred in the main area with the type scaled up (a container
-// query on the screen's own width — see .coaching-* in app/globals.css).
+// what ships. Two groups: the pitch (headline, subhead, CTA) and the offer
+// (benefits, entitlements). On a phone they are one fixed-height column (the
+// wrappers are display:contents): vertical slack is absorbed by the benefit rows
+// (flex:1 + space-evenly), never dumped above the CTA. From 720px of screen width
+// (desktop; a container query on the screen's own width, so the admin's 1280×800
+// preview gets it too) the pitch sits left and the offer right, the CTA beside the
+// headline — see .coaching-* in app/globals.css.
 export default function CoachingScreen({ content, className = "", style, onCtaClick, onFitChange }: Props) {
   const ref = useRef<HTMLElement>(null);
 
@@ -37,7 +39,8 @@ export default function CoachingScreen({ content, className = "", style, onCtaCl
     // Observe the children too: the root's box is fixed, only its content grows.
     const ro = new ResizeObserver(check);
     ro.observe(el);
-    Array.from(el.children).forEach((c) => ro.observe(c));
+    // The group wrappers are display:contents on a phone (no box to observe), so watch their children too.
+    el.querySelectorAll(".coaching-stack, .coaching-pitch > *, .coaching-offer > *").forEach((c) => ro.observe(c));
     return () => ro.disconnect();
   }, [content, onFitChange]);
 
@@ -45,13 +48,25 @@ export default function CoachingScreen({ content, className = "", style, onCtaCl
 
   return (
     <section ref={ref} className={`coaching-screen ${className}`} style={style} aria-labelledby="coaching-headline">
-      <h1 id="coaching-headline" className="coaching-headline">
-        <span className="coaching-headline-1">{headline.line1}</span>
-        <span className="coaching-headline-2">{headline.line2}</span>
-        <span className="coaching-headline-3">{headline.line3}</span>
-      </h1>
-      <p className="coaching-subhead">{subhead}</p>
+      {/* The screen is the container the queries key on, so the stack — not the screen — switches column → row. */}
+      <div className="coaching-stack">
+      <div className="coaching-pitch">
+        <h1 id="coaching-headline" className="coaching-headline">
+          <span className="coaching-headline-1">{headline.line1}</span>
+          <span className="coaching-headline-2">{headline.line2}</span>
+          <span className="coaching-headline-3">{headline.line3}</span>
+        </h1>
+        <p className="coaching-subhead">{subhead}</p>
+        {/* Desktop: the CTA sits here, beside the headline. Phone: CSS order moves it under the offer. */}
+        <div className="coaching-cta-wrap">
+          <a className="coaching-cta" href={cta.url} target="_blank" rel="noopener noreferrer" onClick={onCtaClick}>
+            {cta.label}
+          </a>
+          <p className="coaching-caption">{ctaCaption}</p>
+        </div>
+      </div>
 
+      <div className="coaching-offer">
       <ul className="coaching-benefits" aria-label="What you get">
         {benefits.map((b, i) => (
           <li key={i} className="coaching-benefit">
@@ -75,12 +90,7 @@ export default function CoachingScreen({ content, className = "", style, onCtaCl
           </li>
         ))}
       </ul>
-
-      <div className="coaching-cta-wrap">
-        <a className="coaching-cta" href={cta.url} target="_blank" rel="noopener noreferrer" onClick={onCtaClick}>
-          {cta.label}
-        </a>
-        <p className="coaching-caption">{ctaCaption}</p>
+      </div>
       </div>
     </section>
   );
