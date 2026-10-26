@@ -250,8 +250,14 @@ export const COACHING_DESKTOP = {
   sidebar: 232,
   padX: 48,
   padY: 44,
-  /** The single centred column the stack lives in. */
-  column: 640,
+  /** The column fills the main area up to this (the CSS max-width on .coaching-screen--page). */
+  columnMax: 960,
+  /** The column at 1280×800: main area minus its horizontal padding (952px). */
+  column: Math.min(960, 1280 - 232 - 48 * 2),
+  /** From this column width benefits and entitlements lay out two-up (the @container coaching (min-width: 720px) rule). */
+  gridMin: 720,
+  /** Gap between the two columns of benefits / entitlements. */
+  colGap: 32,
   /** The subhead wraps narrower than the column. */
   subheadMax: 520,
 } as const;
@@ -303,6 +309,13 @@ function textHeight(text: string, t: Metric, width: number): number {
   return lines * t.size * t.lh;
 }
 
+/** Total height of items laid out `cols` per row with `gap` between rows: each row is as tall as its tallest item. */
+function stackInColumns(heights: number[], cols: number, gap: number): number {
+  let h = 0; let rows = 0;
+  for (let i = 0; i < heights.length; i += cols) { h += Math.max(...heights.slice(i, i + cols)); rows++; }
+  return h + Math.max(0, rows - 1) * gap;
+}
+
 export interface CoachingHeightEstimate {
   /** Estimated natural height of the stacked content, in px. */
   height: number;
@@ -324,6 +337,9 @@ export function estimateCoachingScreenHeight(
     ? (viewport.columnHeight ?? COACHING_COLUMN_HEIGHT) - COACHING_VIEWPORT.padY * 2
     : (viewport.columnHeight ?? COACHING_DESKTOP_COLUMN_HEIGHT);
   const subheadWidth = layout === "desktop" ? Math.min(width, COACHING_DESKTOP.subheadMax) : width;
+  // Wide desktop column: benefits and entitlements sit two-up; each grid row is as tall as its taller item.
+  const cols = layout === "desktop" && width >= COACHING_DESKTOP.gridMin ? 2 : 1;
+  const colGap = cols > 1 ? COACHING_DESKTOP.colGap : 0;
 
   let h = 0;
   h += textHeight(content.headline.line1, T.line1, width);
@@ -333,19 +349,19 @@ export function estimateCoachingScreenHeight(
   h += textHeight(content.subhead, T.subhead, subheadWidth);
   h += R.afterSubhead;
 
-  const rowWidth = width - R.rowRule - R.rowEmoji;
-  content.benefits.forEach((b, i) => {
-    h += textHeight(b.title, T.benefitTitle, rowWidth) + 2 + textHeight(b.body, T.benefitBody, rowWidth);
-    if (i > 0) h += R.benefitRows;
-  });
+  const rowWidth = (width - colGap * (cols - 1)) / cols - R.rowRule - R.rowEmoji;
+  h += stackInColumns(
+    content.benefits.map((b) => textHeight(b.title, T.benefitTitle, rowWidth) + 2 + textHeight(b.body, T.benefitBody, rowWidth)),
+    cols, R.benefitRows,
+  );
   h += R.afterBenefits;
 
-  const cardWidth = width - R.cardPad * 2 - R.cardEmoji;
+  const cardWidth = (width - R.cardPad * 2 - colGap * (cols - 1)) / cols - R.cardEmoji;
   h += R.cardPad * 2;
-  content.entitlements.forEach((e, i) => {
-    h += textHeight(e.title, T.entTitle, cardWidth) + 4 + textHeight(e.body, T.entBody, cardWidth);
-    if (i > 0) h += R.entRows;
-  });
+  h += stackInColumns(
+    content.entitlements.map((e) => textHeight(e.title, T.entTitle, cardWidth) + 4 + textHeight(e.body, T.entBody, cardWidth)),
+    cols, R.entRows,
+  );
   h += R.afterCard;
 
   h += R.cta + R.ctaToCaption + textHeight(content.ctaCaption, T.caption, width);

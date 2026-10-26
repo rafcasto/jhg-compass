@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
-import { fillTemplate } from "@/lib/content";
 import type { Activity, ActivityLog } from "@/lib/types";
 import {
   type Period, rangeYmd, shift, periodLabel, scaleTarget, toWeekly, inRange, ymd,
@@ -10,6 +9,7 @@ import {
 import { resolveWeeklyTarget } from "@/lib/targets";
 import PageHeader from "@/components/shell/PageHeader";
 import Segmented from "@/components/shell/Segmented";
+import { MarketSection, marketSections } from "@/components/performance/MarketSection";
 
 const PERIODS: Period[] = ["day", "week", "month"];
 
@@ -18,7 +18,10 @@ const PERIODS: Period[] = ["day", "week", "month"];
 // sample data so what the editor previews is the real screen, not a mock.
 //
 // Styling is brand tokens only (tailwind.config.ts) — no local colour table — so
-// the tab can't drift from Compass / Progress. Colour rules (red budget):
+// the tab can't drift from Compass / Progress. The market sections (order, tints,
+// responsive row grid) come from MarketSection, shared with onboarding step 3.
+// Layout fills the content column: header and sections span it, the period
+// controls stay a compact centred group. Colour rules (red budget):
 //   • ink while a period is in progress, green once the target is met,
 //   • red only when the period has CLOSED below target (a genuine negative state),
 //   • one red button on screen at most: "Edit targets" while editing.
@@ -92,7 +95,7 @@ export default function PerformanceScreen({
   };
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="market-screen space-y-6">
       <div className="space-y-4">
         <PageHeader
           eyebrow={t("perf.eyebrow")}
@@ -105,48 +108,30 @@ export default function PerformanceScreen({
           }
         />
 
-        <Segmented fill label="Period" value={period} onChange={setPeriod}
-          items={PERIODS.map((p) => ({ key: p, label: p[0].toUpperCase() + p.slice(1) }))} />
+        <div className="mx-auto w-full max-w-xl space-y-4">
+          <Segmented fill label="Period" value={period} onChange={setPeriod}
+            items={PERIODS.map((p) => ({ key: p, label: p[0].toUpperCase() + p.slice(1) }))} />
 
-        <div className="flex items-center justify-center gap-4">
-          <button type="button" onClick={() => setAnchor(shift(period, anchor, -1))} aria-label="Previous" className="icon-btn">
-            <ChevronLeft className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-          </button>
-          <span className="min-w-[10rem] text-center font-display text-base font-semibold text-jh-ink">{periodLabel(period, anchor)}</span>
-          <button type="button" onClick={() => setAnchor(shift(period, anchor, 1))} aria-label="Next" className="icon-btn">
-            <ChevronRight className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-          </button>
+          <div className="flex items-center justify-center gap-4">
+            <button type="button" onClick={() => setAnchor(shift(period, anchor, -1))} aria-label="Previous" className="icon-btn">
+              <ChevronLeft className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+            </button>
+            <span className="min-w-[10rem] text-center font-display text-base font-semibold text-jh-ink">{periodLabel(period, anchor)}</span>
+            <button type="button" onClick={() => setAnchor(shift(period, anchor, 1))} aria-label="Next" className="icon-btn">
+              <ChevronRight className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Hidden job market — the bulk of success (top) */}
-      <section>
-        <Banner emoji={t("perf.hiddenEmoji")} main={t("perf.hiddenTitle")}
-          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} tint="blue" />
-        <Rows cats={hidden} {...rowProps} />
-      </section>
-
-      {/* Visible job market (bottom) — neutral tint: nothing is wrong with it, it's just the smaller share. */}
-      <section>
-        <Banner emoji={t("perf.visibleEmoji")} main={t("perf.visibleTitle")}
-          subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} tint="mist" />
-        <Rows cats={visible} {...rowProps} />
-      </section>
+      {/* Visible market first (the short list), hidden market below — order and tints from MarketSection. */}
+      {marketSections({ t, hidden, visible, effortSplit }).map((section) => (
+        <MarketSection key={section.market} section={section}>
+          <Rows cats={section.cats} {...rowProps} />
+        </MarketSection>
+      ))}
 
       <p className="text-center text-[13px] text-jh-mute">{t("perf.footer")}</p>
-    </div>
-  );
-}
-
-function Banner({ emoji, main, subtitle, tint }: { emoji: string; main: string; subtitle: string; tint: "blue" | "mist" }) {
-  return (
-    <div className={`flex items-center gap-3 rounded-md p-4 ${tint === "blue" ? "bg-jh-blue-grey" : "bg-jh-mist"}`}>
-      {/* Emoji is admin-authored content; the circle gives it a consistent footprint next to the Lucide set. */}
-      <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/70 text-xl leading-none">{emoji}</span>
-      <div className="min-w-0">
-        <div className="font-display text-base font-bold leading-tight text-jh-ink">{main}</div>
-        <div className="mt-0.5 text-[13px] text-jh-body">{subtitle}</div>
-      </div>
     </div>
   );
 }
@@ -169,9 +154,10 @@ interface RowProps {
   setTargetHint: string;
 }
 
+// Rows are rendered as direct children of the section's `.market-rows` grid.
 function Rows({ cats, editAll, editRows, closed, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow, actualLabel, targetLabel, setGoalLabel, setTargetHint }: RowProps) {
   return (
-    <div>
+    <>
       {cats.map((c) => {
         const a = actuals[c.id] ?? 0;
         const t = periodTarget(c.id);
@@ -237,7 +223,7 @@ function Rows({ cats, editAll, editRows, closed, periodTarget, actuals, add, rem
           </div>
         );
       })}
-    </div>
+    </>
   );
 }
 

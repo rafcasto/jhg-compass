@@ -10,20 +10,17 @@ import GoalStatement from "@/components/compass/GoalStatement";
 import GoalFields from "@/components/compass/GoalFields";
 import { useLiveDoc, paths, setDoc } from "@/lib/firestore/db";
 import { useContent } from "@/lib/firestore/content";
-import { fillTemplate } from "@/lib/content";
 import { scaleTarget, toWeekly } from "@/lib/period";
+import { MarketSection, marketSections } from "@/components/performance/MarketSection";
 import { resolveWeeklyTarget, withTargetEdits } from "@/lib/targets";
-import type { Activity, Profile } from "@/lib/types";
+import type { Profile } from "@/lib/types";
 import { EMPTY_GOAL, goalFromProfile, normalizeGoal, type Goal } from "@/lib/goal";
 import { track } from "@/lib/track-client";
 import { TAGS } from "@/lib/tags";
 
-// Design tokens shared with the Performance tab (JobHackers design system).
-const C = {
-  ink: "#191c27", mute: "#6b7280", muteLight: "#9aa0ad", slash: "#c5c9d2",
-  disabled: "#d4d8e2", line: "#eef0f5", circle: "#e6e8ef",
-  bannerBlue: "#e2ebfb", bannerRed: "#fbe3e6",
-};
+// Styling is brand tokens only. Step 3 (targets) is the Performance tab's market
+// sections (components/performance/MarketSection) with a per-day stepper per row,
+// so order, tints and the responsive row grid are the same on both screens.
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -110,7 +107,8 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-jh-paper px-4 py-8">
-      <div className="mx-auto w-full max-w-lg">
+      {/* Steps 1–2 are forms (≤ 512px); step 3 is the market list and gets the room for two columns of rows. */}
+      <div className={`mx-auto w-full ${step === 2 ? "max-w-4xl" : "max-w-lg"}`}>
         <div className="flex flex-col items-center mb-6">
           <Image src="/assets/logo-jobhackers.png" alt="JobHackers" width={140} height={38} className="mb-3" />
           <Stepper step={step} />
@@ -137,22 +135,25 @@ export default function OnboardingPage() {
         )}
 
         {step === 2 && (
-          <div className="space-y-4">
-            <div className="card p-6">
+          <div className="market-screen space-y-6">
+            <div>
               <h1 className="text-2xl">{t("onb.targetsTitle")}</h1>
               <p className="text-jh-mute text-sm mt-1">{t("onb.targetsSubtitle")}</p>
             </div>
 
-            <TargetSection emoji={t("perf.hiddenEmoji")} main={t("perf.hiddenTitle")}
-              subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.hidden })} bg={C.bannerBlue}
-              cats={hidden} perDayLabel={t("onb.perDay")} daily={daily} setDaily={setDaily} />
-            <TargetSection emoji={t("perf.visibleEmoji")} main={t("perf.visibleTitle")}
-              subtitle={fillTemplate(t("perf.effortNote"), { pct: effortSplit.visible })} bg={C.bannerRed}
-              cats={visible} perDayLabel={t("onb.perDay")} daily={daily} setDaily={setDaily} />
+            {marketSections({ t, hidden, visible, effortSplit }).map((section) => (
+              <MarketSection key={section.market} section={section}>
+                {section.cats.map((c) => (
+                  <TargetRow key={c.id} label={c.label} perDayLabel={t("onb.perDay")} value={daily(c.id)} onChange={(d) => setDaily(c.id, d)} />
+                ))}
+              </MarketSection>
+            ))}
 
-            <Nav onBack={() => setStep(1)}
-              onNext={finish} nextLabel={busy ? "Setting up…" : t("onb.finish")}
-              nextDisabled={busy} nextIcon={<Check className="h-4 w-4" />} />
+            <div className="mx-auto w-full max-w-lg">
+              <Nav onBack={() => setStep(1)}
+                onNext={finish} nextLabel={busy ? "Setting up…" : t("onb.finish")}
+                nextDisabled={busy} nextIcon={<Check className="h-4 w-4" />} />
+            </div>
           </div>
         )}
       </div>
@@ -208,43 +209,24 @@ function Field({ label, value, onChange, placeholder }:
   );
 }
 
-function TargetSection({ emoji, main, subtitle, bg, cats, perDayLabel, daily, setDaily }: {
-  emoji: string; main: string; subtitle: string; bg: string;
-  cats: Activity[]; perDayLabel: string;
-  daily: (id: string) => number;
-  setDaily: (id: string, d: number) => void;
-}) {
-  return (
-    <section className="card overflow-hidden">
-      <div className="flex items-center gap-3" style={{ background: bg, padding: "15px 18px" }}>
-        <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
-        <div>
-          <div className="font-display font-bold" style={{ fontSize: 16, lineHeight: 1.2, color: C.ink }}>{main}</div>
-          <div style={{ fontSize: 13, color: C.mute, marginTop: 2 }}>{subtitle}</div>
-        </div>
-      </div>
-      <div className="px-5">
-        {cats.map((c) => <TargetRow key={c.id} label={c.label} perDayLabel={perDayLabel} value={daily(c.id)} onChange={(d) => setDaily(c.id, d)} />)}
-      </div>
-    </section>
-  );
-}
-
+// One activity row: label + per-day stepper. Same anatomy as a Performance row
+// (16/600 label, section-label over the number, 40px pill buttons, ink outline on +).
+// The label is a direct child of the row and the value sits right after the − button.
 function TargetRow({ label, perDayLabel, value, onChange }: { label: string; perDayLabel: string; value: number; onChange: (d: number) => void }) {
   return (
-    <div className="flex gap-4 items-center" style={{ padding: "14px 0", borderBottom: `1px solid ${C.line}` }}>
-      <div className="flex-1 min-w-0 font-display font-semibold" style={{ fontSize: 15, lineHeight: 1.3, color: C.ink }}>{label}</div>
-      <div className="flex-none text-center">
-        <div className="font-display font-semibold uppercase" style={{ fontSize: 10.5, letterSpacing: ".07em", color: C.muteLight }}>{perDayLabel}</div>
-        <div className="flex items-center justify-end" style={{ gap: 11, marginTop: 6 }}>
-          <button type="button" onClick={() => onChange(value - 1)} className="grid place-items-center rounded-full"
-            style={{ width: 36, height: 36, border: `1.5px solid ${C.circle}`, background: "#fff", color: value > 0 ? C.mute : C.disabled }}>
-            <Minus className="h-5 w-5" />
+    <div className="flex items-center gap-4 border-b border-jh-line py-4">
+      <div className="min-w-0 flex-1 font-display text-base font-semibold leading-snug text-jh-ink">{label}</div>
+      <div className="flex-none">
+        <div className="section-label text-center">{perDayLabel}</div>
+        <div className="mt-2 flex items-center justify-end gap-2">
+          <button type="button" onClick={() => onChange(value - 1)} disabled={value <= 0} aria-label={`Lower: ${label}`}
+            className="grid h-10 w-10 place-items-center rounded-pill border border-jh-line-2 bg-white text-jh-mute transition-colors duration-200 ease-out hover:border-jh-ink hover:text-jh-ink disabled:opacity-40 disabled:hover:border-jh-line-2 disabled:hover:text-jh-mute">
+            <Minus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
           </button>
-          <span className="font-display font-bold" style={{ fontSize: 24, color: value > 0 ? C.ink : C.slash, width: 24, textAlign: "center" }}>{value}</span>
-          <button type="button" onClick={() => onChange(value + 1)} className="grid place-items-center rounded-full text-white"
-            style={{ width: 36, height: 36, background: C.ink, boxShadow: "0 4px 12px rgba(25,28,39,.20)" }}>
-            <Plus className="h-5 w-5" />
+          <span className={`w-8 text-center font-display text-2xl font-bold leading-none ${value > 0 ? "text-jh-ink" : "text-jh-mute"}`}>{value}</span>
+          <button type="button" onClick={() => onChange(value + 1)} aria-label={`Raise: ${label}`}
+            className="grid h-10 w-10 place-items-center rounded-pill border border-jh-ink bg-white text-jh-ink transition-colors duration-200 ease-out hover:bg-jh-ink hover:text-white">
+            <Plus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
           </button>
         </div>
       </div>

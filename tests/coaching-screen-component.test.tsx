@@ -122,13 +122,20 @@ describe("no-scroll layout contract (app/globals.css)", () => {
     expect(b).toContain(`calc(100dvh - ${MOBILE_HEADER_HEIGHT + MOBILE_TABBAR_HEIGHT}px`);
   });
 
-  it("desktop is ONE 640px column centred in the main area, sized to 1280×800 without scrolling", () => {
+  it("desktop is ONE column filling the main area (≤ 960px) centred, sized to 1280×800 without scrolling", () => {
     const coachingCss = css.slice(css.indexOf("Coaching tab (JobHackers design system)"));
     const desktop = coachingCss.match(/@media \(min-width: 768px\) \{[\s\S]*?\.coaching-screen--page \{([^}]*)\}/)![1];
-    expect(desktop).toMatch(/max-width:\s*640px/);
+    expect(desktop).toMatch(/width:\s*100%/);
+    expect(desktop).toMatch(/max-width:\s*960px/);
     expect(desktop).toMatch(/margin:\s*0 auto/);
     expect(desktop).toContain(`calc(100dvh - ${44 * 2}px)`);   // main padding top + bottom
-    expect(coachingCss).not.toMatch(/grid-template/);         // never spread into columns
+    // the width is used by content, not stretched rows: ≥ 720px the lists go two-up (a container query, so the
+    // admin's 1280×800 preview gets it too); the stack itself is never a grid
+    const wide = coachingCss.match(/@container coaching \(min-width: 720px\) \{([\s\S]*?)\n\}/)![1];
+    expect(wide).toMatch(/\.coaching-benefits \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)[^}]*align-content: space-evenly/);
+    expect(wide).toMatch(/\.coaching-card \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+    expect(wide).toMatch(/\.coaching-cta \{[^}]*max-width: 440px/);
+    expect(block(".coaching-screen")).not.toMatch(/grid/);
     // the column is centred, the type is not (only the caption under the CTA is centred)
     for (const sel of [".coaching-screen", ".coaching-headline", ".coaching-subhead", ".coaching-benefit-title", ".coaching-benefit-body", ".coaching-cta"]) {
       expect(block(sel)).not.toMatch(/text-align/);
@@ -158,12 +165,12 @@ describe("no-scroll layout contract (app/globals.css)", () => {
     expect(block(".coaching-screen")).toMatch(/padding:\s*20px/);
   });
 
-  it("uses the brand tokens: red CTA with glow, blue-grey card, no #9aa0ad text", () => {
-    expect(block(".coaching-cta")).toContain("#c2001f");
-    expect(block(".coaching-cta")).toContain("0 6px 18px rgba(194, 0, 31, .25)");
+  it("uses the brand tokens: flat red CTA, blue-grey card, no #9aa0ad text", () => {
+    expect(block(".coaching-cta")).toContain("#e12120");
+    expect(block(".coaching-cta")).not.toMatch(/box-shadow/);
     expect(block(".coaching-cta")).toMatch(/min-height:\s*48px/);
     expect(block(".coaching-card")).toContain("#e2ebfb");
-    expect(block(".coaching-headline-3")).toContain("#c2001f");
+    expect(block(".coaching-headline-3")).toContain("#e12120");
     const coachingCss = css.slice(css.indexOf("Coaching tab (JobHackers design system)"));
     expect(coachingCss).not.toContain("#9aa0ad");
     expect(coachingCss).not.toMatch(/gradient|backdrop-filter/);
