@@ -127,14 +127,46 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
 
 /* ===== Job-market sections (Performance tab + onboarding step 3) =====
    Banner + rows per market, built through components/performance/MarketSection.
-   The rows fill the screen's width: one column on a phone (and inside the admin's
-   390px preview), two once the screen itself is ≥ 860px wide. A CONTAINER query on
-   the screen — not the viewport — so the phone preview on a desktop admin page still
-   renders the phone layout. */
+   One column of rows that fills the screen's width; each row re-flows on its own
+   (see .perf-row). `.market-screen` is a CONTAINER — queries key on the screen's
+   own width, not the viewport, so the admin's 390px phone preview on a desktop
+   page still renders the phone layout. */
 .market-screen { container-type: inline-size; container-name: market; }
-.market-rows { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 32px; }
-@container market (min-width: 860px) {
-  .market-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.market-rows { display: grid; grid-template-columns: minmax(0, 1fr); }
+
+/* ===== Performance rows (components/performance/PerformanceScreen) =====
+   One row = one CSS grid. Phone: label + bar on the left, numbers + buttons on the
+   right, two lines. From 800px of screen width: one table-like line —
+   label · bar · actual / target · − + — scanned top to bottom, with the ACTUAL /
+   TARGET labels shown once per section (.perf-head) instead of on every row. The
+   toolbar (period toggle + date) stacks on a phone and sits on one left-aligned
+   line on desktop. */
+.perf-toolbar { display: flex; flex-direction: column; gap: 16px; }
+.perf-period { width: 100%; }
+.perf-nav { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.perf-head { display: none; }
+.perf-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 160px; column-gap: 16px; row-gap: 12px;
+  grid-template-areas: "label nums" "bar actions"; align-items: start; padding: 16px 0;
+}
+.perf-row-label { grid-area: label; }
+.perf-row-bar { grid-area: bar; min-width: 0; }
+.perf-row-nums { grid-area: nums; display: grid; grid-template-columns: 1fr 16px 1fr; align-items: end; row-gap: 4px; }
+.perf-row-labels { display: contents; }
+.perf-row-actions { grid-area: actions; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.perf-set-goal { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 6px 12px; transition: background-color .2s ease-out, color .2s ease-out; }
+@container market (min-width: 800px) {
+  .perf-toolbar { flex-direction: row; align-items: center; gap: 24px; }
+  .perf-period { width: 360px; }
+  .perf-nav { justify-content: flex-start; }
+  .perf-head, .perf-row { grid-template-columns: minmax(0, 1fr) 240px 120px max-content; column-gap: 24px; }
+  .perf-head { display: grid; padding: 16px 0 4px; }
+  .perf-head-nums { grid-column: 3; display: grid; grid-template-columns: 1fr 16px 1fr; }
+  .perf-row { grid-template-areas: "label bar nums actions"; align-items: center; row-gap: 0; padding: 12px 0; }
+  .perf-row-labels { display: none; }
+  /* nine "set a goal" pills become quiet text — the one strong action on screen stays Edit targets */
+  .perf-set-goal { background: transparent; padding: 0; color: #6b7280; }
+  .perf-set-goal:hover { background: transparent; color: #191c27; }
 }
 
 /* ===== Coaching tab (JobHackers design system) =====
@@ -142,12 +174,13 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
    • Phone: a fixed-height column — header 56 + tab bar 58 are subtracted from the
      viewport (components/shell/MobileChrome.tsx). Vertical slack goes to the benefit
      rows (flex:1 + space-evenly), never above the CTA.
-   • Desktop: the same stack in one column that fills the main area up to 960px
-     (952px at 1280×800), type scaled up; benefits and entitlements spread into two
-     columns once the screen is ≥ 720px wide so the width is used by content, not
-     by stretched rows. Both switches are CONTAINER queries on the screen's own
-     width (not the viewport), so the admin's 1280×800 preview renders the real
-     desktop layout with no duplicated values.
+   • Desktop: the column fills the main area up to 960px (952px at 1280×800), type
+     scaled up, and from 720px of screen width the two groups sit side by side —
+     the pitch (headline, subhead, CTA) left, the offer (benefits, entitlements)
+     right — so the width is used by composition, not by stretched rows. Both
+     switches are CONTAINER queries on the screen's own width (not the viewport),
+     so the admin's 1280×800 preview renders the real desktop layout with no
+     duplicated values.
    Geometry is mirrored in COACHING_VIEWPORT / COACHING_DESKTOP and
    estimateCoachingScreenHeight (lib/coaching-screen.ts). */
 .coaching-screen {
@@ -156,7 +189,13 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
   color: #191c27; background: #fafafa;
   container-type: inline-size; container-name: coaching;
 }
+/* The stack fills the screen and lays the two groups out; it is a separate element
+   because a @container rule cannot style the container itself. */
+.coaching-stack { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .coaching-screen--preview { height: 100%; }
+/* The two groups are transparent on a phone: their children sit directly in the
+   column so the flex slack rules below still apply; the CTA block keeps the bottom slot. */
+.coaching-pitch, .coaching-offer { display: contents; }
 @media (max-width: 767px) {
   /* Cancel the shell's px-5 py-6 (+ pb-24 for the fixed tab bar) so the column is exact. */
   .coaching-screen--page {
@@ -221,7 +260,7 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
 .coaching-entitlement-body { margin: 0; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #3a3f4d; }
 
 /* CTA: full-width, 8px radius, flat (no shadow), Poppins 700, ≥48px tap target */
-.coaching-cta-wrap { flex: 0 0 auto; }
+.coaching-cta-wrap { flex: 0 0 auto; order: 10; }
 .coaching-cta {
   display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; padding: 12px 18px;
   font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 16px; line-height: 1.2;
@@ -258,15 +297,23 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
   .coaching-caption { font-size: 14px; margin-top: 12px; text-align: left; }
 }
 
-/* Wide desktop column (≥ 720px, i.e. the 952px column at 1280×800 and up): benefits
-   and entitlements go two-up so no row runs the full width, and the CTA stops at a
-   button's width. The vertical-slack contract holds — align-content: space-evenly
-   does for the grid rows what justify-content did for the flex column. Mirrored in
-   estimateCoachingScreenHeight (COACHING_DESKTOP.gridMin / colGap). */
+/* Wide desktop column (≥ 720px, i.e. the 952px column at 1280×800 and up): pitch
+   left and offer right, equal halves 48px apart, both top-aligned to each other
+   and the pair centred in the column's height (auto margins — they collapse to
+   top-aligned + scroll if the copy ever overflows). The CTA sits under the
+   subhead where the eye lands first; benefits stack (no orphan cells whatever
+   their count); spacing is on scale. Mirrored in estimateCoachingScreenHeight
+   (COACHING_DESKTOP.splitMin / pitch / offer / colGap). */
 @container coaching (min-width: 720px) {
-  .coaching-benefits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: space-evenly; column-gap: 32px; }
-  .coaching-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+  .coaching-stack { flex: 0 0 auto; margin: auto 0; flex-direction: row; align-items: flex-start; gap: 48px; }
+  .coaching-pitch { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+  .coaching-offer { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+  .coaching-headline { text-wrap: balance; }
+  .coaching-subhead { margin-bottom: 32px; }
+  .coaching-cta-wrap { order: 0; }
   .coaching-cta { max-width: 440px; }
+  .coaching-benefits { flex: 0 0 auto; justify-content: flex-start; gap: 24px; max-height: none; margin-bottom: 32px; }
+  .coaching-card { margin-bottom: 0; }
 }
 
 /* Admin preview frames: a true-size 390×844 phone (and a 1280×800 desktop, scaled

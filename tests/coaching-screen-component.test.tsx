@@ -129,13 +129,21 @@ describe("no-scroll layout contract (app/globals.css)", () => {
     expect(desktop).toMatch(/max-width:\s*960px/);
     expect(desktop).toMatch(/margin:\s*0 auto/);
     expect(desktop).toContain(`calc(100dvh - ${44 * 2}px)`);   // main padding top + bottom
-    // the width is used by content, not stretched rows: ≥ 720px the lists go two-up (a container query, so the
-    // admin's 1280×800 preview gets it too); the stack itself is never a grid
+    // the width is used by composition, not stretched rows: ≥ 720px the pitch sits left of the offer (a container
+    // query, so the admin's 1280×800 preview gets it too); benefits stack, slack goes to the bottom, the CTA is a button's width
     const wide = coachingCss.match(/@container coaching \(min-width: 720px\) \{([\s\S]*?)\n\}/)![1];
-    expect(wide).toMatch(/\.coaching-benefits \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)[^}]*align-content: space-evenly/);
-    expect(wide).toMatch(/\.coaching-card \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+    expect(wide).toMatch(/\.coaching-stack \{[^}]*flex-direction: row[^}]*align-items: flex-start/);
+    expect(block(".coaching-stack")).toMatch(/flex-direction: column/);   // phone: one column that fills the screen
+    expect(wide).toMatch(/\.coaching-stack \{[^}]*margin: auto 0/);        // centred in the column's height
+    expect(wide).toMatch(/\.coaching-pitch \{[^}]*flex: 1 1 0/);
+    expect(wide).toMatch(/\.coaching-offer \{[^}]*flex: 1 1 0/);
+    expect(wide).toMatch(/\.coaching-benefits \{[^}]*flex: 0 0 auto[^}]*justify-content: flex-start/);
+    expect(wide).toMatch(/\.coaching-cta-wrap \{[^}]*order: 0/);
     expect(wide).toMatch(/\.coaching-cta \{[^}]*max-width: 440px/);
-    expect(block(".coaching-screen")).not.toMatch(/grid/);
+    // on a phone the groups are transparent and the CTA keeps the bottom slot
+    expect(block(".coaching-pitch, .coaching-offer")).toMatch(/display: contents/);
+    expect(block(".coaching-cta-wrap")).toMatch(/order: 10/);
+    expect(coachingCss).not.toMatch(/grid-template/);
     // the column is centred, the type is not (only the caption under the CTA is centred)
     for (const sel of [".coaching-screen", ".coaching-headline", ".coaching-subhead", ".coaching-benefit-title", ".coaching-benefit-body", ".coaching-cta"]) {
       expect(block(sel)).not.toMatch(/text-align/);

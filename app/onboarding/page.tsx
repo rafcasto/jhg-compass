@@ -107,8 +107,8 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-jh-paper px-4 py-8">
-      {/* Steps 1–2 are forms (≤ 512px); step 3 is the market list and gets the room for two columns of rows. */}
-      <div className={`mx-auto w-full ${step === 2 ? "max-w-4xl" : "max-w-lg"}`}>
+      {/* Steps 1–2 are forms (≤ 512px); step 3 is the market list and gets a little more room for the long labels. */}
+      <div className={`mx-auto w-full ${step === 2 ? "max-w-2xl" : "max-w-lg"}`}>
         <div className="flex flex-col items-center mb-6">
           <Image src="/assets/logo-jobhackers.png" alt="JobHackers" width={140} height={38} className="mb-3" />
           <Stepper step={step} />

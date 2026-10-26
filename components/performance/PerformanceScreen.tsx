@@ -19,9 +19,9 @@ const PERIODS: Period[] = ["day", "week", "month"];
 //
 // Styling is brand tokens only (tailwind.config.ts) — no local colour table — so
 // the tab can't drift from Compass / Progress. The market sections (order, tints,
-// responsive row grid) come from MarketSection, shared with onboarding step 3.
-// Layout fills the content column: header and sections span it, the period
-// controls stay a compact centred group. Colour rules (red budget):
+// row list) come from MarketSection, shared with onboarding step 3. Each row is
+// a CSS grid (.perf-row): stacked on a phone, one table-like line from 800px of
+// screen width with the ACTUAL / TARGET labels once per section. Colour rules (red budget):
 //   • ink while a period is in progress, green once the target is met,
 //   • red only when the period has CLOSED below target (a genuine negative state),
 //   • one red button on screen at most: "Edit targets" while editing.
@@ -108,11 +108,13 @@ export default function PerformanceScreen({
           }
         />
 
-        <div className="mx-auto w-full max-w-xl space-y-4">
-          <Segmented fill label="Period" value={period} onChange={setPeriod}
-            items={PERIODS.map((p) => ({ key: p, label: p[0].toUpperCase() + p.slice(1) }))} />
+        <div className="perf-toolbar">
+          <div className="perf-period">
+            <Segmented fill label="Period" value={period} onChange={setPeriod}
+              items={PERIODS.map((p) => ({ key: p, label: p[0].toUpperCase() + p.slice(1) }))} />
+          </div>
 
-          <div className="flex items-center justify-center gap-4">
+          <div className="perf-nav">
             <button type="button" onClick={() => setAnchor(shift(period, anchor, -1))} aria-label="Previous" className="icon-btn">
               <ChevronLeft className="h-5 w-5" strokeWidth={1.5} aria-hidden />
             </button>
@@ -126,7 +128,7 @@ export default function PerformanceScreen({
 
       {/* Visible market first (the short list), hidden market below — order and tints from MarketSection. */}
       {marketSections({ t, hidden, visible, effortSplit }).map((section) => (
-        <MarketSection key={section.market} section={section}>
+        <MarketSection key={section.market} section={section} head={<PerfHead actualLabel={rowProps.actualLabel} targetLabel={rowProps.targetLabel} />}>
           <Rows cats={section.cats} {...rowProps} />
         </MarketSection>
       ))}
@@ -154,7 +156,18 @@ interface RowProps {
   setTargetHint: string;
 }
 
-// Rows are rendered as direct children of the section's `.market-rows` grid.
+// Column labels shown once per section on desktop (.perf-head is display:none on a
+// phone, where each row carries its own). Decorative: the row cells keep their labels.
+function PerfHead({ actualLabel, targetLabel }: { actualLabel: string; targetLabel: string }) {
+  return (
+    <div className="perf-head" aria-hidden>
+      <div className="perf-head-nums"><Label>{actualLabel}</Label><div /><Label>{targetLabel}</Label></div>
+    </div>
+  );
+}
+
+// Rows are direct children of the section's `.market-rows`. Each row is one grid
+// (.perf-row): areas label · bar · nums · actions, re-flowed by the container query.
 function Rows({ cats, editAll, editRows, closed, periodTarget, actuals, add, remove, setGoal, startEdit, finishRow, actualLabel, targetLabel, setGoalLabel, setTargetHint }: RowProps) {
   return (
     <>
@@ -174,51 +187,46 @@ function Rows({ cats, editAll, editRows, closed, periodTarget, actuals, add, rem
         const onInc = () => (editing ? setGoal(c.id, t + 1) : add(c.id));
 
         return (
-          <div key={c.id} className="flex items-start gap-4 border-b border-jh-line py-4">
-            <div className="min-w-0 flex-1">
-              <div className="font-display text-base font-semibold leading-snug text-jh-ink">{c.label}</div>
+          <div key={c.id} className="perf-row border-b border-jh-line">
+            <div className="perf-row-label font-display text-base font-semibold leading-snug text-jh-ink">{c.label}</div>
 
-              {hasGoal && !editing && <div className="mt-3"><Bar a={a} t={t} done={done} missed={missed} /></div>}
-
+            {/* Bar slot: the bullet bar, or the quiet "set a goal" action, or the edit hint. */}
+            <div className="perf-row-bar">
+              {hasGoal && !editing && <Bar a={a} t={t} done={done} missed={missed} />}
               {!hasGoal && !editing && (
                 <button type="button" onClick={() => startEdit(c.id)}
-                  className="mt-2 inline-flex items-center gap-1 rounded-pill bg-jh-mist px-3 py-1.5 font-display text-xs font-semibold text-jh-ink transition-colors duration-200 ease-out hover:bg-jh-blue-grey">
+                  className="perf-set-goal bg-jh-mist font-display text-xs font-semibold text-jh-ink hover:bg-jh-blue-grey">
                   <Plus className="h-3.5 w-3.5" aria-hidden /> {setGoalLabel}
                 </button>
               )}
-
-              {editing && <div className="mt-2 text-xs text-jh-mute">{setTargetHint}</div>}
+              {editing && <div className="text-xs text-jh-mute">{setTargetHint}</div>}
             </div>
 
-            <div className="w-40 flex-none">
-              {/* Actual leads (24/700); target is context (16/500 mute). */}
-              <div className="grid items-end" style={{ gridTemplateColumns: "1fr 16px 1fr" }}>
-                <Label>{actualLabel}</Label>
-                <div />
-                <Label>{targetLabel}</Label>
-                <div className={`mt-1 text-center font-display text-2xl font-bold leading-none ${actualCls}`}>{a}</div>
-                <div aria-hidden className="mt-1 text-center font-display text-lg font-light leading-none text-jh-mute-2">/</div>
-                <div className={`mt-1 text-center font-display text-base font-medium leading-none ${hasGoal || editing ? "text-jh-mute" : "text-jh-mute-2"}`}>{targetText}</div>
-              </div>
+            {/* Actual leads (24/700); target is context (16/500 mute). */}
+            <div className="perf-row-nums">
+              <div className="perf-row-labels"><Label>{actualLabel}</Label><div /><Label>{targetLabel}</Label></div>
+              <div className={`text-center font-display text-2xl font-bold leading-none ${actualCls}`}>{a}</div>
+              <div aria-hidden className="text-center font-display text-lg font-light leading-none text-jh-mute-2">/</div>
+              <div className={`text-center font-display text-base font-medium leading-none ${hasGoal || editing ? "text-jh-mute" : "text-jh-mute-2"}`}>{targetText}</div>
+            </div>
 
-              <div className="mt-3 flex items-center justify-end gap-2">
-                {perRowEdit && (
-                  <button type="button" onClick={() => finishRow(c.id)} className="btn-ghost btn-sm">Done</button>
-                )}
-                <button type="button" onClick={onDec} disabled={decDisabled}
-                  aria-label={`${editing ? "Lower target" : "Remove one"}: ${c.label}`}
-                  className="grid h-10 w-10 place-items-center rounded-pill border border-jh-line-2 bg-white text-jh-mute transition-colors duration-200 ease-out hover:border-jh-ink hover:text-jh-ink disabled:opacity-40 disabled:hover:border-jh-line-2 disabled:hover:text-jh-mute">
-                  <Minus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-                </button>
-                <button type="button" onClick={onInc}
-                  aria-label={`${editing ? "Raise target" : "Log one"}: ${c.label}`}
-                  className={`grid h-10 w-10 place-items-center rounded-pill border bg-white transition-colors duration-200 ease-out
-                    ${done && !editing
-                      ? "border-rb-green-dark text-rb-green-dark hover:bg-rb-green-dark hover:text-white"
-                      : "border-jh-ink text-jh-ink hover:bg-jh-ink hover:text-white"}`}>
-                  <Plus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-                </button>
-              </div>
+            <div className="perf-row-actions">
+              {perRowEdit && (
+                <button type="button" onClick={() => finishRow(c.id)} className="btn-ghost btn-sm">Done</button>
+              )}
+              <button type="button" onClick={onDec} disabled={decDisabled}
+                aria-label={`${editing ? "Lower target" : "Remove one"}: ${c.label}`}
+                className="grid h-10 w-10 place-items-center rounded-pill border border-jh-line-2 bg-white text-jh-mute transition-colors duration-200 ease-out hover:border-jh-ink hover:text-jh-ink disabled:opacity-40 disabled:hover:border-jh-line-2 disabled:hover:text-jh-mute">
+                <Minus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+              </button>
+              <button type="button" onClick={onInc}
+                aria-label={`${editing ? "Raise target" : "Log one"}: ${c.label}`}
+                className={`grid h-10 w-10 place-items-center rounded-pill border bg-white transition-colors duration-200 ease-out
+                  ${done && !editing
+                    ? "border-rb-green-dark text-rb-green-dark hover:bg-rb-green-dark hover:text-white"
+                    : "border-jh-ink text-jh-ink hover:bg-jh-ink hover:text-white"}`}>
+                <Plus className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+              </button>
             </div>
           </div>
         );
