@@ -188,7 +188,7 @@ The existing drop zone verbatim (dashed `border-jh-line-2`, "`.md` or `.yml` · 
 │ │   replaces 3 · adds 4 · negotiation scripts untouched     │ │
 │ ├───────────────────────────────────────────────────────────┤ │
 │ │ + Watchlist              10 companies, 5 include, 6 excl. │ │
-│ │   ⚠ Timely has no careers URL — added as name only        │ │
+│ │   ⚠ Timely has no careers URL — skipped                   │ │
 │ ├───────────────────────────────────────────────────────────┤ │
 │ │ + Notes                  new                              │ │
 │ ├───────────────────────────────────────────────────────────┤ │

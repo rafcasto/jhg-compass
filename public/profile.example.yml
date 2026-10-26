@@ -1,0 +1,154 @@
+version: 1
+goal:
+  role: "Senior Delivery Lead"
+  subsector: "B2B SaaS (logistics and supply-chain software)"
+  companyType: "Scale-up"
+  city: "Wellington, New Zealand"
+  salary: "NZ$ 150,000–175,000"
+contact:
+  title: "Delivery Lead for SaaS teams scaling past product–market fit"
+  phone: "+64 21 555 0199"
+  linkedin: "https://www.linkedin.com/in/ana-ferreira-delivery"
+  portfolio: "https://anaferreira.nz/release-cadence-playbook"
+policy:
+  minimumSalary: "NZ$ 140,000"
+  locationFlexibility: "Y, NZ or AU time zones; Y, up to 2 days on site in Wellington, no change to floor; N"
+  visaStatus: "New Zealand citizen; Australian work rights under the Trans-Tasman arrangement"
+  authorizedIn:
+    - "New Zealand"
+    - "Australia"
+personalization:
+  targetRoles:
+    - archetype: "Delivery Lead"
+      axes: "release cadence, cross-team dependencies, incident reduction; Delivery reliability under growth"
+      buys: "Predictable releases while headcount doubles, without adding process the engineers resent"
+    - archetype: "Engineering Operations Manager"
+      axes: "tooling, on-call, cost of delivery; Engineering operations that scale"
+      buys: "One person who owns the how of shipping so the CTO can own the what"
+    - archetype: "Technical Program Manager"
+      axes: "multi-team programmes, customer commitments, migration programmes; Customer promises kept"
+      buys: "Enterprise commitments landed on the date that was sold"
+  adaptiveFraming:
+    - role: "Delivery reliability under growth"
+      emphasize: "Cadence and incident numbers first; I am the person who made releases boring while the team doubled"
+      proof: "cv.md — Fortnightly release train, Incident halving, Dependency board"
+    - role: "Engineering operations that scale"
+      emphasize: "Cost and on-call outcomes; show the tooling decisions and what they removed"
+      proof: "cv.md — On-call redesign, CI spend cut, Dependency board"
+    - role: "Customer promises kept"
+      emphasize: "Dated commitments met; lead with the migration programme and the enterprise renewals it protected"
+      proof: "cv.md — Tenant migration programme, Fortnightly release train"
+  exitNarrative: >
+    I was the operations analyst who kept getting pulled into engineering stand-ups because the
+    numbers I tracked were the ones nobody owned: how often we shipped, how often it broke, and
+    which customer promise was about to slip. Over six years at two SaaS companies I turned that
+    into a role, Delivery Lead, and ran it through a doubling of headcount and a tenant migration
+    that touched every enterprise customer. I am now looking for a scale-up at the same inflection
+    point, where releases have started to hurt and the founders know it, because that is the exact
+    problem I have already solved twice.
+  crossCuttingAdvantage: >
+    I measure delivery in numbers the business already cares about, cadence, incidents and dates
+    kept, so engineering and leadership argue about the same facts. I remove process before I add it,
+    which is why engineers have asked to keep working with me after every reorganisation. I have done
+    this at 40 and at 110 engineers, so I know which parts of the method change with size.
+  portfolio:
+    url: "https://anaferreira.nz/release-cadence-playbook"
+    description: "The release-cadence playbook that took a 40-engineer SaaS team from monthly to fortnightly releases in two quarters"
+    whenToShare: "After the first conversation with a hiring manager who has named release pain; never in a cold application"
+  compTargets: "Target NZ$ 150,000–175,000; floor NZ$ 140,000. Y, up to 2 days on site in Wellington, no change to floor"
+  locationPolicy:
+    - "Will work in: Wellington; remote across New Zealand or Australia"
+    - "Exclude: roles requiring relocation to the United States"
+    - "Remote: Y, NZ or AU time zones"
+    - "Local hybrid: Y, up to 2 days on site in Wellington, no change to floor"
+    - "Relocate: N"
+watchlist:
+  companies:
+    - name: "Xero"
+      careersUrl: "https://www.xero.com/careers/"
+    - name: "Tracksuit"
+      careersUrl: "https://www.gotracksuit.com/careers"
+    - name: "Dovetail"
+      careersUrl: "https://dovetail.com/careers/"
+    - name: "Halter"
+      careersUrl: "https://halterhq.com/careers"
+    - name: "Auror"
+      careersUrl: "https://www.auror.co/careers"
+    - name: "Sharesies"
+      careersUrl: "https://www.sharesies.nz/careers"
+    - name: "Timely"
+    - name: "Partly"
+      careersUrl: "https://www.partly.com/careers"
+    - name: "Crimson Education"
+      careersUrl: "https://www.crimsoneducation.org/careers"
+    - name: "Hnry"
+      careersUrl: "https://hnry.co.nz/careers/"
+  positive:
+    - "Delivery Lead"
+    - "Delivery Manager"
+    - "Engineering Operations Manager"
+    - "Technical Program Manager"
+    - "Head of Delivery"
+  negative:
+    - "Scrum Master"
+    - "Project Coordinator"
+    - "PMO Analyst"
+    - "intern"
+    - "graduate"
+    - "VP"
+notes: |
+  Hard no's (do not apply): on-site 5 days; hands-on coding roles; defence or gambling sectors
+  Culture must-haves: engineers present in planning; incidents reviewed without blame; a written roadmap; deprioritise when absent: Y
+  Soft dislikes (lower, not a no): pre-seed stage; agencies; companies under 30 staff
+  Notice period: 28 days
+  Never apply: Rapid Freight Systems; Kiwi Bet Online
+  CV house rules: numbers exactly as in 03-proof.md, never rounded; no adjectives before nouns; one page when tailored
+  Top 3 right now: Tracksuit, Halter, Partly
+cv: |
+  # CV -- Ana Ferreira
+
+  **Headline:** Delivery Lead for SaaS teams scaling past product–market fit | Fortnightly releases at 110 engineers | Wellington
+  **Email:** ana@anaferreira.nz
+  **Phone:** +64 21 555 0199
+  **Location:** Wellington, New Zealand
+  **LinkedIn:** https://www.linkedin.com/in/ana-ferreira-delivery
+  **Portfolio:** https://anaferreira.nz/release-cadence-playbook
+
+  ## Professional Summary
+
+  Delivery Lead with six years in B2B SaaS, taking engineering organisations from monthly to fortnightly releases while headcount doubled. Halved production incidents at one company and landed a 240-tenant migration on the sold date at another. Works from the numbers the business already tracks, cadence, incidents and dates kept, and removes process before adding it.
+
+  ## Work Experience
+
+  **FreightDesk Software** -- Wellington, New Zealand
+  *Delivery Lead* -- March 2022 -- Present
+  Led delivery for a logistics SaaS engineering organisation that grew from 55 to 110 engineers across nine teams and two time zones.
+  - Moved release cadence from monthly to fortnightly across nine teams in two quarters by introducing a single release train with team-owned readiness checks (Fortnightly release train).
+  - Halved production incidents from 14 to 7 per month over twelve months by pairing a blameless review cadence with an on-call rota redesigned around service ownership (Incident halving).
+  - Landed the migration of 240 enterprise tenants to the new platform on the date sold to customers, 11 months, zero renewals lost in the quarter (Tenant migration programme).
+  - Cut CI spend by 31% in one quarter by consolidating three pipeline tools into one and retiring 40% of unused jobs (CI spend cut).
+
+  **Ledgerline** -- Auckland, New Zealand
+  *Delivery Manager (promoted from Operations Analyst, 2020)* -- July 2019 -- February 2022
+  Ran delivery for a 40-engineer accounting-integrations SaaS team selling to accounting firms in NZ and AU.
+  - Built a cross-team dependency board that cut blocked work-in-progress from about 30% to 12% of tickets in six months (Dependency board).
+  - Redesigned on-call so that pages outside business hours fell from 22 to 6 a month in one quarter, with no change to response-time commitments (On-call redesign).
+  - Introduced the fortnightly release cadence later reused at FreightDesk, taking the team from monthly releases in two quarters.
+
+  ## Projects
+
+  - Release-cadence playbook: the method used at both companies, written up with templates and the numbers behind it; published at anaferreira.nz, reused by two other Wellington SaaS teams.
+  - Tenant migration programme: 240 enterprise tenants, 11 months, date kept, zero renewals lost in the quarter.
+  - Incident halving: 14 to 7 incidents a month in twelve months at 110 engineers, with the review format and rota design documented.
+
+  ## Education
+
+  **Bachelor of Commerce (Information Systems)** -- Victoria University of Wellington, 2017
+
+  ## Certifications
+
+  - ICAgile Certified Professional in Agile Coaching (ICP-ACC), 2021
+
+  ## Skills
+
+  Release management; incident management; on-call design; programme management; dependency mapping; CI/CD tooling (GitHub Actions, Buildkite); Jira and Linear administration; stakeholder reporting; blameless post-incident review facilitation
