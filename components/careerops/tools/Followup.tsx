@@ -72,7 +72,7 @@ export default function Followup({ ctx }: ToolProps) {
       <section className="card divide-y divide-jh-line">
         <div className="px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
           <p className="text-sm font-display font-semibold text-jh-ink">{overdue.length} overdue · {rows.length - overdue.length} waiting</p>
-          <div role="radiogroup" aria-label="Channel" className="inline-flex gap-1 rounded-pill bg-jh-mist p-1">{(["email", "linkedin"] as const).map((c) => <button key={c} type="button" role="radio" aria-checked={channel === c} onClick={() => setChannel(c)} className={`px-3 py-1 rounded-pill text-xs font-display font-semibold ${channel === c ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute"}`}>{c === "email" ? "Email" : "LinkedIn"}</button>)}</div>
+          <div role="radiogroup" aria-label="Channel" className="inline-flex gap-1 rounded-pill bg-jh-mist p-1">{(["email", "linkedin"] as const).map((c) => <button key={c} type="button" role="radio" aria-checked={channel === c} onClick={() => setChannel(c)} className={`px-3 py-1 rounded-pill text-xs font-display font-semibold ${channel === c ? "bg-white text-jh-ink" : "text-jh-mute"}`}>{c === "email" ? "Email" : "LinkedIn"}</button>)}</div>
         </div>
         {rows.length === 0 ? <p className="px-5 py-8 text-center text-jh-mute text-sm">No cards in flight on your Progress board. Move a card to Outreach or Application and it shows up here.</p> : (
           <ul className="divide-y divide-jh-line">

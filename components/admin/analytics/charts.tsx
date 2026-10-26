@@ -9,7 +9,7 @@ import {
 export type Row = { label: string; count: number };
 
 // Brand-aligned palette for charts.
-export const CHART_COLORS = ["#c2001f", "#191c27", "#0033cc", "#0EA5E9", "#2f7a3a", "#f5d000", "#7a1ec2", "#f08a1c"];
+export const CHART_COLORS = ["#e12120", "#191c27", "#0033cc", "#0EA5E9", "#2f7a3a", "#f5d000", "#7a1ec2", "#f08a1c"];
 
 export function ChartCard({ title, subtitle, children, aside }: { title: string; subtitle?: string; children: ReactNode; aside?: ReactNode }) {
   return (

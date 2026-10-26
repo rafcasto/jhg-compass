@@ -58,7 +58,7 @@ export default function AdminPage() {
       <header className="bg-white border-b border-jh-line">
         <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="grid place-items-center h-8 w-8 rounded-[9px] bg-jh-red text-white text-base shadow-cta">🧭</span>
+            <span className="grid place-items-center h-8 w-8 rounded-[9px] bg-jh-red text-white text-base">🧭</span>
             <span className="font-display font-bold text-jh-ink">JobHacker <span className="text-jh-red">Compass</span></span>
             <span className="ml-1.5 hidden sm:inline font-display font-semibold text-[11px] uppercase tracking-[.12em] text-jh-mute">Admin</span>
           </div>

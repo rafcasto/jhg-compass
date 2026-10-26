@@ -62,7 +62,7 @@ export default function Evaluate({ hasCv, onQueued, onDone, online, externalJobI
         <div role="tablist" className="inline-flex gap-1 rounded-pill bg-jh-mist p-1">
           {(["url", "text"] as const).map((m) => (
             <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
-              className={`px-4 py-1.5 rounded-pill text-sm font-display font-semibold ${mode === m ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute"}`}>{m === "url" ? "Posting URL" : "Paste description"}</button>
+              className={`px-4 py-1.5 rounded-pill text-sm font-display font-semibold ${mode === m ? "bg-white text-jh-ink" : "text-jh-mute"}`}>{m === "url" ? "Posting URL" : "Paste description"}</button>
           ))}
         </div>
         {mode === "url"

@@ -7,7 +7,7 @@ const config: Config = {
     extend: {
       colors: {
         jh: {
-          red: "#c2001f",
+          red: "#e12120",
           "red-hover": "#8a0016",
           ink: "#191c27",
           body: "#3a3f4d", // default body text; the only grey that passes 4.5:1 on the blue-grey tint
@@ -21,7 +21,7 @@ const config: Config = {
           "mute-2": "#9aa0ad",
         },
         rb: {
-          red: "#c2001f",
+          red: "#e12120",
           orange: "#f08a1c",
           yellow: "#f5d000",
           "green-light": "#6bbf6b",
@@ -45,7 +45,6 @@ const config: Config = {
         "jh-1": "0 1px 2px rgba(25,28,39,.06)",
         "jh-2": "0 4px 12px rgba(25,28,39,.08)",
         "jh-3": "0 10px 24px rgba(25,28,39,.10)",
-        cta: "0 6px 18px rgba(194,0,31,.25)",
       },
     },
   },

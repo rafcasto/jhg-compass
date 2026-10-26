@@ -29,7 +29,7 @@ export default function Segmented<K extends string>({ items, value, onChange, fi
         return (
           <button key={key} type="button" onClick={() => onChange(key)} aria-pressed={active}
             className={`inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-xs px-3 py-1.5 font-display text-sm font-semibold transition-colors duration-200 ease-out
-              ${fill ? "flex-1" : ""} ${active ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}>
+              ${fill ? "flex-1" : ""} ${active ? "bg-white text-jh-ink" : "text-jh-mute hover:text-jh-ink"}`}>
             {Icon && <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />}
             {text}
             {badge && (

@@ -40,7 +40,7 @@ export interface Article {
 // ("1-focus", "4-outreach"…), so slugs are normalised by stripping a leading
 // "<n>-" before lookup. Aliases map the live tag names onto the design's steps.
 export const STEP_COLORS: Record<string, string> = {
-  focus: "#c2001f",
+  focus: "#e12120",
   value: "#f08a1c",
   profile: "#f5d000",
   applications: "#6bbf6b",

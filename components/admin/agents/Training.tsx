@@ -90,7 +90,7 @@ export default function Training({ status }: { status: AgentsStatus | null }) {
 
       <Section title="2 · Examples" help="Everything that can go into a dataset. Claude gold is approved on arrival; live-member reports (👍 in the app, when collection is on) arrive unapproved and pseudonymised — review before approving.">
         <div role="tablist" className="inline-flex flex-wrap gap-1 rounded-pill bg-jh-mist p-1 mb-3">
-          {(["all", "claude", "live", "exam", "unapproved"] as const).map((f) => <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-pill text-sm font-display font-semibold capitalize ${filter === f ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute"}`}>{f}</button>)}
+          {(["all", "claude", "live", "exam", "unapproved"] as const).map((f) => <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-pill text-sm font-display font-semibold capitalize ${filter === f ? "bg-white text-jh-ink" : "text-jh-mute"}`}>{f}</button>)}
         </div>
         {!data ? <Loading>Loading examples…</Loading> : rows.length === 0 ? <Empty>No examples yet — generate gold above.</Empty> : (
           <div className="overflow-x-auto -mx-5 px-5">

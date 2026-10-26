@@ -27,7 +27,7 @@ export default function InterviewPrep({ ctx }: ToolProps) {
         <h3 className="font-display font-bold text-jh-ink flex items-center gap-2"><Mic className="h-5 w-5 text-jh-red" strokeWidth={1.5} /> Which role, who&apos;s in the room?</h3>
         <ReportPicker reports={ctx.reports} value={reportJobId} onChange={setReportJobId} />
         <div role="radiogroup" aria-label="Audience" className="inline-flex flex-wrap gap-1 rounded-pill bg-jh-mist p-1">
-          {PREP_AUDIENCES.map((a) => <button key={a.key} type="button" role="radio" aria-checked={audience === a.key} onClick={() => setAudience(a.key)} className={`px-4 py-1.5 rounded-pill text-sm font-display font-semibold ${audience === a.key ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute"}`}>{a.label}</button>)}
+          {PREP_AUDIENCES.map((a) => <button key={a.key} type="button" role="radio" aria-checked={audience === a.key} onClick={() => setAudience(a.key)} className={`px-4 py-1.5 rounded-pill text-sm font-display font-semibold ${audience === a.key ? "bg-white text-jh-ink" : "text-jh-mute"}`}>{a.label}</button>)}
         </div>
         <label className="block"><span className="label">Anything you know about the interview <span className="font-normal text-jh-mute">(optional — names, format, what the recruiter said)</span></span><textarea className="field text-sm min-h-[4.5rem]" value={extra} onChange={(e) => setExtra(e.target.value)} maxLength={2000} /></label>
         <div className="flex items-center gap-3 flex-wrap">

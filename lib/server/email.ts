@@ -54,12 +54,12 @@ function toAppActionLink(rawLink: string): string {
 function emailShell(intro: string, link: string, cta: string) {
   return `
     <div style="font-family:Roboto,Arial,sans-serif;color:#191c27;max-width:520px;margin:0 auto">
-      <h1 style="font-family:Poppins,Arial;color:#191c27;font-size:24px">JobHacker <span style="color:#c2001f">Compass</span></h1>
+      <h1 style="font-family:Poppins,Arial;color:#191c27;font-size:24px">JobHacker <span style="color:#e12120">Compass</span></h1>
       <p style="font-size:15px;line-height:1.6">${intro}</p>
       <p style="margin:28px 0">
-        <a href="${link}" style="background:#c2001f;color:#fff;text-decoration:none;font-family:Poppins,Arial;font-weight:600;padding:14px 26px;border-radius:10px;display:inline-block">${cta}</a>
+        <a href="${link}" style="background:#e12120;color:#fff;text-decoration:none;font-family:Poppins,Arial;font-weight:600;padding:14px 26px;border-radius:10px;display:inline-block">${cta}</a>
       </p>
-      <p style="font-size:13px;color:#6b7280;line-height:1.6">This link expires after a short while for your security. If the button doesn't work, copy and paste this URL into your browser:<br><a href="${link}" style="color:#c2001f;word-break:break-all">${link}</a></p>
+      <p style="font-size:13px;color:#6b7280;line-height:1.6">This link expires after a short while for your security. If the button doesn't work, copy and paste this URL into your browser:<br><a href="${link}" style="color:#e12120;word-break:break-all">${link}</a></p>
       <p style="font-size:13px;color:#6b7280">If you didn't request this, you can safely ignore this email.</p>
     </div>`;
 }

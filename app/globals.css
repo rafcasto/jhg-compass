@@ -14,11 +14,11 @@
 @font-face { font-family: "Poppins"; font-weight: 800; font-display: swap; src: url("/fonts/Poppins-ExtraBold.ttf") format("truetype"); }
 
 :root {
-  --jh-red: #c2001f; --jh-red-hover: #8a0016; --jh-ink: #191c27;
+  --jh-red: #e12120; --jh-red-hover: #8a0016; --jh-ink: #191c27;
   --jh-red-soft: #f6e0e3; --jh-blue-grey: #e2ebfb;
   --jh-paper: #fafafa; --jh-mist: #f3f5fa; --jh-line: #e6e8ef; --jh-line-2: #d4d8e2;
   --jh-mute: #6b7280; --jh-mute-2: #9aa0ad;
-  --rb-red:#c2001f; --rb-orange:#f08a1c; --rb-yellow:#f5d000;
+  --rb-red:#e12120; --rb-orange:#f08a1c; --rb-yellow:#f5d000;
   --rb-green-light:#6bbf6b; --rb-green-dark:#2f7a3a; --rb-blue:#0033cc; --rb-violet:#7a1ec2;
 }
 
@@ -32,11 +32,11 @@
 }
 
 @layer components {
-  /* ---- Buttons: ONE system. 8px radius (--radius-sm), Poppins 600, 15px, colour/shadow
+  /* ---- Buttons: ONE system. 8px radius (--radius-sm), Poppins 600, 15px, colour
      transitions only (no transform). `.cbtn-*` are aliases kept for the Compass tab. ---- */
   .btn { @apply inline-flex items-center justify-center gap-2 font-display font-semibold rounded-sm px-4 py-3 text-[15px] leading-none border border-transparent transition-colors duration-200 ease-out disabled:opacity-60 disabled:cursor-not-allowed; }
   .btn-sm { @apply px-3 py-2 text-sm; }
-  .btn-primary { @apply btn bg-jh-red text-white shadow-cta hover:bg-jh-red-hover; }
+  .btn-primary { @apply btn bg-jh-red text-white hover:bg-jh-red-hover; }
   .btn-secondary { @apply btn bg-white text-jh-ink border-jh-ink hover:bg-jh-ink hover:text-white; }
   .btn-ghost { @apply btn bg-transparent text-jh-red hover:text-jh-red-hover px-2; }
   .cbtn { @apply btn; }
@@ -94,7 +94,7 @@ input[type="date"].date-empty::-webkit-datetime-edit { color: transparent; }
 
 /* ===== Compass tab (JobHackers design system) =====
    Focus ring is global and never removed: 2px red at 40%, 2px offset. */
-:focus-visible { outline: 2px solid rgba(194, 0, 31, 0.4); outline-offset: 2px; }
+:focus-visible { outline: 2px solid rgba(225, 33, 32, 0.4); outline-offset: 2px; }
 
 /* Goal statement — Poppins 600, 19px mobile / 23px desktop, 1.5 line-height */
 .goal-statement {
@@ -107,14 +107,13 @@ input[type="date"].date-empty::-webkit-datetime-edit { color: transparent; }
 }
 @media (min-width: 768px) { .goal-statement { font-size: 23px; } }
 
-/* Carousel arrows: 40px circles, white, 1px border, shadow-1 -> shadow-2 on hover */
+/* Carousel arrows: 40px circles, white, 1px border, no shadow; red glyph on hover */
 .cbtn-icon {
   display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 999px;
   background: #fff; color: #191c27; border: 1px solid #e6e8ef;
-  box-shadow: 0 1px 2px rgba(25, 28, 39, .06);
-  transition: box-shadow 200ms ease-out, color 200ms ease-out, background-color 200ms ease-out;
+  transition: color 200ms ease-out, background-color 200ms ease-out;
 }
-.cbtn-icon:hover:not(:disabled) { box-shadow: 0 10px 24px rgba(25, 28, 39, .10); color: #c2001f; }
+.cbtn-icon:hover:not(:disabled) { color: #e12120; }
 .cbtn-icon:disabled { opacity: .4; cursor: not-allowed; }
 
 /* Native selects share the field chrome and get a chevron. */
@@ -170,7 +169,7 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
 }
 .coaching-headline-1 { font-size: 36px; color: #191c27; }
 .coaching-headline-2 { font-size: 18px; font-weight: 600; color: #191c27; margin: 4px 0; }
-.coaching-headline-3 { font-size: 44px; color: #c2001f; }
+.coaching-headline-3 { font-size: 44px; color: #e12120; }
 
 .coaching-subhead {
   font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.45; color: #3a3f4d;
@@ -206,17 +205,16 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
 .coaching-entitlement-title { margin: 0 0 4px; font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 15px; line-height: 1.3; color: #191c27; }
 .coaching-entitlement-body { margin: 0; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #3a3f4d; }
 
-/* CTA: full-width, 8px radius, red glow, Poppins 700, ≥48px tap target */
+/* CTA: full-width, 8px radius, flat (no shadow), Poppins 700, ≥48px tap target */
 .coaching-cta-wrap { flex: 0 0 auto; }
 .coaching-cta {
   display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; padding: 12px 18px;
   font-family: Poppins, "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 16px; line-height: 1.2;
-  color: #fff; background: #c2001f; border-radius: 8px; text-decoration: none;
-  box-shadow: 0 6px 18px rgba(194, 0, 31, .25);
-  transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
+  color: #fff; background: #e12120; border-radius: 8px; text-decoration: none;
+  transition: background-color 200ms ease-out;
 }
 .coaching-cta:hover, .coaching-cta:active { background: #8a0016; }
-.coaching-cta:focus-visible { outline: 2px solid rgba(194, 0, 31, 0.4); outline-offset: 2px; }
+.coaching-cta:focus-visible { outline: 2px solid rgba(225, 33, 32, 0.4); outline-offset: 2px; }
 .coaching-caption {
   margin: 8px 0 0; text-align: center;
   font-family: Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #6b7280;

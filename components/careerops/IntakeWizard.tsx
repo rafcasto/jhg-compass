@@ -132,7 +132,7 @@ export default function IntakeWizard({ uid, setup, profile, answers }: {
               aria-controls={`intake-panel-${s.key}`}
               tabIndex={active ? 0 : -1}
               onClick={() => go(s.key)}
-              className={`inline-flex items-center gap-1.5 rounded-pill px-3.5 py-2 text-sm font-mono font-semibold transition-colors ${active ? "bg-white text-jh-ink shadow-jh-1" : "text-jh-mute hover:text-jh-ink"}`}
+              className={`inline-flex items-center gap-1.5 rounded-pill px-3.5 py-2 text-sm font-mono font-semibold transition-colors ${active ? "bg-white text-jh-ink" : "text-jh-mute hover:text-jh-ink"}`}
             >
               <Icon className={`h-3.5 w-3.5 shrink-0 ${TONE[state]}`} aria-hidden />
               {s.label}
