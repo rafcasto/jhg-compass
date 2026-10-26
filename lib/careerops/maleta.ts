@@ -277,8 +277,8 @@ function fromCareerOpsProfileYaml(doc: Record<string, unknown>, warnings: string
   };
 }
 
-/** A maleta YAML we wrote ourselves. */
-function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
+/** A profile.yml / maleta YAML we wrote ourselves. Exported for the strict profile reader (profile-file.ts). */
+export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
   const g = (doc.goal ?? {}) as Record<string, unknown>;
   const w = (doc.watchlist ?? {}) as Record<string, unknown>;
   const companies = Array.isArray(w.companies)
