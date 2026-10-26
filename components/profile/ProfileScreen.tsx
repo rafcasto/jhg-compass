@@ -85,7 +85,9 @@ export default function ProfileScreen() {
       <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-jh-red-soft font-display font-bold text-sm text-jh-red" aria-hidden>{initials}</div>
       <div className="min-w-0">
         <p className="truncate font-display font-semibold text-jh-ink">{fullName || "Your profile"}</p>
-        <p className="truncate text-sm text-jh-mute">{[email, profile?.country].filter(Boolean).join(" · ")}</p>
+        {/* One fact per line: in the 232px desktop rail a joined "email · country" always lost the country to the ellipsis. */}
+        {email && <p className="truncate text-sm text-jh-mute" title={email}>{email}</p>}
+        {profile?.country && <p className="truncate text-sm text-jh-mute">{profile.country}</p>}
       </div>
     </div>
   );

@@ -214,8 +214,8 @@ describe("Admin → Coaching tab", () => {
 
   it("flags copy that won't fit, per device, from the real preview measurements", async () => {
     // Phone column overflows; desktop column does not.
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get() { return this.classList?.contains("coaching-screen") ? (this.style.width === "640px" ? 712 : 686) : 0; } });
-    Object.defineProperty(HTMLElement.prototype, "scrollHeight", { configurable: true, get() { return this.classList?.contains("coaching-screen") ? (this.style.width === "640px" ? 700 : 900) : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get() { return this.classList?.contains("coaching-screen") ? (this.style.width === "952px" ? 712 : 686) : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "scrollHeight", { configurable: true, get() { return this.classList?.contains("coaching-screen") ? (this.style.width === "952px" ? 700 : 900) : 0; } });
     render(<CoachingScreenTab />);
     await loaded();
     const pills = screen.getAllByRole("status").map((p) => p.textContent!.trim());

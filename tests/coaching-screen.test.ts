@@ -184,10 +184,12 @@ describe("390×844 layout model", () => {
 
 describe("1280×800 layout model", () => {
   it("is a 232px sidebar plus a 640px column inside 44px / 48px padding", () => {
-    expect(COACHING_DESKTOP).toMatchObject({ width: 1280, height: 800, sidebar: 232, padX: 48, padY: 44, column: 640 });
+    expect(COACHING_DESKTOP).toMatchObject({ width: 1280, height: 800, sidebar: 232, padX: 48, padY: 44, columnMax: 960, column: 952, gridMin: 720 });
     expect(COACHING_DESKTOP_COLUMN_HEIGHT).toBe(800 - 88);
     // the column plus padding fits the main area at 1280
-    expect(COACHING_DESKTOP.sidebar + COACHING_DESKTOP.padX * 2 + COACHING_DESKTOP.column).toBeLessThan(1280);
+    // the column is exactly the main area at 1280×800 (and never wider than the CSS cap)
+    expect(COACHING_DESKTOP.sidebar + COACHING_DESKTOP.padX * 2 + COACHING_DESKTOP.column).toBe(1280);
+    expect(COACHING_DESKTOP.column).toBeLessThanOrEqual(COACHING_DESKTOP.columnMax);
   });
 
   it("the seed copy fits at the desktop scale, with headroom for a fourth benefit", () => {
