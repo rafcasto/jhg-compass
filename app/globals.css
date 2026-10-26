@@ -159,9 +159,13 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
   .perf-toolbar { flex-direction: row; align-items: center; gap: 24px; }
   .perf-period { width: 360px; }
   .perf-nav { justify-content: flex-start; }
-  .perf-head, .perf-row { grid-template-columns: minmax(0, 1fr) 240px 120px max-content; column-gap: 24px; }
+  /* Fixed tracks for the numbers (136px: fits "1 / wk") and the − + pair (40 + 8 + 40). The head
+     row has no buttons, so a max-content 4th column collapsed there and its ACTUAL / TARGET
+     labels sat ~90px right of the figures they name. */
+  .perf-head, .perf-row { grid-template-columns: minmax(0, 1fr) 240px 136px 88px; column-gap: 24px; }
   .perf-head { display: grid; padding: 16px 0 4px; }
-  .perf-head-nums { grid-column: 3; display: grid; grid-template-columns: 1fr 16px 1fr; }
+  .perf-head-nums, .perf-row-nums { grid-template-columns: 1fr 16px 1fr; }
+  .perf-head-nums { grid-column: 3; display: grid; }
   .perf-row { grid-template-areas: "label bar nums actions"; align-items: center; row-gap: 0; padding: 12px 0; }
   .perf-row-labels { display: none; }
   /* "Set a target" pills become quiet text on the wide row — the strong action is the sheet's Done */
