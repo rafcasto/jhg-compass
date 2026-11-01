@@ -317,13 +317,13 @@ Rename `lib/careerops/maleta.ts` → `profile-file.ts` (`Maleta` → `ProfileFil
 | | Headline (previously *lane statement*) | Profile · **Headline** — its own section, one field | `contact.title` (→ `candidate.title`) | `ContactPolicy part="headline"` |
 | | Exit story | Profile · **Exit story** | `personalization.exitNarrative` (→ `narrative.exit_story`) | `Personalization only=[exitNarrative]` |
 | | Core competencies (superpowers) | **Settings · Archetypes** — with the framing they feed (moved out of Who am I, 2026-11-01) | `personalization.crossCuttingAdvantage` (→ `narrative.superpowers[0]`) | `Personalization only=[targetRoles, adaptiveFraming, crossCuttingAdvantage]` |
-| | Proof points | *reserved* (`proof`) — not rendered | — | — |
 | **North Star — What's my target** | Target roles, salary, geographies, industries, company type | Profile · **Target role & market** | `goal.*` | `NorthStarSource` |
 | | Target salary (floor), geographies (flexibility, visa, work rights) | Profile · **Salary floor & location** | `policy.*` | `ContactPolicy part="policy"` |
 | | Comp targets, negotiation, location policy | Profile · **Comp & location policy** | `personalization.compTargets · negotiationScripts · locationPolicy` | `Personalization only=[…]` |
 | | Culture screen | *reserved* (`culture`) | — | — |
 | | Target companies / Top 10 / portals to scan | **Settings · Target companies** (cross-linked from Target role & market) | `watchlist.*` | `WatchlistPanel` |
-| **Artefacts — What value do I create** | Stories L1 / L2 (CCARR), Proof bank | *reserved* (`stories`, `proof`) — group not rendered until the worker reads them (§5.5) | — | — |
+| **Artefacts — What value do I create** | Stories L1 (remember a time when…) / L2 (CCARR) | Profile · **Stories** — one card per story: title + Context · Challenge · Activities · Result · Relevance | `stories[]` (→ top-level `stories:` in career-ops yaml, a JobHackers extension) | `StoriesPanel` |
+| | Proof bank (short description for CV, long for interviews) | Profile · **Proof bank** — one card per proof point: name · hero metric · CV line · interview version · link | `proofPoints[]` (→ `narrative.proof_points` name · url · hero_metric) | `ProofBankPanel` |
 | **Outreach** | — (no JHG keywords yet) | not registered | — | — |
 | *(career-ops config)* | Master CV | **Settings · Master CV** | `cv` | `CvPanel` |
 | | Archetypes (primary / secondary / adjacent) + framing | **Settings · Archetypes** | `personalization.targetRoles · adaptiveFraming` (+ `crossCuttingAdvantage`, above) | `Personalization only=[targetRoles, adaptiveFraming, crossCuttingAdvantage]` |
@@ -360,11 +360,20 @@ Member-facing labels of the eight targeting sections now use the JHG words — *
 
 The CareerOps portal's own Setup screen (`/careerops/setup`) and the intake wizard still edit the same documents in one place; they are the first-run path and keep their whole-document behaviour. Retiring the duplicated Setup surfaces in favour of Settings is a separate task.
 
-### 7.5 RUI score
+### 7.5 Artefacts — rendered (2026-11-01, later the same day)
+
+§5.5 reserved `stories` and `proofPoints` until the worker read them. They are now rendered, because the member asked for them in the file: the whole point of the profile is that the member fills it in once and every agent — including a career-ops checkout fed with the exported `profile.yml` — works from it. Only the culture screen stays reserved.
+
+- **Storage:** `setup.stories: Story[]` (`title` + `context · challenge · activities · result · relevance`, ≤ 12) and `setup.proofPoints: ProofPoint[]` (`name` + `metric · short · long · url`, ≤ 20) — `lib/careerops/artefacts.ts` coerces, caps and never obeys. Both are top-level keys of `profile.yml` (schema: rows with a required `title` / `name`; a non-http link is a warning, the row is kept).
+- **career-ops yaml:** the proof bank becomes `narrative.proof_points` (its own triple; the CV line stands in for a missing metric). Stories have no upstream key and go out as a top-level `stories:` block.
+- **Rows:** Stories is *done* once one story has full CCARR; Proof bank is *done* once one proof point has a metric or a CV line. Upload review diffs both by title / name, like the watchlist.
+- **Import from a career-ops `config/profile.yml`:** `proof_points` → proof bank (metric and link only — upstream has no short/long).
+
+### 7.6 RUI score
 
 | Surface | Before | After |
 |---|---|---|
-| `/profile` | 8.5 / 10 (flat six-row list; one section mixed two storage objects and ten fields) | **9 / 10** — grouped by the questions a member actually asks; every section ≤ 2 storage objects; one red button per screen; `.label` headers over the archetype rows; 44px icon buttons everywhere. Who am I reads as the CV header → one-line headline → the story: three sections, each one question, the headline alone on its row instead of buried as the first of five inputs |
+| `/profile` | 8.5 / 10 (flat six-row list; one section mixed two storage objects and ten fields) | **9 / 10** — grouped by the questions a member actually asks; every section ≤ 2 storage objects; one red button per screen; `.label` headers over the archetype rows; 44px icon buttons everywhere. Who am I reads as the CV header → one-line headline → the story: three sections, each one question, the headline alone on its row instead of buried as the first of five inputs. Artefacts are cards (one story / one proof point each) with the title row and the CCARR grid, so a story reads top-down the way it is told |
 | `/settings` | — (lived inside `/careerops/setup` as five stacked cards with one whole-document Save, 42px buttons, `mute-2` hints) | **9 / 10** — same layout as Profile, per-section Save, vault form on `.label`s and `.btn-sm`, hints at `jh-mute` |
 | Shell account group | Profile · Sign out | Profile · Settings · Sign out (desktop rows; three 44px icons on mobile) |
 

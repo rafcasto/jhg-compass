@@ -26,6 +26,7 @@ import type { Profile } from "@/lib/types";
 import type { Goal } from "@/lib/goal";
 import type { Personalization } from "./personalization";
 import type { CareerOpsContact, CareerOpsPolicy } from "./types";
+import { STORY_FIELDS, proofPointsForCareerOps, type ProofPoint, type Story } from "./artefacts";
 
 const q = (v: unknown) => JSON.stringify(String(v ?? "").trim()); // JSON strings are valid YAML scalars
 const clean = (v: unknown) => String(v ?? "").trim();
@@ -49,9 +50,13 @@ export interface ProfileYamlInput {
    * reads today — so put them there as well as in the rendered markdown.
    */
   personalization?: Personalization | null;
+  /** Artefacts — Stories L1/L2. No upstream home: written as a top-level `stories:` block the worker may read. */
+  stories?: Story[] | null;
+  /** Artefacts — the proof bank. Upstream home: narrative.proof_points (name · url · hero_metric). */
+  proofPoints?: ProofPoint[] | null;
 }
 
-export function buildProfileYaml({ profile, goal, notes, contact, policy, personalization }: ProfileYamlInput): string {
+export function buildProfileYaml({ profile, goal, notes, contact, policy, personalization, stories, proofPoints }: ProfileYamlInput): string {
   const name = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ").trim();
   const role = goal?.role?.trim() ?? "";
 
@@ -88,8 +93,17 @@ export function buildProfileYaml({ profile, goal, notes, contact, policy, person
     ...(clean(personalization?.crossCuttingAdvantage)
       ? ["  superpowers:", `    - ${q(personalization?.crossCuttingAdvantage)}`]
       : []),
+    // The proof bank, in the triple career-ops' CV and cover-letter builders read.
+    ...(proofPoints?.length
+      ? ["  proof_points:", ...proofPointsForCareerOps(proofPoints).flatMap((p) => [`    - name: ${q(p.name)}`, ...opt("      ", "url", p.url), ...opt("      ", "hero_metric", p.hero_metric)])]
+      : []),
     ...(personalization?.portfolio?.url
       ? ["  dashboard:", `    url: ${q(personalization.portfolio.url)}`]
+      : []),
+    // Stories L1 + CCARR. Not an upstream key: a JobHackers extension the
+    // interview-prep and cover modes can draw on instead of mining cv.md.
+    ...(stories?.length
+      ? ["stories:", ...stories.flatMap((s) => [`  - title: ${q(s.title)}`, ...STORY_FIELDS.flatMap((f) => opt("    ", f, s[f]))])]
       : []),
     "compensation:",
     `  target_range: ${q(goal?.salary)}`,

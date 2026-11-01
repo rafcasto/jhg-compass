@@ -10,6 +10,7 @@ contact:
   phone: "+64 21 555 0199"
   linkedin: "https://www.linkedin.com/in/ana-ferreira-delivery"
   portfolio: "https://anaferreira.nz/release-cadence-playbook"
+  location: "Wellington, New Zealand"
 policy:
   minimumSalary: "NZ$ 140,000"
   locationFlexibility: "Y, NZ or AU time zones; Y, up to 2 days on site in Wellington, no change to floor; N"
@@ -62,6 +63,29 @@ personalization:
     - "Remote: Y, NZ or AU time zones"
     - "Local hybrid: Y, up to 2 days on site in Wellington, no change to floor"
     - "Relocate: N"
+stories:
+  - title: "Monthly to fortnightly releases while the team doubled"
+    context: "A 40-engineer B2B SaaS shipping monthly; every release broke something and the enterprise renewals were starting to notice."
+    challenge: "Get to fortnightly releases inside two quarters without adding process the engineers would resent, while headcount went to 110."
+    activities: "Introduced a fortnightly release train, a cross-team dependency board and a 15-minute pre-release review; killed the change-approval board."
+    result: "Fortnightly releases in two quarters; production incidents halved; no enterprise renewal lost to a missed date."
+    relevance: "Delivery Lead roles at scale-ups where releases have started to hurt and the founders know it."
+  - title: "240-tenant migration landed on the sold date"
+    context: "A platform migration every enterprise customer had been promised a date for."
+    challenge: "Keep the date without a freeze on feature work."
+    activities: "Ran the programme off one dated commitment list; weekly customer-facing status; a rollback rehearsal per tenant cohort."
+    result: "All 240 tenants migrated on the sold date; zero rollback used in production."
+proofPoints:
+  - name: "Fortnightly release train"
+    metric: "Monthly → fortnightly releases in two quarters"
+    short: "Took a 40→110-engineer SaaS team from monthly to fortnightly releases in two quarters."
+    long: "Releases were monthly and each one broke something customers noticed. I introduced a release train, a dependency board and a 15-minute pre-release review, and removed the change-approval board. Two quarters later releases were fortnightly and incidents had halved."
+    url: "https://anaferreira.nz/release-cadence-playbook"
+  - name: "Incident halving"
+    metric: "Production incidents −52% year on year"
+    short: "Halved production incidents year on year while release frequency doubled."
+  - name: "Tenant migration programme"
+    metric: "240 tenants migrated on the sold date"
 watchlist:
   companies:
     - name: "Xero"

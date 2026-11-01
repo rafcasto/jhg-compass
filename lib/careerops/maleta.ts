@@ -38,6 +38,7 @@ import { JSON_SCHEMA, dump as yamlDump, load as yamlLoad } from "js-yaml";
 import type { Goal } from "@/lib/goal";
 import { GOAL_KEYS } from "@/lib/goal";
 import { coercePersonalization, parseProfileMd, renderProfileMd, type Personalization } from "./personalization";
+import { coerceProofPoints, coerceStories, proofPointsFromCareerOps, type ProofPoint, type Story } from "./artefacts";
 import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, PortalCompany } from "./types";
 import type { Profile } from "@/lib/types";
 
@@ -54,6 +55,10 @@ export interface Maleta {
   policy?: CareerOpsPolicy;
   /** The eight _profile.md sections. */
   personalization?: Personalization;
+  /** Artefacts — Stories L1/L2 (CCARR). */
+  stories?: Story[];
+  /** Artefacts — the proof bank (career-ops narrative.proof_points). */
+  proofPoints?: ProofPoint[];
   watchlist?: CareerOpsPortals;
   notes?: string;
 }
@@ -115,6 +120,8 @@ export function maletaFromSetup({ profile, setup }: { profile: Profile | null | 
     contact: pruned(setup?.contact),
     policy: pruned(setup?.policy),
     personalization: pruned(coercePersonalization(setup?.personalization ?? {})),
+    stories: setup?.stories?.length ? coerceStories(setup.stories) : undefined,
+    proofPoints: setup?.proofPoints?.length ? coerceProofPoints(setup.proofPoints) : undefined,
     watchlist: setup?.portals?.companies?.length ? setup.portals : undefined,
     notes: setup?.notes?.trim() || undefined,
   };
@@ -130,6 +137,8 @@ export function maletaToYaml(m: Maleta): string {
     contact: m.contact,
     policy: m.policy,
     personalization: m.personalization,
+    stories: m.stories,
+    proofPoints: m.proofPoints,
     watchlist: m.watchlist,
     notes: m.notes,
     cv: m.cv,
@@ -274,6 +283,7 @@ function fromCareerOpsProfileYaml(doc: Record<string, unknown>, warnings: string
       crossCuttingAdvantage: strArr(nar.superpowers)?.[0],
       compTargets: str(comp.target_range) && str(comp.minimum) ? `Target ${str(comp.target_range)}, walk-away ${str(comp.minimum)}.` : undefined,
     })),
+    proofPoints: (() => { const p = proofPointsFromCareerOps(nar.proof_points); return p.length ? p : undefined; })(),
     notes: str(doc.notes),
   };
 }
@@ -296,7 +306,7 @@ export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
     goal: pruned(Object.fromEntries(GOAL_KEYS.map((k) => [k, str(g[k])])) as Goal),
     contact: pruned({
       title: str(contact.title), phone: str(contact.phone), linkedin: str(contact.linkedin),
-      github: str(contact.github), portfolio: str(contact.portfolio),
+      github: str(contact.github), portfolio: str(contact.portfolio), location: str(contact.location),
     } as CareerOpsContact),
     policy: pruned({
       minimumSalary: str(policy.minimumSalary), locationFlexibility: str(policy.locationFlexibility),
@@ -304,6 +314,8 @@ export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
       authorizedIn: strArr(policy.authorizedIn),
     } as CareerOpsPolicy),
     personalization: pruned(coercePersonalization(doc.personalization)),
+    stories: (() => { const s = coerceStories(doc.stories); return s.length ? s : undefined; })(),
+    proofPoints: (() => { const p = coerceProofPoints(doc.proofPoints); return p.length ? p : undefined; })(),
     watchlist: companies.length ? { companies, positive: strArr(w.positive) ?? [], negative: strArr(w.negative) ?? [] } : undefined,
     notes: str(doc.notes),
   };
@@ -372,7 +384,7 @@ function parseMarkdown(text: string, warnings: string[]): Maleta {
     goal: pruned(Object.fromEntries(GOAL_KEYS.map((k) => [k, kv(goalBody, k)])) as Goal),
     contact: pruned({
       title: kv(contactBody, "title"), phone: kv(contactBody, "phone"), linkedin: kv(contactBody, "linkedin"),
-      github: kv(contactBody, "github"), portfolio: kv(contactBody, "portfolio"),
+      github: kv(contactBody, "github"), portfolio: kv(contactBody, "portfolio"), location: kv(contactBody, "location"),
     } as CareerOpsContact),
     policy: pruned({
       minimumSalary: kv(policyBody, "minimumSalary"), locationFlexibility: kv(policyBody, "locationFlexibility"),
@@ -396,6 +408,8 @@ export function maletaContents(m: Maleta): string[] {
   if (m.contact) found.push(`contact details (${Object.keys(m.contact).length})`);
   if (m.policy) found.push("logistics");
   if (m.personalization) found.push(`targeting (${Object.keys(m.personalization).length}/8 sections)`);
+  if (m.stories?.length) found.push(`${m.stories.length} ${m.stories.length === 1 ? "story" : "stories"}`);
+  if (m.proofPoints?.length) found.push(`proof bank (${m.proofPoints.length})`);
   if (m.watchlist?.companies.length) found.push(`watchlist (${m.watchlist.companies.length} companies)`);
   if (m.notes) found.push("notes");
   return found;
@@ -470,6 +484,8 @@ export function maletaToSetupPatch(m: Maleta): MaletaPatch {
     setup.personalization = m.personalization;
     setup.profileMd = renderProfileMd(m.personalization);
   }
+  if (m.stories?.length) setup.stories = m.stories;
+  if (m.proofPoints?.length) setup.proofPoints = m.proofPoints;
   if (m.watchlist?.companies.length) setup.portals = m.watchlist;
   if (m.notes) setup.notes = m.notes;
   // A goal in the file becomes the intake North Star, which overrides Compass —

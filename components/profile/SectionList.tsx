@@ -3,8 +3,8 @@
 import type { ComponentType } from "react";
 import Link from "next/link";
 import {
-  Building2, Check, ChevronRight, Circle, CircleDashed, Compass, Contact, FileText, Globe, KeyRound, Layers, MapPin,
-  Quote, Sparkles, StickyNote, Target, type LucideProps,
+  BadgeCheck, BookOpen, Building2, Check, ChevronRight, Circle, CircleDashed, Compass, Contact, FileText, Globe, KeyRound,
+  Layers, MapPin, Quote, Sparkles, StickyNote, Target, type LucideProps,
 } from "lucide-react";
 import { groupedSections, sectionHref, type ActiveSection, type ActiveSectionKey, type SectionSummary } from "@/lib/profile-sections";
 import type { StepState } from "@/lib/careerops/intake-wizard";
@@ -20,6 +20,7 @@ import type { StepState } from "@/lib/careerops/intake-wizard";
 
 export const SECTION_ICONS: Record<ActiveSectionKey, ComponentType<LucideProps>> = {
   contact: Contact, headline: Quote, story: Sparkles, northstar: Compass, logistics: MapPin, targeting: Target,
+  stories: BookOpen, proof: BadgeCheck,
   cv: FileText, companies: Building2, accounts: KeyRound, archetypes: Layers, portfolio: Globe, notes: StickyNote,
 };
 

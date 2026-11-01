@@ -14,7 +14,7 @@ import { renderProfileMd } from "./personalization";
 import type { CareerOpsSetupV2 } from "./types";
 
 /** The slice of the setup document that reaches profile.yml. */
-export type SetupYamlFields = Pick<CareerOpsSetupV2, "goalSource" | "intakeGoal" | "contact" | "policy" | "notes" | "personalization">;
+export type SetupYamlFields = Pick<CareerOpsSetupV2, "goalSource" | "intakeGoal" | "contact" | "policy" | "notes" | "personalization" | "stories" | "proofPoints">;
 
 export interface SetupYamlInput {
   profile: Profile | null | undefined;
@@ -38,6 +38,8 @@ export function resolveSetupFields({ setup, overrides = {} }: Pick<SetupYamlInpu
     policy: pick("policy"),
     notes: pick("notes"),
     personalization: pick("personalization"),
+    stories: pick("stories"),
+    proofPoints: pick("proofPoints"),
   };
 }
 
@@ -52,6 +54,8 @@ export function buildSetupProfileYaml({ profile, setup, overrides }: SetupYamlIn
     contact: f.contact,
     policy: f.policy,
     personalization: f.personalization,
+    stories: f.stories,
+    proofPoints: f.proofPoints,
   });
 }
 
@@ -80,5 +84,7 @@ export function preserveSetupFields(setup: CareerOpsSetupV2 | null | undefined):
   if (setup?.contact) out.contact = setup.contact;
   if (setup?.policy) out.policy = setup.policy;
   if (setup?.personalization) out.personalization = setup.personalization;
+  if (setup?.stories?.length) out.stories = setup.stories;
+  if (setup?.proofPoints?.length) out.proofPoints = setup.proofPoints;
   return out;
 }

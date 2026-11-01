@@ -1,6 +1,7 @@
 // Client-safe types for the career-ops integration (no Upstash / Firebase imports).
 import type { Goal } from "@/lib/goal";
 import type { Personalization } from "./personalization";
+import type { ProofPoint, Story } from "./artefacts";
 import type { AgentKey, CareerOpsJobStatus, CareerOpsJobType } from "./keys";
 
 export interface CareerOpsJob {
@@ -212,6 +213,10 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   personalization?: Personalization;
   /** Rendered modes/_profile.md, stored for the worker and for transparency. */
   profileMd?: string;
+  /** Artefacts — Stories L1/L2 (CCARR). lib/careerops/artefacts.ts */
+  stories?: Story[];
+  /** Artefacts — the proof bank. Reaches career-ops as narrative.proof_points. */
+  proofPoints?: ProofPoint[];
 }
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last

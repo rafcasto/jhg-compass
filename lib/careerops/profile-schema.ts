@@ -11,15 +11,16 @@
 // public/profile.example.yml and the Packer spec v2 §1–§7.
 
 import { GOAL_KEYS } from "@/lib/goal";
+import { ARTEFACT_CAPS, PROOF_FIELDS, STORY_FIELDS } from "./artefacts";
 
 export const PROFILE_SCHEMA_VERSION = 1;
 
 export interface SchemaError { path: string; message: string }
 export interface SchemaResult { ok: boolean; errors: SchemaError[]; warnings: string[] }
 
-export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "notes", "cv"] as const;
+export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "stories", "proofPoints", "watchlist", "notes", "cv"] as const;
 
-const CONTACT_KEYS = ["title", "phone", "linkedin", "github", "portfolio"] as const;
+const CONTACT_KEYS = ["title", "phone", "linkedin", "github", "portfolio", "location"] as const;
 const POLICY_STRING_KEYS = ["minimumSalary", "locationFlexibility", "visaStatus"] as const;
 const PERSONALIZATION_KEYS = ["targetRoles", "adaptiveFraming", "exitNarrative", "crossCuttingAdvantage", "portfolio", "compTargets", "negotiationScripts", "locationPolicy"] as const;
 const COMPANY_KEYS = ["name", "careersUrl", "enabled", "provider", "apiUrl"] as const;
@@ -161,6 +162,16 @@ export function validateProfileFile(doc: unknown): SchemaResult {
     }
     c.stringList(p.negotiationScripts, "personalization.negotiationScripts", ROW_CAPS.negotiationScripts);
     c.stringList(p.locationPolicy, "personalization.locationPolicy", ROW_CAPS.locationPolicy);
+  }
+
+  // artefacts — stories (L1 title + CCARR) and the proof bank
+  c.rows(doc.stories, "stories", ["title", ...STORY_FIELDS], ["title"], ARTEFACT_CAPS.stories);
+  c.rows(doc.proofPoints, "proofPoints", ["name", ...PROOF_FIELDS], ["name"], ARTEFACT_CAPS.proofPoints);
+  if (Array.isArray(doc.proofPoints)) {
+    doc.proofPoints.forEach((row, i) => {
+      const url = isRecord(row) ? row.url : undefined;
+      if (typeof url === "string" && url.trim() && !/^https?:\/\//i.test(url.trim())) c.warnings.push(`proofPoints[${i}].url is not an absolute http(s) link — the link is left out, the proof point kept`);
+    });
   }
 
   // watchlist
