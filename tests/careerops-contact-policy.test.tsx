@@ -119,3 +119,35 @@ describe("ContactPolicy — existing values", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(/Couldn't save that/i);
   });
 });
+
+describe("ContactPolicy — `part` shows one half and saves only that half", () => {
+  const stored = { ...base, contact: { phone: "+64 21 000 0000" }, policy: { minimumSalary: "160,000", authorizedIn: ["New Zealand"] } } as CareerOpsSetupV2;
+
+  it("contact: no policy fields, and a save leaves policy out of the write", async () => {
+    const user = userEvent.setup();
+    render(<ContactPolicy uid="u1" setup={stored} profile={profile} part="contact" />);
+    expect(screen.queryByLabelText(/Walk-away salary/i)).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText(/LinkedIn/i), "in/jane");
+    await user.click(screen.getByRole("button", { name: /Save contact details/i }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
+    const [, data] = setDoc.mock.calls[0];
+    expect(data.contact).toEqual({ phone: "+64 21 000 0000", linkedin: "in/jane" });
+    expect(data).not.toHaveProperty("policy");
+    // profile.yml is rebuilt from the stored policy + the new contact.
+    expect(String(data.profileYaml)).toContain('minimum: "160,000"');
+    expect(String(data.profileYaml)).toContain('linkedin: "in/jane"');
+  });
+
+  it("policy: no contact fields, and a save leaves contact out of the write", async () => {
+    const user = userEvent.setup();
+    render(<ContactPolicy uid="u1" setup={stored} profile={profile} part="policy" />);
+    expect(screen.queryByLabelText(/^Phone$/i)).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Visa \/ right to work/i), "NZ citizen");
+    await user.click(screen.getByRole("button", { name: /Save logistics/i }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
+    const [, data] = setDoc.mock.calls[0];
+    expect(data.policy).toEqual({ minimumSalary: "160,000", visaStatus: "NZ citizen", authorizedIn: ["New Zealand"] });
+    expect(data).not.toHaveProperty("contact");
+    expect(String(data.profileYaml)).toContain('phone: "+64 21 000 0000"');
+  });
+});

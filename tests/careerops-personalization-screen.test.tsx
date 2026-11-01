@@ -28,7 +28,7 @@ beforeEach(() => setDoc.mockClear());
 describe("Personalization — the eight sections", () => {
   it("shows all eight, with nothing filled in for a new member", () => {
     render(<Personalization uid="u1" setup={base} profile={profile} />);
-    for (const label of ["Target roles", "Adaptive framing", "Exit narrative", "Cross-cutting advantage", "Portfolio / demo", "Comp targets", "Negotiation scripts", "Location policy"]) {
+    for (const label of ["Archetypes", "Adaptive framing", "Exit story", "Core competencies", "Portfolio / demo", "Comp targets", "Negotiation scripts", "Location policy"]) {
       expect(screen.getByRole("heading", { name: label })).toBeInTheDocument();
     }
     expect(filled()).toBe("0 of 8");
@@ -79,8 +79,8 @@ describe("Personalization — what gets written", () => {
   it("stores the validated sections, the rendered _profile.md and a rebuilt profile.yml", async () => {
     const user = userEvent.setup();
     render(<Personalization uid="u1" setup={base} profile={profile} />);
-    await user.type(screen.getByLabelText(/^Exit narrative$/i), "Built and sold a SaaS. Now applied AI.");
-    await user.type(screen.getByLabelText(/^Cross-cutting advantage$/i), "Technical builder with real proof.");
+    await user.type(screen.getByLabelText(/^Exit story$/i), "Built and sold a SaaS. Now applied AI.");
+    await user.type(screen.getByLabelText(/^Core competencies$/i), "Technical builder with real proof.");
     await user.type(screen.getByLabelText(/Demo or portfolio URL/i), "https://jane.dev/demo");
     await user.click(save());
 
@@ -114,7 +114,7 @@ describe("Personalization — what gets written", () => {
     // A framing row needs BOTH halves; this one has only the first.
     await user.click(screen.getByRole("button", { name: /Add framing/i }));
     await user.type(screen.getByLabelText("If the role is 1"), "Platform");
-    await user.type(screen.getByLabelText(/^Exit narrative$/i), "Something, so there is a change to save.");
+    await user.type(screen.getByLabelText(/^Exit story$/i), "Something, so there is a change to save.");
     await user.click(save());
     await waitFor(() => expect(setDoc).toHaveBeenCalled());
     expect(setDoc.mock.calls[0][1].personalization).not.toHaveProperty("adaptiveFraming");
@@ -122,7 +122,7 @@ describe("Personalization — what gets written", () => {
 
   it("loads what was saved before", () => {
     render(<Personalization uid="u1" setup={{ ...base, personalization: { exitNarrative: "Saved story.", targetRoles: [{ archetype: "AI Platform", axes: "evals" }] } }} profile={profile} />);
-    expect(screen.getByLabelText(/^Exit narrative$/i)).toHaveValue("Saved story.");
+    expect(screen.getByLabelText(/^Exit story$/i)).toHaveValue("Saved story.");
     expect(screen.getByLabelText("Archetype 1")).toHaveValue("AI Platform");
     expect(filled()).toBe("2 of 8");
   });
@@ -131,8 +131,50 @@ describe("Personalization — what gets written", () => {
     const user = userEvent.setup();
     setDoc.mockRejectedValueOnce(new Error("offline"));
     render(<Personalization uid="u1" setup={base} profile={profile} />);
-    await user.type(screen.getByLabelText(/^Exit narrative$/i), "x");
+    await user.type(screen.getByLabelText(/^Exit story$/i), "x");
     await user.click(save());
     expect(await screen.findByRole("status")).toHaveTextContent(/Couldn't save that/i);
+  });
+});
+
+describe("Personalization — `only` renders a subset and saves only that subset", () => {
+  const stored = { ...base, personalization: { exitNarrative: "Saved story.", targetRoles: [{ archetype: "AI Platform" }], compTargets: "200k" } };
+
+  it("shows just the named sections, without the eight-section counter", () => {
+    render(<Personalization uid="u1" setup={stored} profile={profile} only={["targetRoles", "adaptiveFraming"]} saveLabel="Save archetypes" />);
+    expect(screen.getByRole("heading", { name: "Archetypes" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Adaptive framing" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Exit story" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/sections filled in/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Save archetypes/i })).toBeDisabled();
+  });
+
+  it("drops the repeated heading when a single section stands alone", () => {
+    render(<Personalization uid="u1" setup={stored} profile={profile} only={["portfolio"]} />);
+    expect(screen.queryByRole("heading", { name: "Portfolio / demo" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Demo or portfolio URL/i)).toBeInTheDocument();
+  });
+
+  it("writes the shown sections over what is stored and leaves the rest exactly as it was", async () => {
+    const user = userEvent.setup();
+    render(<Personalization uid="u1" setup={stored} profile={profile} only={["targetRoles", "adaptiveFraming"]} saveLabel="Save archetypes" />);
+    await user.type(screen.getByLabelText("Archetype 1"), " / LLMOps");
+    await user.click(screen.getByRole("button", { name: /Save archetypes/i }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
+    const p = setDoc.mock.calls[0][1].personalization as Record<string, unknown>;
+    expect(p.targetRoles).toEqual([{ archetype: "AI Platform / LLMOps" }]);
+    expect(p.exitNarrative).toBe("Saved story.");
+    expect(p.compTargets).toBe("200k");
+  });
+
+  it("clearing a shown field removes it, and still does not touch the hidden ones", async () => {
+    const user = userEvent.setup();
+    render(<Personalization uid="u1" setup={stored} profile={profile} only={["targetRoles", "adaptiveFraming"]} />);
+    await user.click(screen.getByRole("button", { name: /Remove archetype 1/i }));
+    await user.click(screen.getByRole("button", { name: /Save personalization/i }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
+    const p = setDoc.mock.calls[0][1].personalization as Record<string, unknown>;
+    expect(p).not.toHaveProperty("targetRoles");
+    expect(p.exitNarrative).toBe("Saved story.");
   });
 });

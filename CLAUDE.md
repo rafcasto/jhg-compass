@@ -9,8 +9,13 @@
   `profile.yml`. Existing `maleta*` identifiers in `lib/careerops/maleta.ts`, `MaletaUpload.tsx`,
   `StartChooser.tsx`, `IntakeScreen.tsx`, `docs/LA_MALETA.md` and their tests are legacy; rename them when
   touched, and never add new ones.
-- The page at `/profile` is where a member sees and edits that whole profile. It is **not** gated on
-  CareerOps being enabled: every member can upload, view, edit and export their profile.
+- The profile is edited on two sibling pages in the shell's account group (decision 2026-11-01,
+  `docs/UX_PROFILE.md §7`): `/profile` is *who I am and what I'm aiming at* (contact, competencies & story,
+  target role & market, salary floor & location, comp & location policy); `/settings` is *what the agents work
+  from* (master CV, target companies, portal accounts, archetypes, portfolio / demo, notes). Neither is gated
+  on CareerOps being enabled — only the **Portal accounts** section needs it (the vault key comes from the
+  worker). Export and upload of the whole `profile.yml` live on `/profile`. Both pages render from
+  `lib/profile-sections.ts` through `components/profile/SectionsPage.tsx`; add a section there, not a page.
 
 ## Design
 

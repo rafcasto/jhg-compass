@@ -26,7 +26,7 @@ function Inner() {
         Prefer to be walked through it one thing at a time, or want to set a North Star here instead of on the Compass tab?{" "}
         <Link href={INTAKE_HREF} className="underline underline-offset-2 hover:text-jh-red">Run intake</Link>.
       </p>
-      <Setup onReady={() => { if (first) router.replace(PORTAL_HOME); }} />
+      <Setup vaultPublicKey={ctx.status?.vaultPublicKey ?? null} onReady={() => { if (first) router.replace(PORTAL_HOME); }} />
     </div>
   );
 }

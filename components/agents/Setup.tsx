@@ -18,7 +18,7 @@ import type { Profile } from "@/lib/types";
 
 // Agents → Setup. The CV is the one thing the Evaluator cannot work without;
 // profile.yml is generated from the Compass goal so it never has to be typed.
-export default function Setup({ onReady }: { onReady?: () => void }) {
+export default function Setup({ onReady, vaultPublicKey = null }: { onReady?: () => void; vaultPublicKey?: string | null }) {
   const { user } = useAuth();
   const uid = user?.uid;
   const { data: setup, loading } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
@@ -116,7 +116,7 @@ export default function Setup({ onReady }: { onReady?: () => void }) {
       <section className="card p-5 space-y-3">
         <h2 className="text-lg">Portal accounts</h2>
         <p className="text-jh-mute text-sm max-w-2xl">Workday, SuccessFactors and Cornerstone hide the application form behind a candidate account. Save the account you created on each portal and the Pi signs in as you to read the whole form — it fills only what it knows (your profile, standard answers, the tailored CV), presses only Continue, and never Submit. The password is encrypted in this browser for the Pi alone.</p>
-        {uid && <PortalAccounts uid={uid} />}
+        {uid && <PortalAccounts uid={uid} publicKey={vaultPublicKey} />}
       </section>
 
       <section className="card p-5 space-y-3">

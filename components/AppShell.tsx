@@ -58,7 +58,7 @@ export default function AppShell({ children, daysLeft, agentsEnabled = false, po
     <div className="min-h-screen md:flex">
       {/* ---- Mobile top header (Profile + logout live here on mobile) ---- */}
       <div className="md:hidden">
-        <MobileHeader onSignOut={handleLogout} signingOut={signingOut} profileActive={isActive("/profile")} brand={<PortalSwitcher portal={portal} available={available} compact />} />
+        <MobileHeader onSignOut={handleLogout} signingOut={signingOut} profileActive={isActive("/profile")} settingsActive={isActive("/settings")} brand={<PortalSwitcher portal={portal} available={available} compact />} />
       </div>
 
       {/* ---- Desktop sidebar (shared with the admin preview) ---- */}
@@ -66,7 +66,7 @@ export default function AppShell({ children, daysLeft, agentsEnabled = false, po
         <DesktopSidebar
           items={items}
           brand={<PortalSwitcher portal={portal} available={available} />}
-          onSignOut={handleLogout} signingOut={signingOut} profileActive={isActive("/profile")}
+          onSignOut={handleLogout} signingOut={signingOut} profileActive={isActive("/profile")} settingsActive={isActive("/settings")}
           footer={daysLeft != null ? (
             <div className="mb-3 rounded-sm bg-jh-mist px-3 py-2.5 text-xs text-jh-mute">
               <span className="font-semibold text-jh-ink">{daysLeft} days</span> of access left

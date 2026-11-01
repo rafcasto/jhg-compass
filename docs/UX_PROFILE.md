@@ -300,3 +300,69 @@ Rename `lib/careerops/maleta.ts` → `profile-file.ts` (`Maleta` → `ProfileFil
 | Text width constrained? | Summaries truncate at one line; prose at `max-w-prose`. |
 | Contrast? | Readable text ≥ `jh-mute` (4.8:1); `jh-mute-2` for chevrons/placeholders only. |
 | Shadows match elevation? | List `jh-1`, sheet `jh-3`, rail none. |
+
+---
+
+## 7. Revision 2026-11-01 — Profile / Settings split
+
+**Decision:** the member's profile is edited on two pages that sit side by side in the account group of both shells (sidebar rows on desktop, icon targets in the header on mobile): **Profile** (`/profile`) is *who I am and what I'm aiming at*; **Settings** (`/settings`) is *what the agents work from*. One `profile.yml` still carries everything — a section's page is where it is **edited**, not where it is stored. Export and upload stay on Profile and cover the whole file.
+
+**Source of the IA:** the "JHG Compass (UX)" and "JHG keywords" columns of *Career-Ops Profile Config for JHG* (Rafael, 2026-11-01), mapped onto the storage model. Both pages render from one registry (`lib/profile-sections.ts`) through one layout (`components/profile/SectionsPage.tsx`).
+
+### 7.1 Mapping — JHG vocabulary → page section → storage
+
+| JHG Compass (UX) | JHG keywords | Page · section | Storage (`profile.yml`) | Editor |
+|---|---|---|---|---|
+| **Profile — Who am I** | Header: name, phone, email, LinkedIn, location, portfolio URL | Profile · identity card (read-only) + **Contact details** | account (`users/{uid}`) · `contact.*` | `ContactPolicy part="contact"` |
+| | Headline (lane statement) | Profile · Contact details — *Professional headline* | `contact.title` | same |
+| | Core competencies (superpowers), exit story | Profile · **Competencies & story** | `personalization.crossCuttingAdvantage` (→ career-ops `narrative.superpowers[0]`) · `personalization.exitNarrative` (→ `narrative.exit_story`) | `Personalization only=[crossCuttingAdvantage, exitNarrative]` |
+| | Proof points | *reserved* (`proof`) — not rendered | — | — |
+| **North Star — What's my target** | Target roles, salary, geographies, industries, company type | Profile · **Target role & market** | `goal.*` | `NorthStarSource` |
+| | Target salary (floor), geographies (flexibility, visa, work rights) | Profile · **Salary floor & location** | `policy.*` | `ContactPolicy part="policy"` |
+| | Comp targets, negotiation, location policy | Profile · **Comp & location policy** | `personalization.compTargets · negotiationScripts · locationPolicy` | `Personalization only=[…]` |
+| | Culture screen | *reserved* (`culture`) | — | — |
+| | Target companies / Top 10 / portals to scan | **Settings · Target companies** (cross-linked from Target role & market) | `watchlist.*` | `WatchlistPanel` |
+| **Artefacts — What value do I create** | Stories L1 / L2 (CCARR), Proof bank | *reserved* (`stories`, `proof`) — group not rendered until the worker reads them (§5.5) | — | — |
+| **Outreach** | — (no JHG keywords yet) | not registered | — | — |
+| *(career-ops config)* | Master CV | **Settings · Master CV** | `cv` | `CvPanel` |
+| | Archetypes (primary / secondary / adjacent) + framing | **Settings · Archetypes** | `personalization.targetRoles · adaptiveFraming` | `Personalization only=[targetRoles, adaptiveFraming]` |
+| | Portfolio / demo (URL, what, when) | **Settings · Portfolio / demo** | `personalization.portfolio` | `Personalization only=[portfolio]` |
+| | Portal credentials | **Settings · Portal accounts** — *only when CareerOps is on* (needs the worker's vault key) | `users/{uid}/careerOpsVault` (not in the file) | `PortalAccounts` |
+| | Notes for the agents | **Settings · Notes for the agents** | `notes` | `NotesPanel` |
+
+### 7.2 Page shapes
+
+```
+/profile  (rail groups = the JHG questions)          /settings  (flat)
+ WHO AM I                                             ✓ Master CV
+  ✓ Contact details                                   ✓ Target companies        10
+  ◐ Competencies & story        1/2                   ○ Portal accounts   (CareerOps only)
+ WHAT'S MY TARGET                                     ◐ Archetypes                3
+  ✓ Target role & market    Compass                   ○ Portfolio / demo
+  ◐ Salary floor & location                           ✓ Notes for the agents
+  ○ Comp & location policy      0/3
+```
+
+- Same rail / overview / drill-in / `?section=` behaviour as §1; `parseSection(raw, sectionsFor(page))` so a Settings URL cannot open a Profile section and `accounts` is only reachable with CareerOps on.
+- Section header on the content side gets the group as its eyebrow: `PROFILE · WHO AM I` → `h2` → ask. Rail rows are grouped under `.section-label` questions; mobile rows are one `.card` per group.
+- Progress bar per page, over that page's sections. Fill is **ink** (information), as is the targeting progress bar inside `Personalization` (was red).
+- The `Personalization` and `ContactPolicy` panels take a subset (`only` / `part`) and **save only that subset** over what is stored, so two panels editing one storage object can never wipe each other.
+- Upload review rows are still the **file's** six sections (`FILE_SECTIONS`); each names the page section a member goes to afterwards (`watchlist → Settings · Target companies`, `targeting → Profile · Competencies & story`).
+
+### 7.3 Vocabulary
+
+Member-facing labels of the eight targeting sections now use the JHG words — **Archetypes** (was Target roles), **Core competencies** (was Cross-cutting advantage), **Exit story** (was Exit narrative). The headings in the rendered `_profile.md` are unchanged: that file is career-ops' contract.
+
+### 7.4 Not changed
+
+The CareerOps portal's own Setup screen (`/careerops/setup`) and the intake wizard still edit the same documents in one place; they are the first-run path and keep their whole-document behaviour. Retiring the duplicated Setup surfaces in favour of Settings is a separate task.
+
+### 7.5 RUI score
+
+| Surface | Before | After |
+|---|---|---|
+| `/profile` | 8.5 / 10 (flat six-row list; one section mixed two storage objects and ten fields) | **9 / 10** — grouped by the questions a member actually asks; every section ≤ 2 storage objects; one red button per screen; `.label` headers over the archetype rows; 44px icon buttons everywhere |
+| `/settings` | — (lived inside `/careerops/setup` as five stacked cards with one whole-document Save, 42px buttons, `mute-2` hints) | **9 / 10** — same layout as Profile, per-section Save, vault form on `.label`s and `.btn-sm`, hints at `jh-mute` |
+| Shell account group | Profile · Sign out | Profile · Settings · Sign out (desktop rows; three 44px icons on mobile) |
+
+Remaining to reach 10: `Personalization`'s three-column rows still stack as unlabelled inputs below `sm` (§4.3 pattern — summary rows + edit sheet — not yet applied); `CvPanel`'s review step still shows a 2-up editor/preview at `md` that is cramped at 768px.

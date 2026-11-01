@@ -25,14 +25,14 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
                 <div className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
                   <input aria-label={`Company ${i + 1} name`} className="field text-sm" placeholder="Xero" value={c.name} onChange={(e) => setCo(i, { name: e.target.value })} />
                   <input aria-label={`Company ${i + 1} careers URL`} className="field text-sm font-mono" placeholder="https://jobs.lever.co/xero" value={c.careersUrl} onChange={(e) => setCo(i, { careersUrl: e.target.value })} />
-                  <button type="button" onClick={() => set({ companies: value.companies.filter((_, j) => j !== i) })} className="btn-ghost text-jh-red p-2" aria-label={`Remove ${c.name || "company"}`}><Trash2 className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => set({ companies: value.companies.filter((_, j) => j !== i) })} className="icon-btn icon-btn-danger" aria-label={`Remove ${c.name || "company"}`}><Trash2 className="h-4 w-4" aria-hidden /></button>
                 </div>
                 <details className="pl-1">
                   <summary className="cursor-pointer text-xs text-jh-mute flex items-center gap-1"><Settings2 className="h-3.5 w-3.5" /> Advanced{c.provider || c.apiUrl ? ` — ${[c.provider, c.apiUrl ? "API URL" : ""].filter(Boolean).join(", ")}` : ""}</summary>
                   <div className="grid sm:grid-cols-2 gap-2 mt-1.5">
-                    <label className="block"><span className="text-xs text-jh-mute">Board provider <span className="text-jh-mute-2">(career-ops id, e.g. successfactors, phenom, smartrecruiters)</span></span>
+                    <label className="block"><span className="text-xs text-jh-mute">Board provider <span className="text-jh-mute">(career-ops id, e.g. successfactors, phenom, smartrecruiters)</span></span>
                       <input aria-label={`Company ${i + 1} provider`} className={`field text-sm font-mono ${c.provider && !PROVIDER_ID.test(c.provider.trim().toLowerCase()) ? "border-jh-red" : ""}`} placeholder="auto-detect" value={c.provider ?? ""} onChange={(e) => setCo(i, { provider: e.target.value })} /></label>
-                    <label className="block"><span className="text-xs text-jh-mute">API / board URL <span className="text-jh-mute-2">(when the board lives on a different host than the careers page)</span></span>
+                    <label className="block"><span className="text-xs text-jh-mute">API / board URL <span className="text-jh-mute">(when the board lives on a different host than the careers page)</span></span>
                       <input aria-label={`Company ${i + 1} API URL`} className="field text-sm font-mono" placeholder="https://jobs.example.com" value={c.apiUrl ?? ""} onChange={(e) => setCo(i, { apiUrl: e.target.value })} /></label>
                   </div>
                 </details>
@@ -42,14 +42,14 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
           })}
         </ul>
         {value.companies.length < MAX_COMPANIES && (
-          <button type="button" onClick={() => set({ companies: [...value.companies, { name: "", careersUrl: "" }] })} className="btn-secondary text-xs px-3 py-2 mt-2"><Plus className="h-4 w-4" /> Add company</button>
+          <button type="button" onClick={() => set({ companies: [...value.companies, { name: "", careersUrl: "" }] })} className="btn-secondary btn-sm mt-2"><Plus className="h-4 w-4" aria-hidden /> Add company</button>
         )}
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="label">Title keywords — include</span>
           <textarea aria-label="Include keywords" className="field text-sm min-h-[4.5rem]" placeholder="Product Owner, Product Manager" value={value.positive.join(", ")} onChange={(e) => set({ positive: list(e.target.value) })} />
-          <span className="text-xs text-jh-mute-2">A posting is listed when its title <em>contains</em> any of these (case-insensitive). Short stems catch more: <code className="font-mono">Test</code> finds Test Lead, Test Analyst and Test Automation; <code className="font-mono">QA Manager</code> only finds that exact phrase. Comma-separated.</span>
+          <span className="block mt-1 text-xs text-jh-mute">A posting is listed when its title <em>contains</em> any of these (case-insensitive). Short stems catch more: <code className="font-mono">Test</code> finds Test Lead, Test Analyst and Test Automation; <code className="font-mono">QA Manager</code> only finds that exact phrase. Comma-separated.</span>
           {suggested.filter((k) => !value.positive.some((p) => p.toLowerCase() === k.toLowerCase())).length > 0 && (
             <span className="block mt-1.5 text-xs text-jh-mute">Suggested for your goal:{" "}
               {suggested.filter((k) => !value.positive.some((p) => p.toLowerCase() === k.toLowerCase())).map((k) => (
@@ -61,7 +61,7 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
         <label className="block">
           <span className="label">Title keywords — exclude</span>
           <textarea aria-label="Exclude keywords" className="field text-sm min-h-[4.5rem]" placeholder="Junior, Intern" value={value.negative.join(", ")} onChange={(e) => set({ negative: list(e.target.value) })} />
-          <span className="text-xs text-jh-mute-2">Drop titles containing these. <code className="font-mono">word:Intern</code> matches the whole word only.</span>
+          <span className="block mt-1 text-xs text-jh-mute">Drop titles containing these. <code className="font-mono">word:Intern</code> matches the whole word only.</span>
         </label>
       </div>
     </div>
@@ -91,7 +91,7 @@ export function PortalBadge({ st, onUse }: { st: PortalStatus; onUse?: (s: Porta
           <button type="button" onClick={() => onUse(st.suggested!)} className="btn-secondary text-xs px-2.5 py-1">Use this</button>
         </p>
       )}
-      {nearMiss && <details><summary className="cursor-pointer">None matched — titles seen there (tune your keywords)</summary><p className="mt-1 pl-3 text-jh-mute-2">{st.sample!.join(" · ")}</p></details>}
+      {nearMiss && <details><summary className="cursor-pointer">None matched — titles seen there (tune your keywords)</summary><p className="mt-1 pl-3 text-jh-mute">{st.sample!.join(" · ")}</p></details>}
     </div>
   );
 }
