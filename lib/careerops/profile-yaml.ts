@@ -70,7 +70,7 @@ export function buildProfileYaml({ profile, goal, notes, contact, policy, person
     ...opt("  ", "title", contact?.title),
     `  email: ${q(profile?.email)}`,
     ...opt("  ", "phone", contact?.phone),
-    `  location: ${q(goal?.city || profile?.country)}`,
+    `  location: ${q(contact?.location || goal?.city || profile?.country)}`,
     ...opt("  ", "linkedin", contact?.linkedin),
     ...opt("  ", "portfolio_url", contact?.portfolio),
     ...opt("  ", "github", contact?.github),

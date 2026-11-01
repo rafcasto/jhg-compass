@@ -38,7 +38,7 @@ function download(name: string, text: string) {
 export default function ProfileScreen() {
   const { user } = useAuth();
   const uid = user?.uid;
-  const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
+  const { data: profile, loading: profileLoading } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
   const { data: setup, loading: setupLoading } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
   const params = useSearchParams();
   const active = parseSection(params.get("section"), SECTIONS);
@@ -104,14 +104,15 @@ export default function ProfileScreen() {
         sections={SECTIONS}
         rows={rows}
         active={active}
-        loading={!uid || setupLoading}
+        loading={!uid || setupLoading || profileLoading}
         panelKey={stamp}
         status={statusLine}
         panel={(key) => {
           if (!uid) return null;
           switch (key) {
             case "contact": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="contact" />;
-            case "story": return <Personalization uid={uid} setup={setup} profile={profile} only={["crossCuttingAdvantage", "exitNarrative"]} saveLabel="Save story" />;
+            case "headline": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="headline" />;
+            case "story": return <Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} saveLabel="Save exit story" />;
             case "northstar": return (
               <div className="space-y-4">
                 <NorthStarSource uid={uid} setup={setup} profile={profile} />

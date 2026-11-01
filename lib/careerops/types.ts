@@ -179,6 +179,8 @@ export interface CareerOpsContact {
   github?: string;
   /** candidate.portfolio_url */
   portfolio?: string;
+  /** candidate.location — where the member is based ("Wellington, New Zealand"); falls back to the goal city, then the account country. */
+  location?: string;
 }
 
 // compensation.* and location.* beyond the five Compass goal fields. These were

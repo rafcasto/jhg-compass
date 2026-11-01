@@ -164,6 +164,8 @@ preferences:
     expect(p.maleta.contact).toEqual({
       title: "Product leader, climate", phone: "+64 21 000 0000",
       linkedin: "linkedin.com/in/janesmith", github: "github.com/janesmith", portfolio: "https://jane.dev",
+      // candidate.location is the member's base, kept apart from the goal city it also seeds.
+      location: "Auckland, New Zealand",
     });
     expect(p.maleta.policy?.minimumSalary).toBe("NZ$160k");
     expect(p.maleta.policy?.authorizedIn).toEqual(["New Zealand", "Australia"]);
