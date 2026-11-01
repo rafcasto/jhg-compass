@@ -313,9 +313,10 @@ Rename `lib/careerops/maleta.ts` → `profile-file.ts` (`Maleta` → `ProfileFil
 
 | JHG Compass (UX) | JHG keywords | Page · section | Storage (`profile.yml`) | Editor |
 |---|---|---|---|---|
-| **Profile — Who am I** | Header: name, phone, email, LinkedIn, location, portfolio URL | Profile · identity card (read-only) + **Contact details** | account (`users/{uid}`) · `contact.*` | `ContactPolicy part="contact"` |
-| | Headline (lane statement) | Profile · Contact details — *Professional headline* | `contact.title` | same |
-| | Core competencies (superpowers), exit story | Profile · **Competencies & story** | `personalization.crossCuttingAdvantage` (→ career-ops `narrative.superpowers[0]`) · `personalization.exitNarrative` (→ `narrative.exit_story`) | `Personalization only=[crossCuttingAdvantage, exitNarrative]` |
+| **Profile — Who am I** | Header: name, phone, email, LinkedIn, location, portfolio URL (optional) | Profile · **Contact details** — first/last name · phone · email (read-only, the sign-in email) · LinkedIn URL · location · portfolio URL | `firstName`/`lastName`/`email` on the account (`users/{uid}`) · `contact.phone · linkedin · location · portfolio` | `ContactPolicy part="contact"` |
+| | Headline (previously *lane statement*) | Profile · **Headline** — its own section, one field | `contact.title` (→ `candidate.title`) | `ContactPolicy part="headline"` |
+| | Exit story | Profile · **Exit story** | `personalization.exitNarrative` (→ `narrative.exit_story`) | `Personalization only=[exitNarrative]` |
+| | Core competencies (superpowers) | **Settings · Archetypes** — with the framing they feed (moved out of Who am I, 2026-11-01) | `personalization.crossCuttingAdvantage` (→ `narrative.superpowers[0]`) | `Personalization only=[targetRoles, adaptiveFraming, crossCuttingAdvantage]` |
 | | Proof points | *reserved* (`proof`) — not rendered | — | — |
 | **North Star — What's my target** | Target roles, salary, geographies, industries, company type | Profile · **Target role & market** | `goal.*` | `NorthStarSource` |
 | | Target salary (floor), geographies (flexibility, visa, work rights) | Profile · **Salary floor & location** | `policy.*` | `ContactPolicy part="policy"` |
@@ -325,7 +326,7 @@ Rename `lib/careerops/maleta.ts` → `profile-file.ts` (`Maleta` → `ProfileFil
 | **Artefacts — What value do I create** | Stories L1 / L2 (CCARR), Proof bank | *reserved* (`stories`, `proof`) — group not rendered until the worker reads them (§5.5) | — | — |
 | **Outreach** | — (no JHG keywords yet) | not registered | — | — |
 | *(career-ops config)* | Master CV | **Settings · Master CV** | `cv` | `CvPanel` |
-| | Archetypes (primary / secondary / adjacent) + framing | **Settings · Archetypes** | `personalization.targetRoles · adaptiveFraming` | `Personalization only=[targetRoles, adaptiveFraming]` |
+| | Archetypes (primary / secondary / adjacent) + framing | **Settings · Archetypes** | `personalization.targetRoles · adaptiveFraming` (+ `crossCuttingAdvantage`, above) | `Personalization only=[targetRoles, adaptiveFraming, crossCuttingAdvantage]` |
 | | Portfolio / demo (URL, what, when) | **Settings · Portfolio / demo** | `personalization.portfolio` | `Personalization only=[portfolio]` |
 | | Portal credentials | **Settings · Portal accounts** — *only when CareerOps is on* (needs the worker's vault key) | `users/{uid}/careerOpsVault` (not in the file) | `PortalAccounts` |
 | | Notes for the agents | **Settings · Notes for the agents** | `notes` | `NotesPanel` |
@@ -336,10 +337,11 @@ Rename `lib/careerops/maleta.ts` → `profile-file.ts` (`Maleta` → `ProfileFil
 /profile  (rail groups = the JHG questions)          /settings  (flat)
  WHO AM I                                             ✓ Master CV
   ✓ Contact details                                   ✓ Target companies        10
-  ◐ Competencies & story        1/2                   ○ Portal accounts   (CareerOps only)
- WHAT'S MY TARGET                                     ◐ Archetypes                3
-  ✓ Target role & market    Compass                   ○ Portfolio / demo
-  ◐ Salary floor & location                           ✓ Notes for the agents
+  ✓ Headline                                          ○ Portal accounts   (CareerOps only)
+  ○ Exit story                                        ◐ Archetypes                3
+ WHAT'S MY TARGET                                     ○ Portfolio / demo
+  ✓ Target role & market    Compass                   ✓ Notes for the agents
+  ◐ Salary floor & location
   ○ Comp & location policy      0/3
 ```
 
@@ -347,7 +349,8 @@ Rename `lib/careerops/maleta.ts` → `profile-file.ts` (`Maleta` → `ProfileFil
 - Section header on the content side gets the group as its eyebrow: `PROFILE · WHO AM I` → `h2` → ask. Rail rows are grouped under `.section-label` questions; mobile rows are one `.card` per group.
 - Progress bar per page, over that page's sections. Fill is **ink** (information), as is the targeting progress bar inside `Personalization` (was red).
 - The `Personalization` and `ContactPolicy` panels take a subset (`only` / `part`) and **save only that subset** over what is stored, so two panels editing one storage object can never wipe each other.
-- Upload review rows are still the **file's** six sections (`FILE_SECTIONS`); each names the page section a member goes to afterwards (`watchlist → Settings · Target companies`, `targeting → Profile · Competencies & story`).
+- Upload review rows are still the **file's** six sections (`FILE_SECTIONS`); each names the page section a member goes to afterwards (`watchlist → Settings · Target companies`, `targeting → Profile · Exit story`).
+- **Who am I is exactly three sections** (decision 2026-11-01): Contact details · Headline · Exit story. Contact details is the CV header as the member reads it — name, phone, email, LinkedIn URL, location, portfolio URL (optional) — so the name fields write to the account document and the email is shown read-only (it is the sign-in). `contact.location` is new in the storage model (→ `candidate.location`, falling back to the goal city, then the account country). GitHub is no longer collected on this page; a stored value survives every save. Core competencies left the group for Settings · Archetypes.
 
 ### 7.3 Vocabulary
 
@@ -361,7 +364,7 @@ The CareerOps portal's own Setup screen (`/careerops/setup`) and the intake wiza
 
 | Surface | Before | After |
 |---|---|---|
-| `/profile` | 8.5 / 10 (flat six-row list; one section mixed two storage objects and ten fields) | **9 / 10** — grouped by the questions a member actually asks; every section ≤ 2 storage objects; one red button per screen; `.label` headers over the archetype rows; 44px icon buttons everywhere |
+| `/profile` | 8.5 / 10 (flat six-row list; one section mixed two storage objects and ten fields) | **9 / 10** — grouped by the questions a member actually asks; every section ≤ 2 storage objects; one red button per screen; `.label` headers over the archetype rows; 44px icon buttons everywhere. Who am I reads as the CV header → one-line headline → the story: three sections, each one question, the headline alone on its row instead of buried as the first of five inputs |
 | `/settings` | — (lived inside `/careerops/setup` as five stacked cards with one whole-document Save, 42px buttons, `mute-2` hints) | **9 / 10** — same layout as Profile, per-section Save, vault form on `.label`s and `.btn-sm`, hints at `jh-mute` |
 | Shell account group | Profile · Sign out | Profile · Settings · Sign out (desktop rows; three 44px icons on mobile) |
 

@@ -4,7 +4,7 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import {
   Building2, Check, ChevronRight, Circle, CircleDashed, Compass, Contact, FileText, Globe, KeyRound, Layers, MapPin,
-  Sparkles, StickyNote, Target, type LucideProps,
+  Quote, Sparkles, StickyNote, Target, type LucideProps,
 } from "lucide-react";
 import { groupedSections, sectionHref, type ActiveSection, type ActiveSectionKey, type SectionSummary } from "@/lib/profile-sections";
 import type { StepState } from "@/lib/careerops/intake-wizard";
@@ -19,7 +19,7 @@ import type { StepState } from "@/lib/careerops/intake-wizard";
 // not red — a half-filled section is not a negative state (UX audit §0.4).
 
 export const SECTION_ICONS: Record<ActiveSectionKey, ComponentType<LucideProps>> = {
-  contact: Contact, story: Sparkles, northstar: Compass, logistics: MapPin, targeting: Target,
+  contact: Contact, headline: Quote, story: Sparkles, northstar: Compass, logistics: MapPin, targeting: Target,
   cv: FileText, companies: Building2, accounts: KeyRound, archetypes: Layers, portfolio: Globe, notes: StickyNote,
 };
 

@@ -71,7 +71,7 @@ export default function SettingsScreen() {
           case "cv": return <CvPanel uid={uid} setup={setup} profile={profile} goalRole={goal.goal.role} />;
           case "companies": return <WatchlistPanel uid={uid} setup={setup} goalRole={goal.goal.role} />;
           case "accounts": return <PortalAccounts uid={uid} publicKey={publicKey} />;
-          case "archetypes": return <Personalization uid={uid} setup={setup} profile={profile} only={["targetRoles", "adaptiveFraming"]} saveLabel="Save archetypes" />;
+          case "archetypes": return <Personalization uid={uid} setup={setup} profile={profile} only={["targetRoles", "adaptiveFraming", "crossCuttingAdvantage"]} saveLabel="Save archetypes" />;
           case "portfolio": return <Personalization uid={uid} setup={setup} profile={profile} only={["portfolio"]} saveLabel="Save portfolio" />;
           case "notes": return <NotesPanel uid={uid} setup={setup} profile={profile} />;
           default: return null;

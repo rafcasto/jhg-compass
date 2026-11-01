@@ -25,9 +25,10 @@ import type { Profile } from "@/lib/types";
 // lib/careerops/personalization.ts, which is a direct port of upstream's module
 // — this component only collects.
 //
-// `only` renders a subset: the Profile page shows core competencies + exit story
-// as "Competencies & story", Settings shows archetypes + framing as "Archetypes"
-// and the portfolio on its own. The save then writes ONLY those keys over what
+// `only` renders a subset: the Profile page shows the exit story on its own
+// ("Exit story") and comp targets + scripts + location policy ("Comp & location
+// policy"); Settings shows archetypes + framing + core competencies
+// ("Archetypes") and the portfolio on its own. The save then writes ONLY those keys over what
 // is stored, so one panel can never wipe a section another panel owns.
 
 const MAX = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8 };

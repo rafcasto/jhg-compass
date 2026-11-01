@@ -259,6 +259,7 @@ function fromCareerOpsProfileYaml(doc: Record<string, unknown>, warnings: string
       linkedin: str(c.linkedin),
       github: str(c.github),
       portfolio: str(c.portfolio_url),
+      location: str(c.location),
     } as CareerOpsContact),
     policy: pruned({
       minimumSalary: str(comp.minimum),

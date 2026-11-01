@@ -4,11 +4,11 @@
 //
 // Two pages, one profile.yml:
 //
-//   /profile   WHO AM I            contact · core competencies & story
+//   /profile   WHO AM I            contact details · headline · exit story
 //              WHAT'S MY TARGET    target role & market · salary floor & location · comp & location policy
 //              WHAT VALUE DO I CREATE  (reserved — stories, proof bank)
 //   /settings  what the agents work from: master CV · target companies ·
-//              portal accounts · archetypes · portfolio / demo · notes
+//              portal accounts · archetypes & core competencies · portfolio / demo · notes
 //
 // The grouping is the JobHackers vocabulary (Profile / North Star / Artefacts);
 // the keys are the storage model's. The export is still the whole file: a
@@ -63,8 +63,9 @@ export interface ProfileSection {
 
 export const PROFILE_SECTIONS = [
   // ---- /profile · Who am I ----
-  { key: "contact", page: "profile", group: "who", label: "Contact details", title: "Contact details", ask: "Your headline, phone, LinkedIn, portfolio and GitHub — the header of every generated CV and cover letter.", available: true },
-  { key: "story", page: "profile", group: "who", label: "Competencies & story", title: "Core competencies and exit story", ask: "What you do that other candidates can't, and why you're moving — the frame for every summary, cover letter and interview answer.", available: true },
+  { key: "contact", page: "profile", group: "who", label: "Contact details", title: "Contact details", ask: "Your name, phone, email, LinkedIn, location and portfolio — the header of every generated CV and cover letter, and the contact block of every application form.", available: true },
+  { key: "headline", page: "profile", group: "who", label: "Headline", title: "Headline", ask: "Your lane statement: one line under your name that says what you do and for whom. It opens every CV and summary the agents write.", available: true },
+  { key: "story", page: "profile", group: "who", label: "Exit story", title: "Exit story", ask: "Why you're leaving and where you're heading — the frame for every summary, cover letter and interview answer.", available: true },
   // ---- /profile · What's my target ----
   { key: "northstar", page: "profile", group: "target", label: "Target role & market", title: "Target role and market", ask: "Role, industry, company type, geography and salary range — the North Star every evaluation is scored against.", available: true },
   { key: "logistics", page: "profile", group: "target", label: "Salary floor & location", title: "Salary floor, location and right to work", ask: "The number below which you walk, how flexible you are on location, your visa status and where you already hold work rights.", available: true },
@@ -77,7 +78,7 @@ export const PROFILE_SECTIONS = [
   { key: "cv", page: "settings", label: "Master CV", title: "Your master CV", ask: "The only source of truth about what you have done. Every tailored CV starts from it, and the Evaluator quotes it as evidence.", available: true },
   { key: "companies", page: "settings", label: "Target companies", title: "Target companies", ask: "The companies you're targeting and their careers pages — where the Scout looks — plus the title keywords it includes and excludes.", available: true },
   { key: "accounts", page: "settings", label: "Portal accounts", title: "Career portal accounts", ask: "The candidate accounts you created on Workday, SuccessFactors and other portals, so the agents can read the whole application form. Encrypted in your browser.", available: true, requires: "careerOps" },
-  { key: "archetypes", page: "settings", label: "Archetypes", title: "Role archetypes", ask: "The role archetypes the Evaluator scores fit against, and how to frame you for each one.", available: true },
+  { key: "archetypes", page: "settings", label: "Archetypes", title: "Role archetypes and core competencies", ask: "The role archetypes the Evaluator scores fit against, how to frame you for each one, and the core competencies that cut across all of them.", available: true },
   { key: "portfolio", page: "settings", label: "Portfolio / demo", title: "Portfolio or demo", ask: "A live demo, dashboard or public project the agents can point to, and when it's worth sharing.", available: true },
   { key: "notes", page: "settings", label: "Notes for the agents", title: "Notes for the agents", ask: "Hard no's, never-apply companies, CV house rules — free text every agent reads before it acts.", available: true },
 ] as const satisfies readonly ProfileSection[];
@@ -189,22 +190,29 @@ export function sectionSummaries({ setup, profile, accounts = 0 }: SectionSignal
   const cv = setup?.cvMarkdown?.trim() ?? "";
   const readiness = cv ? cvReadiness(cv) : null;
 
-  const contactN = filled(contact);                                  // of 5
-  const storyN = [p.crossCuttingAdvantage, p.exitNarrative].filter(has).length;   // of 2
+  // Name and email come from the account, so a signed-in member always has two of the six.
+  const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ");
+  const contactN = [fullName, profile?.email, contact.phone, contact.linkedin, contact.location, contact.portfolio].filter(has).length; // of 6
+  const headline = contact.title?.trim() ?? "";
+  const exitStory = p.exitNarrative?.trim() ?? "";
   const logisticsN = filled(policy);                                 // of 5
   const targetingN = [p.compTargets, p.negotiationScripts, p.locationPolicy].filter(has).length; // of 3
-  const archetypesN = [p.targetRoles, p.adaptiveFraming].filter(has).length;      // of 2
+  const archetypesN = [p.targetRoles, p.adaptiveFraming, p.crossCuttingAdvantage].filter(has).length; // of 3
   const roles = p.targetRoles ?? [];
 
   return [
     {
-      key: "contact", state: stateOf(contactN, 3),
-      summary: join([contact.title && clip(contact.title, 48), contact.phone, contact.linkedin && "LinkedIn", contact.portfolio && "portfolio", contact.github && "GitHub"]) || NOT_SET,
+      // "done" needs the phone and at least one link or the location on top of the account's name and email.
+      key: "contact", state: stateOf(contactN, 4),
+      summary: join([fullName, contact.phone, contact.location && clip(contact.location, 32), contact.linkedin && "LinkedIn", contact.portfolio && "portfolio"]) || NOT_SET,
     },
     {
-      key: "story", state: stateOf(storyN, 2),
-      summary: storyN ? clip(firstLine(p.crossCuttingAdvantage ?? p.exitNarrative)) : NOT_SET,
-      count: `${storyN}/2`,
+      key: "headline", state: headline ? "done" : "empty",
+      summary: headline ? clip(headline) : NOT_SET,
+    },
+    {
+      key: "story", state: exitStory ? "done" : "empty",
+      summary: exitStory ? clip(firstLine(exitStory)) : NOT_SET,
     },
     {
       key: "northstar", state: g.role?.trim() ? "done" : "empty",
@@ -237,8 +245,8 @@ export function sectionSummaries({ setup, profile, accounts = 0 }: SectionSignal
     {
       key: "archetypes", state: stateOf(archetypesN, 2),
       summary: roles.length
-        ? join([roles.slice(0, 3).map((r) => r.archetype).join(", ") + (roles.length > 3 ? "…" : ""), p.adaptiveFraming?.length ? `${plural(p.adaptiveFraming.length, "framing")}` : undefined])
-        : p.adaptiveFraming?.length ? `${plural(p.adaptiveFraming.length, "framing")} · no archetypes yet` : NOT_SET,
+        ? join([roles.slice(0, 3).map((r) => r.archetype).join(", ") + (roles.length > 3 ? "…" : ""), p.adaptiveFraming?.length ? `${plural(p.adaptiveFraming.length, "framing")}` : undefined, has(p.crossCuttingAdvantage) && "competencies"])
+        : p.adaptiveFraming?.length || has(p.crossCuttingAdvantage) ? join([p.adaptiveFraming?.length ? plural(p.adaptiveFraming.length, "framing") : undefined, has(p.crossCuttingAdvantage) && "competencies", "no archetypes yet"]) : NOT_SET,
       count: roles.length ? String(roles.length) : undefined,
     },
     {
