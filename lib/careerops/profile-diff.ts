@@ -9,14 +9,15 @@
 // Pure — no React. Tested.
 
 import type { ProfileFile } from "./profile-file";
-import { SECTIONS, SECTION_COPY, type Personalization } from "./personalization";
+import { SECTIONS, type Personalization } from "./personalization";
 import { cvReadiness } from "./intake";
-import type { ActiveSectionKey } from "@/lib/profile-sections";
+import { targetingLabel, type FileSectionKey } from "@/lib/profile-sections";
 
 export type DiffKind = "add" | "replace" | "keep";
 
 export interface SectionDiff {
-  key: ActiveSectionKey;
+  /** A section of the FILE (storage grouping), not of the page — see FILE_SECTIONS. */
+  key: FileSectionKey;
   /** Whether the file carries this section at all. */
   inFile: boolean;
   kind: DiffKind;
@@ -53,7 +54,7 @@ function counts({ added, replaced, kept, dropped }: ReturnType<typeof fieldDiff>
 const kindOf = (d: ReturnType<typeof fieldDiff>): DiffKind =>
   d.replaced.length || d.dropped.length ? "replace" : d.added.length ? "add" : "keep";
 
-const absent = (key: ActiveSectionKey): SectionDiff => ({ key, inFile: false, kind: "keep", headline: "not in the file — left as it is" });
+const absent = (key: FileSectionKey): SectionDiff => ({ key, inFile: false, kind: "keep", headline: "not in the file — left as it is" });
 
 export function profileDiff(current: ProfileFile, incoming: ProfileFile): SectionDiff[] {
   const out: SectionDiff[] = [];
@@ -96,7 +97,7 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
     const cur = (current.personalization ?? {}) as Record<string, unknown>;
     const inc = incoming.personalization as Record<string, unknown>;
     const d = fieldDiff(cur, inc);
-    const name = (id: string) => SECTION_COPY[id as keyof Personalization].label.toLowerCase();
+    const name = (id: string) => targetingLabel(id as keyof Personalization);
     const n = SECTIONS.filter((s) => inc[s.id] !== undefined).length;
     const detail = [
       d.replaced.length ? `replaces ${list(d.replaced.map(name))}` : "",

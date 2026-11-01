@@ -1,38 +1,71 @@
 import { describe, it, expect } from "vitest";
-import { ACTIVE_SECTIONS, PROFILE_SECTIONS, parseSection, profileProgress, sectionSummaries } from "@/lib/profile-sections";
-import { WIZARD_STEPS } from "@/lib/careerops/intake-wizard";
+import {
+  ACTIVE_SECTIONS, DEFAULT_SECTION, FILE_SECTIONS, GROUPS, PROFILE_SECTIONS, groupedSections, parseSection, profileProgress,
+  rowsFor, sectionHref, sectionSummaries, sectionsFor,
+} from "@/lib/profile-sections";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 
 const profile = { email: "ana@example.com", goal: { role: "Delivery Lead", city: "Wellington", salary: "NZ$ 150,000" } } as Profile;
 
 describe("profile sections — the registry", () => {
-  it("renders six sections, in the wizard's order, and hides the reserved three", () => {
-    expect(ACTIVE_SECTIONS.map((s) => s.key)).toEqual(["northstar", "contact", "targeting", "watchlist", "notes", "cv"]);
-    expect(PROFILE_SECTIONS.filter((s) => !s.available).map((s) => s.key)).toEqual(["culture", "proof", "stories"]);
-    // Same words as the wizard for the sections both have.
-    const wizard = Object.fromEntries(WIZARD_STEPS.map((s) => [s.key, s.label]));
-    for (const s of ACTIVE_SECTIONS) if (wizard[s.key]) expect(s.label.startsWith(wizard[s.key].split(" ")[0])).toBe(true);
+  it("splits the profile between two pages: who I am / what I target on Profile, what the agents work from on Settings", () => {
+    expect(sectionsFor("profile").map((s) => s.key)).toEqual(["contact", "story", "northstar", "logistics", "targeting"]);
+    expect(sectionsFor("settings").map((s) => s.key)).toEqual(["cv", "companies", "archetypes", "portfolio", "notes"]);
+    expect(ACTIVE_SECTIONS.length).toBe(11);
   });
 
-  it("parses ?section=, and sends unknown, reserved or absent to the overview", () => {
-    expect(parseSection("targeting")).toBe("targeting");
-    expect(parseSection("culture")).toBeNull();
+  it("only offers portal accounts to a member with CareerOps switched on — the vault needs the worker's key", () => {
+    expect(sectionsFor("settings", { careerOps: true }).map((s) => s.key)).toEqual(["cv", "companies", "accounts", "archetypes", "portfolio", "notes"]);
+    expect(parseSection("accounts", sectionsFor("settings"))).toBeNull();
+    expect(parseSection("accounts", sectionsFor("settings", { careerOps: true }))).toBe("accounts");
+  });
+
+  it("groups the Profile page in the JobHackers vocabulary and hides the reserved sections", () => {
+    expect(GROUPS.map((g) => `${g.eyebrow}: ${g.label}`)).toEqual(["Profile: Who am I", "North Star: What's my target", "Artefacts: What value do I create"]);
+    const grouped = groupedSections(sectionsFor("profile"));
+    expect(grouped.map((g) => [g.group?.key, g.sections.map((s) => s.key)])).toEqual([
+      ["who", ["contact", "story"]],
+      ["target", ["northstar", "logistics", "targeting"]],
+    ]);
+    // Artefacts (stories, proof bank) and the culture screen are registered but not rendered.
+    expect(PROFILE_SECTIONS.filter((s) => !s.available).map((s) => s.key)).toEqual(["culture", "stories", "proof"]);
+    // Settings is flat: one unnamed group.
+    expect(groupedSections(sectionsFor("settings")).map((g) => g.group)).toEqual([null]);
+  });
+
+  it("parses ?section= per page, and sends unknown, reserved, absent or other-page keys to the overview", () => {
+    expect(parseSection("story", sectionsFor("profile"))).toBe("story");
+    expect(parseSection("cv", sectionsFor("profile"))).toBeNull();
+    expect(parseSection("cv", sectionsFor("settings"))).toBe("cv");
+    expect(parseSection("proof")).toBeNull();
     expect(parseSection("nope")).toBeNull();
     expect(parseSection(null)).toBeNull();
+    expect(DEFAULT_SECTION).toEqual({ profile: "contact", settings: "cv" });
+  });
+
+  it("deep-links to whichever page edits a section", () => {
+    expect(sectionHref("story")).toBe("/profile?section=story");
+    expect(sectionHref("companies")).toBe("/settings?section=companies");
+  });
+
+  it("maps every section of the file to a page section a member can go to", () => {
+    expect(Object.keys(FILE_SECTIONS)).toEqual(["northstar", "contact", "targeting", "watchlist", "notes", "cv"]);
+    for (const f of Object.values(FILE_SECTIONS)) expect(ACTIVE_SECTIONS.some((s) => s.key === f.edit)).toBe(true);
+    expect(FILE_SECTIONS.watchlist.edit).toBe("companies");
   });
 });
 
 describe("profile sections — what each row says", () => {
-  it("says Not set everywhere for a new member", () => {
+  it("says Not set everywhere for a new member, on both pages", () => {
     const rows = sectionSummaries({ setup: null, profile: null });
-    expect(rows.map((r) => r.summary)).toEqual(["Not set", "Not set", "Not set", "Not set", "Not set", "Not set"]);
-    expect(rows.every((r) => r.state === "empty")).toBe(true);
-    expect(profileProgress(rows)).toEqual({ done: 0, total: 6, pct: 0 });
+    expect(rows.every((r) => r.summary === "Not set" && r.state === "empty")).toBe(true);
+    expect(profileProgress(rowsFor(sectionsFor("profile"), rows))).toEqual({ done: 0, total: 5, pct: 0 });
+    expect(profileProgress(rowsFor(sectionsFor("settings", { careerOps: true }), rows))).toEqual({ done: 0, total: 6, pct: 0 });
   });
 
   it("quotes the Compass goal when the setup has none", () => {
-    const [ns] = sectionSummaries({ setup: null, profile });
+    const ns = sectionSummaries({ setup: null, profile }).find((r) => r.key === "northstar")!;
     expect(ns.state).toBe("done");
     expect(ns.summary).toBe("Delivery Lead · Wellington · NZ$ 150,000");
     expect(ns.count).toBe("Compass");
@@ -43,28 +76,51 @@ describe("profile sections — what each row says", () => {
       cvMarkdown: "# CV\n\n## Experience\n2019 – 2024 Acme " + "word ".repeat(100),
       profileYaml: "", updatedAt: 1,
       goalSource: "intake", intakeGoal: { role: "Senior Delivery Lead", city: "Wellington", salary: "NZ$ 150,000–175,000" },
-      contact: { phone: "+64 21 555 0199", linkedin: "in/ana", title: "Delivery Lead", portfolio: "https://ana.nz" },
+      contact: { phone: "+64 21 555 0199", linkedin: "in/ana", title: "Delivery Lead for SaaS teams", portfolio: "https://ana.nz" },
       policy: { minimumSalary: "NZ$ 140,000", authorizedIn: ["New Zealand", "Australia"] },
       personalization: {
         targetRoles: [{ archetype: "Delivery Lead" }, { archetype: "TPM" }],
-        exitNarrative: "Story.", portfolio: { url: "https://ana.nz" }, compTargets: "x", locationPolicy: ["Will work in: Wellington"],
+        adaptiveFraming: [{ role: "Delivery", emphasize: "Cadence" }],
+        exitNarrative: "I was the operations analyst who kept getting pulled into stand-ups.",
+        portfolio: { url: "https://www.ana.nz/playbook", description: "The release-cadence playbook" },
+        compTargets: "Target NZ$ 150–175k", locationPolicy: ["Will work in: Wellington"],
       },
       portals: { companies: [{ name: "Xero", careersUrl: "https://x" }, { name: "Tracksuit", careersUrl: "https://t" }, { name: "Dovetail", careersUrl: "https://d" }, { name: "Halter", careersUrl: "https://h" }], positive: ["Delivery Lead"], negative: [] },
       notes: "Hard no's: on-site 5 days\nNotice period: 28 days",
     } as CareerOpsSetupV2;
-    const rows = Object.fromEntries(sectionSummaries({ setup, profile }).map((r) => [r.key, r]));
+    const rows = Object.fromEntries(sectionSummaries({ setup, profile, accounts: 2 }).map((r) => [r.key, r]));
+
+    // Who am I
+    expect(rows.contact.summary).toBe("Delivery Lead for SaaS teams · +64 21 555 0199 · LinkedIn · portfolio");
+    expect(rows.contact.state).toBe("done");
+    expect(rows.story.summary).toBe("I was the operations analyst who kept getting pulled into stand-ups.");
+    expect(rows.story.state).toBe("partial");
+    expect(rows.story.count).toBe("1/2");
+    // What's my target
     expect(rows.northstar.summary).toBe("Senior Delivery Lead · Wellington · NZ$ 150,000–175,000");
     expect(rows.northstar.count).toBe("profile");
-    expect(rows.contact.summary).toBe("+64 21 555 0199 · LinkedIn · floor NZ$ 140,000 · New Zealand / Australia");
-    expect(rows.contact.state).toBe("done");
-    expect(rows.targeting.count).toBe("5/8");
-    expect(rows.targeting.summary).toBe("2 roles · exit narrative · portfolio / demo +2");
-    expect(rows.targeting.state).toBe("partial");
-    expect(rows.watchlist.summary).toBe("Xero, Tracksuit, Dovetail…");
-    expect(rows.watchlist.count).toBe("4");
-    expect(rows.notes.summary).toBe("Hard no's: on-site 5 days");
-    expect(rows.notes.state).toBe("done");
+    expect(rows.logistics.summary).toBe("floor NZ$ 140,000 · New Zealand / Australia");
+    expect(rows.logistics.state).toBe("partial");
+    expect(rows.targeting.summary).toBe("Target NZ$ 150–175k · 1 location rule");
+    expect(rows.targeting.count).toBe("2/3");
+    // Settings
     expect(rows.cv.summary).toMatch(/^\d+ words · Ready to score$/);
-    expect(profileProgress(Object.values(rows))).toEqual({ done: 5, total: 6, pct: 83 });
+    expect(rows.companies.summary).toBe("Xero, Tracksuit, Dovetail…");
+    expect(rows.companies.count).toBe("4");
+    expect(rows.accounts.summary).toBe("2 accounts saved · encrypted for the worker");
+    expect(rows.archetypes.summary).toBe("Delivery Lead, TPM · 1 framing");
+    expect(rows.archetypes.state).toBe("done");
+    expect(rows.portfolio.summary).toBe("ana.nz · The release-cadence playbook");
+    expect(rows.notes.summary).toBe("Hard no's: on-site 5 days");
+
+    expect(profileProgress(rowsFor(sectionsFor("profile"), Object.values(rows)))).toEqual({ done: 2, total: 5, pct: 40 });
+    expect(profileProgress(rowsFor(sectionsFor("settings", { careerOps: true }), Object.values(rows)))).toEqual({ done: 6, total: 6, pct: 100 });
+  });
+
+  it("truncates long quotes to one line's worth", () => {
+    const long = "x".repeat(200);
+    const rows = Object.fromEntries(sectionSummaries({ setup: { cvMarkdown: "", profileYaml: "", updatedAt: 1, notes: long } as CareerOpsSetupV2, profile: null }).map((r) => [r.key, r]));
+    expect(rows.notes.summary.length).toBeLessThanOrEqual(72);
+    expect(rows.notes.summary.endsWith("…")).toBe(true);
   });
 });

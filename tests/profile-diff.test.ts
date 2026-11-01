@@ -75,7 +75,7 @@ describe("profileDiff — replaces are reported honestly", () => {
   it("names the targeting sections it replaces, adds and drops", () => {
     const d = byKey(profileDiff(current, { version: 1, personalization: { exitNarrative: "New story.", crossCuttingAdvantage: "Edge." } }));
     expect(d.targeting.kind).toBe("replace");
-    expect(d.targeting.detail).toBe("replaces exit narrative · adds cross-cutting advantage · drops comp targets");
+    expect(d.targeting.detail).toBe("replaces exit story · adds core competencies · drops comp targets");
   });
 
   it("lists watchlist companies added, kept and dropped by name", () => {

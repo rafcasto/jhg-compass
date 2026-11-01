@@ -95,7 +95,7 @@ export default function CvPanel({ uid, setup, profile, goalRole, onSaved }: {
   }
 
   const alert = err && (
-    <p role="alert" className="flex items-start gap-2 rounded-[10px] border border-jh-red/30 bg-jh-red/5 px-3 py-2.5 text-sm text-jh-red">
+    <p role="alert" className="flex items-start gap-2 rounded-sm border border-jh-red/30 bg-jh-red/5 px-3 py-2.5 text-sm text-jh-red">
       <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" /> {err}
     </p>
   );
@@ -107,18 +107,18 @@ export default function CvPanel({ uid, setup, profile, goalRole, onSaved }: {
       <div className="space-y-3">
         {alert}
         <div className="flex flex-wrap items-center gap-2">
-          <FileText className="h-4 w-4 text-jh-red" />
+          <FileText className="h-4 w-4 text-jh-mute" aria-hidden />
           <h3 className="font-display font-semibold text-jh-ink">Your CV is saved</h3>
           <span className={`ml-auto inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-xs font-semibold ${r.scoreable ? "bg-rb-green-dark/10 text-rb-green-dark" : "bg-jh-red/10 text-jh-red"}`}>
             {r.scoreable ? <Check className="h-3 w-3" /> : <TriangleAlert className="h-3 w-3" />}
             {r.scoreable ? "Ready to score" : "A bit thin"}
           </span>
         </div>
-        {r.hint && <p className="text-xs text-jh-red">{r.hint}</p>}
-        <div className="prose prose-sm max-w-none max-h-72 overflow-y-auto rounded-[10px] border border-jh-line bg-jh-mist/40 p-3">
+        {r.hint && <p className="text-xs text-jh-mute">{r.hint}</p>}
+        <div className="prose prose-sm max-w-none max-h-72 overflow-y-auto rounded-sm border border-jh-line bg-jh-mist/40 p-3">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{saved}</ReactMarkdown>
         </div>
-        <p className="text-xs text-jh-mute-2">{r.words} words{setup?.updatedAt ? ` · last saved ${new Date(setup.updatedAt).toLocaleString()}` : ""}</p>
+        <p className="text-xs text-jh-mute">{r.words} words{setup?.updatedAt ? ` · last saved ${new Date(setup.updatedAt).toLocaleString()}` : ""}</p>
         <button type="button" onClick={() => { setReplacing(true); setPaste(saved); }} className="btn-secondary text-sm">
           <RotateCcw className="h-4 w-4" /> Replace my CV
         </button>
@@ -132,7 +132,7 @@ export default function CvPanel({ uid, setup, profile, goalRole, onSaved }: {
       <div className="space-y-3">
         {alert}
         <div className="flex flex-wrap items-center gap-2">
-          <FileText className="h-4 w-4 text-jh-red" />
+          <FileText className="h-4 w-4 text-jh-mute" aria-hidden />
           <h3 className="font-display font-semibold text-jh-ink">Here&apos;s your CV — review and save</h3>
           {readiness && (
             <span className={`ml-auto inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-xs font-semibold ${readiness.scoreable ? "bg-rb-green-dark/10 text-rb-green-dark" : "bg-jh-red/10 text-jh-red"}`}>
@@ -141,14 +141,14 @@ export default function CvPanel({ uid, setup, profile, goalRole, onSaved }: {
             </span>
           )}
         </div>
-        {readiness?.hint && <p className="text-xs text-jh-red">{readiness.hint}</p>}
+        {readiness?.hint && <p className="text-xs text-jh-mute">{readiness.hint}</p>}
         <div className="grid gap-3 md:grid-cols-2">
           <textarea aria-label="Review your CV" value={md} onChange={(e) => setMd(e.target.value)} className="field font-mono text-xs min-h-[18rem]" />
-          <div className="prose prose-sm max-w-none overflow-y-auto rounded-[10px] border border-jh-line bg-jh-mist/40 p-3 min-h-[18rem] max-h-[18rem]">
+          <div className="prose prose-sm max-w-none overflow-y-auto rounded-sm border border-jh-line bg-jh-mist/40 p-3 min-h-[18rem] max-h-[18rem]">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{md}</ReactMarkdown>
           </div>
         </div>
-        <p className="text-xs text-jh-mute-2">{readiness?.words ?? 0} words</p>
+        <p className="text-xs text-jh-mute">{readiness?.words ?? 0} words</p>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={save} disabled={phase === "saving"} className="btn-primary text-sm disabled:opacity-60">
             <Check className="h-4 w-4" /> {phase === "saving" ? "Saving…" : "Save my CV"}
@@ -169,7 +169,7 @@ export default function CvPanel({ uid, setup, profile, goalRole, onSaved }: {
         onDragOver={(e) => { e.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}
         onDrop={(e) => { e.preventDefault(); setOver(false); takeFile(e.dataTransfer.files?.[0]); }}
-        className={`rounded-[10px] border-[1.5px] border-dashed p-4 transition-colors ${over ? "border-jh-red bg-jh-red/5" : "border-jh-line-2"}`}
+        className={`rounded-sm border-[1.5px] border-dashed p-4 transition-colors ${over ? "border-jh-red bg-jh-red/5" : "border-jh-line-2"}`}
       >
         <textarea
           aria-label="Your CV"
@@ -177,14 +177,14 @@ export default function CvPanel({ uid, setup, profile, goalRole, onSaved }: {
           onChange={(e) => { setPaste(e.target.value); setErr(null); }}
           onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && paste.trim()) takeText(paste); }}
           placeholder={"# Jane Smith\nSenior Product Owner · Auckland\n\n## Experience\n**Acme — Product Owner (2021–2025)**\n- Led …"}
-          className="w-full min-h-[18rem] resize-y bg-transparent font-mono text-xs text-jh-ink outline-none placeholder:text-jh-mute-2"
+          className="w-full min-h-[18rem] resize-y bg-transparent font-mono text-xs text-jh-ink outline-none placeholder:text-jh-mute"
         />
         <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-jh-line pt-3">
           <label className="btn-secondary text-xs px-3 py-2 cursor-pointer">
             <Upload className="h-3.5 w-3.5" /> Upload .md / .txt
             <input type="file" accept=".md,.txt,.markdown,text/plain,text/markdown" className="sr-only" onChange={(e) => takeFile(e.target.files?.[0])} />
           </label>
-          <span className="inline-flex items-center gap-1 text-xs text-jh-mute-2"><Lock className="h-3 w-3" /> Stays on our own hardware.</span>
+          <span className="inline-flex items-center gap-1 text-xs text-jh-mute"><Lock className="h-3 w-3" /> Stays on our own hardware.</span>
           <button type="button" disabled={!paste.trim()} onClick={() => takeText(paste)} className="btn-primary ml-auto text-sm disabled:opacity-60">
             Read my CV <ArrowRight className="h-4 w-4" />
           </button>

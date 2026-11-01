@@ -3,7 +3,7 @@
 import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { LogOut, UserRound, Signal, Wifi, BatteryFull, type LucideProps } from "lucide-react";
+import { LogOut, Settings, UserRound, Signal, Wifi, BatteryFull, type LucideProps } from "lucide-react";
 
 // The mobile shell pieces (top header + bottom tab bar), shared by the live app
 // (AppShell) and the admin's 390×844 preview so the preview is the real chrome,
@@ -21,13 +21,16 @@ export interface TabItem {
 }
 
 export function MobileHeader({
-  onSignOut, signingOut = false, position = "sticky", brand, profileHref = "/profile", profileActive = false,
-}: { onSignOut?: () => void; signingOut?: boolean; position?: "sticky" | "static"; brand?: ReactNode; profileHref?: string; profileActive?: boolean }) {
+  onSignOut, signingOut = false, position = "sticky", brand, profileHref = "/profile", profileActive = false, settingsHref = "/settings", settingsActive = false,
+}: { onSignOut?: () => void; signingOut?: boolean; position?: "sticky" | "static"; brand?: ReactNode; profileHref?: string; profileActive?: boolean; settingsHref?: string; settingsActive?: boolean }) {
   const live = position === "sticky";
-  // Right slot: two icon-only 44×44 targets (Profile · Sign out). With two controls a
-  // text label would make a ~140px cluster that fights the brand on a 390px screen.
-  const profileCls = `flex items-center justify-center h-11 w-11 rounded-sm transition-colors duration-200 ease-out ${profileActive ? "text-jh-red" : "text-jh-mute hover:text-jh-ink"}`;
+  // Right slot: three icon-only 44×44 targets (Profile · Settings · Sign out). Icon-only
+  // because with text labels the cluster would fight the brand on a 390px screen.
+  const iconCls = (active: boolean) => `flex items-center justify-center h-11 w-11 rounded-sm transition-colors duration-200 ease-out ${active ? "text-jh-red" : "text-jh-mute hover:text-jh-ink"}`;
+  const profileCls = iconCls(profileActive);
+  const settingsCls = iconCls(settingsActive);
   const profileIcon = <UserRound className="h-5 w-5" strokeWidth={1.5} aria-hidden />;
+  const settingsIcon = <Settings className="h-5 w-5" strokeWidth={1.5} aria-hidden />;
   return (
     <header className={`${live ? "sticky top-0 z-40" : ""} flex items-center justify-between h-14 pl-4 pr-2 bg-white border-b border-jh-line`}>
       {brand ?? (
@@ -40,6 +43,9 @@ export function MobileHeader({
         {live
           ? <Link href={profileHref} aria-label="Profile" aria-current={profileActive ? "page" : undefined} className={profileCls}>{profileIcon}</Link>
           : <span aria-label="Profile" role="img" className={profileCls}>{profileIcon}</span>}
+        {live
+          ? <Link href={settingsHref} aria-label="Settings" aria-current={settingsActive ? "page" : undefined} className={settingsCls}>{settingsIcon}</Link>
+          : <span aria-label="Settings" role="img" className={settingsCls}>{settingsIcon}</span>}
         <button type="button" onClick={onSignOut} disabled={signingOut || !onSignOut} tabIndex={onSignOut ? undefined : -1}
           aria-label={signingOut ? "Signing out…" : "Sign out"}
           className="flex items-center justify-center h-11 w-11 rounded-sm text-jh-mute hover:text-jh-red transition-colors duration-200 ease-out disabled:opacity-50">

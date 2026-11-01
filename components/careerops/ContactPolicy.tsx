@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { setDoc } from "firebase/firestore";
-import { Check, Link2, Save, TriangleAlert } from "lucide-react";
+import { Check, Save, TriangleAlert } from "lucide-react";
 import { paths } from "@/lib/firestore/db";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import type { CareerOpsContact, CareerOpsPolicy, CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -13,6 +13,12 @@ import type { Profile } from "@/lib/types";
 // header, the cover-letter contact block and the application-form autofill.
 // Until this card existed, Compass emitted none of them, so every generated CV
 // went out with no LinkedIn, no GitHub, no portfolio and no phone.
+//
+// `part` splits it: the Profile page shows the contact half under "Who am I"
+// and the policy half under "What's my target". Each half saves only its own
+// object, so neither can wipe the other. The intake wizard shows both.
+
+export type ContactPolicyPart = "contact" | "policy" | "both";
 
 const TEXT: { key: keyof CareerOpsContact; label: string; placeholder: string; hint?: string }[] = [
   { key: "title", label: "Professional headline", placeholder: "e.g. Product leader, climate tech", hint: "Sits under your name on the generated CV." },
@@ -22,9 +28,21 @@ const TEXT: { key: keyof CareerOpsContact; label: string; placeholder: string; h
   { key: "github", label: "GitHub", placeholder: "github.com/yourname" },
 ];
 
+const SAVE_LABEL: Record<ContactPolicyPart, string> = { both: "Save details", contact: "Save contact details", policy: "Save logistics" };
+const INTRO: Record<ContactPolicyPart, string> = {
+  both: "These go straight onto your generated CV and cover letter, and into application forms the agents fill for you. All optional — but anything you leave blank is simply missing from those documents.",
+  contact: "These go straight onto your generated CV and cover letter, and into application forms the agents fill for you. Your name, email and country come from your account.",
+  policy: "Scoring weighs every offer against these. Anything blank is treated as unknown, never guessed.",
+};
+
 const splitList = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
 
-export default function ContactPolicy({ uid, setup, profile }: { uid: string; setup: CareerOpsSetupV2 | null; profile: Profile | null | undefined }) {
+export default function ContactPolicy({ uid, setup, profile, part = "both" }: {
+  uid: string;
+  setup: CareerOpsSetupV2 | null;
+  profile: Profile | null | undefined;
+  part?: ContactPolicyPart;
+}) {
   const [contact, setContact] = useState<CareerOpsContact>(setup?.contact ?? {});
   const [policy, setPolicy] = useState<CareerOpsPolicy>(setup?.policy ?? {});
   const [authorized, setAuthorized] = useState((setup?.policy?.authorizedIn ?? []).join(", "));
@@ -32,36 +50,42 @@ export default function ContactPolicy({ uid, setup, profile }: { uid: string; se
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  const showContact = part !== "policy";
+  const showPolicy = part !== "contact";
   const touch = () => { setDirty(true); setMsg(null); };
 
   async function save() {
     setBusy(true);
     setMsg(null);
     try {
-      const nextContact: CareerOpsContact = Object.fromEntries(
-        TEXT.map((f) => [f.key, (contact[f.key] ?? "").trim()]).filter(([, v]) => v),
-      );
-      const list = splitList(authorized);
-      const nextPolicy: CareerOpsPolicy = {
-        ...(policy.minimumSalary?.trim() ? { minimumSalary: policy.minimumSalary.trim() } : {}),
-        ...(policy.locationFlexibility?.trim() ? { locationFlexibility: policy.locationFlexibility.trim() } : {}),
-        ...(policy.visaStatus?.trim() ? { visaStatus: policy.visaStatus.trim() } : {}),
-        ...(policy.needsSponsorship ? { needsSponsorship: true } : {}),
-        ...(list.length ? { authorizedIn: list } : {}),
-      };
+      const patch: Pick<CareerOpsSetupV2, "contact" | "policy"> = {};
+      if (showContact) {
+        patch.contact = Object.fromEntries(
+          TEXT.map((f) => [f.key, (contact[f.key] ?? "").trim()]).filter(([, v]) => v),
+        ) as CareerOpsContact;
+      }
+      if (showPolicy) {
+        const list = splitList(authorized);
+        patch.policy = {
+          ...(policy.minimumSalary?.trim() ? { minimumSalary: policy.minimumSalary.trim() } : {}),
+          ...(policy.locationFlexibility?.trim() ? { locationFlexibility: policy.locationFlexibility.trim() } : {}),
+          ...(policy.visaStatus?.trim() ? { visaStatus: policy.visaStatus.trim() } : {}),
+          ...(policy.needsSponsorship ? { needsSponsorship: true } : {}),
+          ...(list.length ? { authorizedIn: list } : {}),
+        };
+      }
       await setDoc(
         paths.careerOpsSetup(uid),
         {
-          contact: nextContact,
-          policy: nextPolicy,
+          ...patch,
           // Rebuilt from the one place that knows every field.
-          profileYaml: buildSetupProfileYaml({ profile, setup, overrides: { contact: nextContact, policy: nextPolicy } }),
+          profileYaml: buildSetupProfileYaml({ profile, setup, overrides: patch }),
           updatedAt: Date.now(),
         },
         { merge: true },
       );
       setDirty(false);
-      setMsg("Saved. Your next generated CV, cover letter and form fill will use these.");
+      setMsg(showContact ? "Saved. Your next generated CV, cover letter and form fill will use these." : "Saved. Scoring weighs these from your next evaluation.");
     } catch {
       setMsg("Couldn't save that — try again.");
     } finally {
@@ -71,89 +95,90 @@ export default function ContactPolicy({ uid, setup, profile }: { uid: string; se
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-jh-mute text-sm max-w-2xl">
-          These go straight onto your generated CV and cover letter, and into application forms the agents fill for you.
-          All optional — but anything you leave blank is simply missing from those documents.
-        </p>
-      </div>
+      <p className="text-jh-mute text-sm max-w-2xl">{INTRO[part]}</p>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {TEXT.map((f) => (
-          <label key={f.key} className="block">
-            <span className="label">{f.label}</span>
+      {showContact && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {TEXT.map((f) => (
+            <label key={f.key} className={`block ${f.key === "title" ? "sm:col-span-2" : ""}`}>
+              <span className="label">{f.label}</span>
+              <input
+                className="field"
+                value={contact[f.key] ?? ""}
+                placeholder={f.placeholder}
+                onChange={(e) => { setContact((c) => ({ ...c, [f.key]: e.target.value })); touch(); }}
+              />
+              {f.hint && <span className="block text-xs text-jh-mute mt-1">{f.hint}</span>}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {showPolicy && (
+        <>
+          <div className={`grid gap-4 sm:grid-cols-2 ${showContact ? "border-t border-jh-line pt-4" : ""}`}>
+            <label className="block">
+              <span className="label">Walk-away salary</span>
+              <input
+                className="field"
+                value={policy.minimumSalary ?? ""}
+                placeholder="e.g. 160,000"
+                onChange={(e) => { setPolicy((p) => ({ ...p, minimumSalary: e.target.value })); touch(); }}
+              />
+              <span className="block text-xs text-jh-mute mt-1">The number below which you walk. Scoring weighs an offer against it.</span>
+            </label>
+            <label className="block">
+              <span className="label">Location flexibility</span>
+              <input
+                className="field"
+                value={policy.locationFlexibility ?? ""}
+                placeholder="e.g. Remote, 1 week/month on-site"
+                onChange={(e) => { setPolicy((p) => ({ ...p, locationFlexibility: e.target.value })); touch(); }}
+              />
+            </label>
+            <label className="block">
+              <span className="label">Visa / right to work</span>
+              <input
+                className="field"
+                value={policy.visaStatus ?? ""}
+                placeholder="e.g. NZ citizen — no sponsorship needed"
+                onChange={(e) => { setPolicy((p) => ({ ...p, visaStatus: e.target.value })); touch(); }}
+              />
+            </label>
+            <label className="block">
+              <span className="label">Already authorised to work in</span>
+              <input
+                className="field"
+                value={authorized}
+                placeholder="New Zealand, Australia"
+                onChange={(e) => { setAuthorized(e.target.value); touch(); }}
+              />
+              <span className="block text-xs text-jh-mute mt-1">Comma-separated. Defaults to your profile country.</span>
+            </label>
+          </div>
+
+          <label className="flex items-start gap-3 text-sm text-jh-ink">
             <input
-              className="field"
-              value={contact[f.key] ?? ""}
-              placeholder={f.placeholder}
-              onChange={(e) => { setContact((c) => ({ ...c, [f.key]: e.target.value })); touch(); }}
+              type="checkbox"
+              className="mt-0.5 h-5 w-5 rounded-xs accent-jh-red"
+              checked={!!policy.needsSponsorship}
+              onChange={(e) => { setPolicy((p) => ({ ...p, needsSponsorship: e.target.checked })); touch(); }}
             />
-            {f.hint && <span className="block text-xs text-jh-mute-2 mt-1">{f.hint}</span>}
+            <span>
+              I need visa sponsorship for roles outside those countries
+              <span className="block text-xs text-jh-mute">When a posting says it won&apos;t sponsor, scoring treats that as a hard blocker.</span>
+            </span>
           </label>
-        ))}
-      </div>
-
-      <div className="border-t border-jh-line pt-4 grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="label">Walk-away salary</span>
-          <input
-            className="field"
-            value={policy.minimumSalary ?? ""}
-            placeholder="e.g. 160,000"
-            onChange={(e) => { setPolicy((p) => ({ ...p, minimumSalary: e.target.value })); touch(); }}
-          />
-          <span className="block text-xs text-jh-mute-2 mt-1">The number below which you walk. Scoring weighs an offer against it.</span>
-        </label>
-        <label className="block">
-          <span className="label">Location flexibility</span>
-          <input
-            className="field"
-            value={policy.locationFlexibility ?? ""}
-            placeholder="e.g. Remote, 1 week/month on-site"
-            onChange={(e) => { setPolicy((p) => ({ ...p, locationFlexibility: e.target.value })); touch(); }}
-          />
-        </label>
-        <label className="block">
-          <span className="label">Visa / right to work</span>
-          <input
-            className="field"
-            value={policy.visaStatus ?? ""}
-            placeholder="e.g. NZ citizen — no sponsorship needed"
-            onChange={(e) => { setPolicy((p) => ({ ...p, visaStatus: e.target.value })); touch(); }}
-          />
-        </label>
-        <label className="block">
-          <span className="label">Already authorised to work in</span>
-          <input
-            className="field"
-            value={authorized}
-            placeholder="New Zealand, Australia"
-            onChange={(e) => { setAuthorized(e.target.value); touch(); }}
-          />
-          <span className="block text-xs text-jh-mute-2 mt-1">Comma-separated. Defaults to your profile country.</span>
-        </label>
-      </div>
-
-      <label className="flex items-start gap-2 text-sm text-jh-ink">
-        <input
-          type="checkbox"
-          className="mt-1 accent-jh-red"
-          checked={!!policy.needsSponsorship}
-          onChange={(e) => { setPolicy((p) => ({ ...p, needsSponsorship: e.target.checked })); touch(); }}
-        />
-        <span>
-          I need visa sponsorship for roles outside those countries
-          <span className="block text-xs text-jh-mute">When a posting says it won&apos;t sponsor, scoring treats that as a hard blocker.</span>
-        </span>
-      </label>
+        </>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 border-t border-jh-line pt-3">
         <button type="button" onClick={save} disabled={busy || !dirty} className="btn-primary text-sm disabled:opacity-60">
-          <Save className="h-4 w-4" /> {busy ? "Saving…" : "Save details"}
+          <Save className="h-4 w-4" aria-hidden /> {busy ? "Saving…" : SAVE_LABEL[part]}
         </button>
         {msg && (
           <p role="status" className={`flex items-start gap-1.5 text-sm ${msg.startsWith("Saved") ? "text-rb-green-dark" : "text-jh-red"}`}>
-            {msg.startsWith("Saved") ? <Check className="h-4 w-4 shrink-0 mt-0.5" /> : <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />} {msg}
+            {msg.startsWith("Saved") ? <Check className="h-4 w-4 shrink-0 mt-0.5" aria-hidden /> : <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />} {msg}
           </p>
         )}
       </div>

@@ -30,10 +30,12 @@ export type SectionId = (typeof SECTIONS)[number]["id"];
 
 /** Member-facing labels and the question each section is really asking. */
 export const SECTION_COPY: Record<SectionId, { label: string; ask: string }> = {
-  targetRoles: { label: "Target roles", ask: "The role archetypes you're going after, what each one is really about, and what a company is buying when they hire for it." },
+  // Labels are the JobHackers vocabulary (archetypes · core competencies · exit
+  // story); the headings in the rendered _profile.md stay career-ops' own.
+  targetRoles: { label: "Archetypes", ask: "The role archetypes you're going after, what each one is really about, and what a company is buying when it hires for it." },
   adaptiveFraming: { label: "Adaptive framing", ask: "For each archetype: what to emphasise about you, and which part of your CV proves it." },
-  exitNarrative: { label: "Exit narrative", ask: "Why you're leaving and where you're heading. This frames every summary, cover letter and STAR answer." },
-  crossCuttingAdvantage: { label: "Cross-cutting advantage", ask: "Your signature move — the thing you do that the other candidates can't." },
+  exitNarrative: { label: "Exit story", ask: "Why you're leaving and where you're heading. This frames every summary, cover letter and STAR answer." },
+  crossCuttingAdvantage: { label: "Core competencies", ask: "Your superpowers — the three to five things you do that the other candidates can't." },
   portfolio: { label: "Portfolio / demo", ask: "A live demo, dashboard or public project, and when it's worth sharing." },
   compTargets: { label: "Comp targets", ask: "What the market pays for your target roles, and how you frame your own number." },
   negotiationScripts: { label: "Negotiation scripts", ask: "What you actually say when the offer comes in low, or they push a location discount." },

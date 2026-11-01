@@ -8,7 +8,7 @@ import { paths } from "@/lib/firestore/db";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import { PROFILE_ACCEPT, PROFILE_MAX_BYTES, parseProfileFile, profileToSetupPatch, type ProfileFile, type ProfileFileParse } from "@/lib/careerops/profile-file";
 import { diffReplaces, profileDiff, type DiffKind, type SectionDiff } from "@/lib/careerops/profile-diff";
-import { findSection, type ActiveSectionKey } from "@/lib/profile-sections";
+import { FILE_SECTIONS, type FileSectionKey } from "@/lib/profile-sections";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 
@@ -36,7 +36,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
   /** A file dropped on the page before the sheet opened. */
   initialFile?: File | null;
   onClose: () => void;
-  onDone: (changed: ActiveSectionKey[]) => void;
+  onDone: (changed: FileSectionKey[]) => void;
   onDownloadCurrent: () => void;
 }) {
   const [parsed, setParsed] = useState<ProfileFileParse | null>(null);
@@ -162,7 +162,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
 
           {leftAlone.length > 0 && (
             <p className="text-xs text-jh-mute">
-              Not in the file, left as it is: {leftAlone.map((d) => findSection(d.key)?.label.toLowerCase()).join(", ")}.
+              Not in the file, left as it is: {leftAlone.map((d) => FILE_SECTIONS[d.key].label.toLowerCase()).join(", ")}.
             </p>
           )}
 
@@ -199,7 +199,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
 
 function DiffRow({ d }: { d: SectionDiff }) {
   const Icon = KIND_ICON[d.kind];
-  const label = findSection(d.key)?.label ?? d.key;
+  const label = FILE_SECTIONS[d.key].label;
   return (
     <li className="flex items-start gap-3 px-4 py-3">
       <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${KIND_TONE[d.kind]}`} strokeWidth={2} aria-hidden />
