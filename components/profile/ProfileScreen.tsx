@@ -8,8 +8,6 @@ import { useAuth } from "@/components/AuthProvider";
 import ContactPolicy from "@/components/careerops/ContactPolicy";
 import NorthStarSource from "@/components/careerops/NorthStarSource";
 import Personalization from "@/components/careerops/Personalization";
-import ProofBankPanel from "./ProofBankPanel";
-import StoriesPanel from "./StoriesPanel";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { PROFILE_FILENAME, profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import { FILE_SECTIONS, PAGE_HREF, findSection, parseSection, rowsFor, sectionHref, sectionSummaries, sectionsFor, type FileSectionKey } from "@/lib/profile-sections";
@@ -18,7 +16,7 @@ import type { Profile } from "@/lib/types";
 import ProfileUploadSheet from "./ProfileUploadSheet";
 import SectionsPage from "./SectionsPage";
 
-// The Profile page — docs/UX_PROFILE.md. Who am I · What's my target · What value do I create, with
+// The Profile page — docs/UX_PROFILE.md. Who am I · What's my target, with
 // the whole profile.yml exported from and uploaded to here (the file also
 // carries what Settings edits — a section's page is where it is edited, not
 // where it is stored).
@@ -126,8 +124,6 @@ export default function ProfileScreen() {
             );
             case "logistics": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="policy" />;
             case "targeting": return <Personalization uid={uid} setup={setup} profile={profile} only={["compTargets", "negotiationScripts", "locationPolicy"]} saveLabel="Save policy" />;
-            case "stories": return <StoriesPanel uid={uid} setup={setup} profile={profile} />;
-            case "proof": return <ProofBankPanel uid={uid} setup={setup} profile={profile} />;
             default: return <p className="text-sm text-jh-mute">{findSection(key)?.label} is edited under <Link href={PAGE_HREF.settings} className="link text-sm">Settings</Link>.</p>;
           }
         }}

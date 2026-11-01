@@ -6,7 +6,7 @@
 //
 //   /profile   WHO AM I            contact details · headline · exit story
 //              WHAT'S MY TARGET    target role & market · salary floor & location · comp & location policy
-//              WHAT VALUE DO I CREATE  stories (L1 + CCARR) · proof bank
+//              WHAT VALUE DO I CREATE  (reserved — stories, proof bank)
 //   /settings  what the agents work from: master CV · target companies ·
 //              portal accounts · archetypes & core competencies · portfolio / demo · notes
 //
@@ -14,16 +14,15 @@
 // the keys are the storage model's. The export is still the whole file: a
 // section's page says where it is EDITED, not where it is stored.
 //
-// Reserved sections (the culture screen) are registered with `available: false`
-// and never rendered: a field the agents do not read yet is a broken promise.
-// Flip the flag the day the worker reads it.
+// Reserved sections (proof points, stories, culture screen) are registered
+// with `available: false` and never rendered: a field the agents do not read
+// yet is a broken promise. Flip the flag the day the worker reads them.
 //
 // Pure — no React. Tested.
 
 import { cvReadiness, effectiveGoal } from "./careerops/intake";
 import type { StepState } from "./careerops/intake-wizard";
 import { SECTION_COPY } from "./careerops/personalization";
-import { proofUsable, storyComplete } from "./careerops/artefacts";
 import type { CareerOpsSetupV2 } from "./careerops/types";
 import type { Profile } from "./types";
 
@@ -72,9 +71,9 @@ export const PROFILE_SECTIONS = [
   { key: "logistics", page: "profile", group: "target", label: "Salary floor & location", title: "Salary floor, location and right to work", ask: "The number below which you walk, how flexible you are on location, your visa status and where you already hold work rights.", available: true },
   { key: "targeting", page: "profile", group: "target", label: "Comp & location policy", title: "Comp targets and location policy", ask: "What the market pays for your target roles, what you say when an offer comes in low, and where you will and won't work.", available: true },
   { key: "culture", page: "profile", group: "target", label: "Culture screen", title: "Culture screen", ask: "Reserved.", available: false },
-  // ---- /profile · What value do I create ----
-  { key: "stories", page: "profile", group: "value", label: "Stories", title: "Stories", ask: "A time when you delivered. Name the project (L1), then tell it as Context · Challenge · Activities · Result · Relevance (L2) — the stories behind every interview answer and cover letter.", available: true },
-  { key: "proof", page: "profile", group: "value", label: "Proof bank", title: "Proof bank", ask: "Your library of proof points: the project, its hero metric, one line for the CV and the long version for interviews. The agents quote these instead of adjectives.", available: true },
+  // ---- /profile · What value do I create (reserved until the worker reads them) ----
+  { key: "stories", page: "profile", group: "value", label: "Stories", title: "Interview stories", ask: "Reserved.", available: false },
+  { key: "proof", page: "profile", group: "value", label: "Proof bank", title: "Proof bank", ask: "Reserved.", available: false },
   // ---- /settings ----
   { key: "cv", page: "settings", label: "Master CV", title: "Your master CV", ask: "The only source of truth about what you have done. Every tailored CV starts from it, and the Evaluator quotes it as evidence.", available: true },
   { key: "companies", page: "settings", label: "Target companies", title: "Target companies", ask: "The companies you're targeting and their careers pages — where the Scout looks — plus the title keywords it includes and excludes.", available: true },
@@ -85,7 +84,7 @@ export const PROFILE_SECTIONS = [
 ] as const satisfies readonly ProfileSection[];
 
 export type ProfileSectionKey = (typeof PROFILE_SECTIONS)[number]["key"];
-export type ActiveSectionKey = Exclude<ProfileSectionKey, "culture">;
+export type ActiveSectionKey = Exclude<ProfileSectionKey, "culture" | "stories" | "proof">;
 export type ActiveSection = ProfileSection & { key: ActiveSectionKey };
 
 /** Every section that can render, both pages, in order. */
@@ -143,8 +142,6 @@ export const FILE_SECTIONS = {
   northstar: { label: "North Star", edit: "northstar" },
   contact: { label: "Contact & logistics", edit: "contact" },
   targeting: { label: "Targeting", edit: "story" },
-  stories: { label: "Stories", edit: "stories" },
-  proof: { label: "Proof bank", edit: "proof" },
   watchlist: { label: "Target companies", edit: "companies" },
   notes: { label: "Notes", edit: "notes" },
   cv: { label: "Master CV", edit: "cv" },
@@ -202,10 +199,6 @@ export function sectionSummaries({ setup, profile, accounts = 0 }: SectionSignal
   const targetingN = [p.compTargets, p.negotiationScripts, p.locationPolicy].filter(has).length; // of 3
   const archetypesN = [p.targetRoles, p.adaptiveFraming, p.crossCuttingAdvantage].filter(has).length; // of 3
   const roles = p.targetRoles ?? [];
-  const stories = setup?.stories ?? [];
-  const storiesFull = stories.filter(storyComplete).length;
-  const proof = setup?.proofPoints ?? [];
-  const proofUsableN = proof.filter(proofUsable).length;
 
   return [
     {
@@ -234,18 +227,6 @@ export function sectionSummaries({ setup, profile, accounts = 0 }: SectionSignal
       key: "targeting", state: stateOf(targetingN, 3),
       summary: join([p.compTargets && clip(p.compTargets, 40), p.negotiationScripts?.length ? plural(p.negotiationScripts.length, "script") : undefined, p.locationPolicy?.length ? plural(p.locationPolicy.length, "location rule") : undefined]) || NOT_SET,
       count: `${targetingN}/3`,
-    },
-    {
-      // "done" once at least one story is told in full CCARR.
-      key: "stories", state: stories.length ? (storiesFull ? "done" : "partial") : "empty",
-      summary: stories.length ? join([stories.slice(0, 2).map((s) => clip(s.title, 32)).join(", ") + (stories.length > 2 ? "…" : ""), `${storiesFull}/${stories.length} full CCARR`]) : NOT_SET,
-      count: stories.length ? String(stories.length) : undefined,
-    },
-    {
-      // "done" once at least one proof point has its metric or CV line.
-      key: "proof", state: proof.length ? (proofUsableN ? "done" : "partial") : "empty",
-      summary: proof.length ? proof.slice(0, 3).map((x) => clip(x.metric ?? x.name, 28)).join(" · ") + (proof.length > 3 ? " …" : "") : NOT_SET,
-      count: proof.length ? String(proof.length) : undefined,
     },
     {
       key: "cv", state: cv ? "done" : "empty",

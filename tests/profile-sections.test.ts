@@ -10,9 +10,9 @@ const profile = { email: "ana@example.com", goal: { role: "Delivery Lead", city:
 
 describe("profile sections — the registry", () => {
   it("splits the profile between two pages: who I am / what I target on Profile, what the agents work from on Settings", () => {
-    expect(sectionsFor("profile").map((s) => s.key)).toEqual(["contact", "headline", "story", "northstar", "logistics", "targeting", "stories", "proof"]);
+    expect(sectionsFor("profile").map((s) => s.key)).toEqual(["contact", "headline", "story", "northstar", "logistics", "targeting"]);
     expect(sectionsFor("settings").map((s) => s.key)).toEqual(["cv", "companies", "archetypes", "portfolio", "notes"]);
-    expect(ACTIVE_SECTIONS.length).toBe(14);
+    expect(ACTIVE_SECTIONS.length).toBe(12);
   });
 
   it("only offers portal accounts to a member with CareerOps switched on — the vault needs the worker's key", () => {
@@ -34,10 +34,9 @@ describe("profile sections — the registry", () => {
     expect(grouped.map((g) => [g.group?.key, g.sections.map((s) => s.key)])).toEqual([
       ["who", ["contact", "headline", "story"]],
       ["target", ["northstar", "logistics", "targeting"]],
-      ["value", ["stories", "proof"]],
     ]);
-    // Only the culture screen is registered but not rendered.
-    expect(PROFILE_SECTIONS.filter((s) => !s.available).map((s) => s.key)).toEqual(["culture"]);
+    // Artefacts (stories, proof bank) and the culture screen are registered but not rendered.
+    expect(PROFILE_SECTIONS.filter((s) => !s.available).map((s) => s.key)).toEqual(["culture", "stories", "proof"]);
     // Settings is flat: one unnamed group.
     expect(groupedSections(sectionsFor("settings")).map((g) => g.group)).toEqual([null]);
   });
@@ -46,8 +45,7 @@ describe("profile sections — the registry", () => {
     expect(parseSection("story", sectionsFor("profile"))).toBe("story");
     expect(parseSection("cv", sectionsFor("profile"))).toBeNull();
     expect(parseSection("cv", sectionsFor("settings"))).toBe("cv");
-    expect(parseSection("culture")).toBeNull();
-    expect(parseSection("proof")).toBe("proof");
+    expect(parseSection("proof")).toBeNull();
     expect(parseSection("nope")).toBeNull();
     expect(parseSection(null)).toBeNull();
     expect(DEFAULT_SECTION).toEqual({ profile: "contact", settings: "cv" });
@@ -59,7 +57,7 @@ describe("profile sections — the registry", () => {
   });
 
   it("maps every section of the file to a page section a member can go to", () => {
-    expect(Object.keys(FILE_SECTIONS)).toEqual(["northstar", "contact", "targeting", "stories", "proof", "watchlist", "notes", "cv"]);
+    expect(Object.keys(FILE_SECTIONS)).toEqual(["northstar", "contact", "targeting", "watchlist", "notes", "cv"]);
     for (const f of Object.values(FILE_SECTIONS)) expect(ACTIVE_SECTIONS.some((s) => s.key === f.edit)).toBe(true);
     expect(FILE_SECTIONS.watchlist.edit).toBe("companies");
   });
@@ -69,7 +67,7 @@ describe("profile sections — what each row says", () => {
   it("says Not set everywhere for a new member, on both pages", () => {
     const rows = sectionSummaries({ setup: null, profile: null });
     expect(rows.every((r) => r.summary === "Not set" && r.state === "empty")).toBe(true);
-    expect(profileProgress(rowsFor(sectionsFor("profile"), rows))).toEqual({ done: 0, total: 8, pct: 0 });
+    expect(profileProgress(rowsFor(sectionsFor("profile"), rows))).toEqual({ done: 0, total: 6, pct: 0 });
     expect(profileProgress(rowsFor(sectionsFor("settings", { careerOps: true }), rows))).toEqual({ done: 0, total: 6, pct: 0 });
   });
 
@@ -96,12 +94,6 @@ describe("profile sections — what each row says", () => {
       },
       portals: { companies: [{ name: "Xero", careersUrl: "https://x" }, { name: "Tracksuit", careersUrl: "https://t" }, { name: "Dovetail", careersUrl: "https://d" }, { name: "Halter", careersUrl: "https://h" }], positive: ["Delivery Lead"], negative: [] },
       notes: "Hard no's: on-site 5 days\nNotice period: 28 days",
-      stories: [
-        { title: "Monthly to fortnightly releases while the team doubled", context: "c", challenge: "c", activities: "a", result: "r", relevance: "r" },
-        { title: "Tenant migration", result: "On the sold date" },
-        { title: "On-call redesign" },
-      ],
-      proofPoints: [{ name: "Release train", metric: "Monthly → fortnightly in two quarters" }, { name: "Incidents", short: "Halved incidents." }, { name: "Bare" }, { name: "Fourth" }],
     } as CareerOpsSetupV2;
     const rows = Object.fromEntries(sectionSummaries({ setup, profile, accounts: 2 }).map((r) => [r.key, r]));
 
@@ -120,13 +112,6 @@ describe("profile sections — what each row says", () => {
     expect(rows.logistics.state).toBe("partial");
     expect(rows.targeting.summary).toBe("Target NZ$ 150–175k · 1 location rule");
     expect(rows.targeting.count).toBe("2/3");
-    // What value do I create
-    expect(rows.stories.summary).toBe("Monthly to fortnightly releases…, Tenant migration… · 1/3 full CCARR");
-    expect(rows.stories.state).toBe("done");
-    expect(rows.stories.count).toBe("3");
-    expect(rows.proof.summary).toBe("Monthly → fortnightly in tw… · Incidents · Bare …");
-    expect(rows.proof.state).toBe("done");
-    expect(rows.proof.count).toBe("4");
     // Settings
     expect(rows.cv.summary).toMatch(/^\d+ words · Ready to score$/);
     expect(rows.companies.summary).toBe("Xero, Tracksuit, Dovetail…");
@@ -138,7 +123,7 @@ describe("profile sections — what each row says", () => {
     expect(rows.portfolio.summary).toBe("ana.nz · The release-cadence playbook");
     expect(rows.notes.summary).toBe("Hard no's: on-site 5 days");
 
-    expect(profileProgress(rowsFor(sectionsFor("profile"), Object.values(rows)))).toEqual({ done: 6, total: 8, pct: 75 });
+    expect(profileProgress(rowsFor(sectionsFor("profile"), Object.values(rows)))).toEqual({ done: 4, total: 6, pct: 67 });
     expect(profileProgress(rowsFor(sectionsFor("settings", { careerOps: true }), Object.values(rows)))).toEqual({ done: 6, total: 6, pct: 100 });
   });
 
@@ -158,14 +143,6 @@ describe("profile sections — what each row says", () => {
     const rows = Object.fromEntries(sectionSummaries({ setup: { cvMarkdown: "", profileYaml: "", updatedAt: 1, personalization: { crossCuttingAdvantage: "Cadence." } } as CareerOpsSetupV2, profile: null }).map((r) => [r.key, r]));
     expect(rows.archetypes.summary).toBe("competencies · no archetypes yet");
     expect(rows.archetypes.state).toBe("partial");
-  });
-
-  it("artefacts: a story without CCARR and a proof point without a number are 'started', not 'done'", () => {
-    const rows = Object.fromEntries(sectionSummaries({ setup: { cvMarkdown: "", profileYaml: "", updatedAt: 1, stories: [{ title: "Migration" }], proofPoints: [{ name: "Tool", url: "https://x" }] } as CareerOpsSetupV2, profile: null }).map((r) => [r.key, r]));
-    expect(rows.stories.state).toBe("partial");
-    expect(rows.stories.summary).toBe("Migration · 0/1 full CCARR");
-    expect(rows.proof.state).toBe("partial");
-    expect(rows.proof.summary).toBe("Tool");
   });
 
   it("truncates long quotes to one line's worth", () => {

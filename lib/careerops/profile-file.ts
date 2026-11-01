@@ -45,8 +45,6 @@ export function profileToYaml(p: ProfileFile): string {
     contact: p.contact,
     policy: p.policy,
     personalization: p.personalization,
-    stories: p.stories,
-    proofPoints: p.proofPoints,
     watchlist: p.watchlist,
     notes: p.notes,
     cv: p.cv,

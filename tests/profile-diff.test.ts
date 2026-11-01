@@ -8,8 +8,6 @@ const current: ProfileFile = {
   contact: { phone: "+64 21 000 0000", github: "github.com/ana" },
   policy: { minimumSalary: "NZ$ 140,000" },
   personalization: { exitNarrative: "Old story.", compTargets: "NZ$150k" },
-  stories: [{ title: "Release train", result: "Halved incidents" }],
-  proofPoints: [{ name: "Incidents", metric: "−52%" }],
   watchlist: { companies: [{ name: "Xero", careersUrl: "https://xero.com/careers" }, { name: "Old Co", careersUrl: "https://old.co/jobs" }], positive: ["Delivery Lead"], negative: ["intern"] },
   notes: "Old notes",
   cv: "# CV\n\n## Experience\n2019 – 2024 Acme " + "word ".repeat(100),
@@ -17,10 +15,10 @@ const current: ProfileFile = {
 
 const byKey = (d: ReturnType<typeof profileDiff>) => Object.fromEntries(d.map((x) => [x.key, x]));
 
-describe("profileDiff — one row per section, always eight", () => {
+describe("profileDiff — one row per section, always six", () => {
   it("marks every section absent from the file as kept", () => {
     const d = profileDiff(current, { version: 1 });
-    expect(d.map((x) => x.key)).toEqual(["northstar", "contact", "targeting", "stories", "proof", "watchlist", "notes", "cv"]);
+    expect(d.map((x) => x.key)).toEqual(["northstar", "contact", "targeting", "watchlist", "notes", "cv"]);
     expect(d.every((x) => !x.inFile && x.kind === "keep")).toBe(true);
     expect(diffReplaces(d)).toBe(false);
   });
@@ -44,7 +42,7 @@ describe("profileDiff — one row per section, always eight", () => {
   it("says 'same as now' for an identical file", () => {
     const d = profileDiff(current, current);
     expect(d.every((x) => x.inFile && x.kind === "keep")).toBe(true);
-    expect(d.map((x) => x.headline)).toEqual(["same as now", "same as now", "2 of 8 sections — same as now", "same as now", "same as now", "same as now", "same as now", "same as now"]);
+    expect(d.map((x) => x.headline)).toEqual(["same as now", "same as now", "2 of 8 sections — same as now", "same as now", "same as now", "same as now"]);
   });
 });
 
@@ -85,24 +83,6 @@ describe("profileDiff — replaces are reported honestly", () => {
     expect(d.watchlist.kind).toBe("replace");
     expect(d.watchlist.detail).toBe("adds Halter · keeps 1 · drops Old Co");
     expect(diffReplaces(Object.values(d))).toBe(true);
-  });
-
-  it("diffs stories by title and proof points by name", () => {
-    const stored: ProfileFile = { ...current, stories: [...current.stories!, { title: "Old story" }] };
-    const d = byKey(profileDiff(stored, {
-      version: 1,
-      stories: [{ title: "Release train", context: "c", challenge: "c", activities: "a", result: "r", relevance: "r" }, { title: "Migration" }],
-      proofPoints: [{ name: "Incidents", metric: "−52%" }],
-    }));
-    expect(d.stories.kind).toBe("replace");
-    expect(d.stories.headline).toBe("2 stories, 1 with full CCARR");
-    expect(d.stories.detail).toBe("adds Migration · keeps 1 · drops Old story");
-    expect(d.proof.kind).toBe("keep");
-    expect(d.proof.headline).toBe("same as now");
-    const fresh = byKey(profileDiff({ version: 1 }, { version: 1, proofPoints: [{ name: "Tool" }] }));
-    expect(fresh.proof.kind).toBe("add");
-    expect(fresh.proof.headline).toBe("1 proof point");
-    expect(fresh.proof.detail).toBe("adds Tool");
   });
 
   it("flags a replaced CV and notes", () => {

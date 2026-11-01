@@ -9,7 +9,6 @@
 // Pure — no React. Tested.
 
 import type { ProfileFile } from "./profile-file";
-import { storyComplete, type ProofPoint, type Story } from "./artefacts";
 import { SECTIONS, type Personalization } from "./personalization";
 import { cvReadiness } from "./intake";
 import { targetingLabel, type FileSectionKey } from "@/lib/profile-sections";
@@ -108,10 +107,6 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
     out.push({ key: "targeting", inFile: true, kind: kindOf(d), headline: `${n} of ${SECTIONS.length} sections — ${counts(d)}`, detail: detail || undefined });
   } else out.push(absent("targeting"));
 
-  // Artefacts — stories by title, proof points by name.
-  out.push(namedRows("stories", current.stories, incoming.stories, (s) => s.title, (xs) => `${xs.length} ${xs.length === 1 ? "story" : "stories"}, ${xs.filter(storyComplete).length} with full CCARR`));
-  out.push(namedRows("proof", current.proofPoints, incoming.proofPoints, (p) => p.name, (xs) => `${xs.length} proof ${xs.length === 1 ? "point" : "points"}`));
-
   // Watchlist — companies by name.
   if (incoming.watchlist?.companies.length) {
     const curNames = new Set((current.watchlist?.companies ?? []).map((c) => c.name));
@@ -143,23 +138,6 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
   } else out.push(absent("cv"));
 
   return out;
-}
-
-/** A list section whose rows have a name: adds / keeps / drops by that name, like the watchlist. */
-function namedRows<T extends Story | ProofPoint>(key: FileSectionKey, cur: T[] | undefined, inc: T[] | undefined, nameOf: (x: T) => string, summary: (xs: T[]) => string): SectionDiff {
-  if (!inc?.length) return absent(key);
-  const curNames = new Set((cur ?? []).map(nameOf));
-  const incNames = inc.map(nameOf);
-  const added = incNames.filter((n) => !curNames.has(n));
-  const dropped = [...curNames].filter((n) => !incNames.includes(n));
-  const kept = incNames.length - added.length;
-  const kind: DiffKind = !curNames.size ? "add" : same(cur, inc) ? "keep" : "replace";
-  const detail = kind === "keep" ? undefined : [
-    added.length ? `adds ${list(added.slice(0, 3))}${added.length > 3 ? ` +${added.length - 3}` : ""}` : "",
-    kept ? `keeps ${kept}` : "",
-    dropped.length ? `drops ${list(dropped.slice(0, 3))}${dropped.length > 3 ? ` +${dropped.length - 3}` : ""}` : "",
-  ].filter(Boolean).join(" · ");
-  return { key, inFile: true, kind, headline: kind === "keep" ? "same as now" : summary(inc), detail: detail || undefined };
 }
 
 /** True when at least one stored section would be overwritten — the cue to offer "Download current profile". */
