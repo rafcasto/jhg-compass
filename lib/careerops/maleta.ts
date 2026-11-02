@@ -38,7 +38,7 @@ import { JSON_SCHEMA, dump as yamlDump, load as yamlLoad } from "js-yaml";
 import type { Goal } from "@/lib/goal";
 import { GOAL_KEYS } from "@/lib/goal";
 import { coercePersonalization, parseProfileMd, renderProfileMd, type Personalization } from "./personalization";
-import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, PortalCompany } from "./types";
+import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, Narrative, PortalCompany, ProofPoint, Snapshot, Story } from "./types";
 import type { Profile } from "@/lib/types";
 
 export const MALETA_VERSION = 1;
@@ -56,6 +56,10 @@ export interface Maleta {
   personalization?: Personalization;
   watchlist?: CareerOpsPortals;
   notes?: string;
+  /** Artefacts (Packer spec): proof points, stories, per-company snapshots. Stored for the round trip. */
+  narrative?: Narrative;
+  stories?: Story[];
+  snapshots?: Snapshot[];
 }
 
 // ---- the three ways in ----
@@ -117,6 +121,9 @@ export function maletaFromSetup({ profile, setup }: { profile: Profile | null | 
     personalization: pruned(coercePersonalization(setup?.personalization ?? {})),
     watchlist: setup?.portals?.companies?.length ? setup.portals : undefined,
     notes: setup?.notes?.trim() || undefined,
+    narrative: setup?.narrative?.proofPoints?.length ? setup.narrative : undefined,
+    stories: setup?.stories?.length ? setup.stories : undefined,
+    snapshots: setup?.snapshots?.length ? setup.snapshots : undefined,
   };
 }
 
@@ -133,6 +140,9 @@ export function maletaToYaml(m: Maleta): string {
     watchlist: m.watchlist,
     notes: m.notes,
     cv: m.cv,
+    narrative: m.narrative,
+    stories: m.stories,
+    snapshots: m.snapshots,
   };
   const body = yamlDump(JSON.parse(JSON.stringify(doc)), { lineWidth: 100, noRefs: true, skipInvalid: true });
   return [
@@ -282,10 +292,12 @@ function fromCareerOpsProfileYaml(doc: Record<string, unknown>, warnings: string
 export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
   const g = (doc.goal ?? {}) as Record<string, unknown>;
   const w = (doc.watchlist ?? {}) as Record<string, unknown>;
+  // A company with no careers URL is kept (decision 2026-11-03): the member adds the
+  // page later under Target companies, and buildPortalsYaml leaves it out of the Scout's file until then.
   const companies = Array.isArray(w.companies)
     ? (w.companies as unknown[])
         .map((x) => (x && typeof x === "object" ? { name: str((x as PortalCompany).name) ?? "", careersUrl: str((x as PortalCompany).careersUrl) ?? "" } : null))
-        .filter((x): x is PortalCompany => !!x?.name && !!x?.careersUrl)
+        .filter((x): x is PortalCompany => !!x?.name)
         .slice(0, 25)
     : [];
   const contact = (doc.contact ?? {}) as Record<string, unknown>;
@@ -296,7 +308,7 @@ export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
     goal: pruned(Object.fromEntries(GOAL_KEYS.map((k) => [k, str(g[k])])) as Goal),
     contact: pruned({
       title: str(contact.title), phone: str(contact.phone), linkedin: str(contact.linkedin),
-      github: str(contact.github), portfolio: str(contact.portfolio),
+      github: str(contact.github), portfolio: str(contact.portfolio), location: str(contact.location),
     } as CareerOpsContact),
     policy: pruned({
       minimumSalary: str(policy.minimumSalary), locationFlexibility: str(policy.locationFlexibility),
@@ -306,6 +318,31 @@ export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
     personalization: pruned(coercePersonalization(doc.personalization)),
     watchlist: companies.length ? { companies, positive: strArr(w.positive) ?? [], negative: strArr(w.negative) ?? [] } : undefined,
     notes: str(doc.notes),
+    ...artefactsFromYaml(doc),
+  };
+}
+
+// ---- artefacts: narrative.proofPoints · stories · snapshots ----
+// Strings extracted, capped, never obeyed — same rule as every other section.
+const CAP = 50;
+const rowsOf = (v: unknown): Record<string, unknown>[] =>
+  Array.isArray(v) ? (v.filter((x) => x && typeof x === "object") as Record<string, unknown>[]).slice(0, CAP) : [];
+
+function artefactsFromYaml(doc: Record<string, unknown>): Pick<Maleta, "narrative" | "stories" | "snapshots"> {
+  const nar = (doc.narrative ?? {}) as Record<string, unknown>;
+  const proofPoints = rowsOf(nar.proofPoints)
+    .map((r) => pruned({ name: str(r.name), heroMetric: str(r.heroMetric) } as ProofPoint))
+    .filter((r): r is ProofPoint => !!r?.name);
+  const stories = rowsOf(doc.stories)
+    .map((r) => pruned({ id: str(r.id), title: str(r.title), result: str(r.result), provenance: str(r.provenance) } as Story))
+    .filter((r): r is Story => !!r?.title);
+  const snapshots = rowsOf(doc.snapshots)
+    .map((r) => pruned({ company: str(r.company), storyId: str(r.storyId), title: str(r.title), results: strArr(r.results) } as Snapshot))
+    .filter((r): r is Snapshot => !!r?.company);
+  return {
+    narrative: proofPoints.length ? { proofPoints } : undefined,
+    stories: stories.length ? stories : undefined,
+    snapshots: snapshots.length ? snapshots : undefined,
   };
 }
 
@@ -398,6 +435,9 @@ export function maletaContents(m: Maleta): string[] {
   if (m.personalization) found.push(`targeting (${Object.keys(m.personalization).length}/8 sections)`);
   if (m.watchlist?.companies.length) found.push(`watchlist (${m.watchlist.companies.length} companies)`);
   if (m.notes) found.push("notes");
+  if (m.narrative?.proofPoints?.length) found.push(`proof points (${m.narrative.proofPoints.length})`);
+  if (m.stories?.length) found.push(`stories (${m.stories.length})`);
+  if (m.snapshots?.length) found.push(`snapshots (${m.snapshots.length})`);
   return found;
 }
 
@@ -472,6 +512,9 @@ export function maletaToSetupPatch(m: Maleta): MaletaPatch {
   }
   if (m.watchlist?.companies.length) setup.portals = m.watchlist;
   if (m.notes) setup.notes = m.notes;
+  if (m.narrative) setup.narrative = m.narrative;
+  if (m.stories) setup.stories = m.stories;
+  if (m.snapshots) setup.snapshots = m.snapshots;
   // A goal in the file becomes the intake North Star, which overrides Compass —
   // the member brought it deliberately, so it should win.
   if (m.goal?.role?.trim()) {

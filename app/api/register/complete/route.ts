@@ -32,11 +32,14 @@ export async function POST(req: NextRequest) {
 
   // Enroll the new registrant into the Compass onboarding email sequence.
   // Best-effort side effect: a Kit failure must never fail the registration
-  // (the user already has an account + access at this point).
-  const kit = await enrollInCompassSequence(email, firstName);
-  if (!kit.ok && !kit.skipped) {
-    console.error(`[register] Kit enrollment failed for ${email}: ${kit.error}`);
+  // (the user already has an account + access at this point). A JobHacking-only
+  // sign-up gets no Compass sequence — there is no Compass to onboard them to.
+  if (result.portal !== "jobhacking") {
+    const kit = await enrollInCompassSequence(email, firstName);
+    if (!kit.ok && !kit.skipped) {
+      console.error(`[register] Kit enrollment failed for ${email}: ${kit.error}`);
+    }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, portal: result.portal ?? "compass" });
 }

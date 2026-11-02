@@ -21,7 +21,8 @@ export function DesktopSidebar({
   profileHref = "/profile", profileActive = false, settingsHref = "/settings", settingsActive = false,
 }: {
   items: TabItem[]; onSignOut?: () => void; signingOut?: boolean; position?: "fixed" | "static"; footer?: ReactNode; brand?: ReactNode;
-  profileHref?: string; profileActive?: boolean; settingsHref?: string; settingsActive?: boolean;
+  /** null hides the Profile row — the JobHacking portal has Profile in its primary nav instead. */
+  profileHref?: string | null; profileActive?: boolean; settingsHref?: string; settingsActive?: boolean;
 }) {
   const fixed = position === "fixed";
   const profileInner = <><UserRound className="h-5 w-5" strokeWidth={1.5} aria-hidden /> Profile</>;
@@ -56,9 +57,9 @@ export function DesktopSidebar({
           (hover → ink); Sign out is the exit (hover → red). */}
       <div className="mt-auto pt-4 border-t border-jh-line space-y-1" aria-label="Account">
         {footer}
-        {fixed
+        {profileHref !== null && (fixed
           ? <Link href={profileHref} className={rowCls(profileActive)} aria-current={profileActive ? "page" : undefined}>{profileInner}</Link>
-          : <span className={rowCls(profileActive)} aria-current={profileActive ? "page" : undefined}>{profileInner}</span>}
+          : <span className={rowCls(profileActive)} aria-current={profileActive ? "page" : undefined}>{profileInner}</span>)}
         {fixed
           ? <Link href={settingsHref} className={rowCls(settingsActive)} aria-current={settingsActive ? "page" : undefined}>{settingsInner}</Link>
           : <span className={rowCls(settingsActive)} aria-current={settingsActive ? "page" : undefined}>{settingsInner}</span>}

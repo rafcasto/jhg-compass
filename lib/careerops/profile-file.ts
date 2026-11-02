@@ -47,6 +47,10 @@ export function profileToYaml(p: ProfileFile): string {
     personalization: p.personalization,
     watchlist: p.watchlist,
     notes: p.notes,
+    // Artefacts after the CV, as the Packer writes them.
+    narrative: p.narrative,
+    stories: p.stories,
+    snapshots: p.snapshots,
     cv: p.cv,
   };
   const body = yamlDump(JSON.parse(JSON.stringify(doc)), { lineWidth: 100, noRefs: true, skipInvalid: true });

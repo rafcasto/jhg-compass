@@ -12,8 +12,8 @@ import VerifyEmail from "@/components/VerifyEmail";
 import FeedbackGate from "@/components/FeedbackGate";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, emailVerified } = useAuth();
-  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled } = useAccess(user?.uid);
+  const { user, loading, emailVerified, isAdmin } = useAuth();
+  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled, jobHackingEnabled, compassEnabled } = useAccess(user?.uid);
   const { data: profile, loading: profileLoading } =
     useLiveDoc<Profile>(user ? paths.profile(user.uid) : null);
   const router = useRouter();
@@ -32,11 +32,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const onboarded = !!profile?.onboardedAt;
 
+  // A member who signed up to JobHacking alone has no Compass: send them to their portal
+  // before the onboarding gate (the wizard is Compass's; JobHacking fills in from profile.yml).
+  const jobHackingOnly = hasAccess && !compassEnabled && jobHackingEnabled && !isAdmin;
+  useEffect(() => {
+    if (!user || !emailVerified || accessLoading) return;
+    if (jobHackingOnly) router.replace("/jobhacking/profile");
+  }, [user, emailVerified, accessLoading, jobHackingOnly, router]);
+
   // Send verified-but-not-onboarded users to the onboarding wizard (req 3).
   useEffect(() => {
-    if (!user || !emailVerified) return;
+    if (!user || !emailVerified || accessLoading || jobHackingOnly) return;
     if (!profileLoading && !onboarded) router.replace("/onboarding");
-  }, [user, emailVerified, profileLoading, onboarded, router]);
+  }, [user, emailVerified, accessLoading, jobHackingOnly, profileLoading, onboarded, router]);
 
   if (loading || !user || accessLoading) {
     return <div className="min-h-screen grid place-items-center text-jh-mute animate-pulse">Loading…</div>;
@@ -46,12 +54,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!emailVerified) return <VerifyEmail />;
 
   // Gate 2 — onboarding (req 3). Hold the UI while we redirect.
-  if (profileLoading || !onboarded) {
+  if (jobHackingOnly || profileLoading || !onboarded) {
     return <div className="min-h-screen grid place-items-center text-jh-mute animate-pulse">Loading…</div>;
   }
 
   return (
-    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled}>
+    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled} jobHackingEnabled={jobHackingEnabled} compassEnabled={compassEnabled}>
       {children}
       {/* Expired access blocks everything and takes precedence over feedback. */}
       {!hasAccess && <Paywall />}

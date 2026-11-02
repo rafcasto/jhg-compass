@@ -130,6 +130,21 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
     out.push({ key: "notes", inFile: true, kind, headline: kind === "add" ? "new" : kind === "keep" ? "same as now" : "replaces", detail: incoming.notes.split("\n")[0] });
   } else out.push(absent("notes"));
 
+  // Artefacts — proof points, stories, snapshots, counted as one section.
+  const art = (p: ProfileFile) => ({ proofPoints: p.narrative?.proofPoints ?? [], stories: p.stories ?? [], snapshots: p.snapshots ?? [] });
+  const inc = art(incoming), cur = art(current);
+  const incN = inc.proofPoints.length + inc.stories.length + inc.snapshots.length;
+  if (incN) {
+    const curN = cur.proofPoints.length + cur.stories.length + cur.snapshots.length;
+    const kind: DiffKind = !curN ? "add" : same(cur, inc) ? "keep" : "replace";
+    const parts = [
+      inc.proofPoints.length ? `${inc.proofPoints.length} proof ${inc.proofPoints.length === 1 ? "point" : "points"}` : "",
+      inc.stories.length ? `${inc.stories.length} ${inc.stories.length === 1 ? "story" : "stories"}` : "",
+      inc.snapshots.length ? `${inc.snapshots.length} ${inc.snapshots.length === 1 ? "snapshot" : "snapshots"}` : "",
+    ].filter(Boolean).join(", ");
+    out.push({ key: "artefacts", inFile: true, kind, headline: kind === "keep" ? "same as now" : parts, detail: kind === "keep" ? undefined : "Kept with your profile and exported with it — no page edits these yet." });
+  } else out.push(absent("artefacts"));
+
   // CV.
   if (incoming.cv) {
     const r = cvReadiness(incoming.cv);

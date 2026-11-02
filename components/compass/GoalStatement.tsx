@@ -1,4 +1,4 @@
-import { companyTypePhrase, type Goal } from "@/lib/goal";
+import { companyTypePhrase, roleWithSeniority, type Goal } from "@/lib/goal";
 
 // The fixed goal-statement sentence. Every member value is italic + white; blanks
 // render a dimmed placeholder so the shape of the sentence is always visible.
@@ -27,7 +27,7 @@ function V({ value, placeholder, name }: { value?: string; placeholder: string; 
 export default function GoalStatement({ goal }: { goal: Goal }) {
   return (
     <p className="goal-statement" data-testid="goal-statement">
-      In 60 days from now, I&apos;m working as <V name="role" value={goal.role} placeholder="[Seniority Level + Job title]" />, making $
+      In 60 days from now, I&apos;m working as <V name="role" value={roleWithSeniority(goal)} placeholder="[Seniority Level + Job title]" />, making $
       <V name="salary" value={goal.salary} placeholder="[Target Salary]" /> yearly before tax.
       <br />
       I&apos;m based in <V name="city" value={goal.city} placeholder="[City]" /> and specialise in thriving industry{" "}

@@ -4,6 +4,11 @@ import { adminAuth, adminDb } from "@/lib/firebase/admin";
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
 
+/** Which portal a link signs the member up to. "jobhacking" = JobHacking alone (no Compass). */
+export type LinkPortal = "compass" | "jobhacking";
+export const LINK_PORTALS: readonly LinkPortal[] = ["compass", "jobhacking"];
+export const asLinkPortal = (v: unknown): LinkPortal => (v === "jobhacking" ? "jobhacking" : "compass");
+
 export interface RegistrationLink {
   token: string;
   createdBy: string;
@@ -12,6 +17,7 @@ export interface RegistrationLink {
   maxUses: number;            // how many signups the link allows (default 1)
   uses: number;
   email: string | null;       // optional: lock the link to one email
+  portal?: LinkPortal;        // absent = compass (links created before the JobHacking portal)
   status: "active" | "used" | "expired";
   createdAt: number;
 }
@@ -19,7 +25,7 @@ export interface RegistrationLink {
 // Admin creates a time-boxed registration link (req 8).
 export async function createRegistrationLink(
   adminUid: string,
-  opts: { expiryHours?: number; accessDurationDays?: number; maxUses?: number; email?: string | null }
+  opts: { expiryHours?: number; accessDurationDays?: number; maxUses?: number; email?: string | null; portal?: LinkPortal }
 ): Promise<RegistrationLink> {
   const token = globalThis.crypto.randomUUID().replace(/-/g, "");
   const now = Date.now();
@@ -31,6 +37,7 @@ export async function createRegistrationLink(
     maxUses: opts.maxUses ?? 1,
     uses: 0,
     email: opts.email?.trim() || null,
+    portal: asLinkPortal(opts.portal),
     status: "active",
     createdAt: now,
   };
@@ -48,6 +55,7 @@ interface ValidationResult {
   reason?: "not_found" | "expired" | "used";
   email?: string | null;
   accessDurationDays?: number;
+  portal?: LinkPortal;
 }
 
 export async function validateLink(token: string): Promise<ValidationResult> {
@@ -61,13 +69,15 @@ export async function validateLink(token: string): Promise<ValidationResult> {
     return { valid: false, reason: "expired" };
   }
   if (link.uses >= link.maxUses || link.status === "used") return { valid: false, reason: "used" };
-  return { valid: true, email: link.email, accessDurationDays: link.accessDurationDays };
+  return { valid: true, email: link.email, accessDurationDays: link.accessDurationDays, portal: asLinkPortal(link.portal) };
 }
 
 interface CompleteResult {
   ok: boolean;
   uid?: string;
   error?: string;
+  /** Where to send the member once signed in. */
+  portal?: LinkPortal;
 }
 
 // Consumes the link: create the user, grant 60-day access (default), mark link used.
@@ -88,6 +98,7 @@ export async function completeRegistration(
   const db = adminDb();
   const now = Date.now();
   const days = v.accessDurationDays ?? 60;
+  const portal = asLinkPortal(v.portal);
 
   // create or update the user with the chosen password
   const displayName = [firstName, lastName].filter(Boolean).join(" ") || undefined;
@@ -109,6 +120,11 @@ export async function completeRegistration(
       email, plan: "3_month", durationDays: days, status: "active",
       redeemBy: null, startsAt: now, expiresAt: now + days * DAY,
       source: "registration_link", createdAt: now, updatedAt: now,
+      // A JobHacking link signs the member up to that portal alone: Compass off, JobHacking on.
+      // A Compass link leaves the features untouched (absent = Compass on).
+      ...(portal === "jobhacking"
+        ? { features: { jobHacking: true, compass: false }, featuresUpdatedAt: now, featuresUpdatedBy: "registration_link" }
+        : {}),
     },
     { merge: true }
   );
@@ -119,5 +135,5 @@ export async function completeRegistration(
   const linkData = (await ref.get()).data() as RegistrationLink;
   await ref.set({ uses, usedBy: user.uid, usedAt: now, status: uses >= linkData.maxUses ? "used" : "active" }, { merge: true });
 
-  return { ok: true, uid: user.uid };
+  return { ok: true, uid: user.uid, portal };
 }

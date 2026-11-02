@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import GoalStatement from "@/components/compass/GoalStatement";
 import { COMPANY_TYPES, companyTypePhrase, goalFromLegacy, goalFromProfile, normalizeGoal } from "@/lib/goal";
 
@@ -24,6 +24,14 @@ describe("GoalStatement", () => {
     expect(text).toContain("In 60 days from now, I'm working as Senior Product Owner, making $180,000 – 220,000 yearly before tax.");
     expect(text).toContain("I'm based in Auckland, New Zealand and specialise in thriving industry climate-tech SaaS.");
     expect(text).toContain("I enjoy working for a Scaleup (established), with flexible working arrangements.");
+  });
+
+  it("puts the seniority level in front of the title, without doubling a level already typed into it", () => {
+    render(<GoalStatement goal={{ role: "Product Owner", seniority: "Senior" }} />);
+    expect(screen.getByText("Senior Product Owner")).toHaveAttribute("data-field", "role");
+    cleanup();
+    render(<GoalStatement goal={{ role: "Senior Product Owner", seniority: "Senior" }} />);
+    expect(screen.getByText("Senior Product Owner")).toBeInTheDocument();
   });
 
   it("breaks the line after 'before tax.' and after the subsector", () => {
@@ -85,6 +93,6 @@ describe("goal helpers", () => {
 
   it("trims on normalise", () => {
     expect(normalizeGoal({ role: "  PO ", salary: "", city: undefined }))
-      .toEqual({ role: "PO", subsector: "", companyType: "", city: "", salary: "" });
+      .toEqual({ role: "PO", seniority: "", subsector: "", companyType: "", city: "", salary: "" });
   });
 });

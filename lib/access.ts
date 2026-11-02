@@ -28,6 +28,8 @@ export interface MemberAccessRow {
   renewedAt?: number | null;
   renewedBy?: string | null;
   careerOps: boolean;         // CareerOps portal enabled for this member
+  jobHacking?: boolean;       // JobHacking portal enabled for this member
+  compass?: boolean;          // false = JobHacking-only member (no Compass)
 }
 
 type GrantLike = Pick<AccessGrant, "status" | "startsAt" | "expiresAt" | "redeemBy">;

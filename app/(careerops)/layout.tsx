@@ -15,7 +15,7 @@ import VerifyEmail from "@/components/VerifyEmail";
 // portal on for this member (accessGrants/{uid}.features.careerOps). Admins always get in.
 export default function CareerOpsLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, emailVerified, isAdmin } = useAuth();
-  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled } = useAccess(user?.uid);
+  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled, jobHackingEnabled, compassEnabled } = useAccess(user?.uid);
   const { data: profile, loading: profileLoading } = useLiveDoc<Profile>(user ? paths.profile(user.uid) : null);
   const router = useRouter();
 
@@ -37,7 +37,7 @@ export default function CareerOpsLayout({ children }: { children: React.ReactNod
 
   const allowed = agentsEnabled || isAdmin;
   return (
-    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled} portal="careerops">
+    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled} jobHackingEnabled={jobHackingEnabled} compassEnabled={compassEnabled} portal="careerops">
       {allowed ? children : (
         <div className="card p-10 text-center">
           <h1 className="mb-2">CareerOps isn&apos;t switched on for you yet</h1>

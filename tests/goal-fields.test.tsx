@@ -7,7 +7,8 @@ import { EMPTY_GOAL, GOAL_KEYS } from "@/lib/goal";
 // The Compass tab and onboarding must render the identical form. This pins the
 // agreed order and labels for both variants so they can't drift again.
 const EXPECTED_ORDER = [
-  "Seniority level + Job title",
+  "Job title",
+  "Seniority level",
   "Industry",
   "Company type",
   "Geography (country, region, city, area)",
@@ -25,7 +26,7 @@ describe("GoalFields", () => {
       const labels = Array.from(container.querySelectorAll("label")).map((l) => l.textContent);
       expect(labels).toEqual(EXPECTED_ORDER);
       const cls = variant === "compass" ? "cfield" : "field";
-      expect(container.querySelectorAll(`input.${cls}, select.${cls}`)).toHaveLength(5);
+      expect(container.querySelectorAll(`input.${cls}, select.${cls}`)).toHaveLength(6);
     });
   }
 

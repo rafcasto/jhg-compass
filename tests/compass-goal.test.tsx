@@ -25,7 +25,7 @@ describe("CompassGoal", () => {
 
     expect(screen.queryByRole("button", { name: /edit/i })).not.toBeInTheDocument();
     expect(screen.getByText("Complete your objective")).toBeInTheDocument();
-    expect(screen.getByLabelText("Seniority level + Job title")).toHaveValue("Product Owner");
+    expect(screen.getByLabelText("Job title")).toHaveValue("Product Owner");
     expect(screen.getByLabelText("Industry")).toHaveValue("fintech");
     expect(screen.getByLabelText("Company type")).toHaveValue("Small Business");
     expect(screen.getByLabelText("Geography (country, region, city, area)")).toHaveValue("Wellington");
@@ -47,7 +47,7 @@ describe("CompassGoal", () => {
     const user = userEvent.setup();
     render(<CompassGoal goal={saved} onSave={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
-    const role = screen.getByLabelText("Seniority level + Job title");
+    const role = screen.getByLabelText("Job title");
     await user.clear(role);
     await user.type(role, "Head of Product");
     expect(screen.getByTestId("goal-statement")).toHaveTextContent("working as Head of Product");
@@ -85,7 +85,8 @@ describe("CompassGoal", () => {
     await user.type(salary, " 180,000 – 220,000 ");
     await user.click(screen.getByRole("button", { name: "Save objective" }));
 
-    expect(onSave).toHaveBeenCalledWith({ ...saved, salary: "180,000 – 220,000" });
+    // normalizeGoal writes every goal key, so the level field is present even when untouched.
+    expect(onSave).toHaveBeenCalledWith({ ...saved, seniority: "", salary: "180,000 – 220,000" });
     expect(screen.queryAllByRole("textbox")).toHaveLength(0);
     expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
   });

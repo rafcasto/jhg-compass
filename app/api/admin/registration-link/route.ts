@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRegistrationLink, listRegistrationLinks } from "@/lib/server/registration";
+import { asLinkPortal, createRegistrationLink, listRegistrationLinks } from "@/lib/server/registration";
 
 export const runtime = "nodejs";
 
@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     accessDurationDays: Number(body.accessDurationDays) || 60,
     maxUses: Number(body.maxUses) || 1,
     email: body.email || null,
+    portal: asLinkPortal(body.portal),
   });
   return NextResponse.json({ ok: true, link });
 }

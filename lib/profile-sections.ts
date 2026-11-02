@@ -145,7 +145,9 @@ export const FILE_SECTIONS = {
   watchlist: { label: "Target companies", edit: "companies" },
   notes: { label: "Notes", edit: "notes" },
   cv: { label: "Master CV", edit: "cv" },
-} as const satisfies Record<string, { label: string; edit: ActiveSectionKey }>;
+  // Stored and exported, edited nowhere yet — so no page section to send the member to.
+  artefacts: { label: "Stories & proof points", edit: null },
+} as const satisfies Record<string, { label: string; edit: ActiveSectionKey | null }>;
 
 export type FileSectionKey = keyof typeof FILE_SECTIONS;
 

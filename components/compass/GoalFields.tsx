@@ -4,11 +4,14 @@ import { COMPANY_TYPES, GOAL_KEYS, type Goal } from "@/lib/goal";
 
 // The ONE objective form. Rendered in Compass edit mode and in onboarding step 2
 // so the two can never drift: same fields, same labels, same order, same options.
-// Field order (GOAL_KEYS): role, subsector (industry), companyType, city
-// (geography), salary (range).
+// Field order (GOAL_KEYS): role (job title), seniority, subsector (industry),
+// companyType, city (geography), salary (range). Seniority became its own field
+// on 2026-11-03 (JobHacking True North); a title typed with the level in it
+// still reads fine — roleWithSeniority() never doubles it up.
 
 export const GOAL_LABELS: Record<(typeof GOAL_KEYS)[number], string> = {
-  role: "Seniority level + Job title",
+  role: "Job title",
+  seniority: "Seniority level",
   subsector: "Industry",
   companyType: "Company type",
   city: "Geography (country, region, city, area)",
@@ -16,7 +19,8 @@ export const GOAL_LABELS: Record<(typeof GOAL_KEYS)[number], string> = {
 };
 
 const PLACEHOLDERS: Record<(typeof GOAL_KEYS)[number], string> = {
-  role: "e.g. Senior Product Owner",
+  role: "e.g. Product Owner",
+  seniority: "e.g. Senior",
   subsector: "e.g. climate-tech SaaS",
   companyType: "Select…",
   city: "e.g. Auckland, New Zealand",
@@ -39,11 +43,16 @@ export default function GoalFields({ value, onChange, variant = "compass", idPre
 
   return (
     <div className={`grid gap-4 ${variant === "compass" ? "sm:grid-cols-2" : ""}`}>
-      {/* Role is the longest value — full width, then a clean 2×2 (no orphan). */}
-      <div className={variant === "compass" ? "sm:col-span-2" : undefined}>
+      {/* Title + level on one row, then industry + type, then place + money — a clean 3×2, no orphan. */}
+      <div>
         <label htmlFor={`${idPrefix}-role`} className={labelCls}>{GOAL_LABELS.role}</label>
         <input id={`${idPrefix}-role`} className={fieldCls} value={value.role ?? ""} onChange={set("role")}
           placeholder={PLACEHOLDERS.role} autoComplete="organization-title" />
+      </div>
+      <div>
+        <label htmlFor={`${idPrefix}-seniority`} className={labelCls}>{GOAL_LABELS.seniority}</label>
+        <input id={`${idPrefix}-seniority`} className={fieldCls} value={value.seniority ?? ""} onChange={set("seniority")}
+          placeholder={PLACEHOLDERS.seniority} />
       </div>
       <div>
         <label htmlFor={`${idPrefix}-subsector`} className={labelCls}>{GOAL_LABELS.subsector}</label>
