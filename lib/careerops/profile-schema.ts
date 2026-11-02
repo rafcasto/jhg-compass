@@ -17,15 +17,16 @@ export const PROFILE_SCHEMA_VERSION = 1;
 export interface SchemaError { path: string; message: string }
 export interface SchemaResult { ok: boolean; errors: SchemaError[]; warnings: string[] }
 
-export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "notes", "cv"] as const;
+export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "notes", "cv", "narrative", "stories", "snapshots"] as const;
 
-const CONTACT_KEYS = ["title", "phone", "linkedin", "github", "portfolio"] as const;
+// `location` is in the storage model (CareerOpsContact → candidate.location) and in every export; the file must take it back.
+const CONTACT_KEYS = ["title", "phone", "linkedin", "github", "portfolio", "location"] as const;
 const POLICY_STRING_KEYS = ["minimumSalary", "locationFlexibility", "visaStatus"] as const;
 const PERSONALIZATION_KEYS = ["targetRoles", "adaptiveFraming", "exitNarrative", "crossCuttingAdvantage", "portfolio", "compTargets", "negotiationScripts", "locationPolicy"] as const;
 const COMPANY_KEYS = ["name", "careersUrl", "enabled", "provider", "apiUrl"] as const;
 
 /** Row caps, from coercePersonalization / the watchlist editor / the Packer spec. */
-export const ROW_CAPS = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8, companies: 25, authorizedIn: 50 } as const;
+export const ROW_CAPS = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8, companies: 25, authorizedIn: 50, proofPoints: 50, stories: 50, snapshots: 50 } as const;
 /** Prose caps the importer truncates to. */
 export const TEXT_CAPS = { exitNarrative: 1200, crossCuttingAdvantage: 600, compTargets: 800 } as const;
 
@@ -176,7 +177,8 @@ export function validateProfileFile(doc: unknown): SchemaResult {
           for (const k of ["name", "careersUrl", "provider", "apiUrl"] as const) c.string(r[k], `${path}.${k}`);
           c.boolean(r.enabled, `${path}.enabled`);
           if (!(typeof r.name === "string" && r.name.trim())) c.errors.push({ path, message: "missing name" });
-          else if (!(typeof r.careersUrl === "string" && r.careersUrl.trim())) c.warnings.push(`${r.name} has no careers URL — the Scout needs the page that lists the jobs, so it is skipped`);
+          // Kept (decision 2026-11-03): the member fills the URL in later under Target companies; the Scout skips it until then.
+          else if (!(typeof r.careersUrl === "string" && r.careersUrl.trim())) c.warnings.push(`${r.name} has no careers URL — kept, but the Scout skips it until you add the page that lists the jobs`);
         });
         if (w.companies.length > ROW_CAPS.companies) c.warnings.push(`watchlist.companies has ${w.companies.length} entries — only the first ${ROW_CAPS.companies} are kept`);
       }
@@ -187,6 +189,25 @@ export function validateProfileFile(doc: unknown): SchemaResult {
 
   c.string(doc.notes, "notes");
   c.string(doc.cv, "cv");
+
+  // artefacts — narrative.proofPoints · stories · snapshots (Packer spec; added 2026-11-03)
+  const nar = c.mapping(doc.narrative, "narrative", ["proofPoints"]);
+  if (nar) c.rows(nar.proofPoints, "narrative.proofPoints", ["name", "heroMetric"], ["name"], ROW_CAPS.proofPoints);
+  c.rows(doc.stories, "stories", ["id", "title", "result", "provenance"], ["title"], ROW_CAPS.stories);
+  if (!absent(doc.snapshots)) {
+    if (!Array.isArray(doc.snapshots)) c.errors.push({ path: "snapshots", message: `must be a list, got ${describe(doc.snapshots)}` });
+    else {
+      doc.snapshots.forEach((row, i) => {
+        const path = `snapshots[${i}]`;
+        const r = c.mapping(row, path, ["company", "storyId", "title", "results"]);
+        if (!r) { if (!absent(row)) return; c.errors.push({ path, message: "empty entry" }); return; }
+        for (const k of ["company", "storyId", "title"] as const) c.string(r[k], `${path}.${k}`);
+        c.stringList(r.results, `${path}.results`);
+        if (!(typeof r.company === "string" && r.company.trim())) c.errors.push({ path, message: "missing company" });
+      });
+      if (doc.snapshots.length > ROW_CAPS.snapshots) c.warnings.push(`snapshots has ${doc.snapshots.length} entries — only the first ${ROW_CAPS.snapshots} are kept`);
+    }
+  }
 
   return { ok: c.errors.length === 0, errors: c.errors, warnings: c.warnings };
 }

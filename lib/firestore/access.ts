@@ -11,6 +11,8 @@ export interface AccessState {
   hasAccess: boolean;
   daysLeft: number | null;
   agentsEnabled: boolean;   // Admin switched features.careerOps on (CareerOps portal)
+  jobHackingEnabled: boolean; // features.jobHacking — the JobHacking portal (admin switch or JobHacking sign-up link)
+  compassEnabled: boolean;    // features.compass !== false — off only for members who signed up to JobHacking alone
 }
 
 function computeHasAccess(g: AccessGrant | null): { ok: boolean; daysLeft: number | null } {
@@ -41,7 +43,12 @@ export function useAccess(uid: string | undefined): AccessState {
   }, [uid]);
 
   const { ok, daysLeft } = computeHasAccess(grant);
-  return { loading, grant, hasAccess: ok, daysLeft, agentsEnabled: ok && grant?.features?.careerOps === true };
+  return {
+    loading, grant, hasAccess: ok, daysLeft,
+    agentsEnabled: ok && grant?.features?.careerOps === true,
+    jobHackingEnabled: ok && grant?.features?.jobHacking === true,
+    compassEnabled: ok && grant?.features?.compass !== false,
+  };
 }
 
 export const DEFAULT_ADMIN_CONFIG: AdminConfig = {

@@ -199,6 +199,19 @@ export interface CareerOpsPolicy {
   authorizedIn?: string[];
 }
 
+// ---- artefacts (Packer spec, profile.yml top-level `narrative` · `stories` · `snapshots`) ----
+//
+// Stored and exported so a member's profile.yml round-trips without loss. No
+// page edits them yet; the JobHacking portal reads nothing from them either.
+
+/** narrative.proofPoints[] — a named result and the one number that proves it. */
+export interface ProofPoint { name: string; heroMetric?: string }
+export interface Narrative { proofPoints?: ProofPoint[] }
+/** stories[] — one interview story: what happened, how sure the member is of the figure. */
+export interface Story { id?: string; title: string; result?: string; provenance?: string }
+/** snapshots[] — a story pointed at one target company, with the figures to lead with. */
+export interface Snapshot { company: string; storyId?: string; title?: string; results?: string[] }
+
 export interface CareerOpsSetupV2 extends CareerOpsSetup {
   portals?: CareerOpsPortals;
   portalsYaml?: string;
@@ -212,6 +225,10 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   personalization?: Personalization;
   /** Rendered modes/_profile.md, stored for the worker and for transparency. */
   profileMd?: string;
+  /** Artefacts carried by profile.yml (Packer spec). Stored for the round trip; not read by any screen yet. */
+  narrative?: Narrative;
+  stories?: Story[];
+  snapshots?: Snapshot[];
 }
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last

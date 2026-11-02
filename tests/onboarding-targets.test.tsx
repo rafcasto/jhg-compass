@@ -63,7 +63,7 @@ async function goToTargetsStep(user: ReturnType<typeof userEvent.setup>) {
   await user.type(fieldByLabel(DEFAULT_TEXT["onb.lastName"]), "Lovelace");
   await user.type(screen.getByLabelText("Country"), "NZ");
   await user.click(screen.getByRole("button", { name: /continue/i }));
-  await user.type(screen.getByLabelText("Seniority level + Job title"), "PO");
+  await user.type(screen.getByLabelText("Job title"), "PO");
   await user.click(screen.getByRole("button", { name: /continue/i }));
   expect(screen.getByText(DEFAULT_TEXT["onb.targetsTitle"])).toBeInTheDocument();
 }

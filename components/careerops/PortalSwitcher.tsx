@@ -3,19 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronsUpDown, Compass, Briefcase, Check } from "lucide-react";
+import { ChevronsUpDown, Compass, Briefcase, Check, Target } from "lucide-react";
 import { PORTAL_HOME } from "@/lib/careerops/portal-nav";
 
-export type Portal = "compass" | "careerops";
+export type Portal = "compass" | "careerops" | "jobhacking";
+
+export const JOBHACKING_HOME = "/jobhacking/profile";
 
 export const PORTALS: { key: Portal; label: string; hint: string; href: string; icon: typeof Compass }[] = [
   { key: "compass", label: "Compass", hint: "Goal, performance, progress board, coaching", href: "/compass", icon: Compass },
   { key: "careerops", label: "CareerOps", hint: "Sourcing · Scoring · Tailoring · Tracking", href: PORTAL_HOME, icon: Briefcase },
+  { key: "jobhacking", label: "JobHacking", hint: "Profile · True North · Target companies", href: JOBHACKING_HOME, icon: Target },
 ];
 
-// The logo section of both shells. When the member has more than one portal
-// (CareerOps is switched on per member by the admin), clicking it opens the
-// switcher; otherwise it is the plain brand.
+// The logo section of every shell. When the member has more than one portal
+// (CareerOps and JobHacking are switched on per member by the admin, or by a
+// JobHacking sign-up link), clicking it opens the switcher; otherwise it is the plain brand.
 export default function PortalSwitcher({ portal, available, compact = false }: { portal: Portal; available: Portal[]; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

@@ -4,22 +4,33 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PageHeader from "@/components/shell/PageHeader";
-import { GROUPS, PAGE_HREF, findSection, profileProgress, sectionHref, type ActiveSection, type ActiveSectionKey, type PageKey, type SectionSummary } from "@/lib/profile-sections";
-import SectionList, { SECTION_ICONS } from "./SectionList";
+import SectionList, { type SectionItem, type SectionRow } from "./SectionList";
 
-// The one layout behind /profile and /settings — docs/UX_PROFILE.md §1, §7.
+// The one layout behind every sectioned page — /profile, /settings and the
+// JobHacking pages — docs/UX_PROFILE.md §1, §7; docs/UX_JOBHACKING.md.
 //
 // Desktop (≥ md): a sticky 232px rail beside the content column; the active
 // section lives in ?section= and the first section opens when it is absent.
-// Mobile: the overview IS the page (identity, actions, progress, rows); a
+// Mobile: the overview IS the page (identity, lead, actions, progress, rows); a
 // section drills in with a `‹ Page` back row and prev / next at the bottom.
-// Both pages pass their sections, the rows that summarise them, and a panel
+// Every page passes its items, the rows that summarise them, and a panel
 // renderer; everything else here is the same on purpose.
 
-export default function SectionsPage({
-  page, eyebrow, title, intro, actions, identity, sections, rows, active, panel, panelKey, loading = false, status,
+export interface SectionsProgress { done: number; total: number; pct: number }
+
+/** Over every rendered section — the whole picture, not just the required ones. */
+export function sectionsProgress(rows: readonly SectionRow[]): SectionsProgress {
+  const done = rows.filter((r) => r.state === "done").length;
+  return { done, total: rows.length, pct: rows.length ? Math.round((done / rows.length) * 100) : 0 };
+}
+
+export default function SectionsPage<K extends string>({
+  id, backHref, eyebrow, title, intro, actions, identity, lead, items, rows, active, panel, panelKey, loading = false, status,
 }: {
-  page: PageKey;
+  /** Prefix for the section heading's id (one per page). */
+  id: string;
+  /** The page's overview — where the mobile back row goes. */
+  backHref: string;
   eyebrow: string;
   title: string;
   intro: string;
@@ -27,24 +38,25 @@ export default function SectionsPage({
   actions?: ReactNode;
   /** Who this is — rail top on desktop, a card on the mobile overview. */
   identity?: ReactNode;
-  sections: readonly ActiveSection[];
-  rows: SectionSummary[];
-  active: ActiveSectionKey | null;
-  panel: (key: ActiveSectionKey) => ReactNode;
+  /** A full-width block under the header (the True North statement). Hidden on mobile while a section is open. */
+  lead?: ReactNode;
+  items: readonly SectionItem<K>[];
+  rows: readonly SectionRow<K>[];
+  active: K | null;
+  panel: (key: K) => ReactNode;
   /** Change to remount the open panel (after an upload replaced its data). */
   panelKey?: string | number;
   loading?: boolean;
   /** A role="status" line under the header. */
   status?: ReactNode;
 }) {
-  const progress = profileProgress(rows);
-  const shown: ActiveSectionKey = active ?? sections[0].key;
-  const meta = findSection(shown)!;
-  const group = meta.group ? GROUPS.find((g) => g.key === meta.group) : undefined;
-  const Icon = SECTION_ICONS[shown];
+  const progress = sectionsProgress(rows);
+  const shown: K = active ?? items[0].key;
+  const meta = items.find((s) => s.key === shown) ?? items[0];
+  const Icon = meta.icon;
   const count = rows.find((r) => r.key === shown)?.count;
-  const i = sections.findIndex((s) => s.key === shown);
-  const prev = sections[i - 1], next = sections[i + 1];
+  const i = items.findIndex((s) => s.key === shown);
+  const prev = items[i - 1], next = items[i + 1];
   const listLabel = `${title} sections`;
 
   const progressBar = (
@@ -71,11 +83,13 @@ export default function SectionsPage({
 
       {status}
 
+      {lead && <div className={active ? "hidden md:block" : ""}>{lead}</div>}
+
       <div className="md:grid md:grid-cols-[232px_minmax(0,1fr)] md:items-start md:gap-8">
         {/* ---- Desktop rail ---- */}
         <aside className="hidden md:block md:sticky md:top-11 space-y-5">
           {identity}
-          <SectionList sections={sections} rows={rows} active={shown} variant="rail" label={listLabel} />
+          <SectionList items={items} rows={rows} active={shown} variant="rail" label={listLabel} />
           <div className="border-t border-jh-line pt-4">{progressBar}</div>
         </aside>
 
@@ -85,18 +99,18 @@ export default function SectionsPage({
             {identity && <section className="card p-4">{identity}</section>}
             {actions && <div className="grid grid-cols-2 gap-2 [&>button]:w-full">{actions}</div>}
             {progressBar}
-            <SectionList sections={sections} rows={rows} variant="rows" label={listLabel} />
+            <SectionList items={items} rows={rows} variant="rows" label={listLabel} />
           </div>
 
           {/* ---- Section ---- */}
-          <section className={`space-y-4 ${active ? "" : "hidden md:block"}`} aria-labelledby={`${page}-section-title`}>
-            <Link href={PAGE_HREF[page]} className="md:hidden -ml-2 inline-flex min-h-[44px] items-center gap-1 px-2 font-display font-semibold text-sm text-jh-mute hover:text-jh-ink">
+          <section className={`space-y-4 ${active ? "" : "hidden md:block"}`} aria-labelledby={`${id}-section-title`}>
+            <Link href={backHref} className="md:hidden -ml-2 inline-flex min-h-[44px] items-center gap-1 px-2 font-display font-semibold text-sm text-jh-mute hover:text-jh-ink">
               <ArrowLeft className="h-4 w-4" strokeWidth={1.5} aria-hidden /> {title}
             </Link>
             <header className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                {group && <p className="section-label mb-1">{group.eyebrow} · {group.label}</p>}
-                <h2 id={`${page}-section-title`} className="flex items-center gap-2 text-lg"><Icon className="h-5 w-5 text-jh-mute" strokeWidth={1.5} aria-hidden /> {meta.title}</h2>
+                {meta.group && <p className="section-label mb-1">{meta.group.eyebrow} · {meta.group.label}</p>}
+                <h2 id={`${id}-section-title`} className="flex items-center gap-2 text-lg"><Icon className="h-5 w-5 text-jh-mute" strokeWidth={1.5} aria-hidden /> {meta.title}</h2>
                 <p className="mt-1 max-w-prose text-sm text-jh-mute">{meta.ask}</p>
               </div>
               {count && <span className="shrink-0 font-mono text-xs text-jh-mute pt-1.5">{count}</span>}
@@ -105,8 +119,8 @@ export default function SectionsPage({
               {loading ? <p className="text-jh-mute animate-pulse">Loading…</p> : <div key={`${shown}-${panelKey ?? 0}`}>{panel(shown)}</div>}
             </div>
             <nav className="flex items-center justify-between gap-3 md:hidden" aria-label="Neighbouring sections">
-              {prev ? <Link href={sectionHref(prev.key)} className="btn-secondary btn-sm">← {prev.label}</Link> : <span />}
-              {next ? <Link href={sectionHref(next.key)} className="btn-secondary btn-sm">{next.label} →</Link> : <span />}
+              {prev ? <Link href={prev.href} className="btn-secondary btn-sm">← {prev.label}</Link> : <span />}
+              {next ? <Link href={next.href} className="btn-secondary btn-sm">{next.label} →</Link> : <span />}
             </nav>
           </section>
         </div>

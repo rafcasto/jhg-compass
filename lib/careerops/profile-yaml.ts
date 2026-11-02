@@ -54,6 +54,9 @@ export interface ProfileYamlInput {
 export function buildProfileYaml({ profile, goal, notes, contact, policy, personalization }: ProfileYamlInput): string {
   const name = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ").trim();
   const role = goal?.role?.trim() ?? "";
+  // An explicit seniority (goal.seniority, JobHacking True North) wins; older
+  // goals carry it inside the title ("Senior Product Owner"), so fall back to reading it from there.
+  const level = goal?.seniority?.trim() || seniority(role);
 
   // Countries where work authorization is already held. An explicit list wins;
   // otherwise the member's own country is the one safe assumption.
@@ -78,7 +81,7 @@ export function buildProfileYaml({ profile, goal, notes, contact, policy, person
     "  primary:",
     ...(role ? [`    - ${q(role)}`] : ["    []"]),
     "  archetypes:",
-    ...(role ? [`    - name: ${q(role)}`, `      level: ${q(seniority(role))}`, "      fit: \"primary\""] : ["    []"]),
+    ...(role ? [`    - name: ${q(role)}`, `      level: ${q(level)}`, "      fit: \"primary\""] : ["    []"]),
     "narrative:",
     `  headline: ${q(role ? `${role}${goal?.subsector ? ` in ${goal.subsector}` : ""}` : "")}`,
     ...opt("  ", "exit_story", personalization?.exitNarrative),

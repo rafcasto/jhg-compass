@@ -56,10 +56,11 @@ describe("profile sections — the registry", () => {
     expect(sectionHref("companies")).toBe("/settings?section=companies");
   });
 
-  it("maps every section of the file to a page section a member can go to", () => {
-    expect(Object.keys(FILE_SECTIONS)).toEqual(["northstar", "contact", "targeting", "watchlist", "notes", "cv"]);
-    for (const f of Object.values(FILE_SECTIONS)) expect(ACTIVE_SECTIONS.some((s) => s.key === f.edit)).toBe(true);
+  it("maps every editable section of the file to a page section a member can go to; the artefacts have none yet", () => {
+    expect(Object.keys(FILE_SECTIONS)).toEqual(["northstar", "contact", "targeting", "watchlist", "notes", "cv", "artefacts"]);
+    for (const f of Object.values(FILE_SECTIONS)) if (f.edit) expect(ACTIVE_SECTIONS.some((s) => s.key === f.edit)).toBe(true);
     expect(FILE_SECTIONS.watchlist.edit).toBe("companies");
+    expect(FILE_SECTIONS.artefacts.edit).toBeNull();
   });
 });
 

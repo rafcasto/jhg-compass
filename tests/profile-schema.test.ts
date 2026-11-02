@@ -24,8 +24,13 @@ describe("profile schema — the example file", () => {
     const r = parseProfileFile(example, "profile.yml");
     expect(r.ok).toBe(true);
     expect(r.errors).toEqual([]);
-    expect(r.profile.goal?.role).toBe("Senior Delivery Lead");
-    expect(r.profile.watchlist?.companies.length).toBe(9); // 10 listed, Timely has no URL
+    expect(r.profile.goal?.role).toBe("Delivery Lead");
+    expect(r.profile.goal?.seniority).toBe("Senior");
+    expect(r.profile.watchlist?.companies.length).toBe(10); // Timely has no URL and is kept (decision 2026-11-03)
+    expect(r.profile.watchlist?.companies.find((c) => c.name === "Timely")?.careersUrl).toBe("");
+    expect(r.profile.narrative?.proofPoints).toHaveLength(3);
+    expect(r.profile.stories).toHaveLength(3);
+    expect(r.profile.snapshots).toHaveLength(2);
     expect(r.found).toContain("your CV");
     expect(r.found.some((f) => f.startsWith("targeting (7/8"))).toBe(true); // the sample has no negotiation scripts
   });

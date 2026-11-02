@@ -11,7 +11,8 @@ import WatchlistPanel from "@/components/careerops/WatchlistPanel";
 import { useAccess } from "@/lib/firestore/access";
 import { paths, useLiveCollection, useLiveDoc } from "@/lib/firestore/db";
 import { effectiveGoal } from "@/lib/careerops/intake";
-import { parseSection, rowsFor, sectionSummaries, sectionsFor } from "@/lib/profile-sections";
+import { PAGE_HREF, parseSection, rowsFor, sectionSummaries, sectionsFor } from "@/lib/profile-sections";
+import { profileItems } from "./SectionList";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { VaultAccount } from "@/lib/careerops/vault";
 import type { Profile } from "@/lib/types";
@@ -33,6 +34,7 @@ export default function SettingsScreen() {
   const { agentsEnabled, loading: accessLoading } = useAccess(uid);
   const careerOps = agentsEnabled || isAdmin;
   const sections = useMemo(() => sectionsFor("settings", { careerOps }), [careerOps]);
+  const items = useMemo(() => profileItems(sections), [sections]);
 
   const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
   const { data: setup, loading: setupLoading } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
@@ -57,11 +59,12 @@ export default function SettingsScreen() {
 
   return (
     <SectionsPage
-      page="settings"
+      id="settings"
+      backHref={PAGE_HREF.settings}
       eyebrow="Account"
       title="Settings"
       intro="What the agents work from: your master CV, the companies they watch, the portal accounts they sign in with, and the archetypes they score against."
-      sections={sections}
+      items={items}
       rows={rows}
       active={active}
       loading={!uid || setupLoading || accessLoading}

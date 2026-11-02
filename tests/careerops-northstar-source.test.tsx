@@ -31,7 +31,7 @@ describe("NorthStarSource — choosing the process", () => {
     expect(compassRadio()).toBeChecked();
     expect(intakeRadio()).not.toBeChecked();
     // Compass picked → no goal form, just a pointer at where it lives.
-    expect(screen.queryByLabelText(/Seniority level \+ Job title/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Job title$/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Compass tab/i })).toHaveAttribute("href", "/compass");
   });
 
@@ -44,7 +44,7 @@ describe("NorthStarSource — choosing the process", () => {
     const user = userEvent.setup();
     render(<NorthStarSource uid="u1" setup={setupWith()} profile={profile} />);
     await user.click(intakeRadio());
-    for (const label of [/Seniority level \+ Job title/i, /^Industry$/i, /Company type/i, /Geography/i, /Salary range/i]) {
+    for (const label of [/^Job title$/i, /^Industry$/i, /Company type/i, /Geography/i, /Salary range/i]) {
       expect(screen.getByLabelText(label)).toBeInTheDocument();
     }
   });
@@ -60,7 +60,7 @@ describe("NorthStarSource — the override", () => {
     const user = userEvent.setup();
     render(<NorthStarSource uid="u1" setup={setupWith()} profile={profile} />);
     await user.click(intakeRadio());
-    await user.type(screen.getByLabelText(/Seniority level \+ Job title/i), "Senior Product Owner");
+    await user.type(screen.getByLabelText(/^Job title$/i), "Senior Product Owner");
     await user.type(screen.getByLabelText(/^Industry$/i), "climate-tech");
     await user.click(saveBtn());
 
@@ -99,7 +99,7 @@ describe("NorthStarSource — the override", () => {
     render(<NorthStarSource uid="u1" setup={setupWith()} profile={profile} />);
     await user.click(intakeRadio());
     expect(screen.getByText(/Without a job title the override can't take effect/i)).toBeInTheDocument();
-    await user.type(screen.getByLabelText(/Seniority level \+ Job title/i), "PO");
+    await user.type(screen.getByLabelText(/^Job title$/i), "PO");
     expect(screen.queryByText(/Without a job title the override can't take effect/i)).not.toBeInTheDocument();
   });
 
@@ -121,7 +121,7 @@ describe("NorthStarSource — the override", () => {
     setDoc.mockRejectedValueOnce(new Error("offline"));
     render(<NorthStarSource uid="u1" setup={setupWith()} profile={profile} />);
     await user.click(intakeRadio());
-    await user.type(screen.getByLabelText(/Seniority level \+ Job title/i), "PO");
+    await user.type(screen.getByLabelText(/^Job title$/i), "PO");
     await user.click(saveBtn());
     expect(await screen.findByRole("status")).toHaveTextContent(/Couldn't save that/i);
   });

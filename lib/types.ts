@@ -140,6 +140,10 @@ export interface AccessGrant {
 
 export interface GrantFeatures {
   careerOps?: boolean;
+  /** The JobHacking portal (Profile · True North · Target companies). Admin switch, or a JobHacking registration link. */
+  jobHacking?: boolean;
+  /** Compass itself. Absent = on (every member has it); false only for members who signed up to JobHacking alone. */
+  compass?: boolean;
 }
 
 export interface AdminConfig {

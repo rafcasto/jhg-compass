@@ -1,6 +1,7 @@
 version: 1
 goal:
-  role: "Senior Delivery Lead"
+  role: "Delivery Lead"
+  seniority: "Senior"
   subsector: "B2B SaaS (logistics and supply-chain software)"
   companyType: "Scale-up"
   city: "Wellington, New Zealand"
@@ -96,6 +97,36 @@ watchlist:
     - "intern"
     - "graduate"
     - "VP"
+narrative:
+  proofPoints:
+    - name: "Fortnightly release train"
+      heroMetric: "Monthly to fortnightly releases across 9 teams in 2 quarters"
+    - name: "Incident halving"
+      heroMetric: "Production incidents from 14 to 7 a month in 12 months"
+    - name: "Tenant migration programme"
+      heroMetric: "240 enterprise tenants moved on the sold date"
+stories:
+  - id: "S1"
+    title: "Fortnightly release train"
+    result: "Moved release cadence from monthly to fortnightly across nine teams in two quarters with a single release train."
+    provenance: "verified"
+  - id: "S2"
+    title: "Incident halving"
+    result: "Halved production incidents from 14 to 7 per month over twelve months with blameless reviews and a service-ownership rota."
+    provenance: "verified"
+  - id: "S3"
+    title: "Tenant migration programme"
+    result: "Landed the migration of 240 enterprise tenants on the date sold to customers, zero renewals lost in the quarter."
+    provenance: "estimate"
+snapshots:
+  - company: "Tracksuit"
+    storyId: "S1"
+    title: "Fortnightly release train"
+    results: ["monthly", "fortnightly"]
+  - company: "Halter"
+    storyId: "S2"
+    title: "Incident halving"
+    results: ["14", "7"]
 notes: |
   Hard no's (do not apply): on-site 5 days; hands-on coding roles; defence or gambling sectors
   Culture must-haves: engineers present in planning; incidents reviewed without blame; a written roadmap; deprioritise when absent: Y

@@ -29,7 +29,7 @@ beforeEach(() => {
   fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
     if (init?.method === "POST" && String(url).endsWith("/features")) {
       const body = JSON.parse(String(init.body));
-      rows = rows.map((r) => body.uids.includes(r.uid) ? { ...r, careerOps: body.careerOps } : r);
+      rows = rows.map((r) => body.uids.includes(r.uid) ? { ...r, ...(body.careerOps !== undefined ? { careerOps: body.careerOps } : {}), ...(body.jobHacking !== undefined ? { jobHacking: body.jobHacking } : {}) } : r);
       return { ok: true, json: async () => ({ ok: true, updated: body.uids.map((uid: string) => ({ uid, email: `${uid}@x.io` })), missing: [], rows }) };
     }
     if (init?.method === "POST") {
@@ -123,5 +123,20 @@ describe("TOFU → Access renewals", () => {
     expect(JSON.parse(String((init as RequestInit).body))).toEqual({ uids: ["ada"], careerOps: true });
     const ada = screen.getByText("Ada Lovelace").closest("tr")!;
     expect(within(ada).getByText("on")).toBeInTheDocument();
+  });
+
+  it("switches the JobHacking portal on for the selected members, with its own column and switch", async () => {
+    const user = userEvent.setup();
+    render(<AccessRenewals />);
+    await loaded();
+    expect(screen.getByRole("columnheader", { name: "JobHacking" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enable JobHacking for selected" })).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: "Select Ada Lovelace" }));
+    await user.click(screen.getByRole("button", { name: "Enable JobHacking for 1" }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("JobHacking enabled for 1 member"));
+    const [, init] = posts().find(([u]) => String(u).endsWith("/features"))!;
+    expect(JSON.parse(String((init as RequestInit).body))).toEqual({ uids: ["ada"], jobHacking: true });
+    const ada = screen.getByText("Ada Lovelace").closest("tr")!;
+    expect(within(ada).getAllByText("on")).toHaveLength(1); // JobHacking on, CareerOps still off
   });
 });

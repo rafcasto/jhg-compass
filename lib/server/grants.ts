@@ -1,6 +1,6 @@
 import "server-only";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
-import type { AccessGrant, AdminConfig, GrantStatus, Profile } from "@/lib/types";
+import type { AccessGrant, AdminConfig, GrantFeatures, GrantStatus, Profile } from "@/lib/types";
 import { effectiveStatus, renewalPeriod, type MemberAccessRow } from "@/lib/access";
 
 const DAY = 86_400_000;
@@ -156,6 +156,8 @@ export async function listGrants(now = Date.now()): Promise<MemberAccessRow[]> {
       renewedAt: g.renewedAt ?? null,
       renewedBy: g.renewedBy ?? null,
       careerOps: g.features?.careerOps === true,
+      jobHacking: g.features?.jobHacking === true,
+      compass: g.features?.compass !== false,
     };
   });
   // newest change first
@@ -196,10 +198,10 @@ export async function renewGrants(uids: string[], days: number, by: string | nul
   return { renewed, missing };
 }
 
-// ---- feature flags (Admin → TOFU → Access renewals → Agents column) ----
+// ---- feature flags (Admin → TOFU → Access renewals → CareerOps / JobHacking columns) ----
 export interface FeatureResult { uid: string; email: string }
 
-export async function setGrantFeatures(uids: string[], features: { careerOps: boolean }, by: string | null): Promise<{ updated: FeatureResult[]; missing: string[] }> {
+export async function setGrantFeatures(uids: string[], features: Partial<GrantFeatures>, by: string | null): Promise<{ updated: FeatureResult[]; missing: string[] }> {
   const db = adminDb();
   const now = Date.now();
   const unique = Array.from(new Set(uids.filter(Boolean)));

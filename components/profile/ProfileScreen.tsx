@@ -11,6 +11,8 @@ import Personalization from "@/components/careerops/Personalization";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { PROFILE_FILENAME, profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import { FILE_SECTIONS, PAGE_HREF, findSection, parseSection, rowsFor, sectionHref, sectionSummaries, sectionsFor, type FileSectionKey } from "@/lib/profile-sections";
+import Identity from "./Identity";
+import { profileItems } from "./SectionList";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 import ProfileUploadSheet from "./ProfileUploadSheet";
@@ -25,6 +27,7 @@ import SectionsPage from "./SectionsPage";
 // useCareerOps(), whose `allowed` check belongs to the portal.
 
 const SECTIONS = sectionsFor("profile");
+const ITEMS = profileItems(SECTIONS);
 
 function download(name: string, text: string) {
   const blob = new Blob([text], { type: "application/yaml;charset=utf-8" });
@@ -52,9 +55,7 @@ export default function ProfileScreen() {
   const rows = useMemo(() => rowsFor(SECTIONS, sectionSummaries({ setup, profile })), [setup, profile]);
   const current = useMemo(() => profileFromSetup({ profile, setup }), [profile, setup]);
 
-  const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ");
   const email = profile?.email ?? user?.email ?? "";
-  const initials = (fullName || email || "?").split(/[\s@]+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
 
   const exportProfile = () => download(PROFILE_FILENAME, profileToYaml(current));
 
@@ -67,24 +68,17 @@ export default function ProfileScreen() {
     </>
   );
 
-  const identity = (
-    <div className="flex items-center gap-3">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-jh-red-soft font-display font-bold text-sm text-jh-red" aria-hidden>{initials}</div>
-      <div className="min-w-0">
-        <p className="truncate font-display font-semibold text-jh-ink">{fullName || "Your profile"}</p>
-        {/* One fact per line: in the 232px desktop rail a joined "email · country" always lost the country to the ellipsis. */}
-        {email && <p className="truncate text-sm text-jh-mute" title={email}>{email}</p>}
-        {profile?.country && <p className="truncate text-sm text-jh-mute">{profile.country}</p>}
-      </div>
-    </div>
-  );
+  const identity = <Identity profile={profile} email={email} />;
 
   const statusLine = status && (
     <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-sm border border-jh-line bg-jh-mist/40 px-4 py-3 text-sm text-jh-ink">
       <Check className="h-4 w-4 shrink-0 text-rb-green-dark" aria-hidden /> {status.text}
-      {status.keys.map((k) => (
-        <Link key={k} href={sectionHref(FILE_SECTIONS[k].edit)} className="link text-sm">{FILE_SECTIONS[k].label}</Link>
-      ))}
+      {status.keys.map((k) => {
+        const edit = FILE_SECTIONS[k].edit;
+        return edit
+          ? <Link key={k} href={sectionHref(edit)} className="link text-sm">{FILE_SECTIONS[k].label}</Link>
+          : <span key={k} className="text-sm text-jh-mute">{FILE_SECTIONS[k].label}</span>;
+      })}
     </p>
   );
 
@@ -95,13 +89,14 @@ export default function ProfileScreen() {
       onDrop={(e) => { if (!e.dataTransfer.files?.length) return; e.preventDefault(); setOver(false); setSheet({ open: true, file: e.dataTransfer.files[0] }); }}
     >
       <SectionsPage
-        page="profile"
+        id="profile"
+        backHref={PAGE_HREF.profile}
         eyebrow="Account"
         title="Profile"
         intro="Who you are and what you're aiming at. Upload a profile.yml, or edit any section here — your master CV, target companies and portal accounts are under Settings."
         actions={actions}
         identity={identity}
-        sections={SECTIONS}
+        items={ITEMS}
         rows={rows}
         active={active}
         loading={!uid || setupLoading || profileLoading}

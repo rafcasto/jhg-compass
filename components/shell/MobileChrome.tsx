@@ -22,7 +22,7 @@ export interface TabItem {
 
 export function MobileHeader({
   onSignOut, signingOut = false, position = "sticky", brand, profileHref = "/profile", profileActive = false, settingsHref = "/settings", settingsActive = false,
-}: { onSignOut?: () => void; signingOut?: boolean; position?: "sticky" | "static"; brand?: ReactNode; profileHref?: string; profileActive?: boolean; settingsHref?: string; settingsActive?: boolean }) {
+}: { onSignOut?: () => void; signingOut?: boolean; position?: "sticky" | "static"; brand?: ReactNode; profileHref?: string | null; profileActive?: boolean; settingsHref?: string; settingsActive?: boolean }) {
   const live = position === "sticky";
   // Right slot: three icon-only 44×44 targets (Profile · Settings · Sign out). Icon-only
   // because with text labels the cluster would fight the brand on a 390px screen.
@@ -40,9 +40,9 @@ export function MobileHeader({
         </div>
       )}
       <div className="flex items-center gap-1" aria-label="Account">
-        {live
+        {profileHref !== null && (live
           ? <Link href={profileHref} aria-label="Profile" aria-current={profileActive ? "page" : undefined} className={profileCls}>{profileIcon}</Link>
-          : <span aria-label="Profile" role="img" className={profileCls}>{profileIcon}</span>}
+          : <span aria-label="Profile" role="img" className={profileCls}>{profileIcon}</span>)}
         {live
           ? <Link href={settingsHref} aria-label="Settings" aria-current={settingsActive ? "page" : undefined} className={settingsCls}>{settingsIcon}</Link>
           : <span aria-label="Settings" role="img" className={settingsCls}>{settingsIcon}</span>}

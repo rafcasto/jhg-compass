@@ -26,7 +26,12 @@ const CONFIG_FIELDS: { key: keyof AdminConfig; label: string; textarea?: boolean
   { key: "emailVerifyBody", label: "Email verification — body", textarea: true },
 ];
 
-interface LinkRow { token: string; status: string; expiresAt: number; accessDurationDays: number; uses: number; maxUses: number; email?: string | null }
+interface LinkRow { token: string; status: string; expiresAt: number; accessDurationDays: number; uses: number; maxUses: number; email?: string | null; portal?: "compass" | "jobhacking" }
+// Which portal a link signs up to. JobHacking links create members with JobHacking on and Compass off.
+const LINK_PORTALS = [
+  { key: "compass", label: "Compass" },
+  { key: "jobhacking", label: "JobHacking only" },
+] as const;
 
 export default function RegistrationAccess({ inviteUrl, onUseAsInvite }: { inviteUrl: string; onUseAsInvite?: (url: string) => Promise<void> }) {
   return (
@@ -43,6 +48,7 @@ function LinkGenerator({ inviteUrl, onUseAsInvite }: { inviteUrl: string; onUseA
   const [accessDurationDays, setAccessDurationDays] = useState(60);
   const [maxUses, setMaxUses] = useState(1);
   const [email, setEmail] = useState("");
+  const [portal, setPortal] = useState<(typeof LINK_PORTALS)[number]["key"]>("compass");
   const [busy, setBusy] = useState(false);
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
@@ -56,7 +62,7 @@ function LinkGenerator({ inviteUrl, onUseAsInvite }: { inviteUrl: string; onUseA
 
   async function generate(e: React.FormEvent) {
     e.preventDefault(); setBusy(true);
-    const res = await postJson("/api/admin/registration-link", { expiryHours, accessDurationDays, maxUses, email: email || null });
+    const res = await postJson("/api/admin/registration-link", { expiryHours, accessDurationDays, maxUses, email: email || null, portal });
     if (res.ok) { setEmail(""); await load(); }
     setBusy(false);
   }
@@ -68,12 +74,18 @@ function LinkGenerator({ inviteUrl, onUseAsInvite }: { inviteUrl: string; onUseA
   const isCurrent = (t: string) => !!inviteUrl && inviteUrl.includes(`/register/${t}`);
 
   return (
-    <Section title="Registration links" help="A temporary sign-up link that grants timed access. The link the thank-you page continues to is marked “in funnel”." >
-      <form onSubmit={generate} className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+    <Section title="Registration links" help="A temporary sign-up link that grants timed access. Compass links are the funnel's; a JobHacking link signs the member up to the JobHacking portal alone (no Compass). The link the thank-you page continues to is marked “in funnel”." >
+      <form onSubmit={generate} className="grid grid-cols-2 sm:grid-cols-6 gap-3 items-end">
         <NumberField label="Link valid (hours)" min={1} value={expiryHours} onChange={setExpiryHours} />
         <NumberField label="Access (days)" min={1} value={accessDurationDays} onChange={setAccessDurationDays} />
         <NumberField label="Max uses" min={1} value={maxUses} onChange={setMaxUses} />
         <Field label="Lock to email" value={email} onChange={setEmail} placeholder="anyone" />
+        <label className="block">
+          <span className="label">Portal</span>
+          <select aria-label="Portal" className="field" value={portal} onChange={(e) => setPortal(e.target.value as typeof portal)}>
+            {LINK_PORTALS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+        </label>
         <button disabled={busy} className="btn-primary disabled:opacity-60 h-[46px]"><LinkIcon className="h-4 w-4" /> {busy ? "Generating…" : "Generate"}</button>
       </form>
 
@@ -84,6 +96,7 @@ function LinkGenerator({ inviteUrl, onUseAsInvite }: { inviteUrl: string; onUseA
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-mono text-jh-ink truncate">/register/{l.token.slice(0, 12)}…
                   {isCurrent(l.token) && <span className="pill bg-jh-red-soft text-jh-red ml-2 align-middle">in funnel</span>}
+                  {l.portal === "jobhacking" && <span className="pill-neutral ml-2 align-middle">JobHacking</span>}
                 </p>
                 <p className="text-xs text-jh-mute">{l.accessDurationDays}d access · {l.uses}/{l.maxUses} used · {l.email ? `${l.email} · ` : ""}
                   <span className={l.status === "active" ? "text-rb-green-dark" : "text-jh-mute"}>{l.status === "active" ? `valid till ${fmt(l.expiresAt)}` : l.status}</span></p>

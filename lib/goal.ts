@@ -6,13 +6,16 @@ import type { Profile, CompassFormula } from "./types";
 //
 // Storage keys are kept stable so previously saved objectives keep rendering;
 // the labels shown to members are the source of truth for meaning:
-//   role        -> "Seniority level + Job title"
+//   role        -> "Job title"
+//   seniority   -> "Seniority level" (added 2026-11-03 for the JobHacking portal's
+//                  True North; older goals carry it inside `role`, e.g. "Senior PO")
 //   subsector   -> "Industry"
 //   companyType -> "Company type" (one of COMPANY_TYPES)
 //   city        -> "Geography (country, region, city, area)"
 //   salary      -> "Salary range (compensation)"
 export interface Goal {
-  role?: string;        // e.g. "Senior Product Owner"
+  role?: string;        // e.g. "Product Owner"
+  seniority?: string;   // e.g. "Senior"
   subsector?: string;   // e.g. "climate-tech SaaS"
   companyType?: string; // e.g. "Startup (early stage)"
   city?: string;        // e.g. "Auckland, New Zealand"
@@ -20,7 +23,8 @@ export interface Goal {
 }
 
 // Display order of the form fields — shared by Compass edit mode and onboarding.
-export const GOAL_KEYS = ["role", "subsector", "companyType", "city", "salary"] as const;
+export const GOAL_KEYS = ["role", "seniority", "subsector", "companyType", "city", "salary"] as const;
+export type GoalKey = (typeof GOAL_KEYS)[number];
 
 export const COMPANY_TYPES = [
   "Multinational Company (MNC)",
@@ -50,7 +54,14 @@ export function companyTypePhrase(value?: string): string {
   return article ? `${article} ${v}` : v;
 }
 
-export const EMPTY_GOAL: Goal = { role: "", subsector: "", companyType: "", city: "", salary: "" };
+/** "Senior" + "Product Owner" → "Senior Product Owner"; either half alone is returned as is. */
+export function roleWithSeniority(g: Pick<Goal, "role" | "seniority">): string {
+  const role = (g.role ?? "").trim(), sen = (g.seniority ?? "").trim();
+  if (sen && role && !role.toLowerCase().startsWith(sen.toLowerCase())) return `${sen} ${role}`;
+  return role || sen;
+}
+
+export const EMPTY_GOAL: Goal = { role: "", seniority: "", subsector: "", companyType: "", city: "", salary: "" };
 
 // Older values written by the legacy onboarding (`profile.compass`, bare
 // values) and by the first Compass-tab release (article-prefixed values).

@@ -73,12 +73,18 @@ export function buildSetupProfileMd({ setup, overrides }: Pick<SetupYamlInput, "
  * drop it. Keys the member has never set stay absent rather than being written
  * as undefined (Firestore rejects undefined) or as defaults.
  */
-export function preserveSetupFields(setup: CareerOpsSetupV2 | null | undefined): Partial<SetupYamlFields> {
-  const out: Partial<SetupYamlFields> = {};
+export type PreservedSetupFields = Partial<SetupYamlFields> & Pick<CareerOpsSetupV2, "narrative" | "stories" | "snapshots">;
+
+export function preserveSetupFields(setup: CareerOpsSetupV2 | null | undefined): PreservedSetupFields {
+  const out: PreservedSetupFields = {};
   if (setup?.goalSource) out.goalSource = setup.goalSource;
   if (setup?.intakeGoal) out.intakeGoal = setup.intakeGoal;
   if (setup?.contact) out.contact = setup.contact;
   if (setup?.policy) out.policy = setup.policy;
   if (setup?.personalization) out.personalization = setup.personalization;
+  // The artefacts an uploaded profile.yml carried: nothing edits them, so a whole-document save must carry them too.
+  if (setup?.narrative) out.narrative = setup.narrative;
+  if (setup?.stories) out.stories = setup.stories;
+  if (setup?.snapshots) out.snapshots = setup.snapshots;
   return out;
 }

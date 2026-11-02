@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { Compass } from "lucide-react";
 
 // Profile and Settings sit side by side in the account group of both shells —
@@ -14,6 +14,18 @@ import { MobileHeader } from "@/components/shell/MobileChrome";
 const items = [{ key: "/compass", label: "Compass", icon: Compass, href: "/compass", active: true }];
 
 describe("account navigation", () => {
+  it("JobHacking shell: no Profile row in the account group (Profile is a primary tab there), Settings points at the portal's upload page", () => {
+    render(<DesktopSidebar items={items} onSignOut={() => {}} profileHref={null} settingsHref="/jobhacking/settings" settingsActive />);
+    const account = screen.getByLabelText("Account");
+    const links = within(account).getAllByRole("link");
+    expect(links.map((l) => l.textContent?.trim())).toEqual(["Settings"]);
+    expect(links[0]).toHaveAttribute("href", "/jobhacking/settings");
+    cleanup();
+    render(<MobileHeader onSignOut={() => {}} profileHref={null} settingsHref="/jobhacking/settings" />);
+    expect(screen.queryByRole("link", { name: "Profile" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/jobhacking/settings");
+  });
+
   it("desktop sidebar: Profile → Settings → Sign out, with the active one marked", () => {
     render(<DesktopSidebar items={items} onSignOut={() => {}} settingsActive />);
     const account = screen.getByLabelText("Account");

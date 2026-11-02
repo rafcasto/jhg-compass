@@ -67,7 +67,8 @@ export default function RegisterPage() {
         throw new Error(map[d.error] ?? "Could not complete registration.");
       }
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/compass");
+      // A JobHacking link lands in the JobHacking portal; everything else in Compass.
+      router.replace(d.portal === "jobhacking" ? "/jobhacking/profile" : "/compass");
     } catch (e: any) {
       setErr(e?.message ?? "Something went wrong.");
       setBusy(false);
