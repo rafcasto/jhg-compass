@@ -3,7 +3,7 @@
 // Three pages, each a sectioned page in the Profile/Settings layout
 // (components/profile/SectionsPage.tsx), plus Settings (the profile.yml upload):
 //
-//   /jobhacking/profile      Contact details · Headline · Bridge story · Core competencies
+//   /jobhacking/narrative    Contact details · Headline · Bridge story · Core competencies
 //   /jobhacking/true-north   Target roles · Target seniority · Target salary · Target industry · Target location
 //   /jobhacking/companies    Target companies
 //   /jobhacking/settings     Upload profile.yml
@@ -22,12 +22,12 @@ import { companyTypePhrase, roleWithSeniority, type Goal } from "../goal";
 import { sectionSummaries, type FileSectionKey } from "../profile-sections";
 import type { Profile } from "../types";
 
-export type JhPageKey = "profile" | "true-north" | "companies";
+export type JhPageKey = "narrative" | "true-north" | "companies";
 
 export interface JhPage { key: JhPageKey; label: string; href: string; title: string; intro: string }
 
 export const JH_PAGES = [
-  { key: "profile", label: "Profile", href: "/jobhacking/profile", title: "Profile", intro: "Who you are: the contact block of every application, what you're best at, the one line under your name, and why you're moving." },
+  { key: "narrative", label: "Narrative", href: "/jobhacking/narrative", title: "Narrative", intro: "Who you are: the contact block of every application, what you're best at, the one line under your name, and why you're moving." },
   { key: "true-north", label: "True North", href: "/jobhacking/true-north", title: "True North", intro: "What you're aiming at. Every section fills a blank in the statement." },
   { key: "companies", label: "Target companies", href: "/jobhacking/companies", title: "Target companies", intro: "The companies you're going after, their careers pages, and the job titles to include and exclude." },
 ] as const satisfies readonly JhPage[];
@@ -48,11 +48,11 @@ export interface JhSection {
 
 export const JH_SECTIONS = [
   // ---- Profile ----
-  { key: "contact", page: "profile", label: "Contact details", title: "Contact details", ask: "Your name, phone, email, LinkedIn, location and portfolio — the header of every generated CV and the contact block of every application form." },
-  { key: "headline", page: "profile", label: "Headline", title: "Headline", ask: "One line under your name that says what you do and for whom." },
+  { key: "contact", page: "narrative", label: "Contact details", title: "Contact details", ask: "Your name, phone, email, LinkedIn, location and portfolio — the header of every generated CV and the contact block of every application form." },
+  { key: "headline", page: "narrative", label: "Headline", title: "Headline", ask: "One line under your name that says what you do and for whom." },
   // "Bridge story" is the JobHacking word for Compass's "Exit story" — same field, personalization.exitNarrative.
-  { key: "story", page: "profile", label: "Bridge story", title: "Bridge story", ask: "Why you're leaving and where you're heading — the frame for every summary, cover letter and interview answer." },
-  { key: "competencies", page: "profile", label: "Core competencies", title: "Core competencies", ask: "Your superpowers — the three to five things you do that the other candidates can't." },
+  { key: "story", page: "narrative", label: "Bridge story", title: "Bridge story", ask: "Why you're leaving and where you're heading — the frame for every summary, cover letter and interview answer." },
+  { key: "competencies", page: "narrative", label: "Core competencies", title: "Core competencies", ask: "Your superpowers — the three to five things you do that the other candidates can't." },
   // ---- True North ----
   { key: "roles", page: "true-north", label: "Target roles", title: "Target roles", ask: "The job title you're going for, and the role archetypes behind it — what each one is really about and what a company is buying when it hires for it." },
   { key: "seniority", page: "true-north", label: "Target seniority", title: "Target seniority", ask: "The level you're applying at — Senior, Lead, Head of. It goes in front of the title in your statement." },

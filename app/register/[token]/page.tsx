@@ -68,7 +68,7 @@ export default function RegisterPage() {
       }
       await signInWithEmailAndPassword(auth, email, password);
       // A JobHacking link lands in the JobHacking portal; everything else in Compass.
-      router.replace(d.portal === "jobhacking" ? "/jobhacking/profile" : "/compass");
+      router.replace(d.portal === "jobhacking" ? "/jobhacking/narrative" : "/compass");
     } catch (e: any) {
       setErr(e?.message ?? "Something went wrong.");
       setBusy(false);
