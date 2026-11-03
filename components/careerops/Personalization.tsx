@@ -34,8 +34,9 @@ import type { Profile } from "@/lib/types";
 const MAX = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8 };
 const ALL: readonly SectionId[] = SECTIONS.map((s) => s.id);
 
-function Section({ id, heading = true, children }: { id: SectionId; heading?: boolean; children: React.ReactNode }) {
-  const { label, ask } = SECTION_COPY[id];
+function Section({ id, heading = true, label: labelOverride, children }: { id: SectionId; heading?: boolean; label?: string; children: React.ReactNode }) {
+  const { label: defaultLabel, ask } = SECTION_COPY[id];
+  const label = labelOverride ?? defaultLabel;
   return (
     <section className="space-y-3 border-t border-jh-line pt-5 first:border-0 first:pt-0" aria-label={heading ? undefined : label}>
       {heading && (
@@ -84,13 +85,15 @@ function RowHead({ cols }: { cols: string[] }) {
   );
 }
 
-export default function Personalization({ uid, setup, profile, only, saveLabel }: {
+export default function Personalization({ uid, setup, profile, only, saveLabel, labels }: {
   uid: string;
   setup: CareerOpsSetupV2 | null;
   profile: Profile | null | undefined;
   /** Render (and save) only these sections. Default: all eight. */
   only?: readonly SectionId[];
   saveLabel?: string;
+  /** A portal's own word for a section (JobHacking says "Bridge story" for exitNarrative). Labels only — the field is the same. */
+  labels?: Partial<Record<SectionId, string>>;
 }) {
   const saved = useMemo(() => setup?.personalization ?? {}, [setup?.personalization]);
   // Callers pass a literal; key it by content so the memo below is stable.
@@ -211,14 +214,14 @@ export default function Personalization({ uid, setup, profile, only, saveLabel }
       )}
 
       {show("crossCuttingAdvantage") && (
-        <Section id="crossCuttingAdvantage" heading={heading}>
-          <Area label="Core competencies" value={cross} onChange={(v) => { setCross(v); touch(); }} placeholder="e.g. Technical builder with real-world proof — I ship and I can show the metrics." />
+        <Section id="crossCuttingAdvantage" heading={heading} label={labels?.crossCuttingAdvantage}>
+          <Area label={labels?.crossCuttingAdvantage ?? "Core competencies"} value={cross} onChange={(v) => { setCross(v); touch(); }} placeholder="e.g. Technical builder with real-world proof — I ship and I can show the metrics." />
         </Section>
       )}
 
       {show("exitNarrative") && (
-        <Section id="exitNarrative" heading={heading}>
-          <Area label="Exit story" value={exitNarrative} onChange={(v) => { setExit(v); touch(); }} placeholder="e.g. Built and sold a SaaS after five years. Now focused on applied AI at scale." rows={4} />
+        <Section id="exitNarrative" heading={heading} label={labels?.exitNarrative}>
+          <Area label={labels?.exitNarrative ?? "Exit story"} value={exitNarrative} onChange={(v) => { setExit(v); touch(); }} placeholder="e.g. Built and sold a SaaS after five years. Now focused on applied AI at scale." rows={4} />
         </Section>
       )}
 

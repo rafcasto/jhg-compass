@@ -49,7 +49,7 @@ On `/jobhacking/true-north` at ≥ md the screen shows: the **sidebar's** active
 **Working**
 - Rail (232px, sticky) with identity on top → state glyph + label per row → ink progress bar; mobile overview is a card of rows that quote the data. Labels recede (`.label` 13px mute), values lead (`.field` 15px ink). One red button in the card.
 - Contact details is a 2-column grid with the portfolio URL spanning both — no orphan. Email read-only in mute inside the field (4.8 : 1 on white — passes).
-- Core competencies and Exit story are one textarea each with the h2 as their label (`heading={false}` path of `Personalization`) — right: a single field doesn't need a second heading.
+- Core competencies and Bridge story are one textarea each with the h2 as their label (`heading={false}` path of `Personalization`) — right: a single field doesn't need a second heading.
 
 **Issues**
 
@@ -114,7 +114,7 @@ This is `WatchlistPanel` → `agents/Portals`, the CareerOps Setup editor render
 | # | Principle | Finding | Fix |
 |---|---|---|---|
 | S1 | Hierarchy | **Upload profile** is `btn-primary btn-sm`. It is the only action on the page; the small size is for toolbars and inline rows. | `btn-primary` at full size. |
-| S2 | Typography / layout | *What it fills in* rows show `p.intro.split(".")[0]` truncated — "Who you are: the contact block of every applic…" in a 672px card. The intro was written for a page header, not a 300px cell. | Derive the cell from the registry: `jhSectionsFor(p.key).map((s) => s.label).join(" · ")` → "Contact details · Core competencies · Headline · Exit story". Nothing invented, nothing truncated at `md`; wrap instead of `truncate`. |
+| S2 | Typography / layout | *What it fills in* rows show `p.intro.split(".")[0]` truncated — "Who you are: the contact block of every applic…" in a 672px card. The intro was written for a page header, not a 300px cell. | Derive the cell from the registry: `jhSectionsFor(p.key).map((s) => s.label).join(" · ")` → "Contact details · Headline · Bridge story · Core competencies". Nothing invented, nothing truncated at `md`; wrap instead of `truncate`. |
 | S3 | Spacing | Rows are `py-2.5` (10px). | `py-3`. |
 | S4 | Depth | The status line is a flat bordered strip on `mist/40`; the card below has `shadow-jh-1`. Two surfaces at two depths with no reason. | Status line → plain `text-sm` with the check, no box (it's a sentence, not a panel), or the same `.card` recipe. |
 

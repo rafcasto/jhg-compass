@@ -3,7 +3,7 @@
 // Three pages, each a sectioned page in the Profile/Settings layout
 // (components/profile/SectionsPage.tsx), plus Settings (the profile.yml upload):
 //
-//   /jobhacking/profile      Contact details · Core competencies · Headline · Exit story
+//   /jobhacking/profile      Contact details · Headline · Bridge story · Core competencies
 //   /jobhacking/true-north   Target roles · Target seniority · Target salary · Target industry · Target location
 //   /jobhacking/companies    Target companies
 //   /jobhacking/settings     Upload profile.yml
@@ -49,9 +49,10 @@ export interface JhSection {
 export const JH_SECTIONS = [
   // ---- Profile ----
   { key: "contact", page: "profile", label: "Contact details", title: "Contact details", ask: "Your name, phone, email, LinkedIn, location and portfolio — the header of every generated CV and the contact block of every application form." },
-  { key: "competencies", page: "profile", label: "Core competencies", title: "Core competencies", ask: "Your superpowers — the three to five things you do that the other candidates can't." },
   { key: "headline", page: "profile", label: "Headline", title: "Headline", ask: "One line under your name that says what you do and for whom." },
-  { key: "story", page: "profile", label: "Exit story", title: "Exit story", ask: "Why you're leaving and where you're heading — the frame for every summary, cover letter and interview answer." },
+  // "Bridge story" is the JobHacking word for Compass's "Exit story" — same field, personalization.exitNarrative.
+  { key: "story", page: "profile", label: "Bridge story", title: "Bridge story", ask: "Why you're leaving and where you're heading — the frame for every summary, cover letter and interview answer." },
+  { key: "competencies", page: "profile", label: "Core competencies", title: "Core competencies", ask: "Your superpowers — the three to five things you do that the other candidates can't." },
   // ---- True North ----
   { key: "roles", page: "true-north", label: "Target roles", title: "Target roles", ask: "The job title you're going for, and the role archetypes behind it — what each one is really about and what a company is buying when it hires for it." },
   { key: "seniority", page: "true-north", label: "Target seniority", title: "Target seniority", ask: "The level you're applying at — Senior, Lead, Head of. It goes in front of the title in your statement." },
@@ -117,7 +118,7 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
   const rules = p.locationPolicy ?? [];
   const companies = setup?.portals?.companies ?? [];
 
-  // Contact, headline, exit story and the company list are the same rows as the
+  // Contact, headline, bridge story (Compass's exit story) and the company list are the same rows as the
   // Profile / Settings pages — one summary per field, wherever it is shown.
   const shared = new Map(sectionSummaries({ setup, profile: signals.profile }).map((r) => [r.key, r]));
   const borrow = (from: "contact" | "headline" | "story" | "companies", key: JhSectionKey): JhSummary => {
@@ -131,9 +132,9 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
 
   return [
     borrow("contact", "contact"),
-    { key: "competencies", state: competencies ? "done" : "empty", summary: competencies ? clip(firstLine(competencies)) : NOT_SET },
     borrow("headline", "headline"),
     borrow("story", "story"),
+    { key: "competencies", state: competencies ? "done" : "empty", summary: competencies ? clip(firstLine(competencies)) : NOT_SET },
     {
       key: "roles", state: stateOf(!!g.role?.trim(), roles.length),
       summary: join([g.role, roles.length ? plural(roles.length, "archetype") : undefined]) || NOT_SET,

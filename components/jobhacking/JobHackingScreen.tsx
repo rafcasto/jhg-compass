@@ -67,7 +67,7 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
           case "contact": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="contact" />;
           case "competencies": return <Personalization uid={uid} setup={setup} profile={profile} only={["crossCuttingAdvantage"]} saveLabel="Save core competencies" />;
           case "headline": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="headline" />;
-          case "story": return <Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} saveLabel="Save exit story" />;
+          case "story": return <Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} labels={{ exitNarrative: "Bridge story" }} saveLabel="Save bridge story" />;
           case "roles": case "seniority": case "salary": case "industry": case "location":
             return <TrueNorthPanel uid={uid} setup={setup} profile={profile} section={key} />;
           case "companies": return <WatchlistPanel uid={uid} setup={setup} goalRole={goal.role} />;
