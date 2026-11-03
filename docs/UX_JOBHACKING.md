@@ -23,9 +23,9 @@ Routes: `/jobhacking/profile` · `/jobhacking/true-north` · `/jobhacking/compan
 | Page · section | `profile.yml` | Editor |
 |---|---|---|
 | **Profile · Contact details** | name + email on the account; `contact.phone · linkedin · location · portfolio` | `ContactPolicy part="contact"` |
-| **Profile · Core competencies** | `personalization.crossCuttingAdvantage` | `Personalization only=[crossCuttingAdvantage]` |
 | **Profile · Headline** | `contact.title` | `ContactPolicy part="headline"` |
-| **Profile · Exit story** | `personalization.exitNarrative` | `Personalization only=[exitNarrative]` |
+| **Profile · Bridge story** *(Compass calls the same field "Exit story")* | `personalization.exitNarrative` | `Personalization only=[exitNarrative] labels={exitNarrative: "Bridge story"}` |
+| **Profile · Core competencies** | `personalization.crossCuttingAdvantage` | `Personalization only=[crossCuttingAdvantage]` |
 | **True North · Target roles** | `goal.role` + `personalization.targetRoles[]` (archetype · axes · buys) | `TrueNorthPanel section="roles"` |
 | **True North · Target seniority** | `goal.seniority` *(new, decision B)* | `TrueNorthPanel section="seniority"` |
 | **True North · Target salary** | `goal.salary` + `policy.minimumSalary` + `personalization.compTargets` | `TrueNorthPanel section="salary"` |

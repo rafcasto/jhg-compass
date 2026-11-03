@@ -34,8 +34,8 @@ describe("JobHacking — pages and sections", () => {
     expect(JH_SETTINGS_HREF).toBe("/jobhacking/settings");
   });
 
-  it("Profile is exactly Contact details · Core competencies · Headline · Exit story", () => {
-    expect(jhSectionsFor("profile").map((s) => s.label)).toEqual(["Contact details", "Core competencies", "Headline", "Exit story"]);
+  it("Profile is exactly Contact details · Headline · Bridge story · Core competencies", () => {
+    expect(jhSectionsFor("profile").map((s) => s.label)).toEqual(["Contact details", "Headline", "Bridge story", "Core competencies"]);
   });
 
   it("True North is exactly the five targets", () => {
