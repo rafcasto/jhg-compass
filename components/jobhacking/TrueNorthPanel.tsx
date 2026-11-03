@@ -12,7 +12,7 @@ import { COMPANY_TYPES, EMPTY_GOAL, normalizeGoal, type Goal } from "@/lib/goal"
 import { jhGoal } from "@/lib/jobhacking/sections";
 import type { Profile } from "@/lib/types";
 
-// The five True North sections — docs/UX_JOBHACKING.md §3. Each one is a few
+// The six True North sections — docs/UX_JOBHACKING.md §3. Each one is a few
 // fields from up to three stored objects (the goal, policy, personalization),
 // and its Save writes ONLY those fields over what is stored, so no section can
 // wipe another's.
@@ -22,13 +22,13 @@ import type { Profile } from "@/lib/types";
 // uploaded profile.yml sets. A save here edits whichever is in effect, so the
 // statement, the Compass tab and the agents' profile.yml all move together.
 
-export type TrueNorthSection = "roles" | "seniority" | "salary" | "industry" | "location";
+export type TrueNorthSection = "industry" | "roles" | "seniority" | "salary" | "location" | "company-type";
 
 const MAX_ROLES = 8;
 const MAX_RULES = 8;
 
 const SAVE_LABEL: Record<TrueNorthSection, string> = {
-  roles: "Save target roles", seniority: "Save seniority", salary: "Save target salary", industry: "Save target industry", location: "Save target location",
+  industry: "Save target industry", roles: "Save target roles", seniority: "Save seniority", salary: "Save salary range", location: "Save location", "company-type": "Save company type",
 };
 
 const cleanRows = (rows: TargetRoleRow[]) => rows.map((r) => ({ archetype: r.archetype.trim(), axes: r.axes?.trim() || undefined, buys: r.buys?.trim() || undefined })).filter((r) => r.archetype);
@@ -123,7 +123,7 @@ export default function TrueNorthPanel({ uid, setup, profile, section }: {
           <label className="block max-w-2xl">
             <span className="label">Job title</span>
             <input className="field" value={goal.role ?? ""} placeholder="e.g. Customer Success Manager" onChange={(e) => setG("role", e.target.value)} />
-            <Hint>The title in your statement. Put the level under Target seniority, not here.</Hint>
+            <Hint>The title in your statement. Put the level under Seniority, not here.</Hint>
           </label>
           <div className="space-y-3 border-t border-jh-line pt-4">
             <div>
@@ -165,7 +165,7 @@ export default function TrueNorthPanel({ uid, setup, profile, section }: {
       {section === "salary" && (
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="label">Target salary range</span>
+            <span className="label">Salary range</span>
             <input className="field" value={goal.salary ?? ""} placeholder="e.g. AUD 140,000–165,000" onChange={(e) => setG("salary", e.target.value)} />
             <Hint>The number in your statement, yearly before tax.</Hint>
           </label>
@@ -183,27 +183,29 @@ export default function TrueNorthPanel({ uid, setup, profile, section }: {
       )}
 
       {section === "industry" && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="label">Industry</span>
-            <input className="field" value={goal.subsector ?? ""} placeholder="e.g. HR tech SaaS" onChange={(e) => setG("subsector", e.target.value)} />
-          </label>
-          <label className="block">
-            <span className="label">Company type</span>
-            <select className="field" value={goal.companyType ?? ""} onChange={(e) => setG("companyType", e.target.value)}>
-              <option value="">Select…</option>
-              {typeOptions.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <Hint>&ldquo;I enjoy working for …&rdquo; in your statement.</Hint>
-          </label>
-        </div>
+        <label className="block max-w-md">
+          <span className="label">Industry / sub-sector</span>
+          <input className="field" value={goal.subsector ?? ""} placeholder="e.g. HR tech SaaS" onChange={(e) => setG("subsector", e.target.value)} />
+          <Hint>As specific as you can — the sub-sector, not just the sector: &ldquo;HR tech SaaS&rdquo;, not &ldquo;software&rdquo;. &ldquo;In …&rdquo; in your statement.</Hint>
+        </label>
+      )}
+
+      {section === "company-type" && (
+        <label className="block max-w-md">
+          <span className="label">Company type</span>
+          <select className="field" value={goal.companyType ?? ""} onChange={(e) => setG("companyType", e.target.value)}>
+            <option value="">Select…</option>
+            {typeOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <Hint>&ldquo;I enjoy working for …&rdquo; in your statement.</Hint>
+        </label>
       )}
 
       {section === "location" && (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="label">Target location</span>
+              <span className="label">Location</span>
               <input className="field" value={goal.city ?? ""} placeholder="e.g. Melbourne, Australia" onChange={(e) => setG("city", e.target.value)} />
               <Hint>Where you&apos;re based in your statement — country, region, city or area.</Hint>
             </label>
@@ -248,7 +250,8 @@ export function pickGoal(section: TrueNorthSection, draft: Goal): Partial<Goal> 
     case "roles": return { role: draft.role };
     case "seniority": return { seniority: draft.seniority };
     case "salary": return { salary: draft.salary };
-    case "industry": return { subsector: draft.subsector, companyType: draft.companyType };
+    case "industry": return { subsector: draft.subsector };
     case "location": return { city: draft.city };
+    case "company-type": return { companyType: draft.companyType };
   }
 }

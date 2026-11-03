@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Building2, Contact, MapPin, Navigation, Quote, Sparkles, Target, Wallet, Factory, Layers, type LucideProps } from "lucide-react";
+import { Building2, Contact, MapPin, Navigation, Quote, Sparkles, Target, Wallet, Factory, Layers, Store, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import ContactPolicy from "@/components/careerops/ContactPolicy";
@@ -25,7 +25,7 @@ import TrueNorthStatement from "./TrueNorthStatement";
 
 const ICONS: Record<JhSectionKey, ComponentType<LucideProps>> = {
   contact: Contact, competencies: Layers, headline: Quote, story: Sparkles,
-  roles: Target, seniority: Navigation, salary: Wallet, industry: Factory, location: MapPin,
+  industry: Factory, roles: Target, seniority: Navigation, salary: Wallet, location: MapPin, "company-type": Store,
   companies: Building2,
 };
 
@@ -68,7 +68,7 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
           case "competencies": return <Personalization uid={uid} setup={setup} profile={profile} only={["crossCuttingAdvantage"]} saveLabel="Save core competencies" />;
           case "headline": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="headline" />;
           case "story": return <Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} labels={{ exitNarrative: "Bridge story" }} saveLabel="Save bridge story" />;
-          case "roles": case "seniority": case "salary": case "industry": case "location":
+          case "industry": case "roles": case "seniority": case "salary": case "location": case "company-type":
             return <TrueNorthPanel uid={uid} setup={setup} profile={profile} section={key} />;
           case "companies": return <WatchlistPanel uid={uid} setup={setup} goalRole={goal.role} />;
         }

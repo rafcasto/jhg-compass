@@ -4,7 +4,7 @@
 // (components/profile/SectionsPage.tsx), plus Settings (the profile.yml upload):
 //
 //   /jobhacking/narrative    Contact details · Headline · Bridge story · Core competencies
-//   /jobhacking/true-north   Target roles · Target seniority · Target salary · Target industry · Target location
+//   /jobhacking/true-north   Target industry · Target roles · Seniority · Salary range · Location · Company type
 //   /jobhacking/companies    Target companies
 //   /jobhacking/settings     Upload profile.yml
 //
@@ -53,12 +53,13 @@ export const JH_SECTIONS = [
   // "Bridge story" is the JobHacking word for Compass's "Exit story" — same field, personalization.exitNarrative.
   { key: "story", page: "narrative", label: "Bridge story", title: "Bridge story", ask: "Why you're leaving and where you're heading — the frame for every summary, cover letter and interview answer." },
   { key: "competencies", page: "narrative", label: "Core competencies", title: "Core competencies", ask: "Your superpowers — the three to five things you do that the other candidates can't." },
-  // ---- True North ----
+  // ---- True North (order decided 2026-11-03: industry first, company type on its own at the end) ----
+  { key: "industry", page: "true-north", label: "Target industry", title: "Target industry", ask: "The industry — and the sub-sector within it — you want to work in." },
   { key: "roles", page: "true-north", label: "Target roles", title: "Target roles", ask: "The job title you're going for, and the role archetypes behind it — what each one is really about and what a company is buying when it hires for it." },
-  { key: "seniority", page: "true-north", label: "Target seniority", title: "Target seniority", ask: "The level you're applying at — Senior, Lead, Head of. It goes in front of the title in your statement." },
-  { key: "salary", page: "true-north", label: "Target salary", title: "Target salary", ask: "The range you're aiming at, the floor below which you walk, and how you talk about your number." },
-  { key: "industry", page: "true-north", label: "Target industry", title: "Target industry", ask: "The industry you want to work in and the kind of company you enjoy working for." },
-  { key: "location", page: "true-north", label: "Target location", title: "Target location", ask: "Where you'll be based, how flexible you are, and the rules on remote, hybrid and relocation." },
+  { key: "seniority", page: "true-north", label: "Seniority", title: "Seniority", ask: "The level you're applying at — Senior, Lead, Head of. It goes in front of the title in your statement." },
+  { key: "salary", page: "true-north", label: "Salary range", title: "Salary range", ask: "The range you're aiming at, the floor below which you walk, and how you talk about your number." },
+  { key: "location", page: "true-north", label: "Location", title: "Location", ask: "Where you'll be based, how flexible you are, and the rules on remote, hybrid and relocation." },
+  { key: "company-type", page: "true-north", label: "Company type", title: "Company type", ask: "The kind of company you enjoy working for — startup, scale-up, enterprise, government." },
   // ---- Target companies ----
   { key: "companies", page: "companies", label: "Target companies", title: "Target companies", ask: "The companies on your list with the page that lists their jobs, plus the title keywords to include and exclude. A company without a careers page stays on the list until you add one." },
 ] as const satisfies readonly JhSection[];
@@ -146,10 +147,8 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
       summary: join([g.salary, policy.minimumSalary && `floor ${policy.minimumSalary}`, p.compTargets && "comp notes"]) || NOT_SET,
       count: `${salaryN}/3`,
     },
-    {
-      key: "industry", state: stateOf(!!g.subsector?.trim(), [g.companyType].filter(has).length),
-      summary: join([g.subsector, g.companyType]) || NOT_SET,
-    },
+    { key: "industry", state: g.subsector?.trim() ? "done" : "empty", summary: g.subsector?.trim() || NOT_SET },
+    { key: "company-type", state: g.companyType?.trim() ? "done" : "empty", summary: g.companyType?.trim() || NOT_SET },
     {
       key: "location", state: stateOf(!!g.city?.trim(), locationN),
       summary: join([g.city, policy.locationFlexibility && clip(policy.locationFlexibility, 40), rules.length ? plural(rules.length, "rule") : undefined]) || NOT_SET,
@@ -199,7 +198,7 @@ export const TRUE_NORTH_PLACEHOLDERS: Record<keyof TrueNorthBlanks, string> = {
 
 /** Which section fills each blank — the statement's values link there. */
 export const TRUE_NORTH_SECTION: Record<keyof TrueNorthBlanks, JhSectionKey> = {
-  role: "roles", industry: "industry", location: "location", salary: "salary", companyType: "industry",
+  role: "roles", industry: "industry", location: "location", salary: "salary", companyType: "company-type",
 };
 
 export function trueNorthBlanks(goal: Goal | null | undefined): TrueNorthBlanks {

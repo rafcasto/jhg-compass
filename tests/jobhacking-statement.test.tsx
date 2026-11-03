@@ -13,7 +13,7 @@ describe("TrueNorthStatement", () => {
     expect(text).toContain("I enjoy working for Scale-up.");
     expect(screen.getByRole("link", { name: "Senior Customer Success Manager" })).toHaveAttribute("href", "/jobhacking/true-north?section=roles");
     expect(screen.getByRole("link", { name: "AUD 140,000–165,000" })).toHaveAttribute("href", "/jobhacking/true-north?section=salary");
-    expect(screen.getByRole("link", { name: "Scale-up" })).toHaveAttribute("href", "/jobhacking/true-north?section=industry");
+    expect(screen.getByRole("link", { name: "Scale-up" })).toHaveAttribute("href", "/jobhacking/true-north?section=company-type");
     expect(screen.getByRole("link", { name: "Melbourne, Australia" })).toHaveAttribute("href", "/jobhacking/true-north?section=location");
   });
 
