@@ -29,13 +29,13 @@ const setup = {
 
 describe("JobHacking — pages and sections", () => {
   it("has the three menu pages in order, and Settings apart from them", () => {
-    expect(JH_PAGES.map((p) => p.label)).toEqual(["Profile", "True North", "Target companies"]);
-    expect(JH_PAGES.map((p) => p.href)).toEqual(["/jobhacking/profile", "/jobhacking/true-north", "/jobhacking/companies"]);
+    expect(JH_PAGES.map((p) => p.label)).toEqual(["Narrative", "True North", "Target companies"]);
+    expect(JH_PAGES.map((p) => p.href)).toEqual(["/jobhacking/narrative", "/jobhacking/true-north", "/jobhacking/companies"]);
     expect(JH_SETTINGS_HREF).toBe("/jobhacking/settings");
   });
 
-  it("Profile is exactly Contact details · Headline · Bridge story · Core competencies", () => {
-    expect(jhSectionsFor("profile").map((s) => s.label)).toEqual(["Contact details", "Headline", "Bridge story", "Core competencies"]);
+  it("Narrative is exactly Contact details · Headline · Bridge story · Core competencies", () => {
+    expect(jhSectionsFor("narrative").map((s) => s.label)).toEqual(["Contact details", "Headline", "Bridge story", "Core competencies"]);
   });
 
   it("True North is exactly the five targets", () => {
@@ -45,10 +45,10 @@ describe("JobHacking — pages and sections", () => {
   });
 
   it("deep-links each section on its own page and parses ?section= per page", () => {
-    expect(jhSectionHref("story")).toBe("/jobhacking/profile?section=story");
+    expect(jhSectionHref("story")).toBe("/jobhacking/narrative?section=story");
     expect(jhSectionHref("salary")).toBe("/jobhacking/true-north?section=salary");
     expect(parseJhSection("salary", jhSectionsFor("true-north"))).toBe("salary");
-    expect(parseJhSection("salary", jhSectionsFor("profile"))).toBeNull();
+    expect(parseJhSection("salary", jhSectionsFor("narrative"))).toBeNull();
     expect(parseJhSection("nope")).toBeNull();
     expect(parseJhSection(null)).toBeNull();
   });

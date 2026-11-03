@@ -17,7 +17,7 @@
   worker). Export and upload of the whole `profile.yml` live on `/profile`. Both pages render from
   `lib/profile-sections.ts` through `components/profile/SectionsPage.tsx`; add a section there, not a page.
 
-- **JobHacking portal** (decision 2026-11-03, `docs/UX_JOBHACKING.md`): a third portal — Profile · True North · Target
+- **JobHacking portal** (decision 2026-11-03, `docs/UX_JOBHACKING.md`): a third portal — Narrative · True North · Target
   companies, plus Settings (upload only) — on the **same documents** as Compass. Its registry is `lib/jobhacking/sections.ts`;
   its pages render through the same `components/profile/SectionsPage.tsx`. Switched on per member (`features.jobHacking`) or by a
   "JobHacking only" registration link (`features.compass: false`). Never invent a field for it: every section reads

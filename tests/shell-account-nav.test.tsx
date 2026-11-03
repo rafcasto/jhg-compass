@@ -14,7 +14,7 @@ import { MobileHeader } from "@/components/shell/MobileChrome";
 const items = [{ key: "/compass", label: "Compass", icon: Compass, href: "/compass", active: true }];
 
 describe("account navigation", () => {
-  it("JobHacking shell: no Profile row in the account group (Profile is a primary tab there), Settings points at the portal's upload page", () => {
+  it("JobHacking shell: no Profile row in the account group (the Narrative tab covers it), Settings points at the portal's upload page", () => {
     render(<DesktopSidebar items={items} onSignOut={() => {}} profileHref={null} settingsHref="/jobhacking/settings" settingsActive />);
     const account = screen.getByLabelText("Account");
     const links = within(account).getAllByRole("link");

@@ -1,6 +1,6 @@
 # JobHacking portal
 
-**Decision (2026-11-03):** a third portal beside Compass and CareerOps, in the same shell. Three menu pages — **Profile · True North · Target companies** — plus **Settings**, which is one thing: upload a `profile.yml`. It renders from the same documents as Compass (`users/{uid}` and `users/{uid}/careerOps/setup`): a section here is another door onto the same field, never a copy.
+**Decision (2026-11-03):** a third portal beside Compass and CareerOps, in the same shell. Three menu pages — **Narrative · True North · Target companies** — plus **Settings**, which is one thing: upload a `profile.yml`. It renders from the same documents as Compass (`users/{uid}` and `users/{uid}/careerOps/setup`): a section here is another door onto the same field, never a copy.
 
 **Method:** Refactoring UI's seven principles, applied through the Compass profile pages' own system (`docs/UX_PROFILE.md`, `docs/UX_AUDIT_COMPASS_TABS.md §0`). Nothing new was designed where the Compass system already had the answer; the one new piece is the True North statement.
 
@@ -11,21 +11,21 @@
 | | How it is switched on | Where |
 |---|---|---|
 | Existing member | `accessGrants/{uid}.features.jobHacking = true` | Admin → TOFU → Access renewals → *JobHacking portal* row (Enable / Disable for the selected members); `JobHacking` column shows the state |
-| New member, JobHacking only | A registration link with **Portal: JobHacking only** | Admin → TOFU → Registration access → Registration links. Signing up through it sets `features: { jobHacking: true, compass: false }` and lands on `/jobhacking/profile`. No Compass onboarding, no Compass email sequence. |
+| New member, JobHacking only | A registration link with **Portal: JobHacking only** | Admin → TOFU → Registration access → Registration links. Signing up through it sets `features: { jobHacking: true, compass: false }` and lands on `/jobhacking/narrative`. No Compass onboarding, no Compass email sequence. |
 | Admin | always | — |
 
-`features.compass` is absent for every member who predates this (absent = on). The Compass shell sends a JobHacking-only member to `/jobhacking/profile` before its onboarding gate. The portal switcher (the logo) lists whichever portals the member has.
+`features.compass` is absent for every member who predates this (absent = on). The Compass shell sends a JobHacking-only member to `/jobhacking/narrative` before its onboarding gate. The portal switcher (the logo) lists whichever portals the member has.
 
-Routes: `/jobhacking/profile` · `/jobhacking/true-north` · `/jobhacking/companies` · `/jobhacking/settings`. The account group of the JobHacking shell is **Settings · Sign out** (Profile is a primary tab there, so it is not repeated).
+Routes: `/jobhacking/narrative` · `/jobhacking/true-north` · `/jobhacking/companies` · `/jobhacking/settings` (`/jobhacking/profile` redirects to `/jobhacking/narrative` — the page was called Profile until 2026-11-03). The account group of the JobHacking shell is **Settings · Sign out** (the Narrative tab is this portal's profile, so no Profile row is repeated).
 
 ## 2. Mapping — menu → section → `profile.yml` → editor
 
 | Page · section | `profile.yml` | Editor |
 |---|---|---|
-| **Profile · Contact details** | name + email on the account; `contact.phone · linkedin · location · portfolio` | `ContactPolicy part="contact"` |
-| **Profile · Headline** | `contact.title` | `ContactPolicy part="headline"` |
-| **Profile · Bridge story** *(Compass calls the same field "Exit story")* | `personalization.exitNarrative` | `Personalization only=[exitNarrative] labels={exitNarrative: "Bridge story"}` |
-| **Profile · Core competencies** | `personalization.crossCuttingAdvantage` | `Personalization only=[crossCuttingAdvantage]` |
+| **Narrative · Contact details** | name + email on the account; `contact.phone · linkedin · location · portfolio` | `ContactPolicy part="contact"` |
+| **Narrative · Headline** | `contact.title` | `ContactPolicy part="headline"` |
+| **Narrative · Bridge story** *(Compass calls the same field "Exit story")* | `personalization.exitNarrative` | `Personalization only=[exitNarrative] labels={exitNarrative: "Bridge story"}` |
+| **Narrative · Core competencies** | `personalization.crossCuttingAdvantage` | `Personalization only=[crossCuttingAdvantage]` |
 | **True North · Target roles** | `goal.role` + `personalization.targetRoles[]` (archetype · axes · buys) | `TrueNorthPanel section="roles"` |
 | **True North · Target seniority** | `goal.seniority` *(new, decision B)* | `TrueNorthPanel section="seniority"` |
 | **True North · Target salary** | `goal.salary` + `policy.minimumSalary` + `personalization.compTargets` | `TrueNorthPanel section="salary"` |
@@ -95,6 +95,6 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 
 | Surface | Score | Notes |
 |---|---|---|
-| `/jobhacking/profile` · `/jobhacking/companies` | **9 / 10** | The Profile/Settings layout as is: rail + content, overview → drill-in, state glyph + summary per row, `.label` recedes, one red button per screen, 44px targets, `jh-mute` minimum. |
+| `/jobhacking/narrative` · `/jobhacking/companies` | **9 / 10** | The Profile/Settings layout as is: rail + content, overview → drill-in, state glyph + summary per row, `.label` recedes, one red button per screen, 44px targets, `jh-mute` minimum. |
 | `/jobhacking/true-north` | **9 / 10** | The statement leads and links; five questions, not three storage objects; labelled archetype rows on mobile. Remaining: the statement card is the Compass card verbatim — fine while both portals exist, a second voice if JobHacking ever stands alone. |
 | `/jobhacking/settings` | **9 / 10** | One action, one card, `max-w-2xl`; the empty state tells the member what the file does. |
