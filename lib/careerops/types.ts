@@ -201,9 +201,9 @@ export interface CareerOpsPolicy {
 
 // ---- artefacts (Packer spec, profile.yml top-level `narrative` · `stories` · `snapshots`) ----
 //
-// Stored and exported so a member's profile.yml round-trips without loss. No
-// page edits them; the JobHacking portal reads them on Artefacts → Story Bank
-// (lib/jobhacking/story-bank.ts).
+// Stored and exported so a member's profile.yml round-trips without loss. Read
+// and edited on JobHacking → Artefacts → Story Bank (lib/jobhacking/story-bank.ts);
+// an upload replaces them as one section.
 
 /** narrative.proofPoints[] — a named result and the one number that proves it. */
 export interface ProofPoint { name: string; heroMetric?: string }
@@ -276,7 +276,7 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   personalization?: Personalization;
   /** Rendered modes/_profile.md, stored for the worker and for transparency. */
   profileMd?: string;
-  /** Artefacts carried by profile.yml (Packer spec). Read on JobHacking → Artefacts → Story Bank; edited nowhere. */
+  /** Artefacts carried by profile.yml (Packer spec). Read and edited on JobHacking → Artefacts → Story Bank. */
   narrative?: Narrative;
   stories?: Story[];
   snapshots?: Snapshot[];

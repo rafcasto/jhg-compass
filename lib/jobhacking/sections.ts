@@ -6,7 +6,7 @@
 //   /jobhacking/narrative    Contact details · Headline · Bridge story · Core competencies
 //   /jobhacking/true-north   Target industry · Target roles · Seniority · Salary range · Location · Company type
 //   /jobhacking/companies    Top 3 · Top 10 · Top 40 (the Packer's ranked lists, read-only) · Watchlist
-//   /jobhacking/artefacts    Story Bank (the Packer's proof points · stories · snapshots, read-only) · Master CV · LinkedIn profile (read-only)
+//   /jobhacking/artefacts    Story Bank (proof points · stories · snapshots, edited on request) · Master CV · LinkedIn profile (read-only)
 //   /jobhacking/settings     Upload profile.yml
 //
 // Same documents as Compass (decision F, 2026-11-03): users/{uid} and
@@ -70,7 +70,7 @@ export const JH_SECTIONS = [
   { key: "top10", page: "companies", label: "Top 10", title: "Top 10", ask: "The ten to keep warm: your Top 3 and the next seven, so a stalled conversation never leaves you with nothing to work on." },
   { key: "top40", page: "companies", label: "Top 40", title: "Top 40", ask: "The whole field, ranked — every company your coach classified as sunrise (growing) or sunset (shrinking), with the industry and sub-sector each one sits in." },
   { key: "companies", page: "companies", label: "Watchlist", title: "Watchlist", ask: "The careers pages to watch — the page that lists each company's jobs — plus the title keywords to include and exclude. A company without a careers page stays on the list until you add one." },
-  // ---- Artefacts (decision 2026-11-05): the Packer's story bank, read-only · the master CV · the LinkedIn profile to build, read-only ----
+  // ---- Artefacts (decision 2026-11-05): the story bank (read, edited on request) · the master CV · the LinkedIn profile to build, read-only ----
   { key: "story-bank", page: "artefacts", label: "Story Bank", title: "Story Bank", ask: "Your proof points — each result and the one number that proves it — the stories behind them, and the snapshots that point a story at one target company." },
   { key: "master-cv", page: "artefacts", label: "Master CV", title: "Master CV", ask: "The only source of truth about what you have done. Every tailored CV starts from it, and the Evaluator quotes it as evidence." },
   { key: "linkedin-profile", page: "artefacts", label: "LinkedIn profile", title: "LinkedIn profile", ask: "Your LinkedIn, section by section — headline, About, each role, Featured, skills, education, certifications — written to paste, each block against LinkedIn's limit." },
@@ -187,10 +187,10 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
         ? join([shared.get("companies")!.summary, companies.some((c) => !c.careersUrl?.trim()) ? `${plural(companies.filter((c) => !c.careersUrl?.trim()).length, "company", "companies")} without a careers page` : undefined])
         : NOT_SET,
     },
-    // The story bank is read, not filled in: "done" the moment the file carried any of it, never "partial".
+    // The story bank is "done" the moment it has anything in it, never "partial"; empty says Not set — the member can add to it here.
     {
       key: "story-bank", state: storyBankCounts(setup).total ? "done" : "empty",
-      summary: storyBankSummary(setup) || NOT_IN_PROFILE,
+      summary: storyBankSummary(setup) || NOT_SET,
       count: storyBankCounts(setup).stories ? String(storyBankCounts(setup).stories) : undefined,
     },
     borrow("cv", "master-cv"),

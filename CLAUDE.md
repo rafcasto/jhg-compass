@@ -28,9 +28,11 @@
   rows on all three lists, never a table, never cards for one list and rows for another. The Watchlist section reads as the
   same rows (`WatchlistSection`, industry borrowed from the ranked lists by name, never invented) and edits through the shared
   `WatchlistPanel` behind an *Edit watchlist* button. The rail is the sub-menu; don't add a `Segmented` beside it.
+  Comma-separated inputs (keywords, figures) keep the typed text as local state and emit the parsed list — never control the
+  textarea from the parsed list (`KeywordArea` in `components/agents/Portals.tsx`, defect fixed 2026-11-05).
   **Artefacts** (decision 2026-11-05, `docs/UX_JOBHACKING.md §3d`) is **Story Bank · Master CV · LinkedIn profile**: Story Bank reads
-  the Packer's `narrative.proofPoints · stories · snapshots` read-only through `components/jobhacking/StoryBankPanel.tsx` (the same row
-  grammar as the company lists); Master CV is Settings' `CvPanel` on the same `cv` field; LinkedIn profile reads the top-level
+  `narrative.proofPoints · stories · snapshots` as rows through `components/jobhacking/StoryBankPanel.tsx` (the same row grammar as the
+  company lists) and edits them behind an *Edit story bank* button (`StoryBankEditor`, saves only those three keys with merge); Master CV is Settings' `CvPanel` on the same `cv` field; LinkedIn profile reads the top-level
   `linkedin` section (`headline · about · experience · featured · skills · education · certifications` — LinkedIn's own sections, one
   pasteable block each, measured against LinkedIn's limits, never cut) through `LinkedinProfilePanel.tsx`. The URL stays
   `contact.linkedin`; never add an open-to-work block there (that is the goal).

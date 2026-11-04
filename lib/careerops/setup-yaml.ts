@@ -82,7 +82,7 @@ export function preserveSetupFields(setup: CareerOpsSetupV2 | null | undefined):
   if (setup?.contact) out.contact = setup.contact;
   if (setup?.policy) out.policy = setup.policy;
   if (setup?.personalization) out.personalization = setup.personalization;
-  // The artefacts an uploaded profile.yml carried: nothing edits them, so a whole-document save must carry them too.
+  // The artefacts and lists: edited only on their own JobHacking sections (merge writes), so a whole-document save must carry them too.
   if (setup?.narrative) out.narrative = setup.narrative;
   if (setup?.stories) out.stories = setup.stories;
   if (setup?.snapshots) out.snapshots = setup.snapshots;
