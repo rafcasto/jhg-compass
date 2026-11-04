@@ -25,7 +25,9 @@
   Target companies (decision 2026-11-05, `docs/UX_JOBHACKING.md §3b`) is **Top 3 · Top 10 · Top 40 · Watchlist**: the first three
   read `companyLists.top3 · top10 · all` (the Packer's ranked lists, sunrise / sunset), are read-only, and never feed the Scout's
   `watchlist`; `all` is shown as "Top 40". They render through `components/jobhacking/CompanyListPanel.tsx` — the same ranked
-  rows on all three lists, never a table, never cards for one list and rows for another. The rail is the sub-menu; don't add a `Segmented` beside it.
+  rows on all three lists, never a table, never cards for one list and rows for another. The Watchlist section reads as the
+  same rows (`WatchlistSection`, industry borrowed from the ranked lists by name, never invented) and edits through the shared
+  `WatchlistPanel` behind an *Edit watchlist* button. The rail is the sub-menu; don't add a `Segmented` beside it.
 
 ## Design
 

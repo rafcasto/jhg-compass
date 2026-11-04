@@ -7,7 +7,6 @@ import type { ComponentType } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import ContactPolicy from "@/components/careerops/ContactPolicy";
 import Personalization from "@/components/careerops/Personalization";
-import WatchlistPanel from "@/components/careerops/WatchlistPanel";
 import Identity from "@/components/profile/Identity";
 import SectionsPage from "@/components/profile/SectionsPage";
 import type { SectionItem } from "@/components/profile/SectionList";
@@ -16,6 +15,7 @@ import { JH_LIST_OF, findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSumm
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 import CompanyListPanel from "./CompanyListPanel";
+import WatchlistSection from "./WatchlistSection";
 import TrueNorthPanel from "./TrueNorthPanel";
 import TrueNorthStatement from "./TrueNorthStatement";
 
@@ -74,7 +74,8 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
           // The Packer's lists: read-only, the same ranked rows on all three.
           case "top3": case "top10": case "top40":
             return <CompanyListPanel listKey={JH_LIST_OF[key]} list={setup?.companyLists?.[JH_LIST_OF[key]]} />;
-          case "companies": return <WatchlistPanel uid={uid} setup={setup} goalRole={goal.role} />;
+          // The watchlist reads as the same rows, with an Edit that opens the shared editor.
+          case "companies": return <WatchlistSection uid={uid} setup={setup} goalRole={goal.role} />;
         }
       }}
     />

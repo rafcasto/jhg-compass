@@ -33,7 +33,7 @@ Routes: `/jobhacking/narrative` · `/jobhacking/true-north` · `/jobhacking/comp
 | **True North · Location** | `goal.city` + `policy.locationFlexibility` + `personalization.locationPolicy[]` *(visa / work rights left out, decision D)* | `TrueNorthPanel section="location"` |
 | **True North · Company type** | `goal.companyType` *(its own section since 2026-11-03; was inside Target industry)* | `TrueNorthPanel section="company-type"` |
 | **Target companies · Top 3 · Top 10 · Top 40** | `companyLists.top3` · `top10` · `all`, each `sunrise[] · sunset[] · unclassified[]` of `rank · name · industry · subSector · companyType · careersUrl · careersUrlStatus` *(new, 2026-11-05)* | `CompanyListPanel` — read-only; the Packer writes them |
-| **Target companies · Watchlist** | `watchlist.companies[]` + `watchlist.positive` / `negative` *(decision E)* | `WatchlistPanel` |
+| **Target companies · Watchlist** | `watchlist.companies[]` + `watchlist.positive` / `negative` *(decision E)* | `WatchlistSection` — the same rows read-only, *Edit watchlist* opens `WatchlistPanel` (§3c) |
 | **Settings** | the whole file | `ProfileUploadSheet` (pick → review the diff → unpack) |
 
 Not on the menu, still in the file and stored: `personalization.adaptiveFraming · negotiationScripts · portfolio`, `policy.visaStatus · authorizedIn · needsSponsorship`, `contact.github`, `notes`, `cv`, and the artefacts (`narrative.proofPoints`, `stories`, `snapshots`). They survive every save and every export.
@@ -83,6 +83,16 @@ Rejected alongside: cards for the Top 3 only (shipped first, then dropped — tw
 
 Rows (`jhSectionSummaries`): Top 3 quotes the three names; Top 10 and Top 40 say *40 companies · 37 sunrise · 2 sunset · 1 not yet classified*; the count sits at the row's right edge. A list is *done* the moment the file carried one — there is no *partial* for something the member cannot type in.
 
+## 3c. Target companies — the Watchlist
+
+**Decision (2026-11-05).** The fourth section reads like the other three and edits on request:
+
+- **Read view**: the same `CompanyRow` — position as the number, name, a second line, type pill, one careers target — then the title keywords as two groups of `.pill-visible` (*Titles to include · Titles to exclude*, each with its count). A watchlist company carries only a name and a URL; where its name matches one on the Packer's lists, the row borrows that company's industry · sub-sector and type (`watchlistRows`, matched on a normalised name). Where it doesn't, the second line is the careers host (`boards.example`). Nothing is invented.
+- **One secondary button**, *Edit watchlist*, top right of the list. It swaps the read view for the shared editor (`WatchlistPanel` → `Portals`, `intro={false}`) with the red **Save watchlist** and a secondary **Cancel**; a save returns to the read view with a `role="status"` *Saved.* The editor is the same one Settings and intake use, so the two cannot drift — only the JobHacking page wraps it.
+- **Empty**: *No companies on your watchlist yet* with *Add companies*, which opens the editor.
+
+Red budget: none on the read view; one Save in edit mode. `WatchlistPanel` gained `intro` · `onSaved` · `onCancel`, all optional, so Settings and the intake wizard render exactly as before.
+
 ## 4. Settings
 
 One card: a drop zone, **Upload profile** (the page's single red button), the "read in your browser, nothing saved until you confirm" line, and *What it fills in* — the three pages as rows. Drag-and-drop anywhere on the page. After an unpack, a `role="status"` line lists the updated file sections, each a link to its JobHacking section where one exists (`JH_FILE_EDIT`). No Export here, by decision; the review step's *Download current profile* (offered only when something would be replaced) still works.
@@ -121,7 +131,9 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 |---|---|
 | `lib/jobhacking/sections.ts` | pages, sections, `?section=` parsing, row summaries, the statement's blanks and text — pure, tested |
 | `lib/jobhacking/company-lists.ts` | the ranked lists: labels (`all` → Top 40), trend groups in rank order, facets, company-type words, row text — pure, tested |
+| `components/jobhacking/CompanyRow.tsx` | the one company row — ranked lists and watchlist alike |
 | `components/jobhacking/CompanyListPanel.tsx` | the same ranked rows on Top 3 / Top 10 / Top 40, grouped sunrise / sunset, read-only (§3b) |
+| `components/jobhacking/WatchlistSection.tsx` | the watchlist as rows + keyword pills, *Edit watchlist* → the shared editor (§3c) |
 | `components/jobhacking/JobHackingScreen.tsx` | the three pages on `SectionsPage` |
 | `components/jobhacking/TrueNorthPanel.tsx` | the five True North editors |
 | `components/jobhacking/TrueNorthStatement.tsx` | the lead |
@@ -134,6 +146,7 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 | Surface | Score | Notes |
 |---|---|---|
 | `/jobhacking/narrative` | **9 / 10** | The Profile/Settings layout as is: rail + content, overview → drill-in, state glyph + summary per row, `.label` recedes, one red button per screen, 44px targets, `jh-mute` minimum. |
-| `/jobhacking/companies` · Top 3 / Top 10 / Top 40 | **9 / 10** | One row model on all three lists, rank order kept, facet line before the rows, no red, no table (§3b). Remaining: the Top 40's sunrise group is ~37 rows with no in-page jump; a sticky group heading or an industry filter on the facet line is the next step if members ask. The Watchlist section is still the `Portals` editor the audit scored 6.5 (`docs/UX_AUDIT_JOBHACKING.md` §3) — untouched here. |
+| `/jobhacking/companies` · Top 3 / Top 10 / Top 40 | **9 / 10** | One row model on all three lists, rank order kept, facet line before the rows, no red, no table (§3b). Remaining: the Top 40's sunrise group is ~37 rows with no in-page jump; a sticky group heading or an industry filter on the facet line is the next step if members ask. |
+| `/jobhacking/companies` · Watchlist | **8.5 / 10** | Reads as the same rows and pills; the `Portals` editor the audit scored 6.5 (`docs/UX_AUDIT_JOBHACKING.md` §3) is now behind *Edit watchlist* rather than the page itself — its own issues (unlabelled 1fr/2fr inputs, the *Advanced* disclosure per row) remain for a pass of their own. |
 | `/jobhacking/true-north` | **9 / 10** | The statement leads and links; five questions, not three storage objects; labelled archetype rows on mobile. Remaining: the statement card is the Compass card verbatim — fine while both portals exist, a second voice if JobHacking ever stands alone. |
 | `/jobhacking/settings` | **9 / 10** | One action, one card, `max-w-2xl`; the empty state tells the member what the file does. |
