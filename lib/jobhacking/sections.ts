@@ -5,7 +5,7 @@
 //
 //   /jobhacking/narrative    Contact details · Headline · Bridge story · Core competencies
 //   /jobhacking/true-north   Target industry · Target roles · Seniority · Salary range · Location · Company type
-//   /jobhacking/companies    Target companies
+//   /jobhacking/companies    Top 3 · Top 10 · Top 40 (the Packer's ranked lists, read-only) · Watchlist
 //   /jobhacking/settings     Upload profile.yml
 //
 // Same documents as Compass (decision F, 2026-11-03): users/{uid} and
@@ -21,6 +21,7 @@ import type { StepState } from "../careerops/intake-wizard";
 import { companyTypePhrase, roleWithSeniority, type Goal } from "../goal";
 import { sectionSummaries, type FileSectionKey } from "../profile-sections";
 import type { Profile } from "../types";
+import { listCompanies, listCount, listSummary, type CompanyListKey } from "./company-lists";
 
 export type JhPageKey = "narrative" | "true-north" | "companies";
 
@@ -29,7 +30,7 @@ export interface JhPage { key: JhPageKey; label: string; href: string; title: st
 export const JH_PAGES = [
   { key: "narrative", label: "Narrative", href: "/jobhacking/narrative", title: "Narrative", intro: "Who you are: the contact block of every application, what you're best at, the one line under your name, and why you're moving." },
   { key: "true-north", label: "True North", href: "/jobhacking/true-north", title: "True North", intro: "What you're aiming at. Every section fills a blank in the statement." },
-  { key: "companies", label: "Target companies", href: "/jobhacking/companies", title: "Target companies", intro: "The companies you're going after, their careers pages, and the job titles to include and exclude." },
+  { key: "companies", label: "Target companies", href: "/jobhacking/companies", title: "Target companies", intro: "The companies you're going after — your Top 3, your Top 10 and the whole ranked field, sunrise and sunset — plus the careers pages to watch and the job titles to include and exclude." },
 ] as const satisfies readonly JhPage[];
 
 export const JH_HOME = JH_PAGES[0].href;
@@ -60,9 +61,15 @@ export const JH_SECTIONS = [
   { key: "salary", page: "true-north", label: "Salary range", title: "Salary range", ask: "The range you're aiming at, the floor below which you walk, and how you talk about your number." },
   { key: "location", page: "true-north", label: "Location", title: "Location", ask: "Where you'll be based, how flexible you are, and the rules on remote, hybrid and relocation." },
   { key: "company-type", page: "true-north", label: "Company type", title: "Company type", ask: "The kind of company you enjoy working for — startup, scale-up, enterprise, government." },
-  // ---- Target companies ----
-  { key: "companies", page: "companies", label: "Target companies", title: "Target companies", ask: "The companies on your list with the page that lists their jobs, plus the title keywords to include and exclude. A company without a careers page stays on the list until you add one." },
+  // ---- Target companies (decision 2026-11-05): the Packer's three ranked lists, read-only, then the watchlist ----
+  { key: "top3", page: "companies", label: "Top 3", title: "Top 3", ask: "The three to go after first — where your research, outreach and tailored applications start this week." },
+  { key: "top10", page: "companies", label: "Top 10", title: "Top 10", ask: "The ten to keep warm: your Top 3 and the next seven, so a stalled conversation never leaves you with nothing to work on." },
+  { key: "top40", page: "companies", label: "Top 40", title: "Top 40", ask: "The whole field, ranked — every company your coach classified as sunrise (growing) or sunset (shrinking), with the industry and sub-sector each one sits in." },
+  { key: "companies", page: "companies", label: "Watchlist", title: "Watchlist", ask: "The careers pages to watch — the page that lists each company's jobs — plus the title keywords to include and exclude. A company without a careers page stays on the list until you add one." },
 ] as const satisfies readonly JhSection[];
+
+/** Which profile.yml list a ranked section reads. `all` is the whole field, shown as Top 40. */
+export const JH_LIST_OF: Record<"top3" | "top10" | "top40", CompanyListKey> = { top3: "top3", top10: "top10", top40: "all" };
 
 export type JhSectionKey = (typeof JH_SECTIONS)[number]["key"];
 export type JhSectionDef = JhSection & { key: JhSectionKey };
@@ -87,7 +94,7 @@ export function parseJhSection(raw: string | null | undefined, sections: readonl
  * the "unpacked" status line. null: stored, but no JobHacking section shows it.
  */
 export const JH_FILE_EDIT: Record<FileSectionKey, JhSectionKey | null> = {
-  northstar: "roles", contact: "contact", targeting: "story", watchlist: "companies", notes: null, cv: null, artefacts: null,
+  northstar: "roles", contact: "contact", targeting: "story", watchlist: "companies", companyLists: "top3", notes: null, cv: null, artefacts: null,
 };
 
 // ---- what each row shows ----
@@ -97,6 +104,8 @@ export interface JhSummary { key: JhSectionKey; state: StepState; summary: strin
 export interface JhSignals { setup: CareerOpsSetupV2 | null | undefined; profile: Profile | null | undefined }
 
 const NOT_SET = "Not set";
+/** For what the member cannot type in — only an uploaded profile.yml fills it. */
+const NOT_IN_PROFILE = "Not in your profile yet";
 const join = (parts: (string | undefined | null | false)[], sep = " · ") => parts.map((p) => (p ? p.trim() : "")).filter(Boolean).join(sep);
 const has = (v: unknown): boolean => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && !v.length);
 const clip = (s: string, max = 72): string => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
@@ -127,6 +136,7 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
     return { key, state: r.state, summary: r.summary, count: r.count };
   };
 
+  const lists = setup?.companyLists;
   const competencies = p.crossCuttingAdvantage?.trim() ?? "";
   const salaryN = [g.salary, policy.minimumSalary, p.compTargets].filter(has).length;
   const locationN = [g.city, policy.locationFlexibility, rules.length].filter(has).length;
@@ -154,6 +164,14 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
       summary: join([g.city, policy.locationFlexibility && clip(policy.locationFlexibility, 40), rules.length ? plural(rules.length, "rule") : undefined]) || NOT_SET,
       count: `${locationN}/3`,
     },
+    // The ranked lists are read, not filled in: "done" the moment the file carried one, never "partial".
+    {
+      key: "top3", state: listCount(lists?.top3) ? "done" : "empty",
+      summary: listCount(lists?.top3) ? clip(listCompanies(lists?.top3).map((c) => c.name).join(", ")) : NOT_IN_PROFILE,
+      count: listCount(lists?.top3) ? String(listCount(lists?.top3)) : undefined,
+    },
+    { key: "top10", state: listCount(lists?.top10) ? "done" : "empty", summary: listSummary(lists?.top10) || NOT_IN_PROFILE, count: listCount(lists?.top10) ? String(listCount(lists?.top10)) : undefined },
+    { key: "top40", state: listCount(lists?.all) ? "done" : "empty", summary: listSummary(lists?.all) || NOT_IN_PROFILE, count: listCount(lists?.all) ? String(listCount(lists?.all)) : undefined },
     {
       ...borrow("companies", "companies"),
       // The shared row counts every company; here a company with no careers page is worth a word.

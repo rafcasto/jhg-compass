@@ -124,6 +124,18 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
     out.push({ key: "watchlist", inFile: true, kind, headline, detail: detail || undefined });
   } else out.push(absent("watchlist"));
 
+  // Company lists — Top 3 · Top 10 · Top 40, replaced as a whole.
+  const listN = (l: ProfileFile["companyLists"], k: "top3" | "top10" | "all") => (["sunrise", "sunset", "unclassified"] as const).reduce((n, t) => n + (l?.[k]?.[t]?.length ?? 0), 0);
+  const incLists = ["top3", "top10", "all"].map((k) => listN(incoming.companyLists, k as "top3")).reduce((a, b) => a + b, 0);
+  if (incLists) {
+    const curLists = ["top3", "top10", "all"].map((k) => listN(current.companyLists, k as "top3")).reduce((a, b) => a + b, 0);
+    const kind: DiffKind = !curLists ? "add" : same(current.companyLists, incoming.companyLists) ? "keep" : "replace";
+    const parts = ([["top3", "Top 3"], ["top10", "Top 10"], ["all", "Top 40"]] as const)
+      .map(([k, label]) => { const n = listN(incoming.companyLists, k); return n ? `${label} (${n})` : ""; })
+      .filter(Boolean).join(", ");
+    out.push({ key: "companyLists", inFile: true, kind, headline: kind === "keep" ? "same as now" : parts, detail: kind === "keep" ? undefined : "Shown on JobHacking → Target companies. The three lists are replaced together." });
+  } else out.push(absent("companyLists"));
+
   // Notes.
   if (incoming.notes) {
     const kind: DiffKind = !current.notes ? "add" : current.notes === incoming.notes ? "keep" : "replace";

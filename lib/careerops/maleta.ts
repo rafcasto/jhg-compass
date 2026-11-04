@@ -38,7 +38,8 @@ import { JSON_SCHEMA, dump as yamlDump, load as yamlLoad } from "js-yaml";
 import type { Goal } from "@/lib/goal";
 import { GOAL_KEYS } from "@/lib/goal";
 import { coercePersonalization, parseProfileMd, renderProfileMd, type Personalization } from "./personalization";
-import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, Narrative, PortalCompany, ProofPoint, Snapshot, Story } from "./types";
+import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, CareersUrlStatus, CompanyList, CompanyLists, Narrative, PortalCompany, ProofPoint, RankedCompany, Snapshot, Story } from "./types";
+import { CAREERS_URL_STATUSES, COMPANY_LIST_KEYS, COMPANY_TREND_KEYS, ROW_CAPS } from "./profile-schema";
 import type { Profile } from "@/lib/types";
 
 export const MALETA_VERSION = 1;
@@ -55,6 +56,8 @@ export interface Maleta {
   /** The eight _profile.md sections. */
   personalization?: Personalization;
   watchlist?: CareerOpsPortals;
+  /** The Packer's ranked lists — Top 3 · Top 10 · all. Read on JobHacking → Target companies, edited nowhere. */
+  companyLists?: CompanyLists;
   notes?: string;
   /** Artefacts (Packer spec): proof points, stories, per-company snapshots. Stored for the round trip. */
   narrative?: Narrative;
@@ -120,6 +123,7 @@ export function maletaFromSetup({ profile, setup }: { profile: Profile | null | 
     policy: pruned(setup?.policy),
     personalization: pruned(coercePersonalization(setup?.personalization ?? {})),
     watchlist: setup?.portals?.companies?.length ? setup.portals : undefined,
+    companyLists: hasCompanyLists(setup?.companyLists) ? setup!.companyLists : undefined,
     notes: setup?.notes?.trim() || undefined,
     narrative: setup?.narrative?.proofPoints?.length ? setup.narrative : undefined,
     stories: setup?.stories?.length ? setup.stories : undefined,
@@ -138,6 +142,7 @@ export function maletaToYaml(m: Maleta): string {
     policy: m.policy,
     personalization: m.personalization,
     watchlist: m.watchlist,
+    companyLists: m.companyLists,
     notes: m.notes,
     cv: m.cv,
     narrative: m.narrative,
@@ -317,10 +322,46 @@ export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
     } as CareerOpsPolicy),
     personalization: pruned(coercePersonalization(doc.personalization)),
     watchlist: companies.length ? { companies, positive: strArr(w.positive) ?? [], negative: strArr(w.negative) ?? [] } : undefined,
+    companyLists: companyListsFromYaml(doc.companyLists),
     notes: str(doc.notes),
     ...artefactsFromYaml(doc),
   };
 }
+
+// ---- company lists: top3 · top10 · all × sunrise · sunset · unclassified ----
+// Rows are kept in file order; rank is read as a number and never invented.
+const num = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+const status = (v: unknown): CareersUrlStatus | undefined => ((CAREERS_URL_STATUSES as readonly string[]).includes(str(v) ?? "") ? (v as CareersUrlStatus) : undefined);
+
+function rankedRows(v: unknown): RankedCompany[] {
+  return (Array.isArray(v) ? (v.filter((x) => x && typeof x === "object") as Record<string, unknown>[]).slice(0, ROW_CAPS.rankedCompanies) : [])
+    .map((r) => pruned({
+      rank: num(r.rank), name: str(r.name), industry: str(r.industry), subSector: str(r.subSector),
+      companyType: str(r.companyType), careersUrl: str(r.careersUrl), careersUrlStatus: status(r.careersUrlStatus),
+    } as RankedCompany))
+    .filter((r): r is RankedCompany => !!r?.name);
+}
+
+export function companyListsFromYaml(v: unknown): CompanyLists | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const doc = v as Record<string, unknown>;
+  const out: CompanyLists = {};
+  for (const k of COMPANY_LIST_KEYS) {
+    const raw = doc[k];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
+    const list: CompanyList = {};
+    for (const t of COMPANY_TREND_KEYS) {
+      const rows = rankedRows((raw as Record<string, unknown>)[t]);
+      if (rows.length) list[t] = rows;
+    }
+    if (Object.keys(list).length) out[k] = list;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/** True when at least one list has at least one company. */
+export const hasCompanyLists = (l: CompanyLists | null | undefined): boolean =>
+  !!l && COMPANY_LIST_KEYS.some((k) => COMPANY_TREND_KEYS.some((t) => (l[k]?.[t]?.length ?? 0) > 0));
 
 // ---- artefacts: narrative.proofPoints · stories · snapshots ----
 // Strings extracted, capped, never obeyed — same rule as every other section.
@@ -434,6 +475,10 @@ export function maletaContents(m: Maleta): string[] {
   if (m.policy) found.push("logistics");
   if (m.personalization) found.push(`targeting (${Object.keys(m.personalization).length}/8 sections)`);
   if (m.watchlist?.companies.length) found.push(`watchlist (${m.watchlist.companies.length} companies)`);
+  if (hasCompanyLists(m.companyLists)) {
+    const n = (k: keyof CompanyLists) => COMPANY_TREND_KEYS.reduce((sum, t) => sum + (m.companyLists![k]?.[t]?.length ?? 0), 0);
+    found.push(`company lists (Top 3: ${n("top3")} · Top 10: ${n("top10")} · Top 40: ${n("all")})`);
+  }
   if (m.notes) found.push("notes");
   if (m.narrative?.proofPoints?.length) found.push(`proof points (${m.narrative.proofPoints.length})`);
   if (m.stories?.length) found.push(`stories (${m.stories.length})`);
@@ -511,6 +556,7 @@ export function maletaToSetupPatch(m: Maleta): MaletaPatch {
     setup.profileMd = renderProfileMd(m.personalization);
   }
   if (m.watchlist?.companies.length) setup.portals = m.watchlist;
+  if (hasCompanyLists(m.companyLists)) setup.companyLists = m.companyLists;
   if (m.notes) setup.notes = m.notes;
   if (m.narrative) setup.narrative = m.narrative;
   if (m.stories) setup.stories = m.stories;

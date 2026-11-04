@@ -46,6 +46,7 @@ export function profileToYaml(p: ProfileFile): string {
     policy: p.policy,
     personalization: p.personalization,
     watchlist: p.watchlist,
+    companyLists: p.companyLists,
     notes: p.notes,
     // Artefacts after the CV, as the Packer writes them.
     narrative: p.narrative,

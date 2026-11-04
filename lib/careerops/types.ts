@@ -212,6 +212,30 @@ export interface Story { id?: string; title: string; result?: string; provenance
 /** snapshots[] — a story pointed at one target company, with the figures to lead with. */
 export interface Snapshot { company: string; storyId?: string; title?: string; results?: string[] }
 
+// ---- company lists (Packer spec, profile.yml top-level `companyLists`; added 2026-11-05) ----
+//
+// The coach's ranked target companies: Top 3 · Top 10 · the whole field (`all`,
+// shown as "Top 40"), each split sunrise (growing) / sunset (shrinking) /
+// unclassified. Read-only in the portal — the Packer writes them, the member
+// reads them on JobHacking → Target companies. The watchlist above stays the
+// Scout's config; these never feed it.
+
+export type CompanyTrend = "sunrise" | "sunset" | "unclassified";
+/** How the careers URL got there: the coach confirmed it, the coach opened it (unverified), or there is none. */
+export type CareersUrlStatus = "confirmed" | "opened_by_coach" | "none";
+export interface RankedCompany {
+  rank?: number;
+  name: string;
+  industry?: string;
+  subSector?: string;
+  /** Free text from the Packer ("scaleup", "established") — see companyTypeLabel in lib/jobhacking/company-lists. */
+  companyType?: string;
+  careersUrl?: string;
+  careersUrlStatus?: CareersUrlStatus;
+}
+export type CompanyList = Partial<Record<CompanyTrend, RankedCompany[]>>;
+export interface CompanyLists { top3?: CompanyList; top10?: CompanyList; all?: CompanyList }
+
 export interface CareerOpsSetupV2 extends CareerOpsSetup {
   portals?: CareerOpsPortals;
   portalsYaml?: string;
@@ -229,6 +253,8 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   narrative?: Narrative;
   stories?: Story[];
   snapshots?: Snapshot[];
+  /** The Packer's ranked company lists (profile.yml `companyLists`). Read on JobHacking → Target companies; edited nowhere. */
+  companyLists?: CompanyLists;
 }
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last

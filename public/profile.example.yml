@@ -97,6 +97,190 @@ watchlist:
     - "intern"
     - "graduate"
     - "VP"
+# The Packer's ranked lists — read on JobHacking → Target companies (Top 3 · Top 10 · Top 40), edited nowhere.
+# `all` is the whole field. Each list splits sunrise (growing) / sunset (shrinking) / unclassified.
+companyLists:
+  top3:
+    sunrise:
+      - rank: 1
+        name: "Tracksuit"
+        industry: "Martech"
+        subSector: "Brand tracking"
+        companyType: "scaleup"
+        careersUrl: "https://www.gotracksuit.com/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 2
+        name: "Halter"
+        industry: "Agritech"
+        subSector: "Livestock automation"
+        companyType: "scaleup"
+        careersUrl: "https://halterhq.com/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 3
+        name: "Partly"
+        industry: "Automotive tech"
+        subSector: "Parts data platform"
+        companyType: "scaleup"
+        careersUrl: "https://www.partly.com/careers"
+        careersUrlStatus: "confirmed"
+  top10:
+    sunrise:
+      - rank: 1
+        name: "Tracksuit"
+        industry: "Martech"
+        subSector: "Brand tracking"
+        companyType: "scaleup"
+        careersUrl: "https://www.gotracksuit.com/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 2
+        name: "Halter"
+        industry: "Agritech"
+        subSector: "Livestock automation"
+        companyType: "scaleup"
+        careersUrl: "https://halterhq.com/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 3
+        name: "Partly"
+        industry: "Automotive tech"
+        subSector: "Parts data platform"
+        companyType: "scaleup"
+        careersUrl: "https://www.partly.com/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 4
+        name: "Xero"
+        industry: "Fintech"
+        subSector: "SMB accounting"
+        companyType: "established"
+        careersUrl: "https://www.xero.com/careers/"
+        careersUrlStatus: "confirmed"
+      - rank: 5
+        name: "Auror"
+        industry: "Retail tech"
+        subSector: "Loss prevention"
+        companyType: "scaleup"
+        careersUrl: "https://www.auror.co/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 6
+        name: "Dovetail"
+        industry: "B2B SaaS"
+        subSector: "Customer research"
+        companyType: "scaleup"
+        careersUrl: "https://dovetail.com/careers/"
+        careersUrlStatus: "confirmed"
+      - rank: 7
+        name: "Sharesies"
+        industry: "Fintech"
+        subSector: "Retail investing"
+        companyType: "scaleup"
+        careersUrl: "https://www.sharesies.nz/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 8
+        name: "Hnry"
+        industry: "Fintech"
+        subSector: "Sole-trader tax"
+        companyType: "scaleup"
+        careersUrl: "https://hnry.co.nz/careers/"
+        careersUrlStatus: "opened_by_coach"
+      - rank: 9
+        name: "Timely"
+        industry: "B2B SaaS"
+        subSector: "Appointment scheduling"
+        companyType: "established"
+        careersUrlStatus: "none"
+    sunset:
+      - rank: 10
+        name: "Crimson Education"
+        industry: "Edtech"
+        subSector: "Admissions consulting"
+        companyType: "established"
+        careersUrl: "https://www.crimsoneducation.org/careers"
+        careersUrlStatus: "opened_by_coach"
+  all:
+    sunrise:
+      - rank: 1
+        name: "Tracksuit"
+        industry: "Martech"
+        subSector: "Brand tracking"
+        companyType: "scaleup"
+        careersUrl: "https://www.gotracksuit.com/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 2
+        name: "Halter"
+        industry: "Agritech"
+        subSector: "Livestock automation"
+        companyType: "scaleup"
+        careersUrl: "https://halterhq.com/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 3
+        name: "Partly"
+        industry: "Automotive tech"
+        subSector: "Parts data platform"
+        companyType: "scaleup"
+        careersUrl: "https://www.partly.com/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 4
+        name: "Xero"
+        industry: "Fintech"
+        subSector: "SMB accounting"
+        companyType: "established"
+        careersUrl: "https://www.xero.com/careers/"
+        careersUrlStatus: "confirmed"
+      - rank: 5
+        name: "Auror"
+        industry: "Retail tech"
+        subSector: "Loss prevention"
+        companyType: "scaleup"
+        careersUrl: "https://www.auror.co/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 6
+        name: "Dovetail"
+        industry: "B2B SaaS"
+        subSector: "Customer research"
+        companyType: "scaleup"
+        careersUrl: "https://dovetail.com/careers/"
+        careersUrlStatus: "confirmed"
+      - rank: 7
+        name: "Sharesies"
+        industry: "Fintech"
+        subSector: "Retail investing"
+        companyType: "scaleup"
+        careersUrl: "https://www.sharesies.nz/careers"
+        careersUrlStatus: "confirmed"
+      - rank: 8
+        name: "Hnry"
+        industry: "Fintech"
+        subSector: "Sole-trader tax"
+        companyType: "scaleup"
+        careersUrl: "https://hnry.co.nz/careers/"
+        careersUrlStatus: "opened_by_coach"
+      - rank: 9
+        name: "Timely"
+        industry: "B2B SaaS"
+        subSector: "Appointment scheduling"
+        companyType: "established"
+        careersUrlStatus: "none"
+      - rank: 11
+        name: "Vend by Lightspeed"
+        industry: "Retail tech"
+        subSector: "Point of sale"
+        companyType: "established"
+        careersUrl: "https://careers.lightspeedhq.com/"
+        careersUrlStatus: "opened_by_coach"
+    sunset:
+      - rank: 10
+        name: "Crimson Education"
+        industry: "Edtech"
+        subSector: "Admissions consulting"
+        companyType: "established"
+        careersUrl: "https://www.crimsoneducation.org/careers"
+        careersUrlStatus: "opened_by_coach"
+      - rank: 12
+        name: "Pushpay"
+        industry: "Fintech"
+        subSector: "Donor management"
+        companyType: "established"
+        careersUrl: "https://pushpay.com/careers"
+        careersUrlStatus: "opened_by_coach"
 narrative:
   proofPoints:
     - name: "Fortnightly release train"

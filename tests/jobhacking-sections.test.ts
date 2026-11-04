@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  JH_FILE_EDIT, JH_PAGES, JH_SECTIONS, JH_SETTINGS_HREF, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor,
+  JH_FILE_EDIT, JH_LIST_OF, JH_PAGES, JH_SECTIONS, JH_SETTINGS_HREF, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor,
   parseJhSection, trueNorthBlanks, trueNorthText,
 } from "@/lib/jobhacking/sections";
 import { FILE_SECTIONS } from "@/lib/profile-sections";
@@ -25,6 +25,11 @@ const setup = {
     locationPolicy: ["Will work in: Melbourne", "Remote: Y", "Relocate: N"],
   },
   portals: { companies: [{ name: "Wattle HR Cloud", careersUrl: "https://boards.example/wattle" }, { name: "Grevillea Clinic Systems", careersUrl: "" }], positive: ["Customer Success Manager"], negative: ["intern"] },
+  companyLists: {
+    top3: { sunrise: [{ rank: 1, name: "Wattle HR Cloud" }, { rank: 2, name: "Coolabah Health Software" }, { rank: 4, name: "Ironbark Logistics SaaS" }] },
+    top10: { sunrise: Array.from({ length: 10 }, (_, i) => ({ rank: i + 1, name: `Co ${i + 1}` })) },
+    all: { sunrise: Array.from({ length: 37 }, (_, i) => ({ rank: i + 1, name: `Co ${i + 1}` })), sunset: [{ rank: 16, name: "Old 16" }, { rank: 40, name: "Old 40" }], unclassified: [{ rank: 13, name: "Maybe 13" }] },
+  },
 } as CareerOpsSetupV2;
 
 describe("JobHacking — pages and sections", () => {
@@ -40,8 +45,13 @@ describe("JobHacking — pages and sections", () => {
 
   it("True North is exactly Target industry · Target roles · Seniority · Salary range · Location · Company type", () => {
     expect(jhSectionsFor("true-north").map((s) => s.label)).toEqual(["Target industry", "Target roles", "Seniority", "Salary range", "Location", "Company type"]);
-    expect(jhSectionsFor("companies").map((s) => s.key)).toEqual(["companies"]);
-    expect(JH_SECTIONS.length).toBe(11);
+  });
+
+  it("Target companies is the Packer's three ranked lists, then the watchlist (decision 2026-11-05)", () => {
+    expect(jhSectionsFor("companies").map((s) => s.label)).toEqual(["Top 3", "Top 10", "Top 40", "Watchlist"]);
+    expect(jhSectionsFor("companies").map((s) => s.key)).toEqual(["top3", "top10", "top40", "companies"]);
+    expect(JH_LIST_OF).toEqual({ top3: "top3", top10: "top10", top40: "all" });
+    expect(JH_SECTIONS.length).toBe(14);
   });
 
   it("deep-links each section on its own page and parses ?section= per page", () => {
@@ -57,6 +67,7 @@ describe("JobHacking — pages and sections", () => {
     expect(Object.keys(JH_FILE_EDIT).sort()).toEqual(Object.keys(FILE_SECTIONS).sort());
     expect(JH_FILE_EDIT.northstar).toBe("roles");
     expect(JH_FILE_EDIT.watchlist).toBe("companies");
+    expect(JH_FILE_EDIT.companyLists).toBe("top3");
     expect(JH_FILE_EDIT.cv).toBeNull();
     expect(JH_FILE_EDIT.artefacts).toBeNull();
   });
@@ -88,6 +99,12 @@ describe("JobHacking — rows", () => {
     expect(rows.companies.summary).toContain("1 company without a careers page");
   });
 
+  it("summarises the ranked lists: the Top 3 by name, the longer two by size and trend", () => {
+    expect(rows.top3).toMatchObject({ state: "done", summary: "Wattle HR Cloud, Coolabah Health Software, Ironbark Logistics SaaS", count: "3" });
+    expect(rows.top10).toMatchObject({ state: "done", summary: "10 companies · all sunrise", count: "10" });
+    expect(rows.top40).toMatchObject({ state: "done", summary: "40 companies · 37 sunrise · 2 sunset · 1 not yet classified", count: "40" });
+  });
+
   it("is partial when only the supporting fields are set, and empty when nothing is", () => {
     const only = Object.fromEntries(jhSectionSummaries({ setup: { policy: { minimumSalary: "1" }, personalization: { targetRoles: [{ archetype: "x" }] } } as CareerOpsSetupV2, profile }).map((r) => [r.key, r]));
     expect(only.salary.state).toBe("partial");
@@ -96,6 +113,9 @@ describe("JobHacking — rows", () => {
     expect(only.industry.state).toBe("empty");
     expect(only["company-type"]).toMatchObject({ state: "empty", summary: "Not set" });
     expect(only.companies.summary).toBe("Not set");
+    // The lists cannot be typed in, so the empty row says where they come from rather than "Not set".
+    expect(only.top3).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
+    expect(only.top40).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
   });
 
   it("returns a page's rows in that page's order", () => {
