@@ -26,11 +26,12 @@ Routes: `/jobhacking/narrative` · `/jobhacking/true-north` · `/jobhacking/comp
 | **Narrative · Headline** | `contact.title` | `ContactPolicy part="headline"` |
 | **Narrative · Bridge story** *(Compass calls the same field "Exit story")* | `personalization.exitNarrative` | `Personalization only=[exitNarrative] labels={exitNarrative: "Bridge story"}` |
 | **Narrative · Core competencies** | `personalization.crossCuttingAdvantage` | `Personalization only=[crossCuttingAdvantage]` |
+| **True North · Target industry** | `goal.subsector` (the industry *and* its sub-sector, one field — decision C; company type moved out 2026-11-03) | `TrueNorthPanel section="industry"` |
 | **True North · Target roles** | `goal.role` + `personalization.targetRoles[]` (archetype · axes · buys) | `TrueNorthPanel section="roles"` |
-| **True North · Target seniority** | `goal.seniority` *(new, decision B)* | `TrueNorthPanel section="seniority"` |
-| **True North · Target salary** | `goal.salary` + `policy.minimumSalary` + `personalization.compTargets` | `TrueNorthPanel section="salary"` |
-| **True North · Target industry** | `goal.subsector` + `goal.companyType` *(decision C)* | `TrueNorthPanel section="industry"` |
-| **True North · Target location** | `goal.city` + `policy.locationFlexibility` + `personalization.locationPolicy[]` *(visa / work rights left out, decision D)* | `TrueNorthPanel section="location"` |
+| **True North · Seniority** | `goal.seniority` *(new, decision B)* | `TrueNorthPanel section="seniority"` |
+| **True North · Salary range** | `goal.salary` + `policy.minimumSalary` + `personalization.compTargets` | `TrueNorthPanel section="salary"` |
+| **True North · Location** | `goal.city` + `policy.locationFlexibility` + `personalization.locationPolicy[]` *(visa / work rights left out, decision D)* | `TrueNorthPanel section="location"` |
+| **True North · Company type** | `goal.companyType` *(its own section since 2026-11-03; was inside Target industry)* | `TrueNorthPanel section="company-type"` |
 | **Target companies** | `watchlist.companies[]` + `watchlist.positive` / `negative` *(decision E)* | `WatchlistPanel` |
 | **Settings** | the whole file | `ProfileUploadSheet` (pick → review the diff → unpack) |
 
@@ -52,9 +53,9 @@ I'm based in [Target Location] and I'm making [Target Salary] yearly before tax.
 I enjoy working for [Target Company Type].
 ```
 
-Every value is a link to the section that fills it; a blank renders the template's own bracketed label, dimmed, so the sentence keeps its shape. The five rail rows are the five blanks' questions — a member never sees *goal*, *policy* or *personalization*. Each section's Save writes only its own fields (the goal subset to the goal in effect, the policy subset merged into `policy`, the personalization subset merged into `personalization` and re-rendered into `profileMd`), and rebuilds `profileYaml` from the result.
+Every value is a link to the section that fills it; a blank renders the template's own bracketed label, dimmed, so the sentence keeps its shape. The six rail rows are the five blanks' questions (Target industry and Company type are two rows for two blanks; Seniority rides with the role) — a member never sees *goal*, *policy* or *personalization*. Each section's Save writes only its own fields (the goal subset to the goal in effect, the policy subset merged into `policy`, the personalization subset merged into `personalization` and re-rendered into `profileMd`), and rebuilds `profileYaml` from the result.
 
-`Target industry`'s company-type select lists `COMPANY_TYPES` and, when the stored value is not one of them (an uploaded "Scale-up"), that value too — it is never silently dropped. Archetype rows carry visible labels below `sm` (the gap `UX_PROFILE.md §7.5` names) and a column head above it.
+`Company type`'s select lists `COMPANY_TYPES` and, when the stored value is not one of them (an uploaded "Scale-up"), that value too — it is never silently dropped. Archetype rows carry visible labels below `sm` (the gap `UX_PROFILE.md §7.5` names) and a column head above it.
 
 ## 4. Settings
 

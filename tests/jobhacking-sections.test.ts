@@ -38,10 +38,10 @@ describe("JobHacking — pages and sections", () => {
     expect(jhSectionsFor("narrative").map((s) => s.label)).toEqual(["Contact details", "Headline", "Bridge story", "Core competencies"]);
   });
 
-  it("True North is exactly the five targets", () => {
-    expect(jhSectionsFor("true-north").map((s) => s.label)).toEqual(["Target roles", "Target seniority", "Target salary", "Target industry", "Target location"]);
+  it("True North is exactly Target industry · Target roles · Seniority · Salary range · Location · Company type", () => {
+    expect(jhSectionsFor("true-north").map((s) => s.label)).toEqual(["Target industry", "Target roles", "Seniority", "Salary range", "Location", "Company type"]);
     expect(jhSectionsFor("companies").map((s) => s.key)).toEqual(["companies"]);
-    expect(JH_SECTIONS.length).toBe(10);
+    expect(JH_SECTIONS.length).toBe(11);
   });
 
   it("deep-links each section on its own page and parses ?section= per page", () => {
@@ -79,7 +79,8 @@ describe("JobHacking — rows", () => {
     expect(rows.roles).toMatchObject({ state: "done", summary: "Customer Success Manager · 3 archetypes", count: "3" });
     expect(rows.seniority).toMatchObject({ state: "done", summary: "Senior" });
     expect(rows.salary).toMatchObject({ state: "done", summary: "AUD 140,000–165,000 · floor AUD 130,000 · comp notes", count: "3/3" });
-    expect(rows.industry).toMatchObject({ state: "done", summary: "HR tech SaaS · Scale-up" });
+    expect(rows.industry).toMatchObject({ state: "done", summary: "HR tech SaaS" });
+    expect(rows["company-type"]).toMatchObject({ state: "done", summary: "Scale-up" });
     expect(rows.location).toMatchObject({ state: "done", count: "3/3" });
     expect(rows.location.summary).toContain("Melbourne, Australia");
     expect(rows.location.summary).toContain("3 rules");
@@ -93,11 +94,12 @@ describe("JobHacking — rows", () => {
     expect(only.roles.state).toBe("partial");
     expect(only.seniority).toMatchObject({ state: "empty", summary: "Not set" });
     expect(only.industry.state).toBe("empty");
+    expect(only["company-type"]).toMatchObject({ state: "empty", summary: "Not set" });
     expect(only.companies.summary).toBe("Not set");
   });
 
   it("returns a page's rows in that page's order", () => {
-    expect(jhRowsFor(jhSectionsFor("true-north"), jhSectionSummaries({ setup, profile })).map((r) => r.key)).toEqual(["roles", "seniority", "salary", "industry", "location"]);
+    expect(jhRowsFor(jhSectionsFor("true-north"), jhSectionSummaries({ setup, profile })).map((r) => r.key)).toEqual(["industry", "roles", "seniority", "salary", "location", "company-type"]);
   });
 });
 
