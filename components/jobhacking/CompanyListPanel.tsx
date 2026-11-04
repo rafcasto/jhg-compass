@@ -10,16 +10,15 @@ import type { CompanyList, CompanyTrend, RankedCompany } from "@/lib/careerops/t
 // JobHacking → Target companies → Top 3 · Top 10 · Top 40 — docs/UX_JOBHACKING.md §3b.
 //
 // One list, grouped sunrise → sunset → unclassified. Read-only: the Packer
-// writes it, the member reads it. Two densities from one row model:
+// writes it, the member reads it. One row model for all three lists (decision
+// 2026-11-05: the same experience on the Top 3 as on the Top 40):
 //
-//   featured (Top 3)  — one card per company, three across: the podium, where the
-//                       member acts this week, so the careers link is a button.
-//   rows (Top 10/40)  — ranked rows in the section's card. Rank recedes (mono,
-//                       mute), the name is the one heavy element, industry · sub-
-//                       sector is the quiet second line, company type is a pill,
-//                       the careers page is one 40px icon target. No table: six
-//                       columns of equal weight is exactly what a Top 40 must
-//                       not look like, and it dies on a phone.
+//   ranked rows in the section's card. Rank recedes (mono, mute), the name is
+//   the one heavy element, industry · sub-sector is the quiet second line,
+//   company type is a pill, the careers page is one 40px icon target. No
+//   table: six columns of equal weight is exactly what a Top 40 must not look
+//   like, and it dies on a phone. No cards: a grid loses the rank order, which
+//   is what a Top N is.
 //
 // Each group opens with a facet line — the industries and company types it is
 // made of — so the shape of 37 rows reads before the rows do. Nothing here is
@@ -27,11 +26,9 @@ import type { CompanyList, CompanyTrend, RankedCompany } from "@/lib/careerops/t
 
 const TREND_ICON: Record<CompanyTrend, ComponentType<LucideProps>> = { sunrise: Sunrise, sunset: Sunset, unclassified: CircleDashed };
 
-export default function CompanyListPanel({ listKey, list, featured = false }: {
+export default function CompanyListPanel({ listKey, list }: {
   listKey: CompanyListKey;
   list: CompanyList | null | undefined;
-  /** Cards instead of rows — for the Top 3. */
-  featured?: boolean;
 }) {
   const label = companyListLabel(listKey);
   const groups = listGroups(list);
@@ -68,9 +65,7 @@ export default function CompanyListPanel({ listKey, list, featured = false }: {
                 </dl>
               )}
             </header>
-            {featured
-              ? <ol className="grid gap-3 sm:grid-cols-3">{g.companies.map((c) => <FeaturedCard key={`${c.rank}-${c.name}`} c={c} />)}</ol>
-              : <ol className="divide-y divide-jh-line border-t border-jh-line">{g.companies.map((c) => <Row key={`${c.rank}-${c.name}`} c={c} />)}</ol>}
+            <ol className="divide-y divide-jh-line border-t border-jh-line">{g.companies.map((c) => <Row key={`${c.rank}-${c.name}`} c={c} />)}</ol>
           </section>
         );
       })}
@@ -102,29 +97,6 @@ function Row({ c }: { c: RankedCompany }) {
       <div className="flex items-center gap-2">
         {type && <span className="pill-neutral hidden sm:inline-flex">{type}</span>}
         <CareersLink c={c} />
-      </div>
-    </li>
-  );
-}
-
-/** The Top 3 treatment: a card per company, the rank as a large quiet numeral, the careers page as a button. */
-function FeaturedCard({ c }: { c: RankedCompany }) {
-  const type = companyTypeLabel(c.companyType);
-  const line = industryLine(c);
-  return (
-    <li className="flex flex-col gap-3 rounded-sm border border-jh-line p-4">
-      <div className="flex items-start justify-between gap-3">
-        <span className="font-mono text-2xl leading-none tabular-nums text-jh-mute" aria-label={c.rank != null ? `Rank ${c.rank}` : undefined}>{c.rank != null ? String(c.rank).padStart(2, "0") : "–"}</span>
-        {type && <span className="pill-neutral">{type}</span>}
-      </div>
-      <div>
-        <p className="font-display text-lg font-semibold leading-tight text-jh-ink">{c.name}</p>
-        {line && <p className="mt-1 text-sm text-jh-mute">{line}</p>}
-      </div>
-      <div className="mt-auto pt-1">
-        {c.careersUrl
-          ? <a href={c.careersUrl} target="_blank" rel="noreferrer" className="btn-secondary btn-sm" aria-label={careersLabel(c)}><ExternalLink className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Careers page</a>
-          : <span className="inline-flex min-h-[36px] items-center gap-2 text-sm text-jh-mute"><Link2Off className="h-4 w-4" strokeWidth={1.5} aria-hidden /> No careers page yet</span>}
       </div>
     </li>
   );

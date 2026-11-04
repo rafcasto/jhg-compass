@@ -69,18 +69,17 @@ Every value is a link to the section that fills it; a blank renders the template
 | A table (rank · name · industry · sub-sector · type · careers) | Six columns of equal weight is the opposite of hierarchy — a Top 40 would read as a spreadsheet, the URL column is noise, and it has no phone layout in a rail page whose mobile mode is a drill-in. |
 | Forty cards | Forty same-sized boxes; "everything looks the same". A grid also loses the one thing a *Top N* is: an order. |
 
-What ships is **one row model in two densities** (`components/jobhacking/CompanyListPanel.tsx`), RUI's *feature some items, minimise the rest*:
+What ships is **one row model, the same on all three lists** (`components/jobhacking/CompanyListPanel.tsx`) — a consistent experience from the Top 3 to the Top 40 (Rafael's call, 2026-11-05; a first cut featured the Top 3 as cards and was dropped for the inconsistency):
 
-- **Top 3 → featured cards**, three across (`sm:grid-cols-3`), stacked on a phone. Rank as a large quiet mono numeral (`01`), the name at `text-lg/600` — the only element using two levers — industry · sub-sector in `sm jh-mute`, company type as `.pill-neutral`, the careers page as an explicit `btn-secondary btn-sm` *Careers page*. This is the podium: where the member acts this week, so the link affordance is a button.
-- **Top 10 · Top 40 → ranked rows** inside the section's card: `grid-cols-[2rem_1fr_auto]`, 44px tall, `divide-y`. Rank recedes (`font-mono text-xs jh-mute`), name leads (`15px/600 ink`), industry · sub-sector is the second line, type is a pill from `sm` (and joins the second line below it), the careers page is one `.icon-btn` (`ExternalLink`, `aria-label` with the company's name). No page → a mute `Link2Off` glyph with sr-only text, never red: a missing URL is a gap the coach fills, not a failure.
+- **Ranked rows** inside the section's card: `grid-cols-[2rem_1fr_auto]`, 44px tall, `divide-y`. Rank recedes (`font-mono text-xs jh-mute`), name leads (`15px/600 ink`) — the one heavy element — industry · sub-sector is the second line, type is a `.pill-neutral` from `sm` (and joins the second line below it), the careers page is one `.icon-btn` (`ExternalLink`, `aria-label` with the company's name). No page → a mute `Link2Off` glyph with sr-only text, never red: a missing URL is a gap the coach fills, not a failure.
 - **Grouped sunrise → sunset → not yet classified** within every list, each group a `.section-label` with its icon and count. Empty groups don't render.
 - **A facet line per group** — *Industries: HR tech 13 · Health tech 12 · Fintech 12 / Company type: Scale-up 19 · Established 18* — a two-row `dl` under the group heading, so the *shape* of 37 rows is read before the rows are. This is the "target industries & sub-sectors, company type" ask, answered as a summary rather than as columns. Only shown once a group has more than one row.
 - **`careersUrlStatus`** never changes the colour: `opened_by_coach` only adds "(found by your coach, not yet confirmed)" to the link's accessible name. Colour-alone was never on the table; here even an icon-alone would be a lie about how sure we are.
 - **Empty state** (no `companyLists` in the profile): centred, one sentence on where the lists come from, one `btn-secondary` to Settings. The overview row reads *Not in your profile yet* instead of *Not set* — the member cannot set it.
 
-Red budget on the page: the shell's active tab and nothing else; the lists have no primary action. Type sizes used: 12 · 14 · 15 · 18 · 24; spacing 4 · 8 · 12 · 16 · 24 · 32. `jh-mute-2` nowhere.
+Red budget on the page: the shell's active tab and nothing else; the lists have no primary action. Type sizes used: 12 · 14 · 15; spacing 4 · 8 · 12 · 16 · 24 · 32. `jh-mute-2` nowhere.
 
-Rejected alongside: sub-grouping the Top 40 by industry → sub-sector (loses the rank order, which is the list's meaning — the facet line gives the industry view without that cost); a `Segmented` inside one *Companies* section (a second tab system beside the rail, which `CLAUDE.md` forbids).
+Rejected alongside: cards for the Top 3 only (shipped first, then dropped — two treatments for one kind of thing read as two pages); sub-grouping the Top 40 by industry → sub-sector (loses the rank order, which is the list's meaning — the facet line gives the industry view without that cost); a `Segmented` inside one *Companies* section (a second tab system beside the rail, which `CLAUDE.md` forbids).
 
 Rows (`jhSectionSummaries`): Top 3 quotes the three names; Top 10 and Top 40 say *40 companies · 37 sunrise · 2 sunset · 1 not yet classified*; the count sits at the row's right edge. A list is *done* the moment the file carried one — there is no *partial* for something the member cannot type in.
 
@@ -122,7 +121,7 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 |---|---|
 | `lib/jobhacking/sections.ts` | pages, sections, `?section=` parsing, row summaries, the statement's blanks and text — pure, tested |
 | `lib/jobhacking/company-lists.ts` | the ranked lists: labels (`all` → Top 40), trend groups in rank order, facets, company-type words, row text — pure, tested |
-| `components/jobhacking/CompanyListPanel.tsx` | Top 3 as featured cards, Top 10 / Top 40 as ranked rows, grouped sunrise / sunset, read-only (§3b) |
+| `components/jobhacking/CompanyListPanel.tsx` | the same ranked rows on Top 3 / Top 10 / Top 40, grouped sunrise / sunset, read-only (§3b) |
 | `components/jobhacking/JobHackingScreen.tsx` | the three pages on `SectionsPage` |
 | `components/jobhacking/TrueNorthPanel.tsx` | the five True North editors |
 | `components/jobhacking/TrueNorthStatement.tsx` | the lead |
@@ -135,6 +134,6 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 | Surface | Score | Notes |
 |---|---|---|
 | `/jobhacking/narrative` | **9 / 10** | The Profile/Settings layout as is: rail + content, overview → drill-in, state glyph + summary per row, `.label` recedes, one red button per screen, 44px targets, `jh-mute` minimum. |
-| `/jobhacking/companies` · Top 3 / Top 10 / Top 40 | **9 / 10** | One row model in two densities, rank order kept, facet line before the rows, no red, no table (§3b). Remaining: the Top 40's sunrise group is ~37 rows with no in-page jump; a sticky group heading or an industry filter on the facet line is the next step if members ask. The Watchlist section is still the `Portals` editor the audit scored 6.5 (`docs/UX_AUDIT_JOBHACKING.md` §3) — untouched here. |
+| `/jobhacking/companies` · Top 3 / Top 10 / Top 40 | **9 / 10** | One row model on all three lists, rank order kept, facet line before the rows, no red, no table (§3b). Remaining: the Top 40's sunrise group is ~37 rows with no in-page jump; a sticky group heading or an industry filter on the facet line is the next step if members ask. The Watchlist section is still the `Portals` editor the audit scored 6.5 (`docs/UX_AUDIT_JOBHACKING.md` §3) — untouched here. |
 | `/jobhacking/true-north` | **9 / 10** | The statement leads and links; five questions, not three storage objects; labelled archetype rows on mobile. Remaining: the statement card is the Compass card verbatim — fine while both portals exist, a second voice if JobHacking ever stands alone. |
 | `/jobhacking/settings` | **9 / 10** | One action, one card, `max-w-2xl`; the empty state tells the member what the file does. |

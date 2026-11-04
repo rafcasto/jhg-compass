@@ -4,7 +4,7 @@ import CompanyListPanel from "@/components/jobhacking/CompanyListPanel";
 import type { CompanyList } from "@/lib/careerops/types";
 
 // JobHacking → Target companies → Top 3 / Top 10 / Top 40 — docs/UX_JOBHACKING.md §3b.
-// Shaped like the Priya sample: the Top 3 as cards, a longer list as ranked rows.
+// Shaped like the Priya sample: one row model, the Top 3 and the Top 40 alike.
 
 const top3: CompanyList = {
   sunrise: [
@@ -25,20 +25,21 @@ const all: CompanyList = {
   unclassified: [{ rank: 13, name: "Gumtree Software 13", industry: "HR tech", subSector: "Benefits brokerage software", companyType: "scaleup" }],
 };
 
-describe("CompanyListPanel — Top 3 (featured)", () => {
-  it("renders one card per company with rank, name, industry line, type and a Careers page button", () => {
-    render(<CompanyListPanel listKey="top3" list={top3} featured />);
+describe("CompanyListPanel — Top 3", () => {
+  it("is the same ranked rows as the longer lists: rank, name, industry line, type and one careers link", () => {
+    render(<CompanyListPanel listKey="top3" list={top3} />);
     const group = screen.getByRole("region", { name: /Sunrise/ });
-    const cards = within(group).getAllByRole("listitem");
-    expect(cards).toHaveLength(3);
-    expect(cards[0]).toHaveTextContent("01");
-    expect(cards[0]).toHaveTextContent("Wattle HR Cloud");
-    expect(cards[0]).toHaveTextContent("HR tech · Payroll compliance software");
-    expect(cards[0]).toHaveTextContent("Scale-up");
-    expect(within(cards[0]).getByRole("link", { name: "Wattle HR Cloud careers page — opens in a new tab" })).toHaveAttribute("href", "https://boards.example/wattle-hr-cloud");
+    const rows = within(group).getAllByRole("listitem");
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toHaveTextContent("1.Wattle HR Cloud");
+    expect(rows[0]).toHaveTextContent("HR tech · Payroll compliance software");
+    expect(rows[0]).toHaveTextContent("Scale-up");
+    expect(within(rows[0]).getByRole("link", { name: "Wattle HR Cloud careers page — opens in a new tab" })).toHaveAttribute("href", "https://boards.example/wattle-hr-cloud");
+    // Rank order is the file's rank, not its position: 1 · 2 · 4.
+    expect(rows[2]).toHaveTextContent("4.Ironbark Logistics SaaS");
     // No careers page: said in words, no link, nothing red.
-    expect(within(cards[2]).queryByRole("link")).toBeNull();
-    expect(cards[2]).toHaveTextContent("No careers page yet");
+    expect(within(rows[2]).queryByRole("link")).toBeNull();
+    expect(rows[2]).toHaveTextContent("No careers page yet");
     // The empty sunset list renders no group.
     expect(screen.queryByRole("region", { name: /Sunset/ })).toBeNull();
     // Three rows: the facet line says what the group is made of.
@@ -48,7 +49,7 @@ describe("CompanyListPanel — Top 3 (featured)", () => {
   });
 });
 
-describe("CompanyListPanel — Top 40 (rows)", () => {
+describe("CompanyListPanel — Top 40", () => {
   it("groups sunrise → sunset → not yet classified, in rank order, one icon link per careers page", () => {
     render(<CompanyListPanel listKey="all" list={all} />);
     const headings = screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent);

@@ -71,9 +71,9 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
           case "story": return <Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} labels={{ exitNarrative: "Bridge story" }} saveLabel="Save bridge story" />;
           case "industry": case "roles": case "seniority": case "salary": case "location": case "company-type":
             return <TrueNorthPanel uid={uid} setup={setup} profile={profile} section={key} />;
-          // The Packer's lists: read-only, the Top 3 featured as cards, the longer two as ranked rows.
+          // The Packer's lists: read-only, the same ranked rows on all three.
           case "top3": case "top10": case "top40":
-            return <CompanyListPanel listKey={JH_LIST_OF[key]} list={setup?.companyLists?.[JH_LIST_OF[key]]} featured={key === "top3"} />;
+            return <CompanyListPanel listKey={JH_LIST_OF[key]} list={setup?.companyLists?.[JH_LIST_OF[key]]} />;
           case "companies": return <WatchlistPanel uid={uid} setup={setup} goalRole={goal.role} />;
         }
       }}
