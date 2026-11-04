@@ -2,10 +2,11 @@
 
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Building2, Contact, ListOrdered, MapPin, Medal, Navigation, Quote, Sparkles, Target, Trophy, Wallet, Factory, Layers, Store, type LucideProps } from "lucide-react";
+import { BookOpen, Building2, Contact, FileText, Linkedin, ListOrdered, MapPin, Medal, Navigation, Quote, Sparkles, Target, Trophy, Wallet, Factory, Layers, Store, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import ContactPolicy from "@/components/careerops/ContactPolicy";
+import CvPanel from "@/components/careerops/CvPanel";
 import Personalization from "@/components/careerops/Personalization";
 import Identity from "@/components/profile/Identity";
 import SectionsPage from "@/components/profile/SectionsPage";
@@ -15,11 +16,13 @@ import { JH_LIST_OF, findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSumm
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 import CompanyListPanel from "./CompanyListPanel";
+import LinkedinProfilePanel from "./LinkedinProfilePanel";
+import StoryBankPanel from "./StoryBankPanel";
 import WatchlistSection from "./WatchlistSection";
 import TrueNorthPanel from "./TrueNorthPanel";
 import TrueNorthStatement from "./TrueNorthStatement";
 
-// The three JobHacking pages — docs/UX_JOBHACKING.md. One screen, one layout
+// The four JobHacking pages — docs/UX_JOBHACKING.md. One screen, one layout
 // (SectionsPage), one registry (lib/jobhacking/sections); the page decides
 // which sections, the section decides which panel. Every panel is one of the
 // Profile/Settings panels or a True North panel, and saves only its own fields.
@@ -28,6 +31,7 @@ const ICONS: Record<JhSectionKey, ComponentType<LucideProps>> = {
   contact: Contact, competencies: Layers, headline: Quote, story: Sparkles,
   industry: Factory, roles: Target, seniority: Navigation, salary: Wallet, location: MapPin, "company-type": Store,
   top3: Trophy, top10: Medal, top40: ListOrdered, companies: Building2,
+  "story-bank": BookOpen, "master-cv": FileText, "linkedin-profile": Linkedin,
 };
 
 export default function JobHackingScreen({ page }: { page: JhPageKey }) {
@@ -76,6 +80,12 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
             return <CompanyListPanel listKey={JH_LIST_OF[key]} list={setup?.companyLists?.[JH_LIST_OF[key]]} />;
           // The watchlist reads as the same rows, with an Edit that opens the shared editor.
           case "companies": return <WatchlistSection uid={uid} setup={setup} goalRole={goal.role} />;
+          // The Packer's story bank: read-only, like the lists.
+          case "story-bank": return <StoryBankPanel source={setup} />;
+          // The same CV panel as Settings · Master CV — one editor for the one field.
+          case "master-cv": return <CvPanel uid={uid} setup={setup} profile={profile} goalRole={goal.role} />;
+          // The LinkedIn profile to build: read-only blocks, each against LinkedIn's limit, with Copy.
+          case "linkedin-profile": return <LinkedinProfilePanel linkedin={setup?.linkedin} />;
         }
       }}
     />

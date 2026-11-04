@@ -18,7 +18,7 @@
   `lib/profile-sections.ts` through `components/profile/SectionsPage.tsx`; add a section there, not a page.
 
 - **JobHacking portal** (decision 2026-11-03, `docs/UX_JOBHACKING.md`): a third portal — Narrative · True North · Target
-  companies, plus Settings (upload only) — on the **same documents** as Compass. Its registry is `lib/jobhacking/sections.ts`;
+  companies · Artefacts, plus Settings (upload only) — on the **same documents** as Compass. Its registry is `lib/jobhacking/sections.ts`;
   its pages render through the same `components/profile/SectionsPage.tsx`. Switched on per member (`features.jobHacking`) or by a
   "JobHacking only" registration link (`features.compass: false`). Never invent a field for it: every section reads
   something `profile.yml` carries. `goal.seniority` is a real goal field (True North · Target seniority).
@@ -28,6 +28,12 @@
   rows on all three lists, never a table, never cards for one list and rows for another. The Watchlist section reads as the
   same rows (`WatchlistSection`, industry borrowed from the ranked lists by name, never invented) and edits through the shared
   `WatchlistPanel` behind an *Edit watchlist* button. The rail is the sub-menu; don't add a `Segmented` beside it.
+  **Artefacts** (decision 2026-11-05, `docs/UX_JOBHACKING.md §3d`) is **Story Bank · Master CV · LinkedIn profile**: Story Bank reads
+  the Packer's `narrative.proofPoints · stories · snapshots` read-only through `components/jobhacking/StoryBankPanel.tsx` (the same row
+  grammar as the company lists); Master CV is Settings' `CvPanel` on the same `cv` field; LinkedIn profile reads the top-level
+  `linkedin` section (`headline · about · experience · featured · skills · education · certifications` — LinkedIn's own sections, one
+  pasteable block each, measured against LinkedIn's limits, never cut) through `LinkedinProfilePanel.tsx`. The URL stays
+  `contact.linkedin`; never add an open-to-work block there (that is the goal).
 
 ## Design
 

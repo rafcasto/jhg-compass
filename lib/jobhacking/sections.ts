@@ -1,11 +1,12 @@
 // The JobHacking portal — docs/UX_JOBHACKING.md.
 //
-// Three pages, each a sectioned page in the Profile/Settings layout
+// Four pages, each a sectioned page in the Profile/Settings layout
 // (components/profile/SectionsPage.tsx), plus Settings (the profile.yml upload):
 //
 //   /jobhacking/narrative    Contact details · Headline · Bridge story · Core competencies
 //   /jobhacking/true-north   Target industry · Target roles · Seniority · Salary range · Location · Company type
 //   /jobhacking/companies    Top 3 · Top 10 · Top 40 (the Packer's ranked lists, read-only) · Watchlist
+//   /jobhacking/artefacts    Story Bank (the Packer's proof points · stories · snapshots, read-only) · Master CV · LinkedIn profile (read-only)
 //   /jobhacking/settings     Upload profile.yml
 //
 // Same documents as Compass (decision F, 2026-11-03): users/{uid} and
@@ -22,8 +23,10 @@ import { companyTypePhrase, roleWithSeniority, type Goal } from "../goal";
 import { sectionSummaries, type FileSectionKey } from "../profile-sections";
 import type { Profile } from "../types";
 import { listCompanies, listCount, listSummary, type CompanyListKey } from "./company-lists";
+import { linkedinCount, linkedinSummary } from "./linkedin-profile";
+import { storyBankCounts, storyBankSummary } from "./story-bank";
 
-export type JhPageKey = "narrative" | "true-north" | "companies";
+export type JhPageKey = "narrative" | "true-north" | "companies" | "artefacts";
 
 export interface JhPage { key: JhPageKey; label: string; href: string; title: string; intro: string }
 
@@ -31,6 +34,7 @@ export const JH_PAGES = [
   { key: "narrative", label: "Narrative", href: "/jobhacking/narrative", title: "Narrative", intro: "Who you are: the contact block of every application, what you're best at, the one line under your name, and why you're moving." },
   { key: "true-north", label: "True North", href: "/jobhacking/true-north", title: "True North", intro: "What you're aiming at. Every section fills a blank in the statement." },
   { key: "companies", label: "Target companies", href: "/jobhacking/companies", title: "Target companies", intro: "The companies you're going after — your Top 3, your Top 10 and the whole ranked field, sunrise and sunset — plus the careers pages to watch and the job titles to include and exclude." },
+  { key: "artefacts", label: "Artefacts", href: "/jobhacking/artefacts", title: "Artefacts", intro: "What you bring to every application: the stories and proof points behind every answer, the master CV every tailored CV starts from, and the LinkedIn profile to build from them." },
 ] as const satisfies readonly JhPage[];
 
 export const JH_HOME = JH_PAGES[0].href;
@@ -66,6 +70,10 @@ export const JH_SECTIONS = [
   { key: "top10", page: "companies", label: "Top 10", title: "Top 10", ask: "The ten to keep warm: your Top 3 and the next seven, so a stalled conversation never leaves you with nothing to work on." },
   { key: "top40", page: "companies", label: "Top 40", title: "Top 40", ask: "The whole field, ranked — every company your coach classified as sunrise (growing) or sunset (shrinking), with the industry and sub-sector each one sits in." },
   { key: "companies", page: "companies", label: "Watchlist", title: "Watchlist", ask: "The careers pages to watch — the page that lists each company's jobs — plus the title keywords to include and exclude. A company without a careers page stays on the list until you add one." },
+  // ---- Artefacts (decision 2026-11-05): the Packer's story bank, read-only · the master CV · the LinkedIn profile to build, read-only ----
+  { key: "story-bank", page: "artefacts", label: "Story Bank", title: "Story Bank", ask: "Your proof points — each result and the one number that proves it — the stories behind them, and the snapshots that point a story at one target company." },
+  { key: "master-cv", page: "artefacts", label: "Master CV", title: "Master CV", ask: "The only source of truth about what you have done. Every tailored CV starts from it, and the Evaluator quotes it as evidence." },
+  { key: "linkedin-profile", page: "artefacts", label: "LinkedIn profile", title: "LinkedIn profile", ask: "Your LinkedIn, section by section — headline, About, each role, Featured, skills, education, certifications — written to paste, each block against LinkedIn's limit." },
 ] as const satisfies readonly JhSection[];
 
 /** Which profile.yml list a ranked section reads. `all` is the whole field, shown as Top 40. */
@@ -94,7 +102,7 @@ export function parseJhSection(raw: string | null | undefined, sections: readonl
  * the "unpacked" status line. null: stored, but no JobHacking section shows it.
  */
 export const JH_FILE_EDIT: Record<FileSectionKey, JhSectionKey | null> = {
-  northstar: "roles", contact: "contact", targeting: "story", watchlist: "companies", companyLists: "top3", notes: null, cv: null, artefacts: null,
+  northstar: "roles", contact: "contact", targeting: "story", watchlist: "companies", companyLists: "top3", notes: null, cv: "master-cv", artefacts: "story-bank", linkedin: "linkedin-profile",
 };
 
 // ---- what each row shows ----
@@ -118,7 +126,7 @@ const stateOf = (lead: boolean, others: number): StepState => (lead ? "done" : o
 export const jhGoal = ({ setup, profile }: JhSignals): Goal =>
   effectiveGoal({ source: setup?.goalSource, compassGoal: profile?.goal, intakeGoal: setup?.intakeGoal }).goal;
 
-/** Every section's row, all three pages. Filter by `jhSectionsFor(page)` to render one page. */
+/** Every section's row, all four pages. Filter by `jhSectionsFor(page)` to render one page. */
 export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
   const { setup } = signals;
   const g = jhGoal(signals);
@@ -128,10 +136,10 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
   const rules = p.locationPolicy ?? [];
   const companies = setup?.portals?.companies ?? [];
 
-  // Contact, headline, bridge story (Compass's exit story) and the company list are the same rows as the
-  // Profile / Settings pages — one summary per field, wherever it is shown.
+  // Contact, headline, bridge story (Compass's exit story), the company list and the master CV are the same
+  // rows as the Profile / Settings pages — one summary per field, wherever it is shown.
   const shared = new Map(sectionSummaries({ setup, profile: signals.profile }).map((r) => [r.key, r]));
-  const borrow = (from: "contact" | "headline" | "story" | "companies", key: JhSectionKey): JhSummary => {
+  const borrow = (from: "contact" | "headline" | "story" | "companies" | "cv", key: JhSectionKey): JhSummary => {
     const r = shared.get(from)!;
     return { key, state: r.state, summary: r.summary, count: r.count };
   };
@@ -178,6 +186,19 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
       summary: companies.length
         ? join([shared.get("companies")!.summary, companies.some((c) => !c.careersUrl?.trim()) ? `${plural(companies.filter((c) => !c.careersUrl?.trim()).length, "company", "companies")} without a careers page` : undefined])
         : NOT_SET,
+    },
+    // The story bank is read, not filled in: "done" the moment the file carried any of it, never "partial".
+    {
+      key: "story-bank", state: storyBankCounts(setup).total ? "done" : "empty",
+      summary: storyBankSummary(setup) || NOT_IN_PROFILE,
+      count: storyBankCounts(setup).stories ? String(storyBankCounts(setup).stories) : undefined,
+    },
+    borrow("cv", "master-cv"),
+    // Read, not filled in — like the story bank. The count is sections filled of LinkedIn's seven.
+    {
+      key: "linkedin-profile", state: linkedinSummary(setup?.linkedin) ? "done" : "empty",
+      summary: linkedinSummary(setup?.linkedin) || NOT_IN_PROFILE,
+      count: linkedinSummary(setup?.linkedin) ? linkedinCount(setup?.linkedin) : undefined,
     },
   ];
 }

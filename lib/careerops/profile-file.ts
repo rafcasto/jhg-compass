@@ -52,6 +52,7 @@ export function profileToYaml(p: ProfileFile): string {
     narrative: p.narrative,
     stories: p.stories,
     snapshots: p.snapshots,
+    linkedin: p.linkedin,
     cv: p.cv,
   };
   const body = yamlDump(JSON.parse(JSON.stringify(doc)), { lineWidth: 100, noRefs: true, skipInvalid: true });

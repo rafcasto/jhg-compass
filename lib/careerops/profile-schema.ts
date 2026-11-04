@@ -17,7 +17,7 @@ export const PROFILE_SCHEMA_VERSION = 1;
 export interface SchemaError { path: string; message: string }
 export interface SchemaResult { ok: boolean; errors: SchemaError[]; warnings: string[] }
 
-export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "companyLists", "notes", "cv", "narrative", "stories", "snapshots"] as const;
+export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "companyLists", "notes", "cv", "narrative", "stories", "snapshots", "linkedin"] as const;
 
 // `location` is in the storage model (CareerOpsContact → candidate.location) and in every export; the file must take it back.
 const CONTACT_KEYS = ["title", "phone", "linkedin", "github", "portfolio", "location"] as const;
@@ -29,9 +29,15 @@ export const COMPANY_LIST_KEYS = ["top3", "top10", "all"] as const;
 export const COMPANY_TREND_KEYS = ["sunrise", "sunset", "unclassified"] as const;
 const RANKED_KEYS = ["rank", "name", "industry", "subSector", "companyType", "careersUrl", "careersUrlStatus"] as const;
 export const CAREERS_URL_STATUSES = ["confirmed", "opened_by_coach", "none"] as const;
+// linkedin — one block per LinkedIn section (added 2026-11-05). Text limits are LinkedIn's own; a block over
+// its limit is kept whole and said once — the panel shows it as over, which is the point of knowing the limit.
+export const LINKEDIN_KEYS = ["headline", "about", "experience", "featured", "skills", "education", "certifications"] as const;
+export const LINKEDIN_FEATURED_KINDS = ["link", "post", "article", "document"] as const;
+const LINKEDIN_EXPERIENCE_KEYS = ["title", "company", "location", "start", "end", "description", "skills"] as const;
+export const LINKEDIN_LIMITS = { headline: 220, about: 2600, description: 2000, skills: 50, roleSkills: 5 } as const;
 
 /** Row caps, from coercePersonalization / the watchlist editor / the Packer spec. */
-export const ROW_CAPS = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8, companies: 25, authorizedIn: 50, proofPoints: 50, stories: 50, snapshots: 50, rankedCompanies: 50 } as const;
+export const ROW_CAPS = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8, companies: 25, authorizedIn: 50, proofPoints: 50, stories: 50, snapshots: 50, rankedCompanies: 50, experience: 20, featured: 10, education: 10, certifications: 20 } as const;
 /** Prose caps the importer truncates to. */
 export const TEXT_CAPS = { exitNarrative: 1200, crossCuttingAdvantage: 600, compTargets: 800 } as const;
 
@@ -245,6 +251,39 @@ export function validateProfileFile(doc: unknown): SchemaResult {
       });
       if (doc.snapshots.length > ROW_CAPS.snapshots) c.warnings.push(`snapshots has ${doc.snapshots.length} entries — only the first ${ROW_CAPS.snapshots} are kept`);
     }
+  }
+
+  // linkedin — headline · about · experience · featured · skills · education · certifications (added 2026-11-05)
+  const li = c.mapping(doc.linkedin, "linkedin", LINKEDIN_KEYS);
+  if (li) {
+    const overLimit = (v: unknown, path: string, limit: number) => {
+      if (typeof v === "string" && v.length > limit) c.warnings.push(`${path} is ${v.length} characters — LinkedIn allows ${limit}; kept whole and shown as over the limit`);
+    };
+    c.string(li.headline, "linkedin.headline"); overLimit(li.headline, "linkedin.headline", LINKEDIN_LIMITS.headline);
+    c.string(li.about, "linkedin.about"); overLimit(li.about, "linkedin.about", LINKEDIN_LIMITS.about);
+    if (!absent(li.experience)) {
+      if (!Array.isArray(li.experience)) c.errors.push({ path: "linkedin.experience", message: `must be a list, got ${describe(li.experience)}` });
+      else {
+        li.experience.forEach((row, i) => {
+          const p = `linkedin.experience[${i}]`;
+          const r = c.mapping(row, p, LINKEDIN_EXPERIENCE_KEYS);
+          if (!r) { if (!absent(row)) return; c.errors.push({ path: p, message: "empty entry" }); return; }
+          for (const k of ["title", "company", "location", "start", "end", "description"] as const) c.string(r[k], `${p}.${k}`);
+          c.stringList(r.skills, `${p}.skills`, LINKEDIN_LIMITS.roleSkills);
+          for (const k of ["title", "company"] as const) if (absent(r[k]) || (typeof r[k] === "string" && !(r[k] as string).trim())) c.errors.push({ path: p, message: `missing ${k}` });
+          overLimit(r.description, `${p}.description`, LINKEDIN_LIMITS.description);
+        });
+        if (li.experience.length > ROW_CAPS.experience) c.warnings.push(`linkedin.experience has ${li.experience.length} entries — only the first ${ROW_CAPS.experience} are kept`);
+      }
+    }
+    c.rows(li.featured, "linkedin.featured", ["kind", "title", "url"], ["title"], ROW_CAPS.featured);
+    if (Array.isArray(li.featured)) li.featured.forEach((row, i) => {
+      const kind = isRecord(row) ? row.kind : undefined;
+      if (typeof kind === "string" && !(LINKEDIN_FEATURED_KINDS as readonly string[]).includes(kind)) c.warnings.push(`linkedin.featured[${i}].kind is "${kind}" — expected link, post, article or document; ignored`);
+    });
+    c.stringList(li.skills, "linkedin.skills", LINKEDIN_LIMITS.skills);
+    c.rows(li.education, "linkedin.education", ["school", "degree", "field", "start", "end"], ["school"], ROW_CAPS.education);
+    c.rows(li.certifications, "linkedin.certifications", ["name", "issuer", "issued", "url"], ["name"], ROW_CAPS.certifications);
   }
 
   return { ok: c.errors.length === 0, errors: c.errors, warnings: c.warnings };

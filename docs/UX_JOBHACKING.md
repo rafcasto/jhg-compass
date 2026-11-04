@@ -1,6 +1,6 @@
 # JobHacking portal
 
-**Decision (2026-11-03):** a third portal beside Compass and CareerOps, in the same shell. Three menu pages — **Narrative · True North · Target companies** — plus **Settings**, which is one thing: upload a `profile.yml`. **Decision (2026-11-05):** Target companies opens on the Packer's three ranked lists — **Top 3 · Top 10 · Top 40** — read-only, grouped sunrise / sunset, with the watchlist as the fourth section (§3b). It renders from the same documents as Compass (`users/{uid}` and `users/{uid}/careerOps/setup`): a section here is another door onto the same field, never a copy.
+**Decision (2026-11-03):** a third portal beside Compass and CareerOps, in the same shell. Three menu pages — **Narrative · True North · Target companies** — plus **Settings**, which is one thing: upload a `profile.yml`. **Decision (2026-11-05):** Target companies opens on the Packer's three ranked lists — **Top 3 · Top 10 · Top 40** — read-only, grouped sunrise / sunset, with the watchlist as the fourth section (§3b). **Decision (2026-11-05):** a fourth menu page, **Artefacts** — **Story Bank · Master CV · LinkedIn profile** — the Packer's proof points, stories and snapshots read-only, the one master CV, and the LinkedIn profile to build, block by block (§3d). It renders from the same documents as Compass (`users/{uid}` and `users/{uid}/careerOps/setup`): a section here is another door onto the same field, never a copy.
 
 **Method:** Refactoring UI's seven principles, applied through the Compass profile pages' own system (`docs/UX_PROFILE.md`, `docs/UX_AUDIT_COMPASS_TABS.md §0`). Nothing new was designed where the Compass system already had the answer; the one new piece is the True North statement.
 
@@ -16,7 +16,7 @@
 
 `features.compass` is absent for every member who predates this (absent = on). The Compass shell sends a JobHacking-only member to `/jobhacking/narrative` before its onboarding gate. The portal switcher (the logo) lists whichever portals the member has.
 
-Routes: `/jobhacking/narrative` · `/jobhacking/true-north` · `/jobhacking/companies` · `/jobhacking/settings` (`/jobhacking/profile` redirects to `/jobhacking/narrative` — the page was called Profile until 2026-11-03). The account group of the JobHacking shell is **Settings · Sign out** (the Narrative tab is this portal's profile, so no Profile row is repeated).
+Routes: `/jobhacking/narrative` · `/jobhacking/true-north` · `/jobhacking/companies` · `/jobhacking/artefacts` · `/jobhacking/settings` (`/jobhacking/profile` redirects to `/jobhacking/narrative` — the page was called Profile until 2026-11-03). The account group of the JobHacking shell is **Settings · Sign out** (the Narrative tab is this portal's profile, so no Profile row is repeated).
 
 ## 2. Mapping — menu → section → `profile.yml` → editor
 
@@ -34,9 +34,12 @@ Routes: `/jobhacking/narrative` · `/jobhacking/true-north` · `/jobhacking/comp
 | **True North · Company type** | `goal.companyType` *(its own section since 2026-11-03; was inside Target industry)* | `TrueNorthPanel section="company-type"` |
 | **Target companies · Top 3 · Top 10 · Top 40** | `companyLists.top3` · `top10` · `all`, each `sunrise[] · sunset[] · unclassified[]` of `rank · name · industry · subSector · companyType · careersUrl · careersUrlStatus` *(new, 2026-11-05)* | `CompanyListPanel` — read-only; the Packer writes them |
 | **Target companies · Watchlist** | `watchlist.companies[]` + `watchlist.positive` / `negative` *(decision E)* | `WatchlistSection` — the same rows read-only, *Edit watchlist* opens `WatchlistPanel` (§3c) |
+| **Artefacts · Story Bank** | `narrative.proofPoints[]` (name · heroMetric) + `stories[]` (id · title · result · provenance) + `snapshots[]` (company · storyId · title · results) — read-only | `StoryBankPanel` |
+| **Artefacts · Master CV** | `cv` | `CvPanel` (the same panel as Settings · Master CV) |
+| **Artefacts · LinkedIn profile** | `linkedin.headline · about · experience[] · featured[] · skills[] · education[] · certifications[]` — read-only, one block per LinkedIn section | `LinkedinProfilePanel` |
 | **Settings** | the whole file | `ProfileUploadSheet` (pick → review the diff → unpack) |
 
-Not on the menu, still in the file and stored: `personalization.adaptiveFraming · negotiationScripts · portfolio`, `policy.visaStatus · authorizedIn · needsSponsorship`, `contact.github`, `notes`, `cv`, and the artefacts (`narrative.proofPoints`, `stories`, `snapshots`). They survive every save and every export.
+Not on the menu, still in the file and stored: `personalization.adaptiveFraming · negotiationScripts · portfolio`, `policy.visaStatus · authorizedIn · needsSponsorship`, `contact.github` and `notes`. They survive every save and every export. (`cv`, the artefacts and `linkedin` joined the menu on 2026-11-05 — §3d.)
 
 ### The goal has two homes
 `lib/careerops/intake.ts`: the Compass goal on `users/{uid}`, or the intake override on the setup document — which an uploaded `profile.yml` sets (`goalSource: "intake"`). A True North save edits **whichever is in effect**, so the statement, the Compass tab (when it is the Compass goal) and the agents' `profile.yml` move together. `goal.seniority` is a field of the one goal form everywhere: Compass edit mode and onboarding now show *Job title* and *Seniority level* as two fields; `roleWithSeniority()` puts them together without doubling a level already typed into the title.
@@ -93,9 +96,20 @@ Rows (`jhSectionSummaries`): Top 3 quotes the three names; Top 10 and Top 40 say
 
 Red budget: none on the read view; one Save in edit mode. `WatchlistPanel` gained `intro` · `onSaved` · `onCancel`, all optional, so Settings and the intake wizard render exactly as before.
 
+## 3d. Artefacts — Story Bank · Master CV · LinkedIn profile
+
+**Decision (2026-11-05).** A fourth menu page for what the member *brings*, as opposed to who they are (Narrative), what they aim at (True North) and where (Target companies). Its rail is **Story Bank · Master CV · LinkedIn profile**; the page opens on the Story Bank.
+
+- **Story Bank** reads the Packer's three artefact lists as they are: **Proof points** (name, hero metric as the second line), **Stories** (the Packer's `id` as the mono index, title, result, provenance as a `.pill-neutral` from `sm` — joining the text below it), with each story's **snapshots** filed under it on `storyId` (*Tracksuit · monthly → fortnightly*). A snapshot whose `storyId` matches no story is listed in its own *Snapshots* group rather than dropped. Read-only, like the company lists: the Packer writes them, the member reads them, the empty state sends to Settings and the overview row says *Not in your profile yet*. Same row grammar as `CompanyRow` — `grid-cols-[2rem_1fr_auto]`, 44px minimum, rank/id recedes, the name is the one heavy element — so the two read-only pages read as one portal. Nothing red: *estimate* is how sure the member is of a figure, not a failure.
+- **Master CV** is Settings' `CvPanel` on the same `cv` field — one editor, one row summary (*412 words · Ready to score*), wherever it is shown. The upload status line now links the *Master CV* and *Stories & proof points* file sections here (`JH_FILE_EDIT`).
+
+- **LinkedIn profile** (Rafael's call, 2026-11-05: "LinkedIn is nothing but the sections the user needs to build in LinkedIn") reads the new `linkedin` section (§5) as **one block per LinkedIn section, in LinkedIn's order** — Headline · About · Experience · Featured · Skills · Education · Licenses & certifications — only the ones the file carries. Each pasteable block (headline, About, every role's description, the skills list) has a **Copy** `.btn-secondary btn-sm` and a mono count against LinkedIn's limit (*187 / 220*); over the limit is the panel's **one red state** — a block LinkedIn will truncate is a genuine negative. Roles read as `roleLine` (*Delivery Lead · FreightDesk Software*) over `roleMeta` (*Mar 2022 – Present · Wellington*) with the per-role skills as `.pill-neutral`; Featured, Education and Certifications are quiet rows with one `.icon-btn` link where there is a URL. Read-only like the story bank; empty state → Settings; row *Headline · About · 2 roles · 6 skills · 1 school · 1 certification*, count *7/7*.
+
+Rejected: a table for the stories (same reason as §3b); rendering snapshots as their own flat list first (a snapshot is a story pointed at a company — it belongs under the story); one Markdown blob for the LinkedIn profile like `cv` (it can't be measured against per-section limits or copied per block, which is the whole use); an *Open to work* block in `linkedin` (titles and locations are True North — one field, one home); a `url` in `linkedin` (it is `contact.linkedin`).
+
 ## 4. Settings
 
-One card: a drop zone, **Upload profile** (the page's single red button), the "read in your browser, nothing saved until you confirm" line, and *What it fills in* — the three pages as rows. Drag-and-drop anywhere on the page. After an unpack, a `role="status"` line lists the updated file sections, each a link to its JobHacking section where one exists (`JH_FILE_EDIT`). No Export here, by decision; the review step's *Download current profile* (offered only when something would be replaced) still works.
+One card: a drop zone, **Upload profile** (the page's single red button), the "read in your browser, nothing saved until you confirm" line, and *What it fills in* — the four pages as rows. Drag-and-drop anywhere on the page. After an unpack, a `role="status"` line lists the updated file sections, each a link to its JobHacking section where one exists (`JH_FILE_EDIT`). No Export here, by decision; the review step's *Download current profile* (offered only when something would be replaced) still works.
 
 ## 5. The file — what changed in the schema (decision A)
 
@@ -123,6 +137,19 @@ companyLists:
 
 A watchlist company with no `careersUrl` is **kept** (warning, not dropped): it stays on Target companies with an empty URL field, and `buildPortalsYaml` leaves it out of the Scout's file until one is added.
 
+**2026-11-05 — `linkedin`.** The LinkedIn profile to build, read on Artefacts → LinkedIn profile and edited nowhere. Mirrors LinkedIn's own sections so each block can be shown against its limit and copied. Validated like the rest: unknown keys and wrong types are errors with a path; `title` + `company` on a role, `title` on a featured item, `school`, `name` are required; row caps are warnings (20 roles · 10 featured · 50 skills · 5 skills per role · 10 schools · 20 certifications). **Text limits are LinkedIn's (headline 220 · About 2,600 · role description 2,000) and are warnings that do not cut the text** — the block is kept whole and shown as over, because knowing it is over is the point. A `featured[].kind` outside `link · post · article · document` is a warning and read as unset. Dates are `"YYYY-MM"` / `"YYYY"` strings (`monthYear` renders *Mar 2022*; an empty `end` on a role is *Present*). Stored on the setup document (`CareerOpsSetupV2.linkedin`), preserved through whole-document saves, exported after the artefacts and before `cv`, one row of the upload review (*Headline · About · 2 roles · …*). The URL stays `contact.linkedin`.
+
+```yaml
+linkedin:
+  headline: "…"                                   # ≤ 220
+  about: |                                        # ≤ 2,600
+  experience: [{ title, company, location, start: "2022-03", end: "", description, skills: [≤ 5] }]
+  featured: [{ kind: link | post | article | document, title, url }]
+  skills: ["…"]                                   # ≤ 50; the first three are the pinned Top skills
+  education: [{ school, degree, field, start, end }]
+  certifications: [{ name, issuer, issued, url }]
+```
+
 Every reader of the file takes the new shape: the Profile page's upload, the CareerOps intake's upload (same codec), and the export. `public/profile.example.yml` carries every key.
 
 ## 6. Components
@@ -134,7 +161,11 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 | `components/jobhacking/CompanyRow.tsx` | the one company row — ranked lists and watchlist alike |
 | `components/jobhacking/CompanyListPanel.tsx` | the same ranked rows on Top 3 / Top 10 / Top 40, grouped sunrise / sunset, read-only (§3b) |
 | `components/jobhacking/WatchlistSection.tsx` | the watchlist as rows + keyword pills, *Edit watchlist* → the shared editor (§3c) |
-| `components/jobhacking/JobHackingScreen.tsx` | the three pages on `SectionsPage` |
+| `lib/jobhacking/story-bank.ts` | the artefacts as rows: proof points, stories with their snapshots on `storyId`, the summary line, provenance words — pure, tested |
+| `components/jobhacking/StoryBankPanel.tsx` | proof points · stories (+ snapshots) · unclaimed snapshots, read-only (§3d) |
+| `lib/jobhacking/linkedin-profile.ts` | LinkedIn's sections in order, which the file fills, the summary line, limits and measures, month-year dates — pure, tested |
+| `components/jobhacking/LinkedinProfilePanel.tsx` | one block per LinkedIn section with count against the limit and Copy, read-only (§3d) |
+| `components/jobhacking/JobHackingScreen.tsx` | the four pages on `SectionsPage` |
 | `components/jobhacking/TrueNorthPanel.tsx` | the five True North editors |
 | `components/jobhacking/TrueNorthStatement.tsx` | the lead |
 | `components/jobhacking/JobHackingSettings.tsx` | upload |
@@ -149,4 +180,5 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 | `/jobhacking/companies` · Top 3 / Top 10 / Top 40 | **9 / 10** | One row model on all three lists, rank order kept, facet line before the rows, no red, no table (§3b). Remaining: the Top 40's sunrise group is ~37 rows with no in-page jump; a sticky group heading or an industry filter on the facet line is the next step if members ask. |
 | `/jobhacking/companies` · Watchlist | **8.5 / 10** | Reads as the same rows and pills; the `Portals` editor the audit scored 6.5 (`docs/UX_AUDIT_JOBHACKING.md` §3) is now behind *Edit watchlist* rather than the page itself — its own issues (unlabelled 1fr/2fr inputs, the *Advanced* disclosure per row) remain for a pass of their own. |
 | `/jobhacking/true-north` | **9 / 10** | The statement leads and links; five questions, not three storage objects; labelled archetype rows on mobile. Remaining: the statement card is the Compass card verbatim — fine while both portals exist, a second voice if JobHacking ever stands alone. |
+| `/jobhacking/artefacts` | **9 / 10** | The company-list row grammar reused for the story bank and the LinkedIn blocks, so the read-only pages read as one portal; the CV editor is Settings' own; the LinkedIn count is the only red on the page and only when a block is over its limit. Remaining: a long story's `result` or About wraps long on a phone — a clamp with an expand is the next step if the Packer writes longer ones. |
 | `/jobhacking/settings` | **9 / 10** | One action, one card, `max-w-2xl`; the empty state tells the member what the file does. |

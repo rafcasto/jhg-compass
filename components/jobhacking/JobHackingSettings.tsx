@@ -65,7 +65,7 @@ export default function JobHackingSettings() {
       <section className="card p-5 md:p-7 max-w-2xl space-y-5" aria-labelledby="jh-upload-title">
         <div>
           <h2 id="jh-upload-title" className="text-lg">Your profile</h2>
-          <p className="mt-1 text-sm text-jh-mute">One .yml with everything in it — contact details, headline, bridge story, core competencies, your True North, your target companies.</p>
+          <p className="mt-1 text-sm text-jh-mute">One .yml with everything in it — contact details, headline, bridge story, core competencies, your True North, your target companies, your story bank, master CV and LinkedIn profile.</p>
         </div>
         <div className={`rounded-sm border-[1.5px] border-dashed p-8 text-center transition-colors ${over ? "border-jh-red bg-jh-red/5" : "border-jh-line-2"}`}>
           <p className="text-sm text-jh-ink">Drop your profile here</p>
