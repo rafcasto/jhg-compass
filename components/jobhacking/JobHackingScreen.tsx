@@ -55,7 +55,7 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
       eyebrow="JobHacking"
       title={meta.title}
       intro={meta.intro}
-      identity={page === "profile" ? <Identity profile={profile} email={email} /> : undefined}
+      identity={page === "narrative" ? <Identity profile={profile} email={email} /> : undefined}
       lead={page === "true-north" ? <TrueNorthStatement goal={goal} /> : undefined}
       items={items}
       rows={rows}

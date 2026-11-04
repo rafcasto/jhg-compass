@@ -1,12 +1,12 @@
 # Refactoring UI audit — the JobHacking portal
 
-**Scope:** `/jobhacking/profile` · `/jobhacking/true-north` · `/jobhacking/companies` · `/jobhacking/settings`, plus the shell pieces only this portal shows (switcher row, Settings-only account group).
+**Scope:** `/jobhacking/narrative` (called Profile when this was written) · `/jobhacking/true-north` · `/jobhacking/companies` · `/jobhacking/settings`, plus the shell pieces only this portal shows (switcher row, Settings-only account group).
 **Method:** Refactoring UI's seven principles, scored 0–10 per surface from the source — `lib/jobhacking/sections.ts`, `components/jobhacking/*`, `components/profile/SectionsPage.tsx` + `SectionList.tsx`, the four editors the sections mount (`ContactPolicy`, `Personalization`, `WatchlistPanel` → `agents/Portals`, `TrueNorthPanel`), `app/globals.css`, `tailwind.config.ts`. Rules of the house applied as written: `docs/UX_AUDIT_COMPASS_TABS.md §0` and `docs/UX_PROFILE.md §3, §7`.
 **Date:** 2026-11-03, on `main` @ `47a0cf0` (the portal's first commit). This revises the provisional scores in `docs/UX_JOBHACKING.md §7`.
 
 | Surface | Score | One-line verdict |
 |---|---|---|
-| Profile | **8.5 / 10** | The Profile/Settings layout, correctly reused. Two paragraphs of mute copy before the first field (the section *ask* and the panel's own intro say the same thing), and CareerOps vocabulary ("the agents", "generated CV") on a portal that may not have agents. |
+| Narrative (then "Profile") | **8.5 / 10** | The Profile/Settings layout, correctly reused. Two paragraphs of mute copy before the first field (the section *ask* and the panel's own intro say the same thing), and CareerOps vocabulary ("the agents", "generated CV") on a portal that may not have agents. |
 | True North | **8.5 / 10** | The statement leads and the five questions are the right IA. The values are links that look like text until hovered; three red items on one desktop screen (sidebar nav, rail nav, Save). |
 | Target companies | **6.5 / 10** | The one weak page. The `Portals` editor was lifted from CareerOps Setup unchanged: a 90-word 12px paragraph at full width, unlabelled 1fr/2fr rows that squash to 100px on a phone, an *Advanced* disclosure under every row, 22px keyword chips, red on a positive suggestion, and "Scout / Pi / AI tokens / North Star" copy. |
 | Settings | **8.5 / 10** | One card, one action — right. The one red button is the small size, and the *What it fills in* rows truncate a page intro that was never written to fit a row. |
@@ -44,7 +44,7 @@ On `/jobhacking/true-north` at ≥ md the screen shows: the **sidebar's** active
 
 ---
 
-## 1. Profile — 8.5 / 10
+## 1. Narrative (then "Profile") — 8.5 / 10
 
 **Working**
 - Rail (232px, sticky) with identity on top → state glyph + label per row → ink progress bar; mobile overview is a card of rows that quote the data. Labels recede (`.label` 13px mute), values lead (`.field` 15px ink). One red button in the card.

@@ -8,7 +8,7 @@ import { PORTAL_HOME } from "@/lib/careerops/portal-nav";
 
 export type Portal = "compass" | "careerops" | "jobhacking";
 
-export const JOBHACKING_HOME = "/jobhacking/profile";
+export const JOBHACKING_HOME = "/jobhacking/narrative";
 
 export const PORTALS: { key: Portal; label: string; hint: string; href: string; icon: typeof Compass }[] = [
   { key: "compass", label: "Compass", hint: "Goal, performance, progress board, coaching", href: "/compass", icon: Compass },

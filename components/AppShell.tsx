@@ -19,10 +19,10 @@ type NavItem = {
 };
 
 const SECTION_ICONS: Record<string, ComponentType<LucideProps>> = { sourcing: Radar, scoring: Target, tailoring: FileText, tracking: ListChecks };
-const JH_ICONS: Record<string, ComponentType<LucideProps>> = { profile: UserRound, "true-north": Navigation, companies: Building2 };
+const JH_ICONS: Record<string, ComponentType<LucideProps>> = { narrative: UserRound, "true-north": Navigation, companies: Building2 };
 
 // One shell, three portals. Compass: Compass · Performance · Progress · Coaching.
-// CareerOps: Sourcing · Scoring · Tailoring · Tracking. JobHacking: Profile ·
+// CareerOps: Sourcing · Scoring · Tailoring · Tracking. JobHacking: Narrative ·
 // True North · Target companies (Settings in the account group). The logo
 // section is the switcher between them (only shown when the member has more than one).
 export interface AppShellAccess {
