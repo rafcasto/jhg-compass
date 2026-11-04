@@ -17,16 +17,21 @@ export const PROFILE_SCHEMA_VERSION = 1;
 export interface SchemaError { path: string; message: string }
 export interface SchemaResult { ok: boolean; errors: SchemaError[]; warnings: string[] }
 
-export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "notes", "cv", "narrative", "stories", "snapshots"] as const;
+export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "companyLists", "notes", "cv", "narrative", "stories", "snapshots"] as const;
 
 // `location` is in the storage model (CareerOpsContact → candidate.location) and in every export; the file must take it back.
 const CONTACT_KEYS = ["title", "phone", "linkedin", "github", "portfolio", "location"] as const;
 const POLICY_STRING_KEYS = ["minimumSalary", "locationFlexibility", "visaStatus"] as const;
 const PERSONALIZATION_KEYS = ["targetRoles", "adaptiveFraming", "exitNarrative", "crossCuttingAdvantage", "portfolio", "compTargets", "negotiationScripts", "locationPolicy"] as const;
 const COMPANY_KEYS = ["name", "careersUrl", "enabled", "provider", "apiUrl"] as const;
+// companyLists — the Packer's ranked lists (added 2026-11-05). `all` is the whole field, shown as "Top 40".
+export const COMPANY_LIST_KEYS = ["top3", "top10", "all"] as const;
+export const COMPANY_TREND_KEYS = ["sunrise", "sunset", "unclassified"] as const;
+const RANKED_KEYS = ["rank", "name", "industry", "subSector", "companyType", "careersUrl", "careersUrlStatus"] as const;
+export const CAREERS_URL_STATUSES = ["confirmed", "opened_by_coach", "none"] as const;
 
 /** Row caps, from coercePersonalization / the watchlist editor / the Packer spec. */
-export const ROW_CAPS = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8, companies: 25, authorizedIn: 50, proofPoints: 50, stories: 50, snapshots: 50 } as const;
+export const ROW_CAPS = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8, companies: 25, authorizedIn: 50, proofPoints: 50, stories: 50, snapshots: 50, rankedCompanies: 50 } as const;
 /** Prose caps the importer truncates to. */
 export const TEXT_CAPS = { exitNarrative: 1200, crossCuttingAdvantage: 600, compTargets: 800 } as const;
 
@@ -55,6 +60,11 @@ class Checker {
     if (absent(v)) return false;
     if (typeof v !== "string") { this.errors.push({ path, message: `must be text, got ${describe(v)}` }); return false; }
     return true;
+  }
+
+  number(v: unknown, path: string) {
+    if (absent(v)) return;
+    if (typeof v !== "number" || !Number.isFinite(v)) this.errors.push({ path, message: `must be a number, got ${describe(v)}` });
   }
 
   boolean(v: unknown, path: string) {
@@ -185,6 +195,34 @@ export function validateProfileFile(doc: unknown): SchemaResult {
     }
     c.stringList(w.positive, "watchlist.positive");
     c.stringList(w.negative, "watchlist.negative");
+  }
+
+  // companyLists — top3 · top10 · all, each sunrise · sunset · unclassified, rows ranked by the Packer
+  const lists = c.mapping(doc.companyLists, "companyLists", COMPANY_LIST_KEYS);
+  if (lists) {
+    for (const k of COMPANY_LIST_KEYS) {
+      const list = c.mapping(lists[k], `companyLists.${k}`, COMPANY_TREND_KEYS);
+      if (!list) continue;
+      for (const t of COMPANY_TREND_KEYS) {
+        const rows = list[t];
+        const path = `companyLists.${k}.${t}`;
+        if (absent(rows)) continue;
+        if (!Array.isArray(rows)) { c.errors.push({ path, message: `must be a list, got ${describe(rows)}` }); continue; }
+        rows.forEach((row, i) => {
+          const p = `${path}[${i}]`;
+          const r = c.mapping(row, p, RANKED_KEYS);
+          if (!r) { if (!absent(row)) return; c.errors.push({ path: p, message: "empty entry" }); return; }
+          c.number(r.rank, `${p}.rank`);
+          for (const f of ["name", "industry", "subSector", "companyType", "careersUrl", "careersUrlStatus"] as const) c.string(r[f], `${p}.${f}`);
+          if (!(typeof r.name === "string" && r.name.trim())) c.errors.push({ path: p, message: "missing name" });
+          // A status outside the three is a value, not a shape: kept as unknown, said once.
+          else if (typeof r.careersUrlStatus === "string" && !(CAREERS_URL_STATUSES as readonly string[]).includes(r.careersUrlStatus)) {
+            c.warnings.push(`${p}.careersUrlStatus is "${r.careersUrlStatus}" — expected confirmed, opened_by_coach or none; ignored`);
+          }
+        });
+        if (rows.length > ROW_CAPS.rankedCompanies) c.warnings.push(`${path} has ${rows.length} entries — only the first ${ROW_CAPS.rankedCompanies} are kept`);
+      }
+    }
   }
 
   c.string(doc.notes, "notes");

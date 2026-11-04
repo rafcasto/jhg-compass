@@ -9,6 +9,7 @@ const current: ProfileFile = {
   policy: { minimumSalary: "NZ$ 140,000" },
   personalization: { exitNarrative: "Old story.", compTargets: "NZ$150k" },
   watchlist: { companies: [{ name: "Xero", careersUrl: "https://xero.com/careers" }, { name: "Old Co", careersUrl: "https://old.co/jobs" }], positive: ["Delivery Lead"], negative: ["intern"] },
+  companyLists: { top3: { sunrise: [{ rank: 1, name: "Xero", industry: "Fintech" }] } },
   notes: "Old notes",
   stories: [{ id: "S1", title: "Old story", result: "Did a thing." }],
   cv: "# CV\n\n## Experience\n2019 – 2024 Acme " + "word ".repeat(100),
@@ -16,10 +17,10 @@ const current: ProfileFile = {
 
 const byKey = (d: ReturnType<typeof profileDiff>) => Object.fromEntries(d.map((x) => [x.key, x]));
 
-describe("profileDiff — one row per section, always seven", () => {
+describe("profileDiff — one row per section, always eight", () => {
   it("marks every section absent from the file as kept", () => {
     const d = profileDiff(current, { version: 1 });
-    expect(d.map((x) => x.key)).toEqual(["northstar", "contact", "targeting", "watchlist", "notes", "artefacts", "cv"]);
+    expect(d.map((x) => x.key)).toEqual(["northstar", "contact", "targeting", "watchlist", "companyLists", "notes", "artefacts", "cv"]);
     expect(d.every((x) => !x.inFile && x.kind === "keep")).toBe(true);
     expect(diffReplaces(d)).toBe(false);
   });
@@ -34,6 +35,8 @@ describe("profileDiff — one row per section, always seven", () => {
     expect(d.targeting.headline).toMatch(/^2 of 8 sections — adds 2$/);
     expect(d.watchlist.kind).toBe("add");
     expect(d.watchlist.headline).toBe("2 companies, 1 include, 1 exclude");
+    expect(d.companyLists.kind).toBe("add");
+    expect(d.companyLists.headline).toBe("Top 3 (1)");
     expect(d.notes.kind).toBe("add");
     expect(d.cv.kind).toBe("add");
     expect(d.cv.detail).toMatch(/words · Ready to score/);
@@ -43,7 +46,7 @@ describe("profileDiff — one row per section, always seven", () => {
   it("says 'same as now' for an identical file", () => {
     const d = profileDiff(current, current);
     expect(d.every((x) => x.inFile && x.kind === "keep")).toBe(true);
-    expect(d.map((x) => x.headline)).toEqual(["same as now", "same as now", "2 of 8 sections — same as now", "same as now", "same as now", "same as now", "same as now"]);
+    expect(d.map((x) => x.headline)).toEqual(["same as now", "same as now", "2 of 8 sections — same as now", "same as now", "same as now", "same as now", "same as now", "same as now"]);
   });
 });
 

@@ -143,6 +143,8 @@ export const FILE_SECTIONS = {
   contact: { label: "Contact & logistics", edit: "contact" },
   targeting: { label: "Targeting", edit: "story" },
   watchlist: { label: "Target companies", edit: "companies" },
+  // The Packer's ranked lists — read on JobHacking → Target companies (JH_FILE_EDIT), no Compass page shows them.
+  companyLists: { label: "Company lists", edit: null },
   notes: { label: "Notes", edit: "notes" },
   cv: { label: "Master CV", edit: "cv" },
   // Stored and exported, edited nowhere yet — so no page section to send the member to.

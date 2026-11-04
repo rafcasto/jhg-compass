@@ -31,6 +31,9 @@ describe("profile schema — the example file", () => {
     expect(r.profile.narrative?.proofPoints).toHaveLength(3);
     expect(r.profile.stories).toHaveLength(3);
     expect(r.profile.snapshots).toHaveLength(2);
+    expect(r.profile.companyLists?.top3?.sunrise?.map((c) => c.name)).toEqual(["Tracksuit", "Halter", "Partly"]);
+    expect(r.profile.companyLists?.all?.sunset).toHaveLength(2);
+    expect(r.found).toContain("company lists (Top 3: 3 · Top 10: 10 · Top 40: 12)");
     expect(r.found).toContain("your CV");
     expect(r.found.some((f) => f.startsWith("targeting (7/8"))).toBe(true); // the sample has no negotiation scripts
   });

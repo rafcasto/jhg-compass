@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Building2, Contact, MapPin, Navigation, Quote, Sparkles, Target, Wallet, Factory, Layers, Store, type LucideProps } from "lucide-react";
+import { Building2, Contact, ListOrdered, MapPin, Medal, Navigation, Quote, Sparkles, Target, Trophy, Wallet, Factory, Layers, Store, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import ContactPolicy from "@/components/careerops/ContactPolicy";
@@ -12,9 +12,10 @@ import Identity from "@/components/profile/Identity";
 import SectionsPage from "@/components/profile/SectionsPage";
 import type { SectionItem } from "@/components/profile/SectionList";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
-import { findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, type JhPageKey, type JhSectionKey } from "@/lib/jobhacking/sections";
+import { JH_LIST_OF, findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, type JhPageKey, type JhSectionKey } from "@/lib/jobhacking/sections";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
+import CompanyListPanel from "./CompanyListPanel";
 import TrueNorthPanel from "./TrueNorthPanel";
 import TrueNorthStatement from "./TrueNorthStatement";
 
@@ -26,7 +27,7 @@ import TrueNorthStatement from "./TrueNorthStatement";
 const ICONS: Record<JhSectionKey, ComponentType<LucideProps>> = {
   contact: Contact, competencies: Layers, headline: Quote, story: Sparkles,
   industry: Factory, roles: Target, seniority: Navigation, salary: Wallet, location: MapPin, "company-type": Store,
-  companies: Building2,
+  top3: Trophy, top10: Medal, top40: ListOrdered, companies: Building2,
 };
 
 export default function JobHackingScreen({ page }: { page: JhPageKey }) {
@@ -70,6 +71,9 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
           case "story": return <Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} labels={{ exitNarrative: "Bridge story" }} saveLabel="Save bridge story" />;
           case "industry": case "roles": case "seniority": case "salary": case "location": case "company-type":
             return <TrueNorthPanel uid={uid} setup={setup} profile={profile} section={key} />;
+          // The Packer's lists: read-only, the same ranked rows on all three.
+          case "top3": case "top10": case "top40":
+            return <CompanyListPanel listKey={JH_LIST_OF[key]} list={setup?.companyLists?.[JH_LIST_OF[key]]} />;
           case "companies": return <WatchlistPanel uid={uid} setup={setup} goalRole={goal.role} />;
         }
       }}
