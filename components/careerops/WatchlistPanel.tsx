@@ -12,10 +12,16 @@ import type { CareerOpsPortals, CareerOpsSetupV2, PortalsStatusDoc } from "@/lib
 // the two cannot drift — only the save differs: this writes with merge, where
 // Setup replaces the whole document.
 
-export default function WatchlistPanel({ uid, setup, goalRole }: {
+export default function WatchlistPanel({ uid, setup, goalRole, intro = true, onSaved, onCancel }: {
   uid: string;
   setup: CareerOpsSetupV2 | null;
   goalRole?: string | null;
+  /** The Scout paragraph above the editor. Off on the JobHacking portal, where the section header already says what this is. */
+  intro?: boolean;
+  /** Called after a successful save — the JobHacking Watchlist returns to its read view. */
+  onSaved?: () => void;
+  /** When given, a Cancel button sits beside Save. */
+  onCancel?: () => void;
 }) {
   const { data: status } = useLiveDoc<PortalsStatusDoc>(uid ? paths.careerOpsPortalsStatus(uid) : null);
   const [portals, setPortals] = useState<CareerOpsPortals>(
@@ -35,6 +41,7 @@ export default function WatchlistPanel({ uid, setup, goalRole }: {
         { merge: true },
       );
       setDirty(false);
+      onSaved?.();
       setMsg(portals.companies.length
         ? `Saved — the Scout will check ${portals.companies.length} ${portals.companies.length === 1 ? "company" : "companies"} on its next run.`
         : "Saved. Add at least one company and the Scout has somewhere to look.");
@@ -47,11 +54,13 @@ export default function WatchlistPanel({ uid, setup, goalRole }: {
 
   return (
     <div className="space-y-4">
-      <p className="text-jh-mute text-sm max-w-2xl">
-        Careers pages the Scout checks for new postings that match your North Star. Zero AI tokens — job boards are read
-        directly, and other careers pages are opened in the Pi&apos;s browser.
-        {status?.at ? ` Last scan ${new Date(status.at).toLocaleString()}.` : ""}
-      </p>
+      {intro && (
+        <p className="text-jh-mute text-sm max-w-2xl">
+          Careers pages the Scout checks for new postings that match your North Star. Zero AI tokens — job boards are read
+          directly, and other careers pages are opened in the Pi&apos;s browser.
+          {status?.at ? ` Last scan ${new Date(status.at).toLocaleString()}.` : ""}
+        </p>
+      )}
 
       <Portals
         value={portals}
@@ -64,6 +73,7 @@ export default function WatchlistPanel({ uid, setup, goalRole }: {
         <button type="button" onClick={save} disabled={busy || !dirty} className="btn-primary text-sm disabled:opacity-60">
           <Save className="h-4 w-4" /> {busy ? "Saving…" : "Save watchlist"}
         </button>
+        {onCancel && <button type="button" onClick={onCancel} disabled={busy} className="btn-secondary btn-sm">Cancel</button>}
         {msg && (
           <p role="status" className={`flex items-start gap-1.5 text-sm ${msg.startsWith("Saved") ? "text-rb-green-dark" : "text-jh-red"}`}>
             {msg.startsWith("Saved") ? <Check className="h-4 w-4 shrink-0 mt-0.5" /> : <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />} {msg}

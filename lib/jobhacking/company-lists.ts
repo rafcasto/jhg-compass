@@ -7,7 +7,7 @@
 // Read-only: the member reads these, the coach's Packer writes them. Nothing
 // here feeds the Scout's watchlist. Pure — no React. Tested.
 
-import type { CompanyList, CompanyLists, CompanyTrend, RankedCompany } from "../careerops/types";
+import type { CompanyList, CompanyLists, CompanyTrend, PortalCompany, RankedCompany } from "../careerops/types";
 
 export type CompanyListKey = keyof CompanyLists;
 
@@ -87,4 +87,43 @@ export function listSummary(list: CompanyList | null | undefined): string {
   if (!n) return "";
   if (groups.length === 1) return `${plural(n, "company", "companies")} · all ${groups[0].label.toLowerCase()}`;
   return [plural(n, "company", "companies"), ...groups.map((g) => `${g.companies.length} ${g.label.toLowerCase()}`)].join(" · ");
+}
+
+// ---- the watchlist, read through the same row ----
+//
+// watchlist.companies carries a name and a careers URL, nothing else. When the
+// same company is on the Packer's lists, its industry · sub-sector and company
+// type are real data the file carries — so the watchlist row shows them.
+// Nothing is invented: a company the coach never ranked shows its careers
+// host instead.
+
+
+const normName = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, " ");
+
+/** Every ranked company by normalised name; the widest list (`all`) wins, then top10, then top3. */
+export function companyLookup(lists: CompanyLists | null | undefined): Map<string, RankedCompany> {
+  const m = new Map<string, RankedCompany>();
+  for (const k of ["top3", "top10", "all"] as const) for (const c of listCompanies(lists?.[k])) m.set(normName(c.name), c);
+  return m;
+}
+
+/** "boards.example" — the careers page as a word, for the second line when there is no industry. */
+export const careersHost = (url: string | null | undefined): string => {
+  const u = (url ?? "").trim();
+  if (!u) return "";
+  try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u.replace(/^https?:\/\//, "").split("/")[0]; }
+};
+
+export interface WatchlistRow { c: RankedCompany; /** Industry line when the coach ranked it, else the careers host, else "". */ secondLine: string; ranked: boolean }
+
+/** The watchlist as rows: position as the number, industry · type borrowed from the ranked lists where the name matches. */
+export function watchlistRows(companies: readonly PortalCompany[] | null | undefined, lists: CompanyLists | null | undefined): WatchlistRow[] {
+  const lookup = companyLookup(lists);
+  return (companies ?? []).filter((c) => c.name?.trim()).map((c, i) => {
+    const hit = lookup.get(normName(c.name));
+    const careersUrl = c.careersUrl?.trim() || undefined;
+    const row: RankedCompany = { rank: i + 1, name: c.name.trim(), industry: hit?.industry, subSector: hit?.subSector, companyType: hit?.companyType, careersUrl };
+    const line = industryLine(row);
+    return { c: row, secondLine: line || careersHost(careersUrl), ranked: !!hit };
+  });
 }
