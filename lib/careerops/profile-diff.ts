@@ -12,6 +12,7 @@ import type { ProfileFile } from "./profile-file";
 import { SECTIONS, type Personalization } from "./personalization";
 import { cvReadiness } from "./intake";
 import { targetingLabel, type FileSectionKey } from "@/lib/profile-sections";
+import { linkedinSummary } from "@/lib/jobhacking/linkedin-profile";
 
 export type DiffKind = "add" | "replace" | "keep";
 
@@ -154,8 +155,15 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
       inc.stories.length ? `${inc.stories.length} ${inc.stories.length === 1 ? "story" : "stories"}` : "",
       inc.snapshots.length ? `${inc.snapshots.length} ${inc.snapshots.length === 1 ? "snapshot" : "snapshots"}` : "",
     ].filter(Boolean).join(", ");
-    out.push({ key: "artefacts", inFile: true, kind, headline: kind === "keep" ? "same as now" : parts, detail: kind === "keep" ? undefined : "Kept with your profile and exported with it — no page edits these yet." });
+    out.push({ key: "artefacts", inFile: true, kind, headline: kind === "keep" ? "same as now" : parts, detail: kind === "keep" ? undefined : "Shown on JobHacking → Artefacts → Story Bank. Replaced together." });
   } else out.push(absent("artefacts"));
+
+  // LinkedIn profile — the blocks to paste, replaced as a whole.
+  const incLi = linkedinSummary(incoming.linkedin);
+  if (incLi) {
+    const kind: DiffKind = !linkedinSummary(current.linkedin) ? "add" : same(current.linkedin, incoming.linkedin) ? "keep" : "replace";
+    out.push({ key: "linkedin", inFile: true, kind, headline: kind === "keep" ? "same as now" : incLi, detail: kind === "keep" ? undefined : "Shown on JobHacking → Artefacts → LinkedIn profile. The sections are replaced together." });
+  } else out.push(absent("linkedin"));
 
   // CV.
   if (incoming.cv) {

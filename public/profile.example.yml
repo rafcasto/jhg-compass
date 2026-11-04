@@ -311,6 +311,60 @@ snapshots:
     storyId: "S2"
     title: "Incident halving"
     results: ["14", "7"]
+linkedin:
+  headline: "Delivery Lead for SaaS teams scaling past product–market fit | Fortnightly releases at 110 engineers | Wellington"
+  about: |
+    Delivery Lead with six years in B2B SaaS, taking engineering organisations from monthly to fortnightly releases while headcount doubled.
+
+    At FreightDesk I moved nine teams onto a single release train in two quarters, halved production incidents from 14 to 7 a month, and landed a 240-tenant migration on the date sold to customers. I work from the numbers the business already tracks — cadence, incidents, dates kept — and remove process before adding it.
+
+    Open to Delivery Lead, Engineering Operations and Technical Program roles with B2B SaaS scale-ups in New Zealand and Australia.
+  experience:
+    - title: "Delivery Lead"
+      company: "FreightDesk Software"
+      location: "Wellington, New Zealand"
+      start: "2022-03"
+      end: ""
+      description: |
+        Led delivery for a logistics SaaS engineering organisation that grew from 55 to 110 engineers across nine teams and two time zones.
+
+        • Moved release cadence from monthly to fortnightly across nine teams in two quarters with a single release train and team-owned readiness checks.
+        • Halved production incidents from 14 to 7 per month over twelve months by pairing blameless reviews with an on-call rota built around service ownership.
+        • Landed the migration of 240 enterprise tenants on the date sold to customers — 11 months, zero renewals lost in the quarter.
+      skills: ["Release management", "Incident management", "Programme delivery"]
+    - title: "Delivery Manager"
+      company: "Harbourline Analytics"
+      location: "Wellington, New Zealand"
+      start: "2019-01"
+      end: "2022-02"
+      description: |
+        Ran delivery for three product teams on a B2B analytics platform, from quarterly planning to release.
+      skills: ["Agile delivery", "Stakeholder management"]
+  featured:
+    - kind: "link"
+      title: "The release cadence playbook"
+      url: "https://anaferreira.nz/release-cadence-playbook"
+    - kind: "article"
+      title: "How we made releases boring while the team doubled"
+      url: "https://anaferreira.nz/boring-releases"
+  skills:
+    - "Release management"
+    - "Incident management"
+    - "Programme delivery"
+    - "Engineering operations"
+    - "Agile delivery"
+    - "Stakeholder management"
+  education:
+    - school: "Victoria University of Wellington"
+      degree: "BSc"
+      field: "Computer Science"
+      start: "2012"
+      end: "2015"
+  certifications:
+    - name: "Professional Scrum Master I"
+      issuer: "Scrum.org"
+      issued: "2019-06"
+      url: ""
 notes: |
   Hard no's (do not apply): on-site 5 days; hands-on coding roles; defence or gambling sectors
   Culture must-haves: engineers present in planning; incidents reviewed without blame; a written roadmap; deprioritise when absent: Y

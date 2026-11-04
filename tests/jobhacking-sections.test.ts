@@ -30,12 +30,17 @@ const setup = {
     top10: { sunrise: Array.from({ length: 10 }, (_, i) => ({ rank: i + 1, name: `Co ${i + 1}` })) },
     all: { sunrise: Array.from({ length: 37 }, (_, i) => ({ rank: i + 1, name: `Co ${i + 1}` })), sunset: [{ rank: 16, name: "Old 16" }, { rank: 40, name: "Old 40" }], unclassified: [{ rank: 13, name: "Maybe 13" }] },
   },
+  narrative: { proofPoints: [{ name: "Churn halving", heroMetric: "Logo churn 8% → 4% in 12 months" }, { name: "Renewal uplift" }] },
+  stories: [{ id: "S1", title: "Churn halving", result: "Halved logo churn.", provenance: "verified" }, { id: "S2", title: "Renewal uplift", provenance: "estimate" }, { title: "Onboarding redesign" }],
+  snapshots: [{ company: "Wattle HR Cloud", storyId: "S1", results: ["8%", "4%"] }],
+  cvMarkdown: Array.from({ length: 40 }, (_, i) => `- Led item ${i} across teams with measurable results`).join("\n"),
+  linkedin: { headline: "Senior CSM for enterprise SaaS", experience: [{ title: "CSM", company: "Acme", start: "2021-02" }, { title: "Support Lead", company: "Beta", start: "2018-01", end: "2021-01" }], skills: ["Retention", "Onboarding"] },
 } as CareerOpsSetupV2;
 
 describe("JobHacking — pages and sections", () => {
-  it("has the three menu pages in order, and Settings apart from them", () => {
-    expect(JH_PAGES.map((p) => p.label)).toEqual(["Narrative", "True North", "Target companies"]);
-    expect(JH_PAGES.map((p) => p.href)).toEqual(["/jobhacking/narrative", "/jobhacking/true-north", "/jobhacking/companies"]);
+  it("has the four menu pages in order, and Settings apart from them", () => {
+    expect(JH_PAGES.map((p) => p.label)).toEqual(["Narrative", "True North", "Target companies", "Artefacts"]);
+    expect(JH_PAGES.map((p) => p.href)).toEqual(["/jobhacking/narrative", "/jobhacking/true-north", "/jobhacking/companies", "/jobhacking/artefacts"]);
     expect(JH_SETTINGS_HREF).toBe("/jobhacking/settings");
   });
 
@@ -51,7 +56,12 @@ describe("JobHacking — pages and sections", () => {
     expect(jhSectionsFor("companies").map((s) => s.label)).toEqual(["Top 3", "Top 10", "Top 40", "Watchlist"]);
     expect(jhSectionsFor("companies").map((s) => s.key)).toEqual(["top3", "top10", "top40", "companies"]);
     expect(JH_LIST_OF).toEqual({ top3: "top3", top10: "top10", top40: "all" });
-    expect(JH_SECTIONS.length).toBe(14);
+  });
+
+  it("Artefacts is the Packer's story bank, the master CV, then the LinkedIn profile (decision 2026-11-05)", () => {
+    expect(jhSectionsFor("artefacts").map((s) => s.label)).toEqual(["Story Bank", "Master CV", "LinkedIn profile"]);
+    expect(jhSectionsFor("artefacts").map((s) => s.key)).toEqual(["story-bank", "master-cv", "linkedin-profile"]);
+    expect(JH_SECTIONS.length).toBe(17);
   });
 
   it("deep-links each section on its own page and parses ?section= per page", () => {
@@ -68,8 +78,10 @@ describe("JobHacking — pages and sections", () => {
     expect(JH_FILE_EDIT.northstar).toBe("roles");
     expect(JH_FILE_EDIT.watchlist).toBe("companies");
     expect(JH_FILE_EDIT.companyLists).toBe("top3");
-    expect(JH_FILE_EDIT.cv).toBeNull();
-    expect(JH_FILE_EDIT.artefacts).toBeNull();
+    expect(JH_FILE_EDIT.cv).toBe("master-cv");
+    expect(JH_FILE_EDIT.artefacts).toBe("story-bank");
+    expect(JH_FILE_EDIT.linkedin).toBe("linkedin-profile");
+    expect(JH_FILE_EDIT.notes).toBeNull();
   });
 });
 
@@ -105,6 +117,13 @@ describe("JobHacking — rows", () => {
     expect(rows.top40).toMatchObject({ state: "done", summary: "40 companies · 37 sunrise · 2 sunset · 1 not yet classified", count: "40" });
   });
 
+  it("summarises the story bank by what the file carries, and the master CV as Settings does", () => {
+    expect(rows["story-bank"]).toMatchObject({ state: "done", summary: "3 stories · 2 proof points · 1 snapshot", count: "3" });
+    expect(rows["master-cv"].state).toBe("done");
+    expect(rows["master-cv"].summary).toMatch(/^\d+ words · (Ready to score|A bit thin)$/);
+    expect(rows["linkedin-profile"]).toMatchObject({ state: "done", summary: "Headline · 2 roles · 2 skills", count: "3/7" });
+  });
+
   it("is partial when only the supporting fields are set, and empty when nothing is", () => {
     const only = Object.fromEntries(jhSectionSummaries({ setup: { policy: { minimumSalary: "1" }, personalization: { targetRoles: [{ archetype: "x" }] } } as CareerOpsSetupV2, profile }).map((r) => [r.key, r]));
     expect(only.salary.state).toBe("partial");
@@ -116,6 +135,9 @@ describe("JobHacking — rows", () => {
     // The lists cannot be typed in, so the empty row says where they come from rather than "Not set".
     expect(only.top3).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
     expect(only.top40).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
+    expect(only["story-bank"]).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
+    expect(only["master-cv"]).toMatchObject({ state: "empty", summary: "Not set" });
+    expect(only["linkedin-profile"]).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
   });
 
   it("returns a page's rows in that page's order", () => {

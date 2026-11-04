@@ -73,7 +73,7 @@ export function buildSetupProfileMd({ setup, overrides }: Pick<SetupYamlInput, "
  * drop it. Keys the member has never set stay absent rather than being written
  * as undefined (Firestore rejects undefined) or as defaults.
  */
-export type PreservedSetupFields = Partial<SetupYamlFields> & Pick<CareerOpsSetupV2, "narrative" | "stories" | "snapshots" | "companyLists">;
+export type PreservedSetupFields = Partial<SetupYamlFields> & Pick<CareerOpsSetupV2, "narrative" | "stories" | "snapshots" | "companyLists" | "linkedin">;
 
 export function preserveSetupFields(setup: CareerOpsSetupV2 | null | undefined): PreservedSetupFields {
   const out: PreservedSetupFields = {};
@@ -87,5 +87,6 @@ export function preserveSetupFields(setup: CareerOpsSetupV2 | null | undefined):
   if (setup?.stories) out.stories = setup.stories;
   if (setup?.snapshots) out.snapshots = setup.snapshots;
   if (setup?.companyLists) out.companyLists = setup.companyLists;
+  if (setup?.linkedin) out.linkedin = setup.linkedin;
   return out;
 }

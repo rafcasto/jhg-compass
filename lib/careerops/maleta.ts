@@ -38,8 +38,8 @@ import { JSON_SCHEMA, dump as yamlDump, load as yamlLoad } from "js-yaml";
 import type { Goal } from "@/lib/goal";
 import { GOAL_KEYS } from "@/lib/goal";
 import { coercePersonalization, parseProfileMd, renderProfileMd, type Personalization } from "./personalization";
-import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, CareersUrlStatus, CompanyList, CompanyLists, Narrative, PortalCompany, ProofPoint, RankedCompany, Snapshot, Story } from "./types";
-import { CAREERS_URL_STATUSES, COMPANY_LIST_KEYS, COMPANY_TREND_KEYS, ROW_CAPS } from "./profile-schema";
+import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, CareersUrlStatus, CompanyList, CompanyLists, LinkedinCertification, LinkedinEducation, LinkedinExperience, LinkedinFeatured, LinkedinFeaturedKind, LinkedinProfile, Narrative, PortalCompany, ProofPoint, RankedCompany, Snapshot, Story } from "./types";
+import { CAREERS_URL_STATUSES, COMPANY_LIST_KEYS, COMPANY_TREND_KEYS, LINKEDIN_FEATURED_KINDS, LINKEDIN_LIMITS, ROW_CAPS } from "./profile-schema";
 import type { Profile } from "@/lib/types";
 
 export const MALETA_VERSION = 1;
@@ -63,6 +63,8 @@ export interface Maleta {
   narrative?: Narrative;
   stories?: Story[];
   snapshots?: Snapshot[];
+  /** The LinkedIn profile to build, one block per LinkedIn section. Read on JobHacking → Artefacts, edited nowhere. */
+  linkedin?: LinkedinProfile;
 }
 
 // ---- the three ways in ----
@@ -128,6 +130,7 @@ export function maletaFromSetup({ profile, setup }: { profile: Profile | null | 
     narrative: setup?.narrative?.proofPoints?.length ? setup.narrative : undefined,
     stories: setup?.stories?.length ? setup.stories : undefined,
     snapshots: setup?.snapshots?.length ? setup.snapshots : undefined,
+    linkedin: hasLinkedin(setup?.linkedin) ? setup!.linkedin : undefined,
   };
 }
 
@@ -148,6 +151,7 @@ export function maletaToYaml(m: Maleta): string {
     narrative: m.narrative,
     stories: m.stories,
     snapshots: m.snapshots,
+    linkedin: m.linkedin,
   };
   const body = yamlDump(JSON.parse(JSON.stringify(doc)), { lineWidth: 100, noRefs: true, skipInvalid: true });
   return [
@@ -325,8 +329,37 @@ export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
     companyLists: companyListsFromYaml(doc.companyLists),
     notes: str(doc.notes),
     ...artefactsFromYaml(doc),
+    linkedin: linkedinFromYaml(doc.linkedin),
   };
 }
+
+// ---- linkedin: headline · about · experience · featured · skills · education · certifications ----
+// Strings extracted, rows capped, text kept whole (a block over LinkedIn's limit is shown as over, not cut).
+const LINKEDIN_ROWS = <T,>(v: unknown, cap: number, map: (r: Record<string, unknown>) => T | undefined): T[] | undefined => {
+  const out = (Array.isArray(v) ? (v.filter((x) => x && typeof x === "object") as Record<string, unknown>[]).slice(0, cap) : []).map(map).filter((x): x is T => !!x);
+  return out.length ? out : undefined;
+};
+
+export function linkedinFromYaml(v: unknown): LinkedinProfile | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const li = v as Record<string, unknown>;
+  const kind = (k: unknown): LinkedinFeaturedKind | undefined => ((LINKEDIN_FEATURED_KINDS as readonly string[]).includes(str(k) ?? "") ? (k as LinkedinFeaturedKind) : undefined);
+  return pruned({
+    headline: str(li.headline),
+    about: str(li.about),
+    experience: LINKEDIN_ROWS(li.experience, ROW_CAPS.experience, (r) => {
+      const row = pruned({ title: str(r.title), company: str(r.company), location: str(r.location), start: str(r.start), end: str(r.end), description: str(r.description), skills: strArr(r.skills)?.slice(0, LINKEDIN_LIMITS.roleSkills) } as LinkedinExperience);
+      return row?.title && row.company ? row : undefined;
+    }),
+    featured: LINKEDIN_ROWS(li.featured, ROW_CAPS.featured, (r) => { const row = pruned({ kind: kind(r.kind), title: str(r.title), url: str(r.url) } as LinkedinFeatured); return row?.title ? row : undefined; }),
+    skills: strArr(li.skills)?.slice(0, LINKEDIN_LIMITS.skills),
+    education: LINKEDIN_ROWS(li.education, ROW_CAPS.education, (r) => { const row = pruned({ school: str(r.school), degree: str(r.degree), field: str(r.field), start: str(r.start), end: str(r.end) } as LinkedinEducation); return row?.school ? row : undefined; }),
+    certifications: LINKEDIN_ROWS(li.certifications, ROW_CAPS.certifications, (r) => { const row = pruned({ name: str(r.name), issuer: str(r.issuer), issued: str(r.issued), url: str(r.url) } as LinkedinCertification); return row?.name ? row : undefined; }),
+  } as LinkedinProfile);
+}
+
+/** True when at least one LinkedIn section has something in it. */
+export const hasLinkedin = (l: LinkedinProfile | null | undefined): boolean => !!l && Object.values(l).some((v) => (Array.isArray(v) ? v.length > 0 : typeof v === "string" && v.trim() !== ""));
 
 // ---- company lists: top3 · top10 · all × sunrise · sunset · unclassified ----
 // Rows are kept in file order; rank is read as a number and never invented.
@@ -483,6 +516,7 @@ export function maletaContents(m: Maleta): string[] {
   if (m.narrative?.proofPoints?.length) found.push(`proof points (${m.narrative.proofPoints.length})`);
   if (m.stories?.length) found.push(`stories (${m.stories.length})`);
   if (m.snapshots?.length) found.push(`snapshots (${m.snapshots.length})`);
+  if (hasLinkedin(m.linkedin)) found.push(`LinkedIn profile (${Object.keys(m.linkedin!).length} ${Object.keys(m.linkedin!).length === 1 ? "section" : "sections"})`);
   return found;
 }
 
@@ -561,6 +595,7 @@ export function maletaToSetupPatch(m: Maleta): MaletaPatch {
   if (m.narrative) setup.narrative = m.narrative;
   if (m.stories) setup.stories = m.stories;
   if (m.snapshots) setup.snapshots = m.snapshots;
+  if (hasLinkedin(m.linkedin)) setup.linkedin = m.linkedin;
   // A goal in the file becomes the intake North Star, which overrides Compass —
   // the member brought it deliberately, so it should win.
   if (m.goal?.role?.trim()) {

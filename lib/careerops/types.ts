@@ -202,7 +202,8 @@ export interface CareerOpsPolicy {
 // ---- artefacts (Packer spec, profile.yml top-level `narrative` · `stories` · `snapshots`) ----
 //
 // Stored and exported so a member's profile.yml round-trips without loss. No
-// page edits them yet; the JobHacking portal reads nothing from them either.
+// page edits them; the JobHacking portal reads them on Artefacts → Story Bank
+// (lib/jobhacking/story-bank.ts).
 
 /** narrative.proofPoints[] — a named result and the one number that proves it. */
 export interface ProofPoint { name: string; heroMetric?: string }
@@ -211,6 +212,32 @@ export interface Narrative { proofPoints?: ProofPoint[] }
 export interface Story { id?: string; title: string; result?: string; provenance?: string }
 /** snapshots[] — a story pointed at one target company, with the figures to lead with. */
 export interface Snapshot { company: string; storyId?: string; title?: string; results?: string[] }
+
+// ---- LinkedIn profile (profile.yml top-level `linkedin`; added 2026-11-05) ----
+//
+// The LinkedIn profile as the member builds it: one block per LinkedIn section,
+// written to be pasted — headline, About, each role's description, the Featured
+// strip, skills, education, certifications. Mirrors LinkedIn's own sections so
+// the portal can show each block against LinkedIn's limit with a Copy button.
+// Read on JobHacking → Artefacts → LinkedIn profile; edited nowhere. The URL
+// stays contact.linkedin; what the member is open to stays the goal.
+
+export type LinkedinFeaturedKind = "link" | "post" | "article" | "document";
+/** One Experience entry. `start` / `end` are "YYYY-MM" (or "YYYY"); an empty `end` is Present. */
+export interface LinkedinExperience { title: string; company: string; location?: string; start?: string; end?: string; description?: string; skills?: string[] }
+export interface LinkedinFeatured { kind?: LinkedinFeaturedKind; title: string; url?: string }
+export interface LinkedinEducation { school: string; degree?: string; field?: string; start?: string; end?: string }
+export interface LinkedinCertification { name: string; issuer?: string; issued?: string; url?: string }
+export interface LinkedinProfile {
+  headline?: string;
+  about?: string;
+  experience?: LinkedinExperience[];
+  featured?: LinkedinFeatured[];
+  /** The first three are the pinned Top skills. */
+  skills?: string[];
+  education?: LinkedinEducation[];
+  certifications?: LinkedinCertification[];
+}
 
 // ---- company lists (Packer spec, profile.yml top-level `companyLists`; added 2026-11-05) ----
 //
@@ -249,12 +276,14 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   personalization?: Personalization;
   /** Rendered modes/_profile.md, stored for the worker and for transparency. */
   profileMd?: string;
-  /** Artefacts carried by profile.yml (Packer spec). Stored for the round trip; not read by any screen yet. */
+  /** Artefacts carried by profile.yml (Packer spec). Read on JobHacking → Artefacts → Story Bank; edited nowhere. */
   narrative?: Narrative;
   stories?: Story[];
   snapshots?: Snapshot[];
   /** The Packer's ranked company lists (profile.yml `companyLists`). Read on JobHacking → Target companies; edited nowhere. */
   companyLists?: CompanyLists;
+  /** The LinkedIn profile to build (profile.yml `linkedin`). Read on JobHacking → Artefacts → LinkedIn profile; edited nowhere. */
+  linkedin?: LinkedinProfile;
 }
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last

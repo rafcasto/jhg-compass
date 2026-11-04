@@ -2,7 +2,7 @@
 
 import { useState, type ComponentType } from "react";
 import { usePathname } from "next/navigation";
-import { Compass, Gauge, Columns3, GraduationCap, Shield, Radar, Target, FileText, ListChecks, UserRound, Navigation, Building2, type LucideProps } from "lucide-react";
+import { Compass, Gauge, Columns3, GraduationCap, Shield, Radar, Target, FileText, ListChecks, UserRound, Navigation, Building2, Archive, type LucideProps } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useContent } from "@/lib/firestore/content";
 import { track } from "@/lib/track-client";
@@ -19,11 +19,11 @@ type NavItem = {
 };
 
 const SECTION_ICONS: Record<string, ComponentType<LucideProps>> = { sourcing: Radar, scoring: Target, tailoring: FileText, tracking: ListChecks };
-const JH_ICONS: Record<string, ComponentType<LucideProps>> = { narrative: UserRound, "true-north": Navigation, companies: Building2 };
+const JH_ICONS: Record<string, ComponentType<LucideProps>> = { narrative: UserRound, "true-north": Navigation, companies: Building2, artefacts: Archive };
 
 // One shell, three portals. Compass: Compass · Performance · Progress · Coaching.
 // CareerOps: Sourcing · Scoring · Tailoring · Tracking. JobHacking: Narrative ·
-// True North · Target companies (Settings in the account group). The logo
+// True North · Target companies · Artefacts (Settings in the account group). The logo
 // section is the switcher between them (only shown when the member has more than one).
 export interface AppShellAccess {
   agentsEnabled?: boolean;
