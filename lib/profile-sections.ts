@@ -147,7 +147,7 @@ export const FILE_SECTIONS = {
   companyLists: { label: "Company lists", edit: null },
   notes: { label: "Notes", edit: "notes" },
   cv: { label: "Master CV", edit: "cv" },
-  // Read on JobHacking → Artefacts → Story Bank (JH_FILE_EDIT), edited nowhere — no Compass page shows them.
+  // Read and edited on JobHacking → Artefacts → Story Bank (JH_FILE_EDIT) — no Compass page shows them.
   artefacts: { label: "Stories & proof points", edit: null },
   // Read on JobHacking → Artefacts → LinkedIn profile (JH_FILE_EDIT), edited nowhere.
   linkedin: { label: "LinkedIn profile", edit: null },

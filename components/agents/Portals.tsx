@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Plus, Trash2, Globe, Rss, AlertTriangle, Settings2, Sparkles } from "lucide-react";
 import { MAX_COMPANIES, PROVIDER_ID } from "@/lib/careerops/portals-yaml";
 import type { CareerOpsPortals, PortalStatus, PortalSuggestion } from "@/lib/careerops/types";
@@ -10,7 +11,6 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
   const set = (patch: Partial<CareerOpsPortals>) => onChange({ ...value, ...patch });
   const statusFor = (c: CareerOpsPortals["companies"][number]) => status.find((s) => s.careersUrl === c.careersUrl.trim() || (s.name && s.name === c.name.trim()));
   const setCo = (i: number, patch: Partial<CareerOpsPortals["companies"][number]>) => set({ companies: value.companies.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
-  const list = (s: string) => s.split(/[,\n]/).map((k) => k.trim()).filter(Boolean);
 
   return (
     <div className="space-y-4">
@@ -48,7 +48,7 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="label">Title keywords — include</span>
-          <textarea aria-label="Include keywords" className="field text-sm min-h-[4.5rem]" placeholder="Product Owner, Product Manager" value={value.positive.join(", ")} onChange={(e) => set({ positive: list(e.target.value) })} />
+          <KeywordArea label="Include keywords" placeholder="Product Owner, Product Manager" value={value.positive} onChange={(positive) => set({ positive })} />
           <span className="block mt-1 text-xs text-jh-mute">A posting is listed when its title <em>contains</em> any of these (case-insensitive). Short stems catch more: <code className="font-mono">Test</code> finds Test Lead, Test Analyst and Test Automation; <code className="font-mono">QA Manager</code> only finds that exact phrase. Comma-separated.</span>
           {suggested.filter((k) => !value.positive.some((p) => p.toLowerCase() === k.toLowerCase())).length > 0 && (
             <span className="block mt-1.5 text-xs text-jh-mute">Suggested for your goal:{" "}
@@ -60,11 +60,37 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
         </label>
         <label className="block">
           <span className="label">Title keywords — exclude</span>
-          <textarea aria-label="Exclude keywords" className="field text-sm min-h-[4.5rem]" placeholder="Junior, Intern" value={value.negative.join(", ")} onChange={(e) => set({ negative: list(e.target.value) })} />
+          <KeywordArea label="Exclude keywords" placeholder="Junior, Intern" value={value.negative} onChange={(negative) => set({ negative })} />
           <span className="block mt-1 text-xs text-jh-mute">Drop titles containing these. <code className="font-mono">word:Intern</code> matches the whole word only.</span>
         </label>
       </div>
     </div>
+  );
+}
+
+/** "Product Owner, Product Manager" → the list; blanks dropped. Exported for the test. */
+export const keywordList = (s: string): string[] => s.split(/[,\n]/).map((k) => k.trim()).filter(Boolean);
+
+// A comma-separated list the member types into. The TEXT is local state and
+// the LIST is the value: re-rendering the textarea from the parsed list ate
+// every trailing comma and space as it was typed ("Product Owner, " parsed to
+// ["Product Owner"] and rendered back without the ", "), so a second keyword
+// could never be started. The draft only re-syncs when the list changes from
+// outside — a suggested-keyword chip, a reset — never on the member's own keystroke.
+function KeywordArea({ label, placeholder, value, onChange }: { label: string; placeholder: string; value: string[]; onChange: (v: string[]) => void }) {
+  const [draft, setDraft] = useState(() => value.join(", "));
+  useEffect(() => {
+    if (JSON.stringify(keywordList(draft)) !== JSON.stringify(value)) setDraft(value.join(", "));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only an outside change to the list may rewrite what is being typed
+  }, [value]);
+  return (
+    <textarea
+      aria-label={label}
+      className="field text-sm min-h-[4.5rem]"
+      placeholder={placeholder}
+      value={draft}
+      onChange={(e) => { setDraft(e.target.value); onChange(keywordList(e.target.value)); }}
+    />
   );
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { proofPoints, provenanceLabel, snapshotFigures, stories, storyBankCounts, storyBankSummary, storyRows } from "@/lib/jobhacking/story-bank";
+import { cleanStoryBank, nextStoryId, proofPoints, provenanceLabel, snapshotFigures, stories, storyBankCounts, storyBankDraft, storyBankSummary, storyRows } from "@/lib/jobhacking/story-bank";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 
 // JobHacking → Artefacts → Story Bank — docs/UX_JOBHACKING.md §3d. Reads the
@@ -53,5 +53,37 @@ describe("story bank", () => {
     expect(provenanceLabel(undefined)).toBe("");
     expect(snapshotFigures({ company: "Tracksuit", results: ["monthly", " fortnightly ", ""] })).toBe("monthly → fortnightly");
     expect(snapshotFigures({ company: "Partly" })).toBe("");
+  });
+});
+
+describe("story bank — editing", () => {
+  it("gives a new story the next free S<n>, filling a gap first and never reusing one", () => {
+    expect(nextStoryId([])).toBe("S1");
+    expect(nextStoryId([{ id: "S1", title: "a" }, { id: "S2", title: "b" }])).toBe("S3");
+    expect(nextStoryId([{ id: "S1", title: "a" }, { id: "S3", title: "c" }])).toBe("S2");
+    expect(nextStoryId([{ id: "S7", title: "a" }, { title: "no id" }])).toBe("S1");
+  });
+
+  it("opens the editor on copies of the stored lists, never the stored objects", () => {
+    const d = storyBankDraft(setup);
+    expect(d.stories).toHaveLength(4);
+    expect(d.snapshots[0]).toEqual(setup.snapshots![0]);
+    expect(d.snapshots[0]).not.toBe(setup.snapshots![0]);
+    expect(d.snapshots[0].results).not.toBe(setup.snapshots![0].results);
+    expect(storyBankDraft(null)).toEqual({ proofPoints: [], stories: [], snapshots: [] });
+  });
+
+  it("on save trims, drops rows missing their one required field, unlinks a snapshot from a story that is gone, and writes cleared lists empty", () => {
+    const out = cleanStoryBank({
+      proofPoints: [{ name: "  Release train ", heroMetric: " 9 teams " }, { name: " ", heroMetric: "orphan" }],
+      stories: [{ id: "S1", title: " Release train ", result: "", provenance: " verified " }, { id: "S2", title: "" }],
+      snapshots: [{ company: " Tracksuit ", storyId: "S1", title: "", results: [" monthly ", "", "fortnightly"] }, { company: "Halter", storyId: "S2", results: [] }, { company: "", storyId: "S1" }],
+    });
+    expect(out).toEqual({
+      narrative: { proofPoints: [{ name: "Release train", heroMetric: "9 teams" }] },
+      stories: [{ id: "S1", title: "Release train", provenance: "verified" }],
+      snapshots: [{ company: "Tracksuit", storyId: "S1", results: ["monthly", "fortnightly"] }, { company: "Halter" }],
+    });
+    expect(cleanStoryBank({ proofPoints: [], stories: [], snapshots: [] })).toEqual({ narrative: { proofPoints: [] }, stories: [], snapshots: [] });
   });
 });

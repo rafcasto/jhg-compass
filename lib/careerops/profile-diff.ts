@@ -155,7 +155,7 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
       inc.stories.length ? `${inc.stories.length} ${inc.stories.length === 1 ? "story" : "stories"}` : "",
       inc.snapshots.length ? `${inc.snapshots.length} ${inc.snapshots.length === 1 ? "snapshot" : "snapshots"}` : "",
     ].filter(Boolean).join(", ");
-    out.push({ key: "artefacts", inFile: true, kind, headline: kind === "keep" ? "same as now" : parts, detail: kind === "keep" ? undefined : "Shown on JobHacking → Artefacts → Story Bank. Replaced together." });
+    out.push({ key: "artefacts", inFile: true, kind, headline: kind === "keep" ? "same as now" : parts, detail: kind === "keep" ? undefined : "Your story bank on JobHacking → Artefacts. The three lists are replaced together." });
   } else out.push(absent("artefacts"));
 
   // LinkedIn profile — the blocks to paste, replaced as a whole.

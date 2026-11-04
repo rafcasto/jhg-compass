@@ -1,11 +1,11 @@
 // JobHacking → Artefacts → Story Bank — docs/UX_JOBHACKING.md §3d.
 //
-// The Packer's artefacts, read as the member's story bank: narrative.proofPoints
-// (a named result and the one number that proves it), stories (what happened,
-// how sure the member is of the figure) and snapshots (a story pointed at one
-// target company, with the figures to lead with). Read-only in the portal —
-// the Packer writes them, the member reads them here; nothing here invents a
-// field. Pure — no React. Tested.
+// The artefacts as the member's story bank: narrative.proofPoints (a named
+// result and the one number that proves it), stories (what happened, how sure
+// the member is of the figure) and snapshots (a story pointed at one target
+// company, with the figures to lead with). The Packer writes them; the member
+// reads them here and, since 2026-11-05, edits them — add, change, remove —
+// through the same three lists. Nothing here invents a field. Pure — no React. Tested.
 
 import type { CareerOpsSetupV2, ProofPoint, Snapshot, Story } from "../careerops/types";
 
@@ -58,3 +58,48 @@ export function provenanceLabel(v: string | null | undefined): string {
 
 /** "monthly → fortnightly" — the figures a snapshot leads with, in order. */
 export const snapshotFigures = (snap: Snapshot): string => rows(snap.results).map((r) => r.trim()).filter(Boolean).join(" → ");
+
+// ---- editing ----
+
+/** The provenance words the Packer uses; a stored value outside them is kept and offered as it is. */
+export const PROVENANCES = ["verified", "estimate"] as const;
+
+/** 50 of each — the schema's row cap. */
+export const STORY_BANK_CAP = 50;
+
+/** What the editor holds: the three lists, blanks and all, as typed. */
+export interface StoryBankDraft { proofPoints: ProofPoint[]; stories: Story[]; snapshots: Snapshot[] }
+
+export const storyBankDraft = (s: StoryBankSource | null | undefined): StoryBankDraft => ({
+  proofPoints: rows(s?.narrative?.proofPoints).map((p) => ({ ...p })),
+  stories: rows(s?.stories).map((x) => ({ ...x })),
+  snapshots: rows(s?.snapshots).map((x) => ({ ...x, results: [...(x.results ?? [])] })),
+});
+
+/** The next free "S<n>" — the Packer's own id shape, never reusing one still in the bank. */
+export function nextStoryId(existing: readonly Story[]): string {
+  const used = new Set(existing.map((s) => (s.id ?? "").trim()).filter(Boolean));
+  let n = existing.length + 1;
+  while (used.has(`S${n}`)) n += 1;
+  // Fill a gap first: S1, S2, S4 → S3, so ids stay short.
+  for (let i = 1; i <= existing.length + 1; i += 1) if (!used.has(`S${i}`)) return `S${i}`;
+  return `S${n}`;
+}
+
+const trim = (v: string | undefined) => (v ?? "").trim();
+const cleanRow = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== "" && !(Array.isArray(v) && !v.length))) as T;
+
+/**
+ * What a save writes: strings trimmed, rows without their one required field dropped
+ * (a proof point needs a name, a story a title, a snapshot a company), capped at 50
+ * each, empty lists kept as empty lists so a cleared bank clears the document.
+ */
+export function cleanStoryBank(d: StoryBankDraft): { narrative: { proofPoints: ProofPoint[] }; stories: Story[]; snapshots: Snapshot[] } {
+  const proofPoints = d.proofPoints.map((p) => cleanRow({ name: trim(p.name), heroMetric: trim(p.heroMetric) })).filter((p) => p.name).slice(0, STORY_BANK_CAP);
+  const stories = d.stories.map((s) => cleanRow({ id: trim(s.id), title: trim(s.title), result: trim(s.result), provenance: trim(s.provenance) })).filter((s) => s.title).slice(0, STORY_BANK_CAP);
+  const ids = new Set(stories.map((s) => s.id).filter(Boolean));
+  const snapshots = d.snapshots
+    .map((x) => cleanRow({ company: trim(x.company), storyId: ids.has(trim(x.storyId)) ? trim(x.storyId) : "", title: trim(x.title), results: rows(x.results).map((r) => r.trim()).filter(Boolean) }))
+    .filter((x) => x.company).slice(0, STORY_BANK_CAP);
+  return { narrative: { proofPoints }, stories, snapshots };
+}

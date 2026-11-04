@@ -1,37 +1,57 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { FileUp } from "lucide-react";
+import { Check, FileUp, Pencil, Plus } from "lucide-react";
 import { JH_SETTINGS_HREF } from "@/lib/jobhacking/sections";
 import { proofPoints, provenanceLabel, snapshotFigures, storyRows, type StoryBankSource } from "@/lib/jobhacking/story-bank";
 import type { Snapshot } from "@/lib/careerops/types";
+import StoryBankEditor from "./StoryBankEditor";
 
 // JobHacking → Artefacts → Story Bank — docs/UX_JOBHACKING.md §3d.
 //
-// Read-only: the Packer writes narrative.proofPoints · stories · snapshots into
-// profile.yml, the member reads them here. The same row grammar as the company
-// lists — a quiet mono index, one heavy name, a mute second line, a neutral
-// pill — so the two read-only pages read as one portal. Nothing here is red:
-// an estimate is how sure the member is of a figure, not a failure. Snapshots
-// sit under the story they point at (matched on storyId); one no story claims
-// is listed on its own rather than dropped.
+// Reads the Packer's narrative.proofPoints · stories · snapshots in the same
+// row grammar as the company lists — a quiet mono index, one heavy name, a
+// mute second line, a neutral pill — so the two pages read as one portal.
+// Nothing here is red: an estimate is how sure the member is of a figure, not
+// a failure. Snapshots sit under the story they point at (matched on storyId);
+// one no story claims is listed on its own rather than dropped. One secondary
+// button, Edit story bank, swaps the read view for the editor (decision
+// 2026-11-05: the member adds, changes and removes stories here; an upload
+// still replaces the lot).
 
-export default function StoryBankPanel({ source }: { source: StoryBankSource | null | undefined }) {
+export default function StoryBankPanel({ uid, source }: { uid: string; source: StoryBankSource | null | undefined }) {
+  const [editing, setEditing] = useState(false);
+  const [saved, setSaved] = useState(false);
   const points = proofPoints(source);
   const { stories, unlinked } = storyRows(source);
+
+  if (editing) {
+    return <StoryBankEditor uid={uid} source={source} onSaved={() => { setEditing(false); setSaved(true); }} onCancel={() => setEditing(false)} />;
+  }
 
   if (!points.length && !stories.length && !unlinked.length) {
     return (
       <div className="mx-auto max-w-md py-6 text-center">
         <p className="font-display font-semibold text-jh-ink">No stories yet</p>
-        <p className="mt-1 text-sm text-jh-mute">Your coach&apos;s Packer writes your proof points, stories and snapshots into your profile.yml. Upload it and they appear here.</p>
-        <Link href={JH_SETTINGS_HREF} className="btn-secondary btn-sm mt-4"><FileUp className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Upload profile</Link>
+        <p className="mt-1 text-sm text-jh-mute">Add your proof points, stories and snapshots here — or upload the profile.yml your coach&apos;s Packer wrote them into.</p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <button type="button" onClick={() => setEditing(true)} className="btn-secondary btn-sm"><Plus className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Add stories</button>
+          <Link href={JH_SETTINGS_HREF} className="btn-secondary btn-sm"><FileUp className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Upload profile</Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center justify-between gap-3">
+        {saved ? <p role="status" className="flex items-center gap-2 text-sm text-rb-green-dark"><Check className="h-4 w-4 shrink-0" aria-hidden /> Saved.</p> : <span />}
+        <button type="button" onClick={() => { setEditing(true); setSaved(false); }} className="btn-secondary btn-sm">
+          <Pencil className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Edit story bank
+        </button>
+      </div>
+
       {points.length > 0 && (
         <section aria-labelledby="sb-proof" className="space-y-3">
           <h3 id="sb-proof" className="section-label">Proof points <Count n={points.length} /></h3>
@@ -90,7 +110,7 @@ export default function StoryBankPanel({ source }: { source: StoryBankSource | n
         </section>
       )}
 
-      <p className="text-xs text-jh-mute">Written by your coach. A verified figure is one you can show a document for; an estimate is your best honest number. Upload a new profile.yml to change them.</p>
+      <p className="text-xs text-jh-mute">A verified figure is one you can show a document for; an estimate is your best honest number. Edit here, or upload a new profile.yml to replace the lot.</p>
     </div>
   );
 }

@@ -135,7 +135,7 @@ describe("JobHacking — rows", () => {
     // The lists cannot be typed in, so the empty row says where they come from rather than "Not set".
     expect(only.top3).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
     expect(only.top40).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
-    expect(only["story-bank"]).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
+    expect(only["story-bank"]).toMatchObject({ state: "empty", summary: "Not set" }); // editable here, unlike the lists
     expect(only["master-cv"]).toMatchObject({ state: "empty", summary: "Not set" });
     expect(only["linkedin-profile"]).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
   });

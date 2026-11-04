@@ -80,8 +80,8 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
             return <CompanyListPanel listKey={JH_LIST_OF[key]} list={setup?.companyLists?.[JH_LIST_OF[key]]} />;
           // The watchlist reads as the same rows, with an Edit that opens the shared editor.
           case "companies": return <WatchlistSection uid={uid} setup={setup} goalRole={goal.role} />;
-          // The Packer's story bank: read-only, like the lists.
-          case "story-bank": return <StoryBankPanel source={setup} />;
+          // The story bank: read as rows, edited on request.
+          case "story-bank": return <StoryBankPanel uid={uid} source={setup} />;
           // The same CV panel as Settings · Master CV — one editor for the one field.
           case "master-cv": return <CvPanel uid={uid} setup={setup} profile={profile} goalRole={goal.role} />;
           // The LinkedIn profile to build: read-only blocks, each against LinkedIn's limit, with Copy.
