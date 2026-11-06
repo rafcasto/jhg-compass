@@ -36,6 +36,9 @@
   `linkedin` section (`headline · about · experience · featured · skills · education · certifications` — LinkedIn's own sections, one
   pasteable block each, measured against LinkedIn's limits, never cut) through `LinkedinProfilePanel.tsx`. The URL stays
   `contact.linkedin`; never add an open-to-work block there (that is the goal).
+  **One goal** (decision 2026-11-07, `docs/UX_JOBHACKING.md §2`): the goal has two homes (`profile.goal`, `setup.intakeGoal` while `goalSource` is
+  `"intake"`) but one reading — every statement shows `goalInEffect` and every save goes through `goalWrites` (`lib/careerops/goal-save.ts`);
+  never read `profile.goal` directly for a statement, never write a goal to a home that is not in effect.
   **The four Packer files** (decision 2026-11-07, `docs/UX_JOBHACKING.md §4, §4b, §5`): the Packer writes `narrative.yml · true-north.yml ·
   target-companies.yml · artefacts.yml`, subsets of the one schema; JobHacking → Settings is four slots (`lib/jobhacking/profile-files.ts`),
   the shared `ProfileUploadSheet` takes several files, and an upload **merges key by key** (`mergeProfile`) — never replace a section whole,

@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { setDoc } from "firebase/firestore";
 import { Check, Plus, Save, TriangleAlert, X } from "lucide-react";
 import { paths } from "@/lib/firestore/db";
-import { resolveGoalSource } from "@/lib/careerops/intake";
+import { goalWrites } from "@/lib/careerops/goal-save";
 import { coercePersonalization, type TargetRoleRow } from "@/lib/careerops/personalization";
 import { buildSetupProfileMd, buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import type { CareerOpsPolicy, CareerOpsSetupV2 } from "@/lib/careerops/types";
-import { COMPANY_TYPES, EMPTY_GOAL, normalizeGoal, type Goal } from "@/lib/goal";
+import { COMPANY_TYPES, EMPTY_GOAL, type Goal } from "@/lib/goal";
 import { jhGoal } from "@/lib/jobhacking/sections";
 import type { Profile } from "@/lib/types";
 
@@ -17,10 +17,12 @@ import type { Profile } from "@/lib/types";
 // and its Save writes ONLY those fields over what is stored, so no section can
 // wipe another's.
 //
-// The goal has two homes (lib/careerops/intake.ts): the Compass goal on
+// The goal has two homes (lib/careerops/goal-save.ts): the Compass goal on
 // users/{uid}, and the intake override on the setup document — which an
-// uploaded profile.yml sets. A save here edits whichever is in effect, so the
-// statement, the Compass tab and the agents' profile.yml all move together.
+// uploaded true-north.yml sets. A save here edits whichever is in effect, so the
+// statement, the Compass tab and the agents' profile.yml all move together —
+// and while the member types, the draft goes up to the statement (`onDraft`)
+// so it reads the new title before Save (2026-11-07).
 
 export type TrueNorthSection = "industry" | "roles" | "seniority" | "salary" | "location" | "company-type";
 
@@ -38,11 +40,13 @@ function Hint({ children }: { children: React.ReactNode }) {
   return <span className="block text-xs text-jh-mute mt-1">{children}</span>;
 }
 
-export default function TrueNorthPanel({ uid, setup, profile, section }: {
+export default function TrueNorthPanel({ uid, setup, profile, section, onDraft }: {
   uid: string;
   setup: CareerOpsSetupV2 | null;
   profile: Profile | null | undefined;
   section: TrueNorthSection;
+  /** The goal fields this section is editing, as typed — the statement previews them. Called with {} when the editor leaves. */
+  onDraft?: (draft: Partial<Goal>) => void;
 }) {
   const live = useMemo(() => jhGoal({ setup, profile }), [setup, profile]);
   const [goal, setGoal] = useState<Goal>({ ...EMPTY_GOAL, ...live });
@@ -55,7 +59,10 @@ export default function TrueNorthPanel({ uid, setup, profile, section }: {
   const [msg, setMsg] = useState<string | null>(null);
 
   const touch = () => { setDirty(true); setMsg(null); };
-  const setG = (k: keyof Goal, v: string) => { setGoal((g) => ({ ...g, [k]: v })); touch(); };
+  const setG = (k: keyof Goal, v: string) => { setGoal((g) => { const next = { ...g, [k]: v }; onDraft?.(pickGoal(section, next)); return next; }); touch(); };
+  // Leaving the section takes the preview with it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => onDraft?.({}), []);
   const setP = (k: "minimumSalary" | "locationFlexibility", v: string) => { setPolicy((p) => ({ ...p, [k]: v })); touch(); };
 
   // A company type the list doesn't know (an uploaded "Scale-up") must stay selectable, not vanish.
@@ -64,8 +71,7 @@ export default function TrueNorthPanel({ uid, setup, profile, section }: {
     return cur && !(COMPANY_TYPES as readonly string[]).includes(cur) ? [cur, ...COMPANY_TYPES] : [...COMPANY_TYPES];
   }, [goal.companyType]);
 
-  // Which stored objects this section touches.
-  const touchesGoal = true;
+  // Which stored objects this section touches (every section touches the goal).
   const touchesPolicy = section === "salary" || section === "location";
   const touchesPersonalization = section === "roles" || section === "salary" || section === "location";
 
@@ -74,14 +80,10 @@ export default function TrueNorthPanel({ uid, setup, profile, section }: {
     setMsg(null);
     try {
       const now = Date.now();
-      const useIntake = resolveGoalSource(setup?.goalSource) === "intake";
-      const patch: Partial<CareerOpsSetupV2> = {};
-
-      const nextGoal = normalizeGoal({ ...EMPTY_GOAL, ...live, ...pickGoal(section, goal) });
-      if (touchesGoal && useIntake) { patch.goalSource = "intake"; patch.intakeGoal = nextGoal; patch.goalUpdatedAt = now; }
-      const nextProfile: Profile | null | undefined = touchesGoal && !useIntake
-        ? { ...(profile ?? { email: "" }), goal: nextGoal }
-        : profile;
+      // The home in effect gets the goal; the other is never written over.
+      const writes = goalWrites({ setup, profile }, { ...live, ...pickGoal(section, goal) }, now);
+      const patch: Partial<CareerOpsSetupV2> = { ...writes.setupPatch };
+      const nextProfile = writes.nextProfile;
 
       if (touchesPolicy) {
         const next: CareerOpsPolicy = { ...(setup?.policy ?? {}) };
@@ -106,7 +108,7 @@ export default function TrueNorthPanel({ uid, setup, profile, section }: {
         { ...patch, profileYaml: buildSetupProfileYaml({ profile: nextProfile, setup, overrides: patch }), updatedAt: now },
         { merge: true },
       );
-      if (touchesGoal && !useIntake) await setDoc(paths.profile(uid), { goal: nextGoal, goalUpdatedAt: now }, { merge: true });
+      if (writes.profilePatch) await setDoc(paths.profile(uid), writes.profilePatch, { merge: true });
       setDirty(false);
       setMsg("Saved. Your statement and the agents' profile follow it.");
     } catch {
