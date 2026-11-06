@@ -13,15 +13,17 @@ const current: ProfileFile = {
   notes: "Old notes",
   stories: [{ id: "S1", title: "Old story", result: "Did a thing." }],
   linkedin: { headline: "Delivery Lead for SaaS teams", skills: ["Release management"] },
+  narrative: { headline: "I help SaaS teams ship", superpowers: ["Release management"] },
+  jhg: { identity: { timezone: "Pacific/Auckland" } },
   cv: "# CV\n\n## Experience\n2019 – 2024 Acme " + "word ".repeat(100),
 };
 
 const byKey = (d: ReturnType<typeof profileDiff>) => Object.fromEntries(d.map((x) => [x.key, x]));
 
-describe("profileDiff — one row per section, always nine", () => {
+describe("profileDiff — one row per section, always eleven", () => {
   it("marks every section absent from the file as kept", () => {
     const d = profileDiff(current, { version: 1 });
-    expect(d.map((x) => x.key)).toEqual(["northstar", "contact", "targeting", "watchlist", "companyLists", "notes", "artefacts", "linkedin", "cv"]);
+    expect(d.map((x) => x.key)).toEqual(["northstar", "contact", "targeting", "watchlist", "companyLists", "notes", "artefacts", "linkedin", "narrative", "jhg", "cv"]);
     expect(d.every((x) => !x.inFile && x.kind === "keep")).toBe(true);
     expect(diffReplaces(d)).toBe(false);
   });
@@ -47,7 +49,7 @@ describe("profileDiff — one row per section, always nine", () => {
   it("says 'same as now' for an identical file", () => {
     const d = profileDiff(current, current);
     expect(d.every((x) => x.inFile && x.kind === "keep")).toBe(true);
-    expect(d.map((x) => x.headline)).toEqual(["same as now", "same as now", "2 of 8 sections — same as now", "same as now", "same as now", "same as now", "same as now", "same as now", "same as now"]);
+    expect(d.map((x) => x.headline)).toEqual(["same as now", "same as now", "2 of 8 sections — same as now", "same as now", "same as now", "same as now", "same as now", "same as now", "same as now", "same as now", "same as now"]);
   });
 });
 

@@ -130,7 +130,7 @@ export default function ProfileScreen() {
           setup={setup}
           profile={profile}
           current={current}
-          initialFile={sheet.file}
+          initialFiles={sheet.file ? [sheet.file] : null}
           onClose={() => setSheet({ open: false, file: null })}
           onDownloadCurrent={exportProfile}
           onDone={(keys) => {

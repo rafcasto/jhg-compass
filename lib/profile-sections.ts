@@ -151,6 +151,10 @@ export const FILE_SECTIONS = {
   artefacts: { label: "Stories & proof points", edit: null },
   // Read on JobHacking → Artefacts → LinkedIn profile (JH_FILE_EDIT), edited nowhere.
   linkedin: { label: "LinkedIn profile", edit: null },
+  // narrative.headline · superpowers — the Narrative file's positioning line (2026-11-07). Read on JobHacking → Narrative.
+  narrative: { label: "Narrative headline & superpowers", edit: null },
+  // jhg — the JobHackers workbook behind the four files (2026-11-07). Read beside the JobHacking sections it explains.
+  jhg: { label: "Workbook", edit: null },
 } as const satisfies Record<string, { label: string; edit: ActiveSectionKey | null }>;
 
 export type FileSectionKey = keyof typeof FILE_SECTIONS;

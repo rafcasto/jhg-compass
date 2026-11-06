@@ -75,7 +75,7 @@ describe("CompanyListPanel — Top 40", () => {
   it("explains where the lists come from when there are none, with one way in", () => {
     render(<CompanyListPanel listKey="top10" list={undefined} />);
     expect(screen.getByText("No Top 10 yet")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Upload profile/ })).toHaveAttribute("href", "/jobhacking/settings");
+    expect(screen.getByRole("link", { name: /Upload target companies/ })).toHaveAttribute("href", "/jobhacking/settings");
     expect(screen.queryByRole("region")).toBeNull();
   });
 });

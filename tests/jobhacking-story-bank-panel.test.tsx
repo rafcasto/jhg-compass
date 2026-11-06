@@ -40,10 +40,10 @@ describe("StoryBankPanel", () => {
     expect(screen.getByText("editor")).toBeInTheDocument();
   });
 
-  it("offers Add stories and Upload profile when the bank is empty", () => {
+  it("offers Add stories and Upload artefacts when the bank is empty", () => {
     render(<StoryBankPanel uid="u1" source={{}} />);
     expect(screen.getByText("No stories yet")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Upload profile/ })).toHaveAttribute("href", "/jobhacking/settings");
+    expect(screen.getByRole("link", { name: /Upload artefacts/ })).toHaveAttribute("href", "/jobhacking/settings");
     fireEvent.click(screen.getByRole("button", { name: /Add stories/ }));
     expect(screen.getByText("editor")).toBeInTheDocument();
   });

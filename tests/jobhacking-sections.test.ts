@@ -48,8 +48,8 @@ describe("JobHacking — pages and sections", () => {
     expect(jhSectionsFor("narrative").map((s) => s.label)).toEqual(["Contact details", "Headline", "Bridge story", "Core competencies"]);
   });
 
-  it("True North is exactly Target industry · Target roles · Seniority · Salary range · Location · Company type", () => {
-    expect(jhSectionsFor("true-north").map((s) => s.label)).toEqual(["Target industry", "Target roles", "Seniority", "Salary range", "Location", "Company type"]);
+  it("True North is exactly Target industry · Target roles · Seniority · Salary range · Location · Company type · Boundaries", () => {
+    expect(jhSectionsFor("true-north").map((s) => s.label)).toEqual(["Target industry", "Target roles", "Seniority", "Salary range", "Location", "Company type", "Boundaries"]);
   });
 
   it("Target companies is the Packer's three ranked lists, then the watchlist (decision 2026-11-05)", () => {
@@ -61,7 +61,7 @@ describe("JobHacking — pages and sections", () => {
   it("Artefacts is the Packer's story bank, the master CV, then the LinkedIn profile (decision 2026-11-05)", () => {
     expect(jhSectionsFor("artefacts").map((s) => s.label)).toEqual(["Story Bank", "Master CV", "LinkedIn profile"]);
     expect(jhSectionsFor("artefacts").map((s) => s.key)).toEqual(["story-bank", "master-cv", "linkedin-profile"]);
-    expect(JH_SECTIONS.length).toBe(17);
+    expect(JH_SECTIONS.length).toBe(18);
   });
 
   it("deep-links each section on its own page and parses ?section= per page", () => {
@@ -141,7 +141,7 @@ describe("JobHacking — rows", () => {
   });
 
   it("returns a page's rows in that page's order", () => {
-    expect(jhRowsFor(jhSectionsFor("true-north"), jhSectionSummaries({ setup, profile })).map((r) => r.key)).toEqual(["industry", "roles", "seniority", "salary", "location", "company-type"]);
+    expect(jhRowsFor(jhSectionsFor("true-north"), jhSectionSummaries({ setup, profile })).map((r) => r.key)).toEqual(["industry", "roles", "seniority", "salary", "location", "company-type", "boundaries"]);
   });
 });
 

@@ -57,7 +57,7 @@ describe("profile sections — the registry", () => {
   });
 
   it("maps every editable section of the file to a page section a member can go to; the artefacts have none yet", () => {
-    expect(Object.keys(FILE_SECTIONS)).toEqual(["northstar", "contact", "targeting", "watchlist", "companyLists", "notes", "cv", "artefacts", "linkedin"]);
+    expect(Object.keys(FILE_SECTIONS)).toEqual(["northstar", "contact", "targeting", "watchlist", "companyLists", "notes", "cv", "artefacts", "linkedin", "narrative", "jhg"]);
     for (const f of Object.values(FILE_SECTIONS)) if (f.edit) expect(ACTIVE_SECTIONS.some((s) => s.key === f.edit)).toBe(true);
     expect(FILE_SECTIONS.watchlist.edit).toBe("companies");
     expect(FILE_SECTIONS.artefacts.edit).toBeNull();

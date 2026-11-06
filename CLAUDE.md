@@ -36,6 +36,13 @@
   `linkedin` section (`headline · about · experience · featured · skills · education · certifications` — LinkedIn's own sections, one
   pasteable block each, measured against LinkedIn's limits, never cut) through `LinkedinProfilePanel.tsx`. The URL stays
   `contact.linkedin`; never add an open-to-work block there (that is the goal).
+  **The four Packer files** (decision 2026-11-07, `docs/UX_JOBHACKING.md §4, §4b, §5`): the Packer writes `narrative.yml · true-north.yml ·
+  target-companies.yml · artefacts.yml`, subsets of the one schema; JobHacking → Settings is four slots (`lib/jobhacking/profile-files.ts`),
+  the shared `ProfileUploadSheet` takes several files, and an upload **merges key by key** (`mergeProfile`) — never replace a section whole,
+  never drop a field a file doesn't mention. Each file's `jhg` block (the workbook: identity, boundaries, titles, clusters, postings, company
+  research, scores, story facts, CV rules) is stored on `CareerOpsSetupV2.jhg` and shown **read-only beside the field it explains** through
+  `components/jobhacking/FileFacts.tsx` — never as a page of its own, never editable. `public/*.example.yml` are the Packer's samples and
+  `tests/profile-files-examples.test.ts` is the contract; change the schema and update them together.
 
 ## Design
 

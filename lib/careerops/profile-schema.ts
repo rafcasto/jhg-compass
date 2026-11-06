@@ -17,7 +17,7 @@ export const PROFILE_SCHEMA_VERSION = 1;
 export interface SchemaError { path: string; message: string }
 export interface SchemaResult { ok: boolean; errors: SchemaError[]; warnings: string[] }
 
-export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "companyLists", "notes", "cv", "narrative", "stories", "snapshots", "linkedin"] as const;
+export const PROFILE_TOP_KEYS = ["version", "goal", "contact", "policy", "personalization", "watchlist", "companyLists", "notes", "cv", "narrative", "stories", "snapshots", "linkedin", "jhg"] as const;
 
 // `location` is in the storage model (CareerOpsContact → candidate.location) and in every export; the file must take it back.
 const CONTACT_KEYS = ["title", "phone", "linkedin", "github", "portfolio", "location"] as const;
@@ -27,8 +27,19 @@ const COMPANY_KEYS = ["name", "careersUrl", "enabled", "provider", "apiUrl"] as 
 // companyLists — the Packer's ranked lists (added 2026-11-05). `all` is the whole field, shown as "Top 40".
 export const COMPANY_LIST_KEYS = ["top3", "top10", "all"] as const;
 export const COMPANY_TREND_KEYS = ["sunrise", "sunset", "unclassified"] as const;
-const RANKED_KEYS = ["rank", "name", "industry", "subSector", "companyType", "careersUrl", "careersUrlStatus"] as const;
-export const CAREERS_URL_STATUSES = ["confirmed", "opened_by_coach", "none"] as const;
+const RANKED_KEYS = ["rank", "name", "industry", "subSector", "companyType", "careersUrl", "careersUrlStatus", "scores"] as const;
+export const CAREERS_URL_STATUSES = ["confirmed", "opened_by_coach", "corrected", "none"] as const;
+/** The Packer's scores on a ranked company — each 1–5, `total` their sum. */
+export const SCORE_KEYS = ["growth", "interest", "access", "proof", "total"] as const;
+// The artefact rows as the Packer writes them since 2026-11-07: STAR-R stories, snapshots with their context, proof points with a URL.
+export const PROOF_POINT_KEYS = ["name", "heroMetric", "url"] as const;
+export const STORY_KEYS = ["id", "title", "situation", "task", "action", "result", "reflection", "provenance"] as const;
+export const SNAPSHOT_KEYS = ["company", "storyId", "title", "context", "challenge", "role", "activities", "results", "relevance", "keyDecisions"] as const;
+const SNAPSHOT_LIST_KEYS = ["activities", "results", "keyDecisions"] as const;
+export const NARRATIVE_KEYS = ["proofPoints", "headline", "superpowers"] as const;
+// jhg — the JobHackers workbook the four Packer files carry (added 2026-11-07). One spec per block, checked like the rest.
+export const JHG_KEYS = ["progress", "identity", "narrative", "trueNorth", "targetCompanies", "artefacts"] as const;
+export const JHG_FILE_KEYS = ["narrative", "trueNorth", "targetCompanies", "artefacts"] as const;
 // linkedin — one block per LinkedIn section (added 2026-11-05). Text limits are LinkedIn's own; a block over
 // its limit is kept whole and said once — the panel shows it as over, which is the point of knowing the limit.
 export const LINKEDIN_KEYS = ["headline", "about", "experience", "featured", "skills", "education", "certifications"] as const;
@@ -37,7 +48,7 @@ const LINKEDIN_EXPERIENCE_KEYS = ["title", "company", "location", "start", "end"
 export const LINKEDIN_LIMITS = { headline: 220, about: 2600, description: 2000, skills: 50, roleSkills: 5 } as const;
 
 /** Row caps, from coercePersonalization / the watchlist editor / the Packer spec. */
-export const ROW_CAPS = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8, companies: 25, authorizedIn: 50, proofPoints: 50, stories: 50, snapshots: 50, rankedCompanies: 50, experience: 20, featured: 10, education: 10, certifications: 20 } as const;
+export const ROW_CAPS = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8, companies: 25, authorizedIn: 50, proofPoints: 50, stories: 50, snapshots: 50, rankedCompanies: 50, experience: 20, featured: 10, education: 10, certifications: 20, jhgRows: 100 } as const;
 /** Prose caps the importer truncates to. */
 export const TEXT_CAPS = { exitNarrative: 1200, crossCuttingAdvantage: 600, compTargets: 800 } as const;
 
@@ -111,7 +122,81 @@ class Checker {
   textCap(v: unknown, path: string, cap: number) {
     if (typeof v === "string" && v.length > cap) this.warnings.push(`${path} is ${v.length} characters — trimmed to ${cap}`);
   }
+
+  /** A mapping against a declared shape: every key named, every value the kind it says. */
+  shape(v: unknown, path: string, spec: Shape): void {
+    const m = this.mapping(v, path, Object.keys(spec));
+    if (!m) return;
+    for (const [k, kind] of Object.entries(spec)) this.kind(m[k], path ? `${path}.${k}` : k, kind);
+  }
+
+  private kind(v: unknown, path: string, kind: Kind): void {
+    if (absent(v)) return;
+    if (kind === "string") { this.string(v, path); return; }
+    if (kind === "number") { this.number(v, path); return; }
+    if (kind === "string[]") { this.stringList(v, path); return; }
+    if ("map" in kind) { this.shape(v, path, kind.map); return; }
+    if ("record" in kind) {
+      const m = this.mapping(v, path, kind.keys);
+      if (m) for (const k of kind.keys) this.kind(m[k], `${path}.${k}`, kind.record);
+      return;
+    }
+    // rows
+    if (!Array.isArray(v)) { this.errors.push({ path, message: `must be a list, got ${describe(v)}` }); return; }
+    v.forEach((row, i) => {
+      const p = `${path}[${i}]`;
+      const r = this.mapping(row, p, Object.keys(kind.rows));
+      if (!r) { if (!absent(row)) return; this.errors.push({ path: p, message: "empty entry" }); return; }
+      for (const [k, kk] of Object.entries(kind.rows)) this.kind(r[k], `${p}.${k}`, kk);
+      for (const k of kind.required ?? []) if (absent(r[k]) || (typeof r[k] === "string" && !(r[k] as string).trim())) this.errors.push({ path: p, message: `missing ${k}` });
+    });
+    if (v.length > ROW_CAPS.jhgRows) this.warnings.push(`${path} has ${v.length} entries — only the first ${ROW_CAPS.jhgRows} are kept`);
+  }
 }
+
+// A tiny declarative shape language for the workbook: enough to say "a list of rows with these string keys",
+// no more. Hand-written on purpose (house style — no zod), and read by the coercer in maleta.ts too.
+export type Kind = "string" | "number" | "string[]" | { map: Shape } | { rows: Shape; required?: readonly string[] } | { record: Kind; keys: readonly string[] };
+export type Shape = Record<string, Kind>;
+
+export const SCORES_SHAPE: Shape = Object.fromEntries(SCORE_KEYS.map((k) => [k, "number"]));
+
+export const JHG_SHAPE: Shape = {
+  progress: { record: { map: { status: "string", updated: "string" } }, keys: JHG_FILE_KEYS },
+  identity: { map: { fullName: "string", email: "string", city: "string", country: "string", location: "string", timezone: "string", outputLanguage: "string", alternateEmails: "string[]", preferredChannel: "string", contactNote: "string" } },
+  narrative: { map: { leadSkills: "string[]", bridgeStoryOneLine: "string" } },
+  trueNorth: { map: {
+    boundaries: { map: {
+      currency: "string", salaryLower: "string", salaryUpper: "string", salaryFloor: "string",
+      authorizedIn: "string[]", needsSponsorship: "string", visaStatus: "string",
+      willWorkIn: "string", exclude: "string", remote: "string", localHybrid: "string", relocate: "string", remoteTravel: "string",
+      hardNos: "string[]", cultureMustHaves: "string[]", deprioritizeIfAbsent: "string", softDislikes: "string[]",
+      noticePeriodDays: "number", excludeLevels: "string[]", neverApply: "string[]", negotiationLines: "string[]",
+    } },
+    postings: { rows: { title: "string", company: "string", location: "string", url: "string", phrases: "string[]", verified: "string" }, required: ["title"] },
+    keepers: "string[]",
+    titles: { map: { target: "string[]", analog: "string[]", exclude: "string[]" } },
+    clusters: { rows: { name: "string", titles: "string[]", axes: "string[]", buys: "string", level: "string", fit: "string" }, required: ["name"] },
+    industries: { rows: { name: "string", subSectors: { rows: { name: "string", growthSignal: "string", source: "string", outlook: "string", confirmed: "string" }, required: ["name"] } }, required: ["name"] },
+    companyType: "string",
+  } },
+  targetCompanies: { map: {
+    companies: { rows: {
+      rank: "number", name: "string", companyType: "string", inspiredBy: "string", industry: "string", subSector: "string", outlook: "string", location: "string", website: "string",
+      growthSignal: "string", growthSource: "string", knownContact: "string", careersUrl: "string", careersUrlStatus: "string", scores: { map: SCORES_SHAPE },
+    }, required: ["name"] },
+    challenges: { rows: { company: "string", challenge: "string", resolution: "string" }, required: ["company"] },
+    top10: { rows: { rank: "number", name: "string", careersUrl: "string", careersUrlStatus: "string", careersUrlNote: "string", hiringAuthorityTitle: "string", knownPerson: "string", thesis: "string", businessProblem: "string", sayItLoud: "string" }, required: ["name"] },
+    top3: { rows: { name: "string", whyNow: "string", firstMove: "string", byDate: "string" }, required: ["name"] },
+  } },
+  artefacts: { map: {
+    storyFacts: { rows: { id: "string", title: "string", role: "string", leadSkill: "string", numbers: "string[]", sourceStatus: "string", sourceNote: "string" }, required: ["title"] },
+    currentDomain: "string",
+    cvHouseRules: "string[]",
+    lockedSections: "string[]",
+    languageLearning: { rows: { language: "string", currentLevel: "string", targetLevel: "string", targetDate: "string", sentence: "string", countries: "string[]" }, required: ["language"] },
+  } },
+};
 
 function describe(v: unknown): string {
   if (v === null) return "nothing";
@@ -220,10 +305,11 @@ export function validateProfileFile(doc: unknown): SchemaResult {
           if (!r) { if (!absent(row)) return; c.errors.push({ path: p, message: "empty entry" }); return; }
           c.number(r.rank, `${p}.rank`);
           for (const f of ["name", "industry", "subSector", "companyType", "careersUrl", "careersUrlStatus"] as const) c.string(r[f], `${p}.${f}`);
+          c.shape(r.scores, `${p}.scores`, SCORES_SHAPE);
           if (!(typeof r.name === "string" && r.name.trim())) c.errors.push({ path: p, message: "missing name" });
-          // A status outside the three is a value, not a shape: kept as unknown, said once.
+          // A status outside the four is a value, not a shape: kept as unknown, said once.
           else if (typeof r.careersUrlStatus === "string" && !(CAREERS_URL_STATUSES as readonly string[]).includes(r.careersUrlStatus)) {
-            c.warnings.push(`${p}.careersUrlStatus is "${r.careersUrlStatus}" — expected confirmed, opened_by_coach or none; ignored`);
+            c.warnings.push(`${p}.careersUrlStatus is "${r.careersUrlStatus}" — expected confirmed, opened_by_coach, corrected or none; ignored`);
           }
         });
         if (rows.length > ROW_CAPS.rankedCompanies) c.warnings.push(`${path} has ${rows.length} entries — only the first ${ROW_CAPS.rankedCompanies} are kept`);
@@ -234,24 +320,32 @@ export function validateProfileFile(doc: unknown): SchemaResult {
   c.string(doc.notes, "notes");
   c.string(doc.cv, "cv");
 
-  // artefacts — narrative.proofPoints · stories · snapshots (Packer spec; added 2026-11-03)
-  const nar = c.mapping(doc.narrative, "narrative", ["proofPoints"]);
-  if (nar) c.rows(nar.proofPoints, "narrative.proofPoints", ["name", "heroMetric"], ["name"], ROW_CAPS.proofPoints);
-  c.rows(doc.stories, "stories", ["id", "title", "result", "provenance"], ["title"], ROW_CAPS.stories);
+  // artefacts — narrative.proofPoints · stories · snapshots (Packer spec; added 2026-11-03), plus the
+  // narrative headline and superpowers, STAR-R stories and snapshot context (the four-file Packer, 2026-11-07)
+  const nar = c.mapping(doc.narrative, "narrative", NARRATIVE_KEYS);
+  if (nar) {
+    c.rows(nar.proofPoints, "narrative.proofPoints", PROOF_POINT_KEYS, ["name"], ROW_CAPS.proofPoints);
+    c.string(nar.headline, "narrative.headline");
+    c.stringList(nar.superpowers, "narrative.superpowers");
+  }
+  c.rows(doc.stories, "stories", STORY_KEYS, ["title"], ROW_CAPS.stories);
   if (!absent(doc.snapshots)) {
     if (!Array.isArray(doc.snapshots)) c.errors.push({ path: "snapshots", message: `must be a list, got ${describe(doc.snapshots)}` });
     else {
       doc.snapshots.forEach((row, i) => {
         const path = `snapshots[${i}]`;
-        const r = c.mapping(row, path, ["company", "storyId", "title", "results"]);
+        const r = c.mapping(row, path, SNAPSHOT_KEYS);
         if (!r) { if (!absent(row)) return; c.errors.push({ path, message: "empty entry" }); return; }
-        for (const k of ["company", "storyId", "title"] as const) c.string(r[k], `${path}.${k}`);
-        c.stringList(r.results, `${path}.results`);
+        for (const k of SNAPSHOT_KEYS) if (!(SNAPSHOT_LIST_KEYS as readonly string[]).includes(k)) c.string(r[k], `${path}.${k}`);
+        for (const k of SNAPSHOT_LIST_KEYS) c.stringList(r[k], `${path}.${k}`);
         if (!(typeof r.company === "string" && r.company.trim())) c.errors.push({ path, message: "missing company" });
       });
       if (doc.snapshots.length > ROW_CAPS.snapshots) c.warnings.push(`snapshots has ${doc.snapshots.length} entries — only the first ${ROW_CAPS.snapshots} are kept`);
     }
   }
+
+  // jhg — the workbook block each of the four files carries (added 2026-11-07)
+  c.shape(doc.jhg, "jhg", JHG_SHAPE);
 
   // linkedin — headline · about · experience · featured · skills · education · certifications (added 2026-11-05)
   const li = c.mapping(doc.linkedin, "linkedin", LINKEDIN_KEYS);
