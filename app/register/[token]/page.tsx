@@ -42,10 +42,13 @@ export default function RegisterPage() {
       .then((r) => r.json())
       .then((d) => {
         if (d.valid) { setState("ok"); setLockedEmail(d.email ?? null); if (d.email) setEmail(d.email); }
+        // An already-claimed link means the account exists: send them to sign in
+        // instead of an error page. Expired / unknown links keep their message.
+        else if (d.reason === "used") router.replace("/login");
         else { setState("invalid"); setReason(d.reason); }
       })
       .catch(() => { setState("invalid"); setReason("not_found"); });
-  }, [token]);
+  }, [token, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,8 +62,9 @@ export default function RegisterPage() {
       if (!res.ok || !d.ok) {
         // An expired link mid-flow drops the user into the expired experience.
         if (d.error === "expired") { setState("invalid"); setReason("expired"); return; }
+        // Claimed between validation and submit → the account exists, go sign in.
+        if (d.error === "used") { router.replace("/login"); return; }
         const map: Record<string, string> = {
-          used: "This link has already been used.",
           email_mismatch: "This link is for a different email address.",
           weak_password: "Password must be at least 6 characters.",
         };
@@ -96,8 +100,9 @@ export default function RegisterPage() {
       );
     }
 
-    // Used / not-found links keep the generic message, with the meetup as a fallback.
-    const msg = reason === "used" ? t("auth.register.invalidUsed") : t("auth.register.invalidDefault");
+    // Not-found links keep the generic message, with the meetup as a fallback
+    // (used links never reach here — they redirect to /login above).
+    const msg = t("auth.register.invalidDefault");
     return (
       <div className="min-h-screen grid place-items-center px-4 text-center bg-jh-paper">
         <div className="card p-8 max-w-sm">
