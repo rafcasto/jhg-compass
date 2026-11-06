@@ -1,0 +1,415 @@
+version: 1
+contact:
+  title: "Delivery Lead for SaaS teams scaling past product–market fit"
+personalization:
+  adaptiveFraming:
+    - role: "Delivery reliability under growth"
+      emphasize: "Cadence and incident numbers first; the person who made releases boring while the team doubled"
+      proof: "cv.md — Fortnightly release train, Incident halving, Cadence playbook reuse"
+    - role: "Engineering operations that scale"
+      emphasize: "Cost and on-call outcomes; the tooling decisions and what they removed"
+      proof: "cv.md — On-call redesign, CI spend cut, Dependency board"
+    - role: "Customer promises kept"
+      emphasize: "Dated commitments met; lead with the migration programme and the enterprise dates kept"
+      proof: "cv.md — Tenant migration programme, Enterprise dates kept"
+  crossCuttingAdvantage: "I measure delivery in numbers the business already tracks, cadence, incidents and dates kept, so engineering and leadership argue about the same facts. I remove process before I add it. I have done this at 40 and at 110 engineers."
+  portfolio:
+    url: "https://ana-ferreira.example/release-cadence-playbook"
+    description: "The release-cadence playbook: monthly to fortnightly across 9 teams in 2 quarters"
+    whenToShare: "Delivery Lead, Engineering Operations Manager; after a first conversation that names release pain"
+notes: |-
+  Hard no's (do not apply): on-site 5 days; hands-on coding roles; defence or gambling sectors
+  Culture must-haves: engineers present in planning; incidents reviewed without blame; no unpaid take-home over 6 hours; deprioritise when absent: Y
+  Soft dislikes (lower, not a no): pre-seed stage; agencies; companies under 30 staff
+  Notice period: 28 days
+  Never apply: Rapid Freight Systems; Kiwi Bet Online
+  CV house rules: Single column, standard section headings, no tables, no photo, no graphics, nothing in header/footer; Contact details in the body only; standard fonts 10–12 pt when rendered; .docx or PDF only
+  Top 3 right now: Kauri Logistics Cloud, Harbourline Health Tech, Tōtara Payments
+narrative:
+  proofPoints:
+    - name: "Fortnightly release train"
+      url: "https://ana-ferreira.example/release-cadence-playbook"
+      heroMetric: "Monthly to fortnightly releases, 9 teams"
+    - name: "Incident halving"
+      url: "https://www.linkedin.com/posts/example-ana-ferreira-incidents"
+      heroMetric: "Incidents cut from 14 to 7 a month"
+    - name: "On-call redesign"
+      heroMetric: "Out-of-hours pages from 22 to 6 a month"
+    - name: "Tenant migration programme"
+      url: "https://ana-ferreira.example/tenant-migration"
+      heroMetric: "240 tenants migrated on the sold date"
+    - name: "Cadence playbook reuse"
+      heroMetric: "Playbook reused by 2 other SaaS teams"
+    - name: "Operational Excellence award"
+      heroMetric: "Operational Excellence award, 2023"
+    - name: "Dependency board"
+      heroMetric: "Blocked work from about 30% to 12%"
+    - name: "Enterprise dates kept"
+      heroMetric: "18 of 18 enterprise dates kept"
+    - name: "CI spend cut"
+      heroMetric: "CI spend down 31% in 1 quarter"
+stories:
+  - id: "S1"
+    title: "Fortnightly release train"
+    situation: "a 110-engineer logistics SaaS doubling in size"
+    task: "Own fortnightly release train"
+    action: "a single release train with team-owned readiness checks"
+    result: "Increased release frequency from monthly to fortnightly across 9 teams in 2 quarters through a single release train."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "verified"
+  - id: "S2"
+    title: "Incident halving"
+    situation: "rising incident load during rapid hiring"
+    task: "Own incident halving"
+    action: "blameless reviews paired with service ownership"
+    result: "Decreased production incidents from 14 to 7 a month in 12 months by pairing blameless reviews with service ownership."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "verified"
+  - id: "S3"
+    title: "On-call redesign"
+    situation: "engineers leaving over on-call load"
+    task: "Own on-call redesign"
+    action: "an on-call rota built around service ownership"
+    result: "Suppressed out-of-hours pages from 22 to 6 a month in 1 quarter by redesigning the on-call rota."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "verified"
+  - id: "S4"
+    title: "Tenant migration programme"
+    situation: "a platform migration promised to enterprise customers"
+    task: "Own tenant migration programme"
+    action: "a dated migration plan agreed with every account owner"
+    result: "Avoided renewal losses while migrating 240 enterprise tenants in 11 months, landing on the sold date."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "verified"
+  - id: "S5"
+    title: "Cadence playbook reuse"
+    situation: "teams asking how FreightDesk released so often"
+    task: "Own cadence playbook reuse"
+    action: "a written playbook with templates"
+    result: "Replicated the fortnightly release cadence at a second company and with 2 other Wellington SaaS teams."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "verified"
+  - id: "S6"
+    title: "Operational Excellence award"
+    situation: "company-wide annual awards"
+    task: "Own operational excellence award"
+    action: "results tracked in the release and incident dashboards"
+    result: "Received the 2023 Operational Excellence award for release and incident results across engineering."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "verified"
+  - id: "S7"
+    title: "Dependency board"
+    situation: "work stalling between 5 teams"
+    task: "Own dependency board"
+    action: "one board every team updated before planning"
+    result: "Created a cross-team dependency board that cut blocked work from about 30% to 12% in 6 months."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "estimate"
+  - id: "S8"
+    title: "Enterprise dates kept"
+    situation: "enterprise contracts with dated deliverables"
+    task: "Own enterprise dates kept"
+    action: "a weekly commitments review with account owners"
+    result: "Maintained 18 of 18 committed enterprise delivery dates over 24 months across 3 product lines."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "verified"
+  - id: "S9"
+    title: "CI spend cut"
+    situation: "cloud costs flagged by the CFO"
+    task: "Own ci spend cut"
+    action: "tool consolidation and retiring unused jobs"
+    result: "Cut CI spend by 31% in 1 quarter by consolidating 3 pipeline tools into one."
+    reflection: "Measure the outcome the business already watches before changing anything."
+    provenance: "verified"
+snapshots:
+  - company: "Kauri Logistics Cloud"
+    storyId: "S1"
+    title: "Fortnightly release train"
+    context: "Logistics SaaS doubling its engineering team"
+    challenge: "9 teams shipping on separate calendars"
+    role: "Delivery Lead"
+    activities:
+      - "Mapped every team's release steps"
+      - "Introduced one release train with readiness checks"
+      - "Published the cadence and the numbers weekly"
+    results:
+      - "9 teams"
+      - "2 quarters"
+    relevance: "Kauri is doubling engineering after its Series B; the same cadence problem"
+    keyDecisions:
+      - "Kept team-owned readiness checks instead of a central release team"
+  - company: "Harbourline Health Tech"
+    storyId: "S4"
+    title: "Tenant migration programme"
+    context: "Platform migration promised to enterprise customers"
+    challenge: "240 tenants with contractual dates"
+    role: "Programme owner"
+    activities:
+      - "Agreed a dated plan with every account owner"
+      - "Ran a weekly commitments review"
+      - "Sequenced tenants by contract risk"
+    results:
+      - "240"
+      - "11 months"
+    relevance: "Harbourline's EHR roll-out has the same dated go-lives"
+  - company: "Tōtara Payments"
+    storyId: "S2"
+    title: "Incident halving"
+    context: "Payments-adjacent SaaS with rising incidents"
+    challenge: "14 incidents a month during rapid hiring"
+    role: "Delivery Lead"
+    activities:
+      - "Introduced blameless reviews"
+      - "Paired reviews with service ownership"
+      - "Tracked incidents per service monthly"
+    results:
+      - "14"
+      - "7"
+      - "12 months"
+    relevance: "Tōtara freezes releases around peak trading because of incident risk"
+linkedin:
+  headline: "Delivery Lead for SaaS scale-ups · Monthly to fortnightly releases across 9 teams · Incidents cut from 14 to 7 a month"
+  about: |-
+    I make releases boring at SaaS companies that are growing fast.
+
+    At FreightDesk Software I moved nine teams from monthly to fortnightly releases in 2 quarters while engineering doubled, and production incidents fell from 14 to 7 a month in 12 months. Before that, at Ledgerline, I redesigned on-call so out-of-hours pages dropped from 22 to 6 a month in 1 quarter.
+
+    What the work looks like: one release train that every team owns, blameless reviews tied to service ownership, and a weekly commitments review so enterprise dates hold. I measure delivery in the numbers the business already tracks, so engineering and leadership argue about the same facts.
+
+    I'm looking for a Delivery Lead role at a SaaS scale-up where releases have started to hurt. If that's your team, message me here.
+  experience:
+    - title: "Delivery Lead"
+      company: "FreightDesk Software"
+      location: "Wellington, New Zealand"
+      start: "2022-03"
+      end: ""
+      description: |-
+        Led delivery for a logistics SaaS engineering organisation that doubled in size across nine teams.
+
+        Moved release cadence from monthly to fortnightly across 9 teams in 2 quarters, by introducing a single release train with team-owned readiness checks
+        Halved production incidents from 14 to 7 a month in 12 months, by pairing blameless reviews with service ownership
+      skills:
+        - "Release management"
+        - "Incident management"
+        - "Programme delivery"
+    - title: "Delivery Manager (promoted from Operations Analyst)"
+      company: "Ledgerline"
+      location: "Auckland, New Zealand"
+      start: "2019-07"
+      end: "2022-02"
+      description: |-
+        Ran delivery for an accounting-integrations SaaS team selling to accounting firms in New Zealand and Australia.
+
+        Reduced out-of-hours pages from 22 to 6 a month in 1 quarter, by redesigning the on-call rota around service ownership
+      skills:
+        - "Incident management"
+        - "On-call design"
+  featured:
+    - kind: "document"
+      title: "The release-cadence playbook: monthly to fortnightly across 9 teams in 2 quarters"
+      url: "https://ana-ferreira.example/release-cadence-playbook"
+    - kind: "article"
+      title: "How 240 tenants moved on the date we sold"
+      url: "https://ana-ferreira.example/tenant-migration"
+    - kind: "post"
+      title: "Halving incidents without a blame culture"
+      url: "https://www.linkedin.com/posts/example-ana-ferreira-incidents"
+  skills:
+    - "Release management"
+    - "Incident management"
+    - "Programme delivery"
+    - "On-call design"
+    - "Cost of delivery"
+  education:
+    - school: "Victoria University of Wellington"
+      degree: "Bachelor of Commerce"
+      field: "Information Systems"
+      start: "2014"
+      end: "2017"
+  certifications:
+    - name: "ICAgile Certified Professional in Agile Coaching"
+      issuer: "ICAgile"
+      issued: "2021-05"
+      url: ""
+cv: |-
+  # CV -- Ana Ferreira
+
+  **Headline:** Delivery Lead for SaaS teams scaling past product–market fit | Release management | Incident reduction | Customer commitments
+  **Location:** Wellington, New Zealand
+  **Email:** ana.ferreira@mail.example
+  **Phone:** +64 21 555 0199
+  **LinkedIn:** https://www.linkedin.com/in/example-ana-ferreira
+  **Portfolio:** https://ana-ferreira.example/release-cadence-playbook
+
+  ## Professional Summary
+
+  Delivery Lead specialising in release management for B2B SaaS scale-ups, moving 9 teams from monthly to fortnightly releases in 2 quarters. Known for incident reduction from 14 to 7 a month, customer commitments kept at 18 of 18, and cross-team dependencies cleared from about 30% to 12% blocked work. Experienced in release cadence, on-call design and CI tooling, with a focus on predictable delivery while headcount doubles.
+
+  ## Work Experience
+
+  ### FreightDesk Software -- Wellington, New Zealand
+
+  **Delivery Lead**
+  March 2022 – Present
+
+  Led delivery for a logistics SaaS engineering organisation that doubled in size across nine teams.
+
+  - Moved release cadence from monthly to fortnightly across 9 teams in 2 quarters, by introducing a single release train with team-owned readiness checks
+  - Halved production incidents from 14 to 7 a month in 12 months, by pairing blameless reviews with service ownership
+  - Migrated 240 enterprise tenants in 11 months on the sold date, by agreeing a dated plan with every account owner
+  - Kept 18 of 18 committed enterprise delivery dates over 24 months across 3 product lines, by running a weekly commitments review
+  - Cut CI spend by 31% in 1 quarter, by consolidating 3 pipeline tools into one
+
+  ### Ledgerline -- Auckland, New Zealand
+
+  **Delivery Manager (promoted from Operations Analyst)**
+  July 2019 – February 2022
+
+  Ran delivery for an accounting-integrations SaaS team selling to accounting firms in New Zealand and Australia.
+
+  - Reduced out-of-hours pages from 22 to 6 a month in 1 quarter, by redesigning the on-call rota around service ownership
+  - Cut blocked work from about 30% to 12% of tickets in 6 months, by creating one cross-team dependency board every team updated before planning
+
+  ## Projects
+
+  - **Fortnightly release train** -- 9 teams on separate calendars → one release train, monthly to fortnightly in 2 quarters
+  - **Tenant migration programme** -- platform migration promised to enterprise customers → 240 tenants in 11 months, on the sold date
+  - **Incident halving** -- rising incidents during rapid hiring → 14 to 7 a month in 12 months
+  - **Cadence playbook reuse** -- the release playbook adopted by 2 other Wellington SaaS teams
+
+  ## Education
+
+  - Bachelor of Commerce (Information Systems), Victoria University of Wellington (2017)
+
+  ## Certifications
+
+  - ICAgile Certified Professional in Agile Coaching, ICAgile, 2021
+
+  ## Awards
+
+  - Operational Excellence award, FreightDesk Software, 2023
+
+  ## Skills
+
+  - **Core expertise:** Release management; release cadence; incident reduction; on-call design; cross-team dependencies; customer commitments
+  - **Adjacent credibility:** Programme delivery; stakeholder reporting; cost of delivery
+  - **Industry keywords:** B2B SaaS; logistics software; enterprise migrations
+  - **Tools and software:** Jira; Linear; GitHub Actions; Buildkite
+  - **Languages:** English (native); te reo Māori (beginner)
+jhg:
+  progress:
+    artefacts:
+      status: "complete"
+      updated: "2026-11-06"
+  identity:
+    fullName: "Ana Ferreira"
+    email: "ana.ferreira@mail.example"
+  artefacts:
+    storyFacts:
+      - id: "S1"
+        title: "Fortnightly release train"
+        role: "FreightDesk Software · Delivery Lead"
+        leadSkill: "Release planning"
+        numbers:
+          - "9 teams"
+          - "2 quarters"
+        sourceStatus: "verified"
+        sourceNote: "Release dashboard, Q2 2023"
+      - id: "S2"
+        title: "Incident halving"
+        role: "FreightDesk Software · Delivery Lead"
+        leadSkill: "Incident follow-through"
+        numbers:
+          - "14"
+          - "7"
+          - "12 months"
+        sourceStatus: "verified"
+        sourceNote: "Incident register, 2023–2024"
+      - id: "S3"
+        title: "On-call redesign"
+        role: "Ledgerline · Delivery Manager"
+        leadSkill: "Incident follow-through"
+        numbers:
+          - "22"
+          - "6"
+          - "1 quarter"
+        sourceStatus: "verified"
+        sourceNote: "2021 performance review"
+      - id: "S4"
+        title: "Tenant migration programme"
+        role: "FreightDesk Software · Delivery Lead"
+        leadSkill: "Cross-team coordination"
+        numbers:
+          - "240"
+          - "11 months"
+        sourceStatus: "verified"
+        sourceNote: "Migration programme debrief, 2024"
+      - id: "S5"
+        title: "Cadence playbook reuse"
+        role: "FreightDesk Software · Delivery Lead"
+        leadSkill: "Release planning"
+        numbers:
+          - "2"
+        sourceStatus: "verified"
+        sourceNote: "LinkedIn recommendation from a peer team lead"
+      - id: "S6"
+        title: "Operational Excellence award"
+        role: "FreightDesk Software · Delivery Lead"
+        leadSkill: "Release planning"
+        numbers:
+          - "2023"
+        sourceStatus: "verified"
+        sourceNote: "Award certificate"
+      - id: "S7"
+        title: "Dependency board"
+        role: "Ledgerline · Delivery Manager"
+        leadSkill: "Cross-team coordination"
+        numbers:
+          - "about 30%"
+          - "12%"
+          - "6 months"
+        sourceStatus: "estimate"
+        sourceNote: "Slack thread with the CTO; the 30% is my own count from Jira exports"
+      - id: "S8"
+        title: "Enterprise dates kept"
+        role: "FreightDesk Software · Delivery Lead"
+        leadSkill: "Cross-team coordination"
+        numbers:
+          - "18 of 18"
+          - "24 months"
+          - "3"
+        sourceStatus: "verified"
+        sourceNote: "Commitments tracker"
+      - id: "S9"
+        title: "CI spend cut"
+        role: "FreightDesk Software · Delivery Lead"
+        leadSkill: "Incident follow-through"
+        numbers:
+          - "31%"
+          - "1 quarter"
+          - "3"
+        sourceStatus: "verified"
+        sourceNote: "Finance cost report, Q1 2024"
+      - id: "S10"
+        title: "Weekly reporting automation"
+        role: "Ledgerline · Operations Analyst"
+        leadSkill: "Release planning"
+        numbers:
+          - "6 hours"
+          - "1"
+        sourceStatus: "user_cannot_confirm"
+        sourceNote: "Remembered; no artefact"
+    currentDomain: "logistics and accounting SaaS"
+    cvHouseRules:
+      - "Single column, standard section headings, no tables, no photo, no graphics, nothing in header/footer"
+      - "Contact details in the body only; standard fonts 10–12 pt when rendered; .docx or PDF only"
+    lockedSections:
+      - "Projects"
+    languageLearning:
+      - language: "te reo Māori"
+        currentLevel: "beginner"
+        targetLevel: "conversational"
+        targetDate: "end of 2027"
+        sentence: "Kei te ako ahau i te reo Māori."
+        countries:
+          - "New Zealand"

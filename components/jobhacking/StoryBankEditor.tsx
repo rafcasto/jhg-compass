@@ -34,7 +34,9 @@ export default function StoryBankEditor({ uid, source, onSaved, onCancel }: {
   async function save() {
     setBusy(true); setErr(null);
     try {
-      await setDoc(paths.careerOpsSetup(uid), { ...cleanStoryBank(d), updatedAt: Date.now() }, { merge: true });
+      const clean = cleanStoryBank(d);
+      // narrative also carries the Narrative file's headline and superpowers (2026-11-07) — keep them under the proof points.
+      await setDoc(paths.careerOpsSetup(uid), { ...clean, narrative: { ...(source?.narrative ?? {}), proofPoints: clean.narrative.proofPoints }, updatedAt: Date.now() }, { merge: true });
       setDirty(false);
       onSaved();
     } catch {

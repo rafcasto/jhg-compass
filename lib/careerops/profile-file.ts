@@ -19,6 +19,7 @@ import {
   maletaContents,
   maletaFromSetup,
   maletaToSetupPatch,
+  mergeMaleta,
   type Maleta,
   type MaletaPatch,
 } from "./maleta";
@@ -36,6 +37,12 @@ export const isProfileFileName = (name: string): boolean => /\.ya?ml$/i.test(nam
 export const profileFromSetup = maletaFromSetup;
 export const profileToSetupPatch = maletaToSetupPatch;
 export const profileContents = maletaContents;
+/**
+ * One file onto what is stored, key by key (decision 2026-11-07, the four-file Packer): the sections the
+ * file carries come back merged with the stored ones; a field the file doesn't mention is never dropped.
+ * Diff and patch both read the result, so the review says exactly what the write will do.
+ */
+export const mergeProfile = mergeMaleta;
 
 /** The profile as YAML. Key order mirrors the Packer spec (goal first, CV last). */
 export function profileToYaml(p: ProfileFile): string {
@@ -54,6 +61,8 @@ export function profileToYaml(p: ProfileFile): string {
     snapshots: p.snapshots,
     linkedin: p.linkedin,
     cv: p.cv,
+    // The workbook last, as the Packer's four files write it.
+    jhg: p.jhg,
   };
   const body = yamlDump(JSON.parse(JSON.stringify(doc)), { lineWidth: 100, noRefs: true, skipInvalid: true });
   return [
@@ -85,7 +94,7 @@ const empty = (text: string = ""): ProfileFileParse => ({ ok: false, profile: { 
  * `version: 1` schema; a shape error lists every problem with its path.
  */
 export function parseProfileFile(text: string, filename?: string): ProfileFileParse {
-  if (filename && !isProfileFileName(filename)) return empty("A profile is a .yml file. Export yours from the Profile page, or download the example and fill it in.");
+  if (filename && !isProfileFileName(filename)) return empty("A profile is a .yml file — one of the four the Packer writes, or the whole profile.yml exported from the Profile page.");
   if (!text?.trim()) return empty("That file is empty.");
   if (text.length > PROFILE_MAX_BYTES) return empty(`That file is ${Math.round(text.length / 1024)} kB — the limit is ${PROFILE_MAX_BYTES / 1024} kB.`);
 

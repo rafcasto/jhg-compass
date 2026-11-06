@@ -4,10 +4,10 @@
 // (components/profile/SectionsPage.tsx), plus Settings (the profile.yml upload):
 //
 //   /jobhacking/narrative    Contact details · Headline · Bridge story · Core competencies
-//   /jobhacking/true-north   Target industry · Target roles · Seniority · Salary range · Location · Company type
+//   /jobhacking/true-north   Target industry · Target roles · Seniority · Salary range · Location · Company type · Boundaries
 //   /jobhacking/companies    Top 3 · Top 10 · Top 40 (the Packer's ranked lists, read-only) · Watchlist
 //   /jobhacking/artefacts    Story Bank (proof points · stories · snapshots, edited on request) · Master CV · LinkedIn profile (read-only)
-//   /jobhacking/settings     Upload profile.yml
+//   /jobhacking/settings     Upload the four Packer files (narrative · true-north · target-companies · artefacts)
 //
 // Same documents as Compass (decision F, 2026-11-03): users/{uid} and
 // users/{uid}/careerOps/setup. A section here is another door onto the same
@@ -25,6 +25,7 @@ import type { Profile } from "../types";
 import { listCompanies, listCount, listSummary, type CompanyListKey } from "./company-lists";
 import { linkedinCount, linkedinSummary } from "./linkedin-profile";
 import { storyBankCounts, storyBankSummary } from "./story-bank";
+import { boundariesSummary, hasBoundaries } from "./workbook";
 
 export type JhPageKey = "narrative" | "true-north" | "companies" | "artefacts";
 
@@ -65,6 +66,8 @@ export const JH_SECTIONS = [
   { key: "salary", page: "true-north", label: "Salary range", title: "Salary range", ask: "The range you're aiming at, the floor below which you walk, and how you talk about your number." },
   { key: "location", page: "true-north", label: "Location", title: "Location", ask: "Where you'll be based, how flexible you are, and the rules on remote, hybrid and relocation." },
   { key: "company-type", page: "true-north", label: "Company type", title: "Company type", ask: "The kind of company you enjoy working for — startup, scale-up, enterprise, government." },
+  // Boundaries (2026-11-07): the True North file's hard no's, culture must-haves, soft dislikes, notice period and never-apply list. Read-only — the coach writes them.
+  { key: "boundaries", page: "true-north", label: "Boundaries", title: "Boundaries", ask: "What rules a role out before anyone scores it — hard no's, the culture you need, soft dislikes, your notice period, and the companies you will never apply to." },
   // ---- Target companies (decision 2026-11-05): the Packer's three ranked lists, read-only, then the watchlist ----
   { key: "top3", page: "companies", label: "Top 3", title: "Top 3", ask: "The three to go after first — where your research, outreach and tailored applications start this week." },
   { key: "top10", page: "companies", label: "Top 10", title: "Top 10", ask: "The ten to keep warm: your Top 3 and the next seven, so a stalled conversation never leaves you with nothing to work on." },
@@ -103,6 +106,7 @@ export function parseJhSection(raw: string | null | undefined, sections: readonl
  */
 export const JH_FILE_EDIT: Record<FileSectionKey, JhSectionKey | null> = {
   northstar: "roles", contact: "contact", targeting: "story", watchlist: "companies", companyLists: "top3", notes: null, cv: "master-cv", artefacts: "story-bank", linkedin: "linkedin-profile",
+  narrative: "headline", jhg: "boundaries",
 };
 
 // ---- what each row shows ----
@@ -146,6 +150,8 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
 
   const lists = setup?.companyLists;
   const competencies = p.crossCuttingAdvantage?.trim() ?? "";
+  const superpowers = setup?.narrative?.superpowers ?? [];
+  const jhg = setup?.jhg;
   const salaryN = [g.salary, policy.minimumSalary, p.compTargets].filter(has).length;
   const locationN = [g.city, policy.locationFlexibility, rules.length].filter(has).length;
 
@@ -153,7 +159,8 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
     borrow("contact", "contact"),
     borrow("headline", "headline"),
     borrow("story", "story"),
-    { key: "competencies", state: competencies ? "done" : "empty", summary: competencies ? clip(firstLine(competencies)) : NOT_SET },
+    // The Narrative file's superpowers count too: the row quotes them when the prose is still empty.
+    { key: "competencies", state: competencies ? "done" : superpowers.length ? "partial" : "empty", summary: competencies ? clip(firstLine(competencies)) : superpowers.length ? superpowers.join(", ") : NOT_SET, count: superpowers.length ? String(superpowers.length) : undefined },
     {
       key: "roles", state: stateOf(!!g.role?.trim(), roles.length),
       summary: join([g.role, roles.length ? plural(roles.length, "archetype") : undefined]) || NOT_SET,
@@ -167,6 +174,8 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
     },
     { key: "industry", state: g.subsector?.trim() ? "done" : "empty", summary: g.subsector?.trim() || NOT_SET },
     { key: "company-type", state: g.companyType?.trim() ? "done" : "empty", summary: g.companyType?.trim() || NOT_SET },
+    // Read, not filled in — the True North file's boundaries; "done" the moment the file carried any.
+    { key: "boundaries", state: hasBoundaries(jhg) ? "done" : "empty", summary: boundariesSummary(jhg) || NOT_IN_PROFILE },
     {
       key: "location", state: stateOf(!!g.city?.trim(), locationN),
       summary: join([g.city, policy.locationFlexibility && clip(policy.locationFlexibility, 40), rules.length ? plural(rules.length, "rule") : undefined]) || NOT_SET,

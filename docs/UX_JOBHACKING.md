@@ -109,9 +109,44 @@ Red budget: none on the read view; one Save in edit mode. `WatchlistPanel` gaine
 
 Rejected: a table for the stories (same reason as §3b); rendering snapshots as their own flat list first (a snapshot is a story pointed at a company — it belongs under the story); one Markdown blob for the LinkedIn profile like `cv` (it can't be measured against per-section limits or copied per block, which is the whole use); an *Open to work* block in `linkedin` (titles and locations are True North — one field, one home); a `url` in `linkedin` (it is `contact.linkedin`).
 
-## 4. Settings
+## 4. Settings — the four Packer files
 
-One card: a drop zone, **Upload profile** (the page's single red button), the "read in your browser, nothing saved until you confirm" line, and *What it fills in* — the four pages as rows. Drag-and-drop anywhere on the page. After an unpack, a `role="status"` line lists the updated file sections, each a link to its JobHacking section where one exists (`JH_FILE_EDIT`). No Export here, by decision; the review step's *Download current profile* (offered only when something would be replaced) still works.
+**Decision (2026-11-07, Rafael):** the Packer writes the profile as **four files, one per page of this portal** — `narrative.yml` · `true-north.yml` · `target-companies.yml` · `artefacts.yml` — and the member uploads them one at a time, as each is ready, instead of one `profile.yml`. The four files are subsets of the one schema (§5); together they are the whole profile, and CareerOps reads the merged result.
+
+**The page** is one card with **four slots** (`lib/jobhacking/profile-files.ts`, `JobHackingSettings.tsx`), the portal's row grammar: a glyph, the slot's name with the Packer's filename in mono, one mute line on what the file fills, then its state — *Uploaded 7 Nov 2026 · narrative.sample.yml · Packer: complete · 6 Nov 2026* (the member's upload record and the file's own `jhg.progress` stamp) or *Not uploaded yet* — a link to the page it fills, and one `.btn-secondary` **Upload** / **Replace**. Above the rows: *2 of 4 uploaded* and the page's one red button, **Upload files**, which takes any of the four or all at once. Drag-and-drop anywhere on the page; a dropped file lands in the slot its stamp names. Under the rows: the example files to download (the Packer's own samples, `public/*.example.yml`), and *Download everything as one profile.yml* — the safety copy, and the file a CLI checkout reads.
+
+**Which slot a file is** (`detectJhFile`): its own `jhg.progress.<file>` stamp first; then the filename (*true-north*, *target-companies*, *artefacts*, *narrative*); a file with neither, or with several stamps (a merged export), is a whole profile and fills every section it carries. A file dropped on the *Narrative* slot that turns out to be the True North file is said, not refused — it goes to True North.
+
+**The sheet** is the Profile page's `ProfileUploadSheet` (pick → review → unpack), now taking several files: each is validated on its own (a wrong shape is refused with its paths and the rest still go through), listed in the review under *Narrative file · narrative.yml — Fills Narrative*, with its diff rows, warnings and raw text, and a × to leave it out; one **Unpack 4 files** writes the lot in one `setDoc`. The review's *Download current profile* still appears when anything would be replaced.
+
+**Merge, not replace (decision H revised).** Because the files overlap — `contact` is in two, `personalization` in three, `notes` in all four — a file **adds to and replaces what it names, key by key, and never drops a field it does not mention** (`mergeProfile` in `lib/careerops/profile-file.ts`): the Artefacts file's `contact.title` lands beside the Narrative file's `contact.phone`. Lists are the one key they are: a file's `stories`, `companyLists`, `linkedin` or `watchlist.companies` replaces the stored list; the True North file's `watchlist.positive · negative` merge beside the Target companies file's `companies`. In `jhg`, `progress` and `identity` accumulate across files and each working block (`narrative · trueNorth · targetCompanies · artefacts`) belongs to its file and is replaced whole. Each file in the review diffs against what is stored **plus the files before it**, so the rows read as the write will happen; `profileDiff` itself is unchanged. The same rule applies to a whole `profile.yml` on the Compass Profile page (one sheet, one semantics).
+
+After an unpack, a `role="status"` line — *Unpacked Narrative, Artefacts — 6 sections updated:* — lists the updated file sections, each a link to its JobHacking section where one exists (`JH_FILE_EDIT`; `narrative` → Headline, `jhg` → Boundaries).
+
+### 4b. What the pages show from the files
+
+**Rule (2026-11-07):** every field the four files carry is shown on the page it belongs to, beside the field it explains, **read-only**, through one block (`components/jobhacking/FileFacts.tsx`: a `.section-label` *From your True North file*, a `dl` of label · value, lists as `.pill-visible`, one `.icon-btn` per URL, nothing red). The editors above are untouched; the member edits what they always edited, and the coach's working data sits under it.
+
+| Page · section | Under the editor, from the file |
+|---|---|
+| Narrative · Contact details | `jhg.identity` — location, time zone, preferred channel, other emails, contact note, output language |
+| Narrative · Headline | `narrative.headline` — the positioning line (*I help … through …*), pasteable |
+| Narrative · Bridge story | `jhg.narrative.bridgeStoryOneLine` |
+| Narrative · Core competencies | `narrative.superpowers` and `jhg.narrative.leadSkills` as pills; the row quotes the superpowers while the prose is empty |
+| True North · Target industry | `jhg.trueNorth.industries[]` → sub-sectors with outlook pill, growth signal, source link |
+| True North · Target roles | `jhg.trueNorth.titles` (target · analog · exclude), `keepers`, `clusters[]` (fit · level pills, titles, axes, buys), then `postings[]` as rows with the phrases, the check date and a link |
+| True North · Salary range | `jhg.trueNorth.boundaries` — range, floor, negotiation lines |
+| True North · Location | `jhg.trueNorth.boundaries` — will work in, exclude, remote, hybrid, relocate, travel, work rights, authorised in, sponsorship |
+| True North · Company type | `jhg.trueNorth.companyType` |
+| **True North · Boundaries** *(new section, read-only)* | `jhg.trueNorth.boundaries` — hard no's, culture must-haves (deprioritise when absent), soft dislikes, levels to exclude, never apply, notice period. Row: *3 hard no's · 3 must-haves · 2 never apply · 28 days' notice*. |
+| Target companies · Top 3 | each row + `jhg.targetCompanies.top3[]` by name — why now, first move, by date |
+| Target companies · Top 10 | each row + `jhg.targetCompanies.top10[]` — business problem, thesis, hiring authority, known person, careers-page note, say it loud |
+| Target companies · Top 40 | each row + `jhg.targetCompanies.companies[]` — growth signal (with source), location, known contact, found via, website; then *Challenged by your coach* (`challenges[]`) |
+| Target companies · every list | `companyLists.*[].scores` on the row's second line — *19 · G5 I5 A4 P5*, mono, mute; legend in the footer |
+| Artefacts · Story Bank | stories as STAR-R (`situation · task · action · reflection` around the result), `jhg.artefacts.storyFacts[]` by id (where, lead skill, numbers, source), snapshots with `context · challenge · role · activities · relevance · keyDecisions` behind a *more* disclosure, proof-point `url` as an icon link. The editor carries every one of these through a save. |
+| Artefacts · Master CV | `jhg.artefacts.cvHouseRules · lockedSections · currentDomain · languageLearning` |
+
+Not shown, still stored and exported: `jhg.identity.fullName · email` (the account's), `jhg.progress` (the Settings slots read it).
 
 ## 5. The file — what changed in the schema (decision A)
 
@@ -154,6 +189,31 @@ linkedin:
 
 Every reader of the file takes the new shape: the Profile page's upload, the CareerOps intake's upload (same codec), and the export. `public/profile.example.yml` carries every key.
 
+**2026-11-07 — the four-file Packer.** Validated like the rest; `public/narrative.example.yml · true-north.example.yml · target-companies.example.yml · artefacts.example.yml` are the Packer's own samples and `tests/profile-files-examples.test.ts` parses, merges and round-trips them.
+
+```yaml
+narrative:
+  headline: "I help SaaS scale-ups ship predictably …"   # new — the positioning line
+  superpowers: ["Release management", …]                 # new
+  proofPoints: [{ name, heroMetric, url }]               # url new
+stories: [{ id, title, situation, task, action, result, reflection, provenance }]     # STAR-R; situation · task · action · reflection new
+snapshots: [{ company, storyId, title, context, challenge, role, activities: [..], results: [..], relevance, keyDecisions: [..] }]
+companyLists.<list>.<trend>[]: { …, careersUrlStatus: confirmed | opened_by_coach | corrected | none, scores: { growth, interest, access, proof, total } }   # corrected + scores new
+jhg:                                                     # new — the JobHackers workbook, one block per file
+  progress: { narrative | trueNorth | targetCompanies | artefacts: { status, updated } }
+  identity: { fullName, email, city, country, location, timezone, outputLanguage, alternateEmails: [..], preferredChannel, contactNote }
+  narrative: { leadSkills: [..], bridgeStoryOneLine }
+  trueNorth: { boundaries: { currency, salaryLower, salaryUpper, salaryFloor, authorizedIn, needsSponsorship, visaStatus, willWorkIn, exclude, remote, localHybrid, relocate, remoteTravel, hardNos, cultureMustHaves, deprioritizeIfAbsent, softDislikes, noticePeriodDays, excludeLevels, neverApply, negotiationLines },
+               postings: [{ title, company, location, url, phrases, verified }], keepers: [..], titles: { target, analog, exclude },
+               clusters: [{ name, titles, axes, buys, level, fit }], industries: [{ name, subSectors: [{ name, growthSignal, source, outlook, confirmed }] }], companyType }
+  targetCompanies: { companies: [{ rank, name, companyType, inspiredBy, industry, subSector, outlook, location, website, growthSignal, growthSource, knownContact, careersUrl, careersUrlStatus, scores }],
+                     challenges: [{ company, challenge, resolution }], top10: [{ rank, name, careersUrl, careersUrlStatus, careersUrlNote, hiringAuthorityTitle, knownPerson, thesis, businessProblem, sayItLoud }],
+                     top3: [{ name, whyNow, firstMove, byDate }] }
+  artefacts: { storyFacts: [{ id, title, role, leadSkill, numbers, sourceStatus, sourceNote }], currentDomain, cvHouseRules: [..], lockedSections: [..], languageLearning: [{ language, currentLevel, targetLevel, targetDate, sentence, countries }] }
+```
+
+`jhg` is checked by one declarative shape (`JHG_SHAPE` in `profile-schema.ts`: string · number · string[] · map · rows · record) that the coercer in `maleta.ts` reads too, so the validator and the reader cannot drift. Unknown keys inside it are errors with a path like everywhere else; rows are capped at 100. Stored whole on the setup document (`CareerOpsSetupV2.jhg`), preserved through whole-document saves, exported last. A watchlist with keywords and no companies (the True North file) is a watchlist. `CareerOpsSetupV2.profileFiles` records when each slot was last unpacked and from which filename — app bookkeeping, not a profile field.
+
 ## 6. Components
 
 | | |
@@ -171,7 +231,11 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 | `components/jobhacking/JobHackingScreen.tsx` | the four pages on `SectionsPage` |
 | `components/jobhacking/TrueNorthPanel.tsx` | the five True North editors |
 | `components/jobhacking/TrueNorthStatement.tsx` | the lead |
-| `components/jobhacking/JobHackingSettings.tsx` | upload |
+| `components/jobhacking/JobHackingSettings.tsx` | the four slots (§4) |
+| `lib/jobhacking/profile-files.ts` | the four files: labels, filenames, which slot a drop is, slot status — pure, tested |
+| `lib/jobhacking/workbook.ts` | the `jhg` block as facts: identity, boundaries, titles, scores, story facts, CV rules — pure, tested |
+| `components/jobhacking/FileFacts.tsx` | the one read-only block under every editor (§4b) |
+| `components/jobhacking/WorkbookPanels.tsx` | the per-section blocks and the Boundaries section |
 | `components/profile/SectionsPage.tsx` · `SectionList.tsx` | generalised: take `SectionItem[]` (key, label, title, ask, href, icon, group) instead of the profile registry, so Profile, Settings and JobHacking share one layout; `profileItems()` adapts the profile registry |
 | `components/profile/Identity.tsx` | the initials / name / email block, shared |
 
@@ -184,4 +248,4 @@ Every reader of the file takes the new shape: the Profile page's upload, the Car
 | `/jobhacking/companies` · Watchlist | **8.5 / 10** | Reads as the same rows and pills; the `Portals` editor the audit scored 6.5 (`docs/UX_AUDIT_JOBHACKING.md` §3) is now behind *Edit watchlist* rather than the page itself — its own issues (unlabelled 1fr/2fr inputs, the *Advanced* disclosure per row) remain for a pass of their own. |
 | `/jobhacking/true-north` | **9 / 10** | The statement leads and links; five questions, not three storage objects; labelled archetype rows on mobile. Remaining: the statement card is the Compass card verbatim — fine while both portals exist, a second voice if JobHacking ever stands alone. |
 | `/jobhacking/artefacts` | **9 / 10** | The company-list row grammar reused for the story bank and the LinkedIn blocks, so the pages read as one portal; the story bank edits behind one button like the watchlist; the CV editor is Settings' own; the LinkedIn count is the only red on the page and only when a block is over its limit. Remaining: a long story's `result` or About wraps long on a phone — a clamp with an expand is the next step if the Packer writes longer ones. |
-| `/jobhacking/settings` | **9 / 10** | One action, one card, `max-w-2xl`; the empty state tells the member what the file does. |
+| `/jobhacking/settings` | **9 / 10** | Four slots in the portal's row grammar, one red button, each row says what it fills and when it was last filled; drop anywhere. Remaining: a slot cannot be cleared — a wrong upload is undone by uploading the right file over it. |

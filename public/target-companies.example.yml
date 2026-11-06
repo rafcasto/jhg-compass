@@ -1,0 +1,1654 @@
+version: 1
+watchlist:
+  companies:
+    - name: "Kauri Logistics Cloud"
+      careersUrl: "https://boards.example/kauri-logistics-cloud"
+    - name: "Harbourline Health Tech"
+      careersUrl: "https://boards.example/harbourline-health-tech"
+    - name: "Kōwhai Agritech"
+      careersUrl: "https://boards.example/kowhai-agritech"
+    - name: "Tōtara Payments"
+      careersUrl: "https://boards.example/totara-payments"
+    - name: "Matai Freight Systems"
+      careersUrl: "https://boards.example/matai-freight-systems"
+    - name: "Southerly Energy Software"
+      careersUrl: "https://southerly-energy-software.example/jobs"
+    - name: "Weka Analytics"
+      careersUrl: "https://boards.example/weka-analytics"
+    - name: "Rimu Insurance Tech"
+      careersUrl: "https://boards.example/rimu-insurance-tech"
+    - name: "Ngaio Retail Cloud"
+    - name: "Pōhutukawa Learning"
+      careersUrl: "https://boards.example/pohutukawa-learning"
+companyLists:
+  all:
+    sunrise:
+      - rank: 1
+        name: "Kauri Logistics Cloud"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/kauri-logistics-cloud"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 2
+        name: "Harbourline Health Tech"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "startup"
+        careersUrl: "https://boards.example/harbourline-health-tech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 3
+        name: "Kōwhai Agritech"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "established"
+        careersUrl: "https://boards.example/kowhai-agritech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 4
+        name: "Tōtara Payments"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/totara-payments"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 5
+        name: "Matai Freight Systems"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/matai-freight-systems"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 6
+        name: "Southerly Energy Software"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "startup"
+        careersUrl: "https://southerly-energy-software.example/jobs"
+        careersUrlStatus: "corrected"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 8
+        name: "Rimu Insurance Tech"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/rimu-insurance-tech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 9
+        name: "Ngaio Retail Cloud"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "scaleup"
+        careersUrlStatus: "none"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 10
+        name: "Pōhutukawa Learning"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "startup"
+        careersUrl: "https://boards.example/pohutukawa-learning"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 4
+          total: 18
+      - rank: 11
+        name: "Kererū Travel Tech"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "established"
+        careersUrl: "https://careers.example/kereru-travel-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 5
+          access: 4
+          proof: 4
+          total: 17
+      - rank: 12
+        name: "Manuka Property Software"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/manuka-property-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 5
+          access: 4
+          proof: 4
+          total: 17
+      - rank: 13
+        name: "Tui Field Services"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/tui-field-services"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 15
+        name: "Pūriri HR Cloud"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "established"
+        careersUrl: "https://careers.example/puriri-hr-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 16
+        name: "Kahikatea Fleet"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/kahikatea-fleet"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 17
+        name: "Miro Dairy Systems"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/miro-dairy-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 18
+        name: "Horoeka Supply Chain"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "startup"
+        careersUrlStatus: "none"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 19
+        name: "Rātā Clinic Software"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "established"
+        careersUrl: "https://careers.example/rata-clinic-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 3
+          total: 14
+      - rank: 20
+        name: "Titoki Freightlink"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/titoki-freightlink"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 3
+          total: 14
+      - rank: 22
+        name: "Maire Booking"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/maire-booking"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 23
+        name: "Kawakawa Payroll"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "established"
+        careersUrl: "https://careers.example/kawakawa-payroll"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 24
+        name: "Tawa Warehouse OS"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/tawa-warehouse-os"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 25
+        name: "Aruhe Telehealth"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/aruhe-telehealth"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 26
+        name: "Kiekie Compliance"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "startup"
+        careersUrl: "https://careers.example/kiekie-compliance"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 27
+        name: "Pingao Ports Tech"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "established"
+        careersUrlStatus: "none"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 29
+        name: "Harakeke Logistics"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/harakeke-logistics"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 2
+          total: 11
+      - rank: 30
+        name: "Toetoe Farm Ops"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "startup"
+        careersUrl: "https://careers.example/toetoe-farm-ops"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 2
+          total: 11
+      - rank: 31
+        name: "Kōtukutuku Care"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "established"
+        careersUrl: "https://careers.example/kotukutuku-care"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 32
+        name: "Ponga Routing"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/ponga-routing"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 33
+        name: "Kānuka Billing"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/kanuka-billing"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 34
+        name: "Akeake Field Data"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/akeake-field-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 36
+        name: "Rewarewa Fleet Safety"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "scaleup"
+        careersUrlStatus: "none"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 37
+        name: "Houhere Procurement"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/houhere-procurement"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 2
+          proof: 1
+          total: 7
+      - rank: 38
+        name: "Taraire Energy Grid"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "startup"
+        careersUrl: "https://careers.example/taraire-energy-grid"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 2
+          proof: 1
+          total: 7
+      - rank: 39
+        name: "Whau Freight Market"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "established"
+        careersUrl: "https://careers.example/whau-freight-market"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 2
+          proof: 1
+          total: 7
+      - rank: 40
+        name: "Kōhūhū Lab Systems"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/kohuhu-lab-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 2
+          proof: 1
+          total: 7
+    sunset:
+      - rank: 7
+        name: "Weka Analytics"
+        industry: "Logistics software"
+        subSector: "Legacy EDI integration"
+        companyType: "established"
+        careersUrl: "https://boards.example/weka-analytics"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 14
+        name: "Karaka Legal Tech"
+        industry: "Health tech"
+        subSector: "Paper records digitisation"
+        companyType: "startup"
+        careersUrl: "https://careers.example/karaka-legal-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 21
+        name: "Hīnau Orchard Data"
+        industry: "Agritech SaaS"
+        subSector: "Dairy shed hardware"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/hīnau-orchard-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 28
+        name: "Raupō Water Data"
+        industry: "Logistics software"
+        subSector: "Legacy EDI integration"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/raupo-water-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 2
+          total: 11
+      - rank: 35
+        name: "Mamaku Health Records"
+        industry: "Health tech"
+        subSector: "Paper records digitisation"
+        companyType: "established"
+        careersUrl: "https://careers.example/mamaku-health-records"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+  top10:
+    sunrise:
+      - rank: 1
+        name: "Kauri Logistics Cloud"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/kauri-logistics-cloud"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 2
+        name: "Harbourline Health Tech"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "startup"
+        careersUrl: "https://boards.example/harbourline-health-tech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 3
+        name: "Kōwhai Agritech"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "established"
+        careersUrl: "https://boards.example/kowhai-agritech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 4
+        name: "Tōtara Payments"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/totara-payments"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 5
+        name: "Matai Freight Systems"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/matai-freight-systems"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 6
+        name: "Southerly Energy Software"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "startup"
+        careersUrl: "https://southerly-energy-software.example/jobs"
+        careersUrlStatus: "corrected"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 8
+        name: "Rimu Insurance Tech"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/rimu-insurance-tech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 9
+        name: "Ngaio Retail Cloud"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        companyType: "scaleup"
+        careersUrlStatus: "none"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 10
+        name: "Pōhutukawa Learning"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "startup"
+        careersUrl: "https://boards.example/pohutukawa-learning"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 4
+          total: 18
+    sunset:
+      - rank: 7
+        name: "Weka Analytics"
+        industry: "Logistics software"
+        subSector: "Legacy EDI integration"
+        companyType: "established"
+        careersUrl: "https://boards.example/weka-analytics"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+  top3:
+    sunrise:
+      - rank: 1
+        name: "Kauri Logistics Cloud"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/kauri-logistics-cloud"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 2
+        name: "Harbourline Health Tech"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        companyType: "startup"
+        careersUrl: "https://boards.example/harbourline-health-tech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 4
+        name: "Tōtara Payments"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/totara-payments"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+    sunset: []
+notes: |-
+  Hard no's (do not apply): on-site 5 days; hands-on coding roles; defence or gambling sectors
+  Culture must-haves: engineers present in planning; incidents reviewed without blame; no unpaid take-home over 6 hours; deprioritise when absent: Y
+  Soft dislikes (lower, not a no): pre-seed stage; agencies; companies under 30 staff
+  Notice period: 28 days
+  Never apply: Rapid Freight Systems; Kiwi Bet Online
+  Top 3 right now: Kauri Logistics Cloud, Harbourline Health Tech, Tōtara Payments
+jhg:
+  progress:
+    targetCompanies:
+      status: "complete"
+      updated: "2026-11-06"
+  identity:
+    fullName: "Ana Ferreira"
+    email: "ana.ferreira@mail.example"
+  targetCompanies:
+    companies:
+      - rank: 1
+        name: "Kauri Logistics Cloud"
+        companyType: "scaleup"
+        inspiredBy: "industry_growth"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://kauri-logistics-cloud.example"
+        growthSignal: "Headcount up 40% in the 12 months to September 2026"
+        growthSource: "https://news.example/kauri-logistics-cloud-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kauri-logistics-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 2
+        name: "Harbourline Health Tech"
+        companyType: "startup"
+        inspiredBy: "press_or_funding"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://harbourline-health-tech.example"
+        growthSignal: "Headcount up 40% in the 12 months to September 2026"
+        growthSource: "https://news.example/harbourline-health-tech-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/harbourline-health-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 3
+        name: "Kōwhai Agritech"
+        companyType: "established"
+        inspiredBy: "competitor"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Christchurch"
+        website: "https://kowhai-agritech.example"
+        growthSignal: "Headcount up 39% in the 12 months to September 2026"
+        growthSource: "https://news.example/kowhai-agritech-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kowhai-agritech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 4
+        name: "Tōtara Payments"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://totara-payments.example"
+        growthSignal: "Headcount up 39% in the 12 months to September 2026"
+        growthSource: "https://news.example/totara-payments-growth-2026"
+        knownContact: "Hemi Walker (former Ledgerline colleague)"
+        careersUrl: "https://careers.example/totara-payments"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 5
+        name: "Matai Freight Systems"
+        companyType: "scaleup"
+        inspiredBy: "customer_or_supplier"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://matai-freight-systems.example"
+        growthSignal: "Headcount up 38% in the 12 months to September 2026"
+        growthSource: "https://news.example/matai-freight-systems-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/matai-freight-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 6
+        name: "Southerly Energy Software"
+        companyType: "startup"
+        inspiredBy: "event_or_community"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://southerly-energy-software.example"
+        growthSignal: "Headcount up 38% in the 12 months to September 2026"
+        growthSource: "https://news.example/southerly-energy-software-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/southerly-energy-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 7
+        name: "Weka Analytics"
+        companyType: "established"
+        inspiredBy: "industry_growth"
+        industry: "Logistics software"
+        subSector: "Legacy EDI integration"
+        outlook: "sunset"
+        location: "Christchurch"
+        website: "https://weka-analytics.example"
+        growthSignal: "Headcount up 37% in the 12 months to September 2026"
+        growthSource: "https://news.example/weka-analytics-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/weka-analytics"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 8
+        name: "Rimu Insurance Tech"
+        companyType: "scaleup"
+        inspiredBy: "press_or_funding"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://rimu-insurance-tech.example"
+        growthSignal: "Headcount up 37% in the 12 months to September 2026"
+        growthSource: "https://news.example/rimu-insurance-tech-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/rimu-insurance-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 9
+        name: "Ngaio Retail Cloud"
+        companyType: "scaleup"
+        inspiredBy: "competitor"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://ngaio-retail-cloud.example"
+        growthSignal: "Headcount up 36% in the 12 months to September 2026"
+        growthSource: "https://news.example/ngaio-retail-cloud-growth-2026"
+        knownContact: ""
+        careersUrl: ""
+        careersUrlStatus: "none"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 10
+        name: "Pōhutukawa Learning"
+        companyType: "startup"
+        inspiredBy: "job_posting"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://pohutukawa-learning.example"
+        growthSignal: "Headcount up 36% in the 12 months to September 2026"
+        growthSource: "https://news.example/pohutukawa-learning-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/pohutukawa-learning"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 4
+          total: 18
+      - rank: 11
+        name: "Kererū Travel Tech"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Christchurch"
+        website: "https://kereru-travel-tech.example"
+        growthSignal: "Headcount up 35% in the 12 months to September 2026"
+        growthSource: "https://news.example/kereru-travel-tech-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kereru-travel-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 5
+          access: 4
+          proof: 4
+          total: 17
+      - rank: 12
+        name: "Manuka Property Software"
+        companyType: "scaleup"
+        inspiredBy: "event_or_community"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://manuka-property-software.example"
+        growthSignal: "Headcount up 35% in the 12 months to September 2026"
+        growthSource: "https://news.example/manuka-property-software-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/manuka-property-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 5
+          access: 4
+          proof: 4
+          total: 17
+      - rank: 13
+        name: "Tui Field Services"
+        companyType: "scaleup"
+        inspiredBy: "industry_growth"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://tui-field-services.example"
+        growthSignal: "Headcount up 34% in the 12 months to September 2026"
+        growthSource: "https://news.example/tui-field-services-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/tui-field-services"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 14
+        name: "Karaka Legal Tech"
+        companyType: "startup"
+        inspiredBy: "press_or_funding"
+        industry: "Health tech"
+        subSector: "Paper records digitisation"
+        outlook: "sunset"
+        location: "Auckland"
+        website: "https://karaka-legal-tech.example"
+        growthSignal: "Headcount up 34% in the 12 months to September 2026"
+        growthSource: "https://news.example/karaka-legal-tech-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/karaka-legal-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 15
+        name: "Pūriri HR Cloud"
+        companyType: "established"
+        inspiredBy: "competitor"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Christchurch"
+        website: "https://puriri-hr-cloud.example"
+        growthSignal: "Headcount up 33% in the 12 months to September 2026"
+        growthSource: "https://news.example/puriri-hr-cloud-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/puriri-hr-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 16
+        name: "Kahikatea Fleet"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://kahikatea-fleet.example"
+        growthSignal: "Headcount up 33% in the 12 months to September 2026"
+        growthSource: "https://news.example/kahikatea-fleet-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kahikatea-fleet"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 17
+        name: "Miro Dairy Systems"
+        companyType: "scaleup"
+        inspiredBy: "customer_or_supplier"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://miro-dairy-systems.example"
+        growthSignal: "Headcount up 32% in the 12 months to September 2026"
+        growthSource: "https://news.example/miro-dairy-systems-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/miro-dairy-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 18
+        name: "Horoeka Supply Chain"
+        companyType: "startup"
+        inspiredBy: "event_or_community"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://horoeka-supply-chain.example"
+        growthSignal: "Headcount up 32% in the 12 months to September 2026"
+        growthSource: "https://news.example/horoeka-supply-chain-growth-2026"
+        knownContact: ""
+        careersUrl: ""
+        careersUrlStatus: "none"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 19
+        name: "Rātā Clinic Software"
+        companyType: "established"
+        inspiredBy: "industry_growth"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Christchurch"
+        website: "https://rata-clinic-software.example"
+        growthSignal: "Headcount up 31% in the 12 months to September 2026"
+        growthSource: "https://news.example/rata-clinic-software-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/rata-clinic-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 3
+          total: 14
+      - rank: 20
+        name: "Titoki Freightlink"
+        companyType: "scaleup"
+        inspiredBy: "press_or_funding"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://titoki-freightlink.example"
+        growthSignal: "Headcount up 31% in the 12 months to September 2026"
+        growthSource: "https://news.example/titoki-freightlink-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/titoki-freightlink"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 3
+          total: 14
+      - rank: 21
+        name: "Hīnau Orchard Data"
+        companyType: "scaleup"
+        inspiredBy: "competitor"
+        industry: "Agritech SaaS"
+        subSector: "Dairy shed hardware"
+        outlook: "sunset"
+        location: "Wellington"
+        website: "https://hīnau-orchard-data.example"
+        growthSignal: "Headcount up 30% in the 12 months to September 2026"
+        growthSource: "https://news.example/hīnau-orchard-data-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/hīnau-orchard-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 22
+        name: "Maire Booking"
+        companyType: "startup"
+        inspiredBy: "job_posting"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://maire-booking.example"
+        growthSignal: "Headcount up 30% in the 12 months to September 2026"
+        growthSource: "https://news.example/maire-booking-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/maire-booking"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 23
+        name: "Kawakawa Payroll"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Christchurch"
+        website: "https://kawakawa-payroll.example"
+        growthSignal: "Headcount up 29% in the 12 months to September 2026"
+        growthSource: "https://news.example/kawakawa-payroll-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kawakawa-payroll"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 24
+        name: "Tawa Warehouse OS"
+        companyType: "scaleup"
+        inspiredBy: "event_or_community"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://tawa-warehouse-os.example"
+        growthSignal: "Headcount up 29% in the 12 months to September 2026"
+        growthSource: "https://news.example/tawa-warehouse-os-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/tawa-warehouse-os"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 25
+        name: "Aruhe Telehealth"
+        companyType: "scaleup"
+        inspiredBy: "industry_growth"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://aruhe-telehealth.example"
+        growthSignal: "Headcount up 28% in the 12 months to September 2026"
+        growthSource: "https://news.example/aruhe-telehealth-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/aruhe-telehealth"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 26
+        name: "Kiekie Compliance"
+        companyType: "startup"
+        inspiredBy: "press_or_funding"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://kiekie-compliance.example"
+        growthSignal: "Headcount up 28% in the 12 months to September 2026"
+        growthSource: "https://news.example/kiekie-compliance-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kiekie-compliance"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 27
+        name: "Pingao Ports Tech"
+        companyType: "established"
+        inspiredBy: "competitor"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Christchurch"
+        website: "https://pingao-ports-tech.example"
+        growthSignal: "Headcount up 27% in the 12 months to September 2026"
+        growthSource: "https://news.example/pingao-ports-tech-growth-2026"
+        knownContact: ""
+        careersUrl: ""
+        careersUrlStatus: "none"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 28
+        name: "Raupō Water Data"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "Logistics software"
+        subSector: "Legacy EDI integration"
+        outlook: "sunset"
+        location: "Remote NZ"
+        website: "https://raupo-water-data.example"
+        growthSignal: "Headcount up 27% in the 12 months to September 2026"
+        growthSource: "https://news.example/raupo-water-data-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/raupo-water-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 2
+          total: 11
+      - rank: 29
+        name: "Harakeke Logistics"
+        companyType: "scaleup"
+        inspiredBy: "customer_or_supplier"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://harakeke-logistics.example"
+        growthSignal: "Headcount up 26% in the 12 months to September 2026"
+        growthSource: "https://news.example/harakeke-logistics-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/harakeke-logistics"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 2
+          total: 11
+      - rank: 30
+        name: "Toetoe Farm Ops"
+        companyType: "startup"
+        inspiredBy: "event_or_community"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://toetoe-farm-ops.example"
+        growthSignal: "Headcount up 26% in the 12 months to September 2026"
+        growthSource: "https://news.example/toetoe-farm-ops-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/toetoe-farm-ops"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 2
+          total: 11
+      - rank: 31
+        name: "Kōtukutuku Care"
+        companyType: "established"
+        inspiredBy: "industry_growth"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Christchurch"
+        website: "https://kotukutuku-care.example"
+        growthSignal: "Headcount up 25% in the 12 months to September 2026"
+        growthSource: "https://news.example/kotukutuku-care-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kotukutuku-care"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 32
+        name: "Ponga Routing"
+        companyType: "scaleup"
+        inspiredBy: "press_or_funding"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://ponga-routing.example"
+        growthSignal: "Headcount up 25% in the 12 months to September 2026"
+        growthSource: "https://news.example/ponga-routing-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/ponga-routing"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 33
+        name: "Kānuka Billing"
+        companyType: "scaleup"
+        inspiredBy: "competitor"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://kanuka-billing.example"
+        growthSignal: "Headcount up 24% in the 12 months to September 2026"
+        growthSource: "https://news.example/kanuka-billing-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kanuka-billing"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 34
+        name: "Akeake Field Data"
+        companyType: "startup"
+        inspiredBy: "job_posting"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://akeake-field-data.example"
+        growthSignal: "Headcount up 24% in the 12 months to September 2026"
+        growthSource: "https://news.example/akeake-field-data-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/akeake-field-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 35
+        name: "Mamaku Health Records"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "Health tech"
+        subSector: "Paper records digitisation"
+        outlook: "sunset"
+        location: "Christchurch"
+        website: "https://mamaku-health-records.example"
+        growthSignal: "Headcount up 23% in the 12 months to September 2026"
+        growthSource: "https://news.example/mamaku-health-records-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/mamaku-health-records"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 36
+        name: "Rewarewa Fleet Safety"
+        companyType: "scaleup"
+        inspiredBy: "event_or_community"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://rewarewa-fleet-safety.example"
+        growthSignal: "Headcount up 23% in the 12 months to September 2026"
+        growthSource: "https://news.example/rewarewa-fleet-safety-growth-2026"
+        knownContact: ""
+        careersUrl: ""
+        careersUrlStatus: "none"
+        scores:
+          growth: 2
+          interest: 3
+          access: 2
+          proof: 2
+          total: 9
+      - rank: 37
+        name: "Houhere Procurement"
+        companyType: "scaleup"
+        inspiredBy: "industry_growth"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Wellington"
+        website: "https://houhere-procurement.example"
+        growthSignal: "Headcount up 22% in the 12 months to September 2026"
+        growthSource: "https://news.example/houhere-procurement-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/houhere-procurement"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 2
+          proof: 1
+          total: 7
+      - rank: 38
+        name: "Taraire Energy Grid"
+        companyType: "startup"
+        inspiredBy: "press_or_funding"
+        industry: "Health tech"
+        subSector: "Clinic practice management"
+        outlook: "sunrise"
+        location: "Auckland"
+        website: "https://taraire-energy-grid.example"
+        growthSignal: "Headcount up 22% in the 12 months to September 2026"
+        growthSource: "https://news.example/taraire-energy-grid-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/taraire-energy-grid"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 2
+          proof: 1
+          total: 7
+      - rank: 39
+        name: "Whau Freight Market"
+        companyType: "established"
+        inspiredBy: "competitor"
+        industry: "Agritech SaaS"
+        subSector: "Farm sensor analytics"
+        outlook: "sunrise"
+        location: "Christchurch"
+        website: "https://whau-freight-market.example"
+        growthSignal: "Headcount up 21% in the 12 months to September 2026"
+        growthSource: "https://news.example/whau-freight-market-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/whau-freight-market"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 2
+          proof: 1
+          total: 7
+      - rank: 40
+        name: "Kōhūhū Lab Systems"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "Logistics software"
+        subSector: "Freight dispatch software"
+        outlook: "sunrise"
+        location: "Remote NZ"
+        website: "https://kohuhu-lab-systems.example"
+        growthSignal: "Headcount up 21% in the 12 months to September 2026"
+        growthSource: "https://news.example/kohuhu-lab-systems-growth-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/kohuhu-lab-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 2
+          proof: 1
+          total: 7
+    challenges:
+      - company: "Tōtara Payments"
+        challenge: "Access 5 with no route"
+        resolution: "Route named: Hemi Walker, former colleague; Access kept at 4"
+      - company: "Kererū Travel Tech"
+        challenge: "brand worship"
+        resolution: "Interest lowered from 5 to 3"
+    top10:
+      - rank: 1
+        name: "Kauri Logistics Cloud"
+        careersUrl: "https://boards.example/kauri-logistics-cloud"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "Greenhouse-style board, 11 open roles"
+        hiringAuthorityTitle: "CTO"
+        knownPerson: ""
+        thesis: "You are hiring for release cadence breaking as the platform team doubles; I took a 110-engineer SaaS team from monthly to fortnightly releases while it doubled"
+        businessProblem: "release cadence breaking as the platform team doubles"
+        sayItLoud: "Y"
+      - rank: 2
+        name: "Harbourline Health Tech"
+        careersUrl: "https://boards.example/harbourline-health-tech"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "Greenhouse-style board, 10 open roles"
+        hiringAuthorityTitle: "Head of Engineering"
+        knownPerson: ""
+        thesis: "You are hiring for missed enterprise go-live dates during the EHR integration roll-out; I took a 110-engineer SaaS team from monthly to fortnightly releases while it doubled"
+        businessProblem: "missed enterprise go-live dates during the EHR integration roll-out"
+        sayItLoud: "Y"
+      - rank: 3
+        name: "Kōwhai Agritech"
+        careersUrl: "https://boards.example/kowhai-agritech"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "Greenhouse-style board, 9 open roles"
+        hiringAuthorityTitle: "VP Engineering"
+        knownPerson: ""
+        thesis: "You are hiring for incident load rising with each new farm-sensor region; I took a 110-engineer SaaS team from monthly to fortnightly releases while it doubled"
+        businessProblem: "incident load rising with each new farm-sensor region"
+        sayItLoud: "Y"
+      - rank: 4
+        name: "Tōtara Payments"
+        careersUrl: "https://boards.example/totara-payments"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "Greenhouse-style board, 8 open roles"
+        hiringAuthorityTitle: "CTO"
+        knownPerson: "Hemi Walker (former Ledgerline colleague)"
+        thesis: "You are hiring for payments releases frozen around peak trading; I took a 110-engineer SaaS team from monthly to fortnightly releases while it doubled"
+        businessProblem: "payments releases frozen around peak trading"
+        sayItLoud: "Y"
+      - rank: 5
+        name: "Matai Freight Systems"
+        careersUrl: "https://boards.example/matai-freight-systems"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "Greenhouse-style board, 7 open roles"
+        hiringAuthorityTitle: "Head of Engineering"
+        knownPerson: ""
+        thesis: "You are hiring for dispatch platform migration with no programme owner; I took a 110-engineer SaaS team from monthly to fortnightly releases while it doubled"
+        businessProblem: "dispatch platform migration with no programme owner"
+        sayItLoud: "Y"
+      - rank: 6
+        name: "Southerly Energy Software"
+        careersUrl: "https://southerly-energy-software.example/jobs"
+        careersUrlStatus: "corrected"
+        careersUrlNote: "company site, Jobs tab, 2 roles"
+        hiringAuthorityTitle: "VP Engineering"
+        knownPerson: ""
+        thesis: "You are hiring for on-call burnout after the grid-data acquisition; I took a 110-engineer SaaS team from monthly to fortnightly releases while it doubled"
+        businessProblem: "on-call burnout after the grid-data acquisition"
+        sayItLoud: "Y"
+      - rank: 7
+        name: "Weka Analytics"
+        careersUrl: "https://boards.example/weka-analytics"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "Greenhouse-style board, 5 open roles"
+        hiringAuthorityTitle: "CTO"
+        knownPerson: ""
+        thesis: "You are hiring for cost of delivery climbing faster than revenue; I took a 110-engineer SaaS team from monthly to fortnightly releases while it doubled"
+        businessProblem: "cost of delivery climbing faster than revenue"
+        sayItLoud: "Y"
+      - rank: 8
+        name: "Rimu Insurance Tech"
+        careersUrl: "https://boards.example/rimu-insurance-tech"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "Greenhouse-style board, 4 open roles"
+        hiringAuthorityTitle: "Head of Engineering"
+        knownPerson: ""
+        thesis: "needs a signal"
+        businessProblem: "needs a signal"
+        sayItLoud: "N"
+      - rank: 9
+        name: "Ngaio Retail Cloud"
+        careersUrl: ""
+        careersUrlStatus: "none"
+        careersUrlNote: ""
+        hiringAuthorityTitle: "VP Engineering"
+        knownPerson: ""
+        thesis: "You are hiring for release train across four squads; I took a 110-engineer SaaS team from monthly to fortnightly releases while it doubled"
+        businessProblem: "release train across four squads"
+        sayItLoud: "Y"
+      - rank: 10
+        name: "Pōhutukawa Learning"
+        careersUrl: "https://boards.example/pohutukawa-learning"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "Greenhouse-style board, 2 open roles"
+        hiringAuthorityTitle: "CTO"
+        knownPerson: ""
+        thesis: "needs a signal"
+        businessProblem: "needs a signal"
+        sayItLoud: "N"
+    top3:
+      - name: "Kauri Logistics Cloud"
+        whyNow: "Series B closed 2026-09-18 with a stated plan to double engineering (https://news.example/kauri-series-b)"
+        firstMove: "Answer the open Delivery Lead posting with the release-cadence one-pager"
+        byDate: "2026-11-04"
+      - name: "Harbourline Health Tech"
+        whyNow: "New CTO appointed 2026-10-01 (https://news.example/harbourline-cto)"
+        firstMove: "Ask a former Ledgerline colleague for an introduction to the CTO"
+        byDate: "2026-11-05"
+      - name: "Tōtara Payments"
+        whyNow: "Hiring wave: 6 engineering roles posted since 2026-10-10 (https://boards.example/totara-payments)"
+        firstMove: "Message Hemi Walker for a 20-minute call about the payments platform team"
+        byDate: "2026-11-06"

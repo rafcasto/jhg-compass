@@ -205,13 +205,20 @@ export interface CareerOpsPolicy {
 // and edited on JobHacking → Artefacts → Story Bank (lib/jobhacking/story-bank.ts);
 // an upload replaces them as one section.
 
-/** narrative.proofPoints[] — a named result and the one number that proves it. */
-export interface ProofPoint { name: string; heroMetric?: string }
-export interface Narrative { proofPoints?: ProofPoint[] }
-/** stories[] — one interview story: what happened, how sure the member is of the figure. */
-export interface Story { id?: string; title: string; result?: string; provenance?: string }
-/** snapshots[] — a story pointed at one target company, with the figures to lead with. */
-export interface Snapshot { company: string; storyId?: string; title?: string; results?: string[] }
+/** narrative.proofPoints[] — a named result, the one number that proves it, and where it is shown (2026-11-07: `url`). */
+export interface ProofPoint { name: string; heroMetric?: string; url?: string }
+/**
+ * narrative — the proof points, plus (2026-11-07, the Narrative file) the positioning line and the
+ * superpowers the Packer writes: `headline` is "I help … through …", `superpowers` the three to five skills.
+ */
+export interface Narrative { proofPoints?: ProofPoint[]; headline?: string; superpowers?: string[] }
+/** stories[] — one interview story as STAR-R (2026-11-07: situation · task · action · reflection beside the result), and how sure the member is of the figure. */
+export interface Story { id?: string; title: string; situation?: string; task?: string; action?: string; result?: string; reflection?: string; provenance?: string }
+/** snapshots[] — a story pointed at one target company: the figures to lead with, and (2026-11-07) the context, challenge, role, activities, relevance and key decisions behind them. */
+export interface Snapshot {
+  company: string; storyId?: string; title?: string;
+  context?: string; challenge?: string; role?: string; activities?: string[]; results?: string[]; relevance?: string; keyDecisions?: string[];
+}
 
 // ---- LinkedIn profile (profile.yml top-level `linkedin`; added 2026-11-05) ----
 //
@@ -248,8 +255,10 @@ export interface LinkedinProfile {
 // Scout's config; these never feed it.
 
 export type CompanyTrend = "sunrise" | "sunset" | "unclassified";
-/** How the careers URL got there: the coach confirmed it, the coach opened it (unverified), or there is none. */
-export type CareersUrlStatus = "confirmed" | "opened_by_coach" | "none";
+/** How the careers URL got there: the coach confirmed it, the coach opened it (unverified), the coach corrected the one found (2026-11-07), or there is none. */
+export type CareersUrlStatus = "confirmed" | "opened_by_coach" | "corrected" | "none";
+/** The Packer's four scores (1–5 each) and their total — why a company sits where it does in the ranking. */
+export interface CompanyScores { growth?: number; interest?: number; access?: number; proof?: number; total?: number }
 export interface RankedCompany {
   rank?: number;
   name: string;
@@ -259,9 +268,73 @@ export interface RankedCompany {
   companyType?: string;
   careersUrl?: string;
   careersUrlStatus?: CareersUrlStatus;
+  scores?: CompanyScores;
 }
 export type CompanyList = Partial<Record<CompanyTrend, RankedCompany[]>>;
 export interface CompanyLists { top3?: CompanyList; top10?: CompanyList; all?: CompanyList }
+
+// ---- the JobHackers workbook (profile.yml top-level `jhg`; added 2026-11-07) ----
+//
+// The four Packer files — narrative.yml · true-north.yml · target-companies.yml ·
+// artefacts.yml — each carry a `jhg` block: the file's progress stamp, the
+// member's identity as the coach has it, and the working data behind the
+// sections above (titles and clusters behind the roles, boundaries behind the
+// policy, scores and theses behind the ranked lists, story facts behind the
+// stories). Stored whole and exported again so nothing the coach wrote is lost
+// before CareerOps reads it; the JobHacking pages show it beside the field it
+// explains. Every key here is one the files carry — none is invented.
+
+export type JhgFileKey = "narrative" | "trueNorth" | "targetCompanies" | "artefacts";
+export interface JhgProgress { status?: string; updated?: string }
+export interface JhgIdentity {
+  fullName?: string; email?: string; city?: string; country?: string; location?: string; timezone?: string; outputLanguage?: string;
+  alternateEmails?: string[]; preferredChannel?: string; contactNote?: string;
+}
+export interface JhgNarrative { leadSkills?: string[]; bridgeStoryOneLine?: string }
+export interface JhgBoundaries {
+  currency?: string; salaryLower?: string; salaryUpper?: string; salaryFloor?: string;
+  authorizedIn?: string[]; needsSponsorship?: string; visaStatus?: string;
+  willWorkIn?: string; exclude?: string; remote?: string; localHybrid?: string; relocate?: string; remoteTravel?: string;
+  hardNos?: string[]; cultureMustHaves?: string[]; deprioritizeIfAbsent?: string; softDislikes?: string[];
+  noticePeriodDays?: number; excludeLevels?: string[]; neverApply?: string[]; negotiationLines?: string[];
+}
+export interface JhgPosting { title: string; company?: string; location?: string; url?: string; phrases?: string[]; verified?: string }
+export interface JhgTitles { target?: string[]; analog?: string[]; exclude?: string[] }
+export interface JhgCluster { name: string; titles?: string[]; axes?: string[]; buys?: string; level?: string; fit?: string }
+export interface JhgSubSector { name: string; growthSignal?: string; source?: string; outlook?: string; confirmed?: string }
+export interface JhgIndustry { name: string; subSectors?: JhgSubSector[] }
+export interface JhgTrueNorth {
+  boundaries?: JhgBoundaries; postings?: JhgPosting[]; keepers?: string[]; titles?: JhgTitles; clusters?: JhgCluster[]; industries?: JhgIndustry[]; companyType?: string;
+}
+/** One researched company — the whole field behind the Top 40, with the growth signal and the scores. */
+export interface JhgCompany {
+  rank?: number; name: string; companyType?: string; inspiredBy?: string; industry?: string; subSector?: string; outlook?: string; location?: string; website?: string;
+  growthSignal?: string; growthSource?: string; knownContact?: string; careersUrl?: string; careersUrlStatus?: string; scores?: CompanyScores;
+}
+export interface JhgChallenge { company: string; challenge?: string; resolution?: string }
+/** The Top 10 as the coach worked them: who hires, who the member knows, the thesis and the business problem it answers. */
+export interface JhgTop10 {
+  rank?: number; name: string; careersUrl?: string; careersUrlStatus?: string; careersUrlNote?: string; hiringAuthorityTitle?: string; knownPerson?: string;
+  thesis?: string; businessProblem?: string; sayItLoud?: string;
+}
+/** The Top 3 with the reason to move now, the first move, and the date to make it by. */
+export interface JhgTop3 { name: string; whyNow?: string; firstMove?: string; byDate?: string }
+export interface JhgTargetCompanies { companies?: JhgCompany[]; challenges?: JhgChallenge[]; top10?: JhgTop10[]; top3?: JhgTop3[] }
+/** The fact behind a story: where it happened, the lead skill, the numbers and how the figure is sourced. */
+export interface JhgStoryFact { id?: string; title: string; role?: string; leadSkill?: string; numbers?: string[]; sourceStatus?: string; sourceNote?: string }
+export interface JhgLanguage { language: string; currentLevel?: string; targetLevel?: string; targetDate?: string; sentence?: string; countries?: string[] }
+export interface JhgArtefacts { storyFacts?: JhgStoryFact[]; currentDomain?: string; cvHouseRules?: string[]; lockedSections?: string[]; languageLearning?: JhgLanguage[] }
+export interface JhgBlock {
+  progress?: Partial<Record<JhgFileKey, JhgProgress>>;
+  identity?: JhgIdentity;
+  narrative?: JhgNarrative;
+  trueNorth?: JhgTrueNorth;
+  targetCompanies?: JhgTargetCompanies;
+  artefacts?: JhgArtefacts;
+}
+
+/** Which Packer file last filled each part of the profile — app bookkeeping for the Settings page, not a profile.yml field. */
+export interface ProfileFileRecord { filename: string; at: number }
 
 export interface CareerOpsSetupV2 extends CareerOpsSetup {
   portals?: CareerOpsPortals;
@@ -284,6 +357,10 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   companyLists?: CompanyLists;
   /** The LinkedIn profile to build (profile.yml `linkedin`). Read on JobHacking → Artefacts → LinkedIn profile; edited nowhere. */
   linkedin?: LinkedinProfile;
+  /** The JobHackers workbook (profile.yml `jhg`), merged from the four Packer files. Read beside the fields it explains; edited nowhere. */
+  jhg?: JhgBlock;
+  /** When each of the four files was last unpacked, and from which filename (JobHacking → Settings). */
+  profileFiles?: Partial<Record<JhgFileKey, ProfileFileRecord>>;
 }
 
 // users/{uid}/careerOps/portalsStatus — what happened to each watchlist company on the last

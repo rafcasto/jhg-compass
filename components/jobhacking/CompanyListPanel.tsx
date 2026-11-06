@@ -5,7 +5,8 @@ import { FileUp, Sunrise, Sunset, CircleDashed, type LucideProps } from "lucide-
 import type { ComponentType } from "react";
 import { JH_SETTINGS_HREF } from "@/lib/jobhacking/sections";
 import { companyListLabel, facets, listGroups, type CompanyListKey } from "@/lib/jobhacking/company-lists";
-import type { CompanyList, CompanyTrend } from "@/lib/careerops/types";
+import { SCORE_LEGEND, companyFacts, top10Facts, top3Facts, type Fact } from "@/lib/jobhacking/workbook";
+import type { CompanyList, CompanyTrend, JhgBlock, RankedCompany } from "@/lib/careerops/types";
 import CompanyRow from "./CompanyRow";
 
 // JobHacking → Target companies → Top 3 · Top 10 · Top 40 — docs/UX_JOBHACKING.md §3b.
@@ -27,19 +28,29 @@ import CompanyRow from "./CompanyRow";
 
 const TREND_ICON: Record<CompanyTrend, ComponentType<LucideProps>> = { sunrise: Sunrise, sunset: Sunset, unclassified: CircleDashed };
 
-export default function CompanyListPanel({ listKey, list }: {
+// Each list shows the part of the workbook written for it (2026-11-07): the
+// Top 3 its why-now / first move / by-date, the Top 10 its thesis and hiring
+// authority, the Top 40 the growth signal and who the member knows. Matched by
+// company name; a row the workbook does not mention shows nothing extra.
+const FACTS: Record<CompanyListKey, (c: RankedCompany, j: JhgBlock | null | undefined) => Fact[]> = { top3: top3Facts, top10: top10Facts, all: companyFacts };
+
+export default function CompanyListPanel({ listKey, list, jhg }: {
   listKey: CompanyListKey;
   list: CompanyList | null | undefined;
+  /** The workbook — the research behind the rows. */
+  jhg?: JhgBlock | null;
 }) {
   const label = companyListLabel(listKey);
   const groups = listGroups(list);
+  const challenges = listKey === "all" ? (jhg?.targetCompanies?.challenges ?? []).filter((c) => c.company?.trim()) : [];
+  const anyScores = groups.some((g) => g.companies.some((c) => c.scores));
 
   if (!groups.length) {
     return (
       <div className="mx-auto max-w-md py-6 text-center">
         <p className="font-display font-semibold text-jh-ink">No {label} yet</p>
-        <p className="mt-1 text-sm text-jh-mute">Your coach&apos;s Packer writes the ranked lists into your profile.yml. Upload it and they appear here.</p>
-        <Link href={JH_SETTINGS_HREF} className="btn-secondary btn-sm mt-4"><FileUp className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Upload profile</Link>
+        <p className="mt-1 text-sm text-jh-mute">Your coach&apos;s Packer writes the ranked lists into your target-companies.yml. Upload it and they appear here.</p>
+        <Link href={JH_SETTINGS_HREF} className="btn-secondary btn-sm mt-4"><FileUp className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Upload target companies</Link>
       </div>
     );
   }
@@ -66,11 +77,27 @@ export default function CompanyListPanel({ listKey, list }: {
                 </dl>
               )}
             </header>
-            <ol className="divide-y divide-jh-line border-t border-jh-line">{g.companies.map((c) => <CompanyRow key={`${c.rank}-${c.name}`} c={c} />)}</ol>
+            <ol className="divide-y divide-jh-line border-t border-jh-line">{g.companies.map((c) => <CompanyRow key={`${c.rank}-${c.name}`} c={c} facts={FACTS[listKey](c, jhg)} />)}</ol>
           </section>
         );
       })}
-      <p className="text-xs text-jh-mute">Ranked by your coach. Sunrise companies are growing; sunset companies are shrinking or standing still. Upload a new profile.yml to change the lists.</p>
+      {challenges.length > 0 && (
+        <section aria-labelledby={`cl-${listKey}-challenges`} className="space-y-3">
+          <h3 id={`cl-${listKey}-challenges`} className="section-label flex items-center gap-2">
+            Challenged by your coach <span className="font-mono text-xs font-normal normal-case tracking-normal text-jh-mute">{challenges.length}</span>
+          </h3>
+          <ul className="divide-y divide-jh-line border-t border-jh-line">
+            {challenges.map((c, i) => (
+              <li key={`${c.company}-${i}`} className="min-h-[44px] py-2">
+                <p className="font-display text-[15px] font-semibold text-jh-ink">{c.company}</p>
+                {c.challenge?.trim() && <p className="text-sm text-jh-mute">{c.challenge}</p>}
+                {c.resolution?.trim() && <p className="text-sm text-jh-body">{c.resolution}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <p className="text-xs text-jh-mute">Ranked by your coach. Sunrise companies are growing; sunset companies are shrinking or standing still.{anyScores && ` ${SCORE_LEGEND}`} Upload a new target-companies.yml to change the lists.</p>
     </div>
   );
 }

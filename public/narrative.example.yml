@@ -1,0 +1,36 @@
+version: 1
+contact:
+  phone: "+64 21 555 0199"
+  linkedin: "https://www.linkedin.com/in/example-ana-ferreira"
+  portfolio: "https://ana-ferreira.example/release-cadence-playbook"
+personalization:
+  exitNarrative: "I was the operations analyst who kept getting pulled into engineering stand-ups because the numbers I tracked were the ones nobody owned. Over six years at two SaaS companies I turned that into a role, Delivery Lead, and ran it through a doubling of headcount and a migration that touched every enterprise customer. I am now looking for a scale-up at the same inflection point, where releases have started to hurt, because that is the problem I have already solved twice."
+narrative:
+  headline: "I help SaaS scale-ups ship predictably while headcount doubles through release management, incident management, and programme delivery"
+  superpowers:
+    - "Release management"
+    - "Incident management"
+    - "Programme delivery"
+jhg:
+  progress:
+    narrative:
+      status: "complete"
+      updated: "2026-11-06"
+  identity:
+    fullName: "Ana Ferreira"
+    email: "ana.ferreira@mail.example"
+    city: "Wellington"
+    country: "New Zealand"
+    location: "Wellington, New Zealand"
+    timezone: "Pacific/Auckland"
+    outputLanguage: "en"
+    alternateEmails:
+      - "ana@freightdesk.example"
+    preferredChannel: "email"
+    contactNote: "Screens unknown numbers — please email first to schedule a call"
+  narrative:
+    leadSkills:
+      - "Release planning"
+      - "Incident follow-through"
+      - "Cross-team coordination"
+    bridgeStoryOneLine: "I was an operations analyst, I turned the numbers nobody owned into a delivery role at two SaaS companies, and now I take on the release pain of the next scale-up because I have solved it twice."

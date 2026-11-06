@@ -13,6 +13,7 @@ import { SECTIONS, type Personalization } from "./personalization";
 import { cvReadiness } from "./intake";
 import { targetingLabel, type FileSectionKey } from "@/lib/profile-sections";
 import { linkedinSummary } from "@/lib/jobhacking/linkedin-profile";
+import { workbookSummary } from "@/lib/jobhacking/workbook";
 
 export type DiffKind = "add" | "replace" | "keep";
 
@@ -108,14 +109,14 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
     out.push({ key: "targeting", inFile: true, kind: kindOf(d), headline: `${n} of ${SECTIONS.length} sections — ${counts(d)}`, detail: detail || undefined });
   } else out.push(absent("targeting"));
 
-  // Watchlist — companies by name.
-  if (incoming.watchlist?.companies.length) {
+  // Watchlist — companies by name; the title keywords alone (the True North file) are a watchlist too.
+  if (incoming.watchlist && (incoming.watchlist.companies.length || incoming.watchlist.positive.length || incoming.watchlist.negative.length)) {
     const curNames = new Set((current.watchlist?.companies ?? []).map((c) => c.name));
     const incNames = incoming.watchlist.companies.map((c) => c.name);
     const added = incNames.filter((n) => !curNames.has(n));
     const dropped = [...curNames].filter((n) => !incNames.includes(n));
     const kept = incNames.length - added.length;
-    const kind: DiffKind = !curNames.size ? "add" : same(current.watchlist, incoming.watchlist) ? "keep" : "replace";
+    const kind: DiffKind = !current.watchlist ? "add" : same(current.watchlist, incoming.watchlist) ? "keep" : "replace";
     const headline = kind === "keep" ? "same as now" : `${incNames.length} ${incNames.length === 1 ? "company" : "companies"}, ${incoming.watchlist.positive.length} include, ${incoming.watchlist.negative.length} exclude`;
     const detail = kind === "keep" ? undefined : [
       added.length ? `adds ${list(added.slice(0, 5))}${added.length > 5 ? ` +${added.length - 5}` : ""}` : "",
@@ -164,6 +165,22 @@ export function profileDiff(current: ProfileFile, incoming: ProfileFile): Sectio
     const kind: DiffKind = !linkedinSummary(current.linkedin) ? "add" : same(current.linkedin, incoming.linkedin) ? "keep" : "replace";
     out.push({ key: "linkedin", inFile: true, kind, headline: kind === "keep" ? "same as now" : incLi, detail: kind === "keep" ? undefined : "Shown on JobHacking → Artefacts → LinkedIn profile. The sections are replaced together." });
   } else out.push(absent("linkedin"));
+
+  // Narrative headline and superpowers — the Narrative file's positioning line.
+  const nar = (p: ProfileFile) => ({ headline: p.narrative?.headline ?? "", superpowers: p.narrative?.superpowers ?? [] });
+  const incNar = nar(incoming), curNar = nar(current);
+  if (incNar.headline || incNar.superpowers.length) {
+    const kind: DiffKind = !(curNar.headline || curNar.superpowers.length) ? "add" : same(curNar, incNar) ? "keep" : "replace";
+    const parts = [incNar.headline ? "headline" : "", incNar.superpowers.length ? `${incNar.superpowers.length} superpowers` : ""].filter(Boolean).join(", ");
+    out.push({ key: "narrative", inFile: true, kind, headline: kind === "keep" ? "same as now" : parts, detail: kind === "keep" ? undefined : incNar.headline || incNar.superpowers.join(", ") });
+  } else out.push(absent("narrative"));
+
+  // The workbook — progress and identity accumulate; each file's working block is replaced whole.
+  const incWb = workbookSummary(incoming.jhg);
+  if (incWb) {
+    const kind: DiffKind = !workbookSummary(current.jhg) ? "add" : same(current.jhg, incoming.jhg) ? "keep" : "replace";
+    out.push({ key: "jhg", inFile: true, kind, headline: kind === "keep" ? "same as now" : incWb, detail: kind === "keep" ? undefined : "Shown beside the JobHacking sections it explains — titles, boundaries, scores, story facts." });
+  } else out.push(absent("jhg"));
 
   // CV.
   if (incoming.cv) {

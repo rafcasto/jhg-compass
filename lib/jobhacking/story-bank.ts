@@ -95,11 +95,29 @@ const cleanRow = <T extends object>(o: T): T => Object.fromEntries(Object.entrie
  * each, empty lists kept as empty lists so a cleared bank clears the document.
  */
 export function cleanStoryBank(d: StoryBankDraft): { narrative: { proofPoints: ProofPoint[] }; stories: Story[]; snapshots: Snapshot[] } {
-  const proofPoints = d.proofPoints.map((p) => cleanRow({ name: trim(p.name), heroMetric: trim(p.heroMetric) })).filter((p) => p.name).slice(0, STORY_BANK_CAP);
-  const stories = d.stories.map((s) => cleanRow({ id: trim(s.id), title: trim(s.title), result: trim(s.result), provenance: trim(s.provenance) })).filter((s) => s.title).slice(0, STORY_BANK_CAP);
+  // The editor edits a few fields of each row; the rest (a proof point's URL, a story's situation · task ·
+  // action · reflection, a snapshot's context and activities — the Packer's, 2026-11-07) ride along untouched.
+  const proofPoints = d.proofPoints.map((p) => cleanRow({ ...p, name: trim(p.name), heroMetric: trim(p.heroMetric) })).filter((p) => p.name).slice(0, STORY_BANK_CAP);
+  const stories = d.stories.map((s) => cleanRow({ ...s, id: trim(s.id), title: trim(s.title), result: trim(s.result), provenance: trim(s.provenance) })).filter((s) => s.title).slice(0, STORY_BANK_CAP);
   const ids = new Set(stories.map((s) => s.id).filter(Boolean));
   const snapshots = d.snapshots
-    .map((x) => cleanRow({ company: trim(x.company), storyId: ids.has(trim(x.storyId)) ? trim(x.storyId) : "", title: trim(x.title), results: rows(x.results).map((r) => r.trim()).filter(Boolean) }))
+    .map((x) => cleanRow({ ...x, company: trim(x.company), storyId: ids.has(trim(x.storyId)) ? trim(x.storyId) : "", title: trim(x.title), results: rows(x.results).map((r) => r.trim()).filter(Boolean) }))
     .filter((x) => x.company).slice(0, STORY_BANK_CAP);
   return { narrative: { proofPoints }, stories, snapshots };
 }
+
+/** "Situation · Task · Action · Reflection" — the STAR-R lines of a story the Packer wrote, in order, only the ones present. */
+export const storyStar = (s: Story): { label: string; text: string }[] =>
+  ([["Situation", s.situation], ["Task", s.task], ["Action", s.action], ["Reflection", s.reflection]] as const)
+    .filter(([, v]) => !!v?.trim()).map(([label, v]) => ({ label, text: v!.trim() }));
+
+/** The lines a snapshot carries beyond its figures: context, challenge, role, activities, relevance, key decisions. */
+export const snapshotDetail = (x: Snapshot): { label: string; text?: string; items?: string[] }[] =>
+  ([
+    { label: "Context", text: x.context?.trim() },
+    { label: "Challenge", text: x.challenge?.trim() },
+    { label: "Role", text: x.role?.trim() },
+    { label: "What I did", items: rows(x.activities).map((a) => a.trim()).filter(Boolean) },
+    { label: "Why it matters here", text: x.relevance?.trim() },
+    { label: "Key decisions", items: rows(x.keyDecisions).map((a) => a.trim()).filter(Boolean) },
+  ]).filter((d) => d.text || d.items?.length);

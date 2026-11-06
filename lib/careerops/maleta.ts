@@ -38,8 +38,8 @@ import { JSON_SCHEMA, dump as yamlDump, load as yamlLoad } from "js-yaml";
 import type { Goal } from "@/lib/goal";
 import { GOAL_KEYS } from "@/lib/goal";
 import { coercePersonalization, parseProfileMd, renderProfileMd, type Personalization } from "./personalization";
-import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, CareersUrlStatus, CompanyList, CompanyLists, LinkedinCertification, LinkedinEducation, LinkedinExperience, LinkedinFeatured, LinkedinFeaturedKind, LinkedinProfile, Narrative, PortalCompany, ProofPoint, RankedCompany, Snapshot, Story } from "./types";
-import { CAREERS_URL_STATUSES, COMPANY_LIST_KEYS, COMPANY_TREND_KEYS, LINKEDIN_FEATURED_KINDS, LINKEDIN_LIMITS, ROW_CAPS } from "./profile-schema";
+import type { CareerOpsContact, CareerOpsPolicy, CareerOpsPortals, CareerOpsSetupV2, CareersUrlStatus, CompanyList, CompanyLists, CompanyScores, JhgBlock, LinkedinCertification, LinkedinEducation, LinkedinExperience, LinkedinFeatured, LinkedinFeaturedKind, LinkedinProfile, Narrative, PortalCompany, ProofPoint, RankedCompany, Snapshot, Story } from "./types";
+import { CAREERS_URL_STATUSES, COMPANY_LIST_KEYS, COMPANY_TREND_KEYS, JHG_SHAPE, LINKEDIN_FEATURED_KINDS, LINKEDIN_LIMITS, ROW_CAPS, SCORES_SHAPE, type Kind, type Shape } from "./profile-schema";
 import type { Profile } from "@/lib/types";
 
 export const MALETA_VERSION = 1;
@@ -65,6 +65,8 @@ export interface Maleta {
   snapshots?: Snapshot[];
   /** The LinkedIn profile to build, one block per LinkedIn section. Read on JobHacking → Artefacts, edited nowhere. */
   linkedin?: LinkedinProfile;
+  /** The JobHackers workbook the four Packer files carry (2026-11-07). Stored whole; read beside the fields it explains. */
+  jhg?: JhgBlock;
 }
 
 // ---- the three ways in ----
@@ -109,6 +111,10 @@ export const findStartPath = (key: string): StartPath | undefined =>
 
 // ---- building one from what we already have ----
 
+/** The watchlist when it has a company or a keyword in it; the Scout's config is any of the three. */
+export const hasWatchlist = (w: CareerOpsPortals | null | undefined): CareerOpsPortals | undefined =>
+  w && (w.companies?.length || w.positive?.length || w.negative?.length) ? w : undefined;
+
 const pruned = <T extends object>(o: T | null | undefined): T | undefined => {
   if (!o) return undefined;
   const out = Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== "" && !(Array.isArray(v) && !v.length)));
@@ -124,14 +130,69 @@ export function maletaFromSetup({ profile, setup }: { profile: Profile | null | 
     contact: pruned(setup?.contact),
     policy: pruned(setup?.policy),
     personalization: pruned(coercePersonalization(setup?.personalization ?? {})),
-    watchlist: setup?.portals?.companies?.length ? setup.portals : undefined,
+    watchlist: hasWatchlist(setup?.portals),
     companyLists: hasCompanyLists(setup?.companyLists) ? setup!.companyLists : undefined,
     notes: setup?.notes?.trim() || undefined,
-    narrative: setup?.narrative?.proofPoints?.length ? setup.narrative : undefined,
+    narrative: hasNarrative(setup?.narrative) ? pruned(setup!.narrative) : undefined,
     stories: setup?.stories?.length ? setup.stories : undefined,
     snapshots: setup?.snapshots?.length ? setup.snapshots : undefined,
     linkedin: hasLinkedin(setup?.linkedin) ? setup!.linkedin : undefined,
+    jhg: hasJhg(setup?.jhg) ? setup!.jhg : undefined,
   };
+}
+
+// ---- merging one file onto what is stored ----
+//
+// The Packer writes the profile as FOUR files (narrative · true-north ·
+// target-companies · artefacts, 2026-11-07), and they overlap: `contact` is in
+// two of them, `personalization` in three, `notes` in all four. So a file
+// cannot replace a section whole — the Artefacts file carrying only
+// `contact.title` must not wipe the phone the Narrative file brought. Rule:
+// a file adds to and replaces what it names, key by key, and never drops a
+// field it does not mention. Lists (stories, the ranked lists, a watchlist's
+// companies) are replaced as the one key they are. Only the sections the file
+// carries come back, each merged with the stored one, so the diff and the
+// patch read exactly what the file would change.
+
+const mergeMap = <T extends object>(cur: T | undefined, inc: T | undefined): T | undefined =>
+  inc ? ({ ...(cur ?? {}), ...inc } as T) : undefined;
+
+export function mergeMaleta(current: Maleta, incoming: Maleta): Maleta {
+  const out: Maleta = { version: incoming.version || MALETA_VERSION };
+  if (incoming.cv) out.cv = incoming.cv;
+  if (incoming.goal) out.goal = mergeMap(current.goal, incoming.goal);
+  if (incoming.contact) out.contact = mergeMap(current.contact, incoming.contact);
+  if (incoming.policy) out.policy = mergeMap(current.policy, incoming.policy);
+  if (incoming.personalization) out.personalization = mergeMap(current.personalization, incoming.personalization);
+  // The True North file carries positive / negative, the Target companies file the companies — three keys, merged by key.
+  if (incoming.watchlist) {
+    const cur = current.watchlist;
+    out.watchlist = {
+      companies: incoming.watchlist.companies.length ? incoming.watchlist.companies : (cur?.companies ?? []),
+      positive: incoming.watchlist.positive.length ? incoming.watchlist.positive : (cur?.positive ?? []),
+      negative: incoming.watchlist.negative.length ? incoming.watchlist.negative : (cur?.negative ?? []),
+    };
+  }
+  if (incoming.companyLists) out.companyLists = incoming.companyLists;
+  if (incoming.notes) out.notes = incoming.notes;
+  if (incoming.narrative) out.narrative = mergeMap(current.narrative, incoming.narrative);
+  if (incoming.stories) out.stories = incoming.stories;
+  if (incoming.snapshots) out.snapshots = incoming.snapshots;
+  if (incoming.linkedin) out.linkedin = incoming.linkedin;
+  if (incoming.jhg) {
+    const cur = current.jhg ?? {};
+    const inc = incoming.jhg;
+    // progress and identity accumulate across the four files; each working block belongs to one file and is replaced whole.
+    out.jhg = pruned({
+      progress: mergeMap(cur.progress, inc.progress) ?? cur.progress,
+      identity: mergeMap(cur.identity, inc.identity) ?? cur.identity,
+      narrative: inc.narrative ?? cur.narrative,
+      trueNorth: inc.trueNorth ?? cur.trueNorth,
+      targetCompanies: inc.targetCompanies ?? cur.targetCompanies,
+      artefacts: inc.artefacts ?? cur.artefacts,
+    } as JhgBlock);
+  }
+  return out;
 }
 
 // ---- export ----
@@ -152,6 +213,7 @@ export function maletaToYaml(m: Maleta): string {
     stories: m.stories,
     snapshots: m.snapshots,
     linkedin: m.linkedin,
+    jhg: m.jhg,
   };
   const body = yamlDump(JSON.parse(JSON.stringify(doc)), { lineWidth: 100, noRefs: true, skipInvalid: true });
   return [
@@ -325,13 +387,50 @@ export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
       authorizedIn: strArr(policy.authorizedIn),
     } as CareerOpsPolicy),
     personalization: pruned(coercePersonalization(doc.personalization)),
-    watchlist: companies.length ? { companies, positive: strArr(w.positive) ?? [], negative: strArr(w.negative) ?? [] } : undefined,
+    // The True North file carries the title keywords with no companies (2026-11-07): a watchlist with any of the three is one.
+    watchlist: hasWatchlist({ companies, positive: strArr(w.positive) ?? [], negative: strArr(w.negative) ?? [] }),
     companyLists: companyListsFromYaml(doc.companyLists),
     notes: str(doc.notes),
     ...artefactsFromYaml(doc),
     linkedin: linkedinFromYaml(doc.linkedin),
+    jhg: jhgFromYaml(doc.jhg),
   };
 }
+
+// ---- jhg: the workbook, coerced against the same shape the validator checks ----
+// Strings extracted, numbers kept as numbers, rows capped, unknown keys dropped — never obeyed.
+function coerceKind(v: unknown, kind: Kind): unknown {
+  if (v === undefined || v === null) return undefined;
+  if (kind === "string") return str(v);
+  if (kind === "number") return num(v);
+  if (kind === "string[]") return strArr(v)?.slice(0, ROW_CAPS.jhgRows);
+  if ("map" in kind) return coerceShape(v, kind.map);
+  if ("record" in kind) {
+    if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+    const r = v as Record<string, unknown>;
+    return pruned(Object.fromEntries(kind.keys.map((k) => [k, coerceKind(r[k], kind.record)])));
+  }
+  if (!Array.isArray(v)) return undefined;
+  const rows = v.slice(0, ROW_CAPS.jhgRows)
+    .map((row) => coerceShape(row, kind.rows))
+    .filter((row): row is Record<string, unknown> => !!row && (kind.required ?? []).every((k) => typeof row[k] === "string" && (row[k] as string).trim() !== ""));
+  return rows.length ? rows : undefined;
+}
+
+export function coerceShape(v: unknown, shape: Shape): Record<string, unknown> | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const r = v as Record<string, unknown>;
+  return pruned(Object.fromEntries(Object.entries(shape).map(([k, kind]) => [k, coerceKind(r[k], kind)])));
+}
+
+export const jhgFromYaml = (v: unknown): JhgBlock | undefined => coerceShape(v, JHG_SHAPE) as JhgBlock | undefined;
+
+/** True when the workbook has anything in it. */
+export const hasJhg = (j: JhgBlock | null | undefined): boolean => !!j && Object.values(j).some((v) => v && typeof v === "object" && Object.keys(v).length > 0);
+
+/** True when the narrative carries a proof point, a headline or a superpower. */
+export const hasNarrative = (n: Narrative | null | undefined): boolean =>
+  !!n && (!!n.proofPoints?.length || !!n.headline?.trim() || !!n.superpowers?.length);
 
 // ---- linkedin: headline · about · experience · featured · skills · education · certifications ----
 // Strings extracted, rows capped, text kept whole (a block over LinkedIn's limit is shown as over, not cut).
@@ -371,6 +470,7 @@ function rankedRows(v: unknown): RankedCompany[] {
     .map((r) => pruned({
       rank: num(r.rank), name: str(r.name), industry: str(r.industry), subSector: str(r.subSector),
       companyType: str(r.companyType), careersUrl: str(r.careersUrl), careersUrlStatus: status(r.careersUrlStatus),
+      scores: coerceShape(r.scores, SCORES_SHAPE) as CompanyScores | undefined,
     } as RankedCompany))
     .filter((r): r is RankedCompany => !!r?.name);
 }
@@ -405,16 +505,23 @@ const rowsOf = (v: unknown): Record<string, unknown>[] =>
 function artefactsFromYaml(doc: Record<string, unknown>): Pick<Maleta, "narrative" | "stories" | "snapshots"> {
   const nar = (doc.narrative ?? {}) as Record<string, unknown>;
   const proofPoints = rowsOf(nar.proofPoints)
-    .map((r) => pruned({ name: str(r.name), heroMetric: str(r.heroMetric) } as ProofPoint))
+    .map((r) => pruned({ name: str(r.name), heroMetric: str(r.heroMetric), url: str(r.url) } as ProofPoint))
     .filter((r): r is ProofPoint => !!r?.name);
   const stories = rowsOf(doc.stories)
-    .map((r) => pruned({ id: str(r.id), title: str(r.title), result: str(r.result), provenance: str(r.provenance) } as Story))
+    .map((r) => pruned({
+      id: str(r.id), title: str(r.title), situation: str(r.situation), task: str(r.task), action: str(r.action),
+      result: str(r.result), reflection: str(r.reflection), provenance: str(r.provenance),
+    } as Story))
     .filter((r): r is Story => !!r?.title);
   const snapshots = rowsOf(doc.snapshots)
-    .map((r) => pruned({ company: str(r.company), storyId: str(r.storyId), title: str(r.title), results: strArr(r.results) } as Snapshot))
+    .map((r) => pruned({
+      company: str(r.company), storyId: str(r.storyId), title: str(r.title), context: str(r.context), challenge: str(r.challenge), role: str(r.role),
+      activities: strArr(r.activities), results: strArr(r.results), relevance: str(r.relevance), keyDecisions: strArr(r.keyDecisions),
+    } as Snapshot))
     .filter((r): r is Snapshot => !!r?.company);
+  const narrative = pruned({ proofPoints: proofPoints.length ? proofPoints : undefined, headline: str(nar.headline), superpowers: strArr(nar.superpowers) } as Narrative);
   return {
-    narrative: proofPoints.length ? { proofPoints } : undefined,
+    narrative,
     stories: stories.length ? stories : undefined,
     snapshots: snapshots.length ? snapshots : undefined,
   };
@@ -508,15 +615,19 @@ export function maletaContents(m: Maleta): string[] {
   if (m.policy) found.push("logistics");
   if (m.personalization) found.push(`targeting (${Object.keys(m.personalization).length}/8 sections)`);
   if (m.watchlist?.companies.length) found.push(`watchlist (${m.watchlist.companies.length} companies)`);
+  else if (m.watchlist) found.push(`title keywords (${m.watchlist.positive.length} include, ${m.watchlist.negative.length} exclude)`);
   if (hasCompanyLists(m.companyLists)) {
     const n = (k: keyof CompanyLists) => COMPANY_TREND_KEYS.reduce((sum, t) => sum + (m.companyLists![k]?.[t]?.length ?? 0), 0);
     found.push(`company lists (Top 3: ${n("top3")} · Top 10: ${n("top10")} · Top 40: ${n("all")})`);
   }
   if (m.notes) found.push("notes");
+  if (m.narrative?.headline) found.push("narrative headline");
+  if (m.narrative?.superpowers?.length) found.push(`superpowers (${m.narrative.superpowers.length})`);
   if (m.narrative?.proofPoints?.length) found.push(`proof points (${m.narrative.proofPoints.length})`);
   if (m.stories?.length) found.push(`stories (${m.stories.length})`);
   if (m.snapshots?.length) found.push(`snapshots (${m.snapshots.length})`);
   if (hasLinkedin(m.linkedin)) found.push(`LinkedIn profile (${Object.keys(m.linkedin!).length} ${Object.keys(m.linkedin!).length === 1 ? "section" : "sections"})`);
+  if (hasJhg(m.jhg)) found.push(`workbook (${Object.keys(m.jhg!).filter((k) => k !== "progress").join(", ")})`);
   return found;
 }
 
@@ -589,13 +700,14 @@ export function maletaToSetupPatch(m: Maleta): MaletaPatch {
     setup.personalization = m.personalization;
     setup.profileMd = renderProfileMd(m.personalization);
   }
-  if (m.watchlist?.companies.length) setup.portals = m.watchlist;
+  if (hasWatchlist(m.watchlist)) setup.portals = m.watchlist;
   if (hasCompanyLists(m.companyLists)) setup.companyLists = m.companyLists;
   if (m.notes) setup.notes = m.notes;
   if (m.narrative) setup.narrative = m.narrative;
   if (m.stories) setup.stories = m.stories;
   if (m.snapshots) setup.snapshots = m.snapshots;
   if (hasLinkedin(m.linkedin)) setup.linkedin = m.linkedin;
+  if (hasJhg(m.jhg)) setup.jhg = m.jhg;
   // A goal in the file becomes the intake North Star, which overrides Compass —
   // the member brought it deliberately, so it should win.
   if (m.goal?.role?.trim()) {
