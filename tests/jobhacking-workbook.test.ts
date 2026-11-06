@@ -22,8 +22,11 @@ describe("workbook helpers", () => {
   });
 
   it("identity facts leave out what the contact editor already shows", () => {
-    const f = identityFacts(read("narrative").jhg);
+    const f = identityFacts(read("narrative").jhg, "ana.ferreira@mail.example");
     expect(f.map((x) => x.label)).toEqual(["Location", "Time zone", "Preferred channel", "Other emails", "Contact note", "Output language"]);
+    // The email in the file is a fact only when it is not the one signed in with — the editor shows that one read-only.
+    expect(identityFacts(read("narrative").jhg, "other@mail.example")[0]).toEqual({ label: "Email in the file", value: "ana.ferreira@mail.example" });
+    expect(identityFacts(read("narrative").jhg, "ANA.FERREIRA@mail.example ").map((x) => x.label)).not.toContain("Email in the file");
     expect(f.find((x) => x.label === "Other emails")!.value).toBe("ana@freightdesk.example");
   });
 

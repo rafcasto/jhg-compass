@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { mergeProfile, parseProfileFile, profileFromSetup, profileToSetupPatch, profileToYaml } from "@/lib/careerops/profile-file";
-import { detectJhFile, jhFilePreview, shapeJhFile } from "@/lib/jobhacking/profile-files";
+import { detectJhFile, jhFileName, jhFilePreview, jhFileProfile, shapeJhFile } from "@/lib/jobhacking/profile-files";
 import { validateProfileFile } from "@/lib/careerops/profile-schema";
 import { JSON_SCHEMA, load } from "js-yaml";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -37,7 +37,17 @@ describe("a second Packer's four files", () => {
     expect(after.personalization?.crossCuttingAdvantage).toBe("CRM architecture; Renewal forecasting; Sales-to-success handover; Customer health scoring");
     const rows = jhFilePreview("narrative", shaped, {}, after, null);
     expect(rows.map((r) => `${r.label}: ${r.headline}`)).toEqual(["Contact details: adds", "Headline: adds", "Bridge story: adds", "Core competencies: adds"]);
-    expect(rows[0].detail).toBe("+33 6 55 01 23 45 · Lyon, France · LinkedIn");
+    // The name is the account's (users/{uid}), written from jhg.identity.fullName — so the row reads with it.
+    expect(jhFileName("narrative", shaped)).toEqual({ firstName: "Laurent", lastName: "Simon" });
+    expect(jhFileProfile("narrative", shaped, { email: "laurent@mail.example" })).toEqual({ email: "laurent@mail.example", firstName: "Laurent", lastName: "Simon" });
+    expect(rows[0].detail).toBe("Laurent Simon · +33 6 55 01 23 45 · Lyon, France · LinkedIn");
+  });
+
+  it("the name is only the Narrative file's, and a stored name the file does not change is not rewritten", () => {
+    const tn = parseProfileFile(read("true-north"), "true-north.yml").profile;
+    expect(jhFileName("trueNorth", tn)).toBeNull();
+    expect(jhFileName("narrative", { jhg: { identity: { fullName: "Cher" } } })).toEqual({ firstName: "Cher", lastName: "" });
+    expect(jhFileName("narrative", { jhg: { identity: { email: "x@y.z" } } })).toBeNull();
   });
 
   it("target-companies.yml keeps the extra sub-sectors and an unclassified group; artefacts.yml keeps the public LinkedIn URL", () => {

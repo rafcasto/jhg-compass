@@ -57,11 +57,13 @@ function Hint({ children }: { children: React.ReactNode }) {
   return <span className="block text-xs text-jh-mute mt-1">{children}</span>;
 }
 
-export default function ContactPolicy({ uid, setup, profile, part = "both" }: {
+export default function ContactPolicy({ uid, setup, profile, part = "both", signInEmail = "" }: {
   uid: string;
   setup: CareerOpsSetupV2 | null;
   profile: Profile | null | undefined;
   part?: ContactPolicyPart;
+  /** The email signed in with — shown when the account document carries none. */
+  signInEmail?: string;
 }) {
   const [contact, setContact] = useState<CareerOpsContact>(setup?.contact ?? {});
   const [firstName, setFirstName] = useState(profile?.firstName ?? "");
@@ -76,7 +78,8 @@ export default function ContactPolicy({ uid, setup, profile, part = "both" }: {
   const showContact = part === "contact" || part === "both";
   const showPolicy = part === "policy" || part === "both";
   const touch = () => { setDirty(true); setMsg(null); };
-  const email = profile?.email ?? "";
+  // The account's email, else the one signed in with — a member whose users document has no email still sees it.
+  const email = profile?.email?.trim() || signInEmail || "";
 
   const setField = (key: keyof CareerOpsContact, value: string) => { setContact((c) => ({ ...c, [key]: value })); touch(); };
 

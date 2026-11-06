@@ -77,7 +77,7 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
         if (!uid) return null;
         const jhg = setup?.jhg;
         switch (key) {
-          case "contact": return <div className="space-y-5"><ContactPolicy uid={uid} setup={setup} profile={profile} part="contact" /><ContactFacts jhg={jhg} /></div>;
+          case "contact": return <div className="space-y-5"><ContactPolicy uid={uid} setup={setup} profile={profile} part="contact" signInEmail={email} /><ContactFacts jhg={jhg} email={email} /></div>;
           case "competencies": return <div className="space-y-5"><Personalization uid={uid} setup={setup} profile={profile} only={["crossCuttingAdvantage"]} saveLabel="Save core competencies" /><CompetencyFacts setup={setup} jhg={jhg} /></div>;
           case "headline": return <div className="space-y-5"><ContactPolicy uid={uid} setup={setup} profile={profile} part="headline" /><HeadlineFacts setup={setup} /></div>;
           case "story": return <div className="space-y-5"><Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} labels={{ exitNarrative: "Bridge story" }} saveLabel="Save bridge story" /><StoryFacts jhg={jhg} /></div>;

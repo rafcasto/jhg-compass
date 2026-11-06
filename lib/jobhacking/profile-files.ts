@@ -106,6 +106,29 @@ export const jhFilesProgress = (statuses: readonly JhFileStatus[]): { done: numb
 
 const text = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
+/** "Laurent Simon" → first name Laurent, last name Simon; a one-word name is a first name. */
+export function splitFullName(fullName: string): { firstName: string; lastName: string } {
+  const [first = "", ...rest] = fullName.trim().split(/\s+/).filter(Boolean);
+  return { firstName: first, lastName: rest.join(" ") };
+}
+
+/**
+ * The member's name as the Narrative file carries it (`jhg.identity.fullName`) — first and last
+ * name live on the account (users/{uid}), not in the profile, so the unpack writes them there.
+ * Null when the file is not the Narrative one or carries no name.
+ */
+export function jhFileName(key: JhgFileKey | null, incoming: Pick<ProfileFile, "jhg">): { firstName: string; lastName: string } | null {
+  const full = key === "narrative" ? text(incoming.jhg?.identity?.fullName) : "";
+  return full ? splitFullName(full) : null;
+}
+
+/** The account as it will be once the file is unpacked — the name from the file over what is stored. */
+export function jhFileProfile(key: JhgFileKey | null, incoming: Pick<ProfileFile, "jhg">, profile: Profile | null | undefined): Profile | null | undefined {
+  const name = jhFileName(key, incoming);
+  if (!name) return profile;
+  return { ...(profile ?? { email: "" }), ...name };
+}
+
 /**
  * The parsed file as the page reads it. The Narrative file's positioning line is the
  * Headline field, its superpowers are the Core competencies field, the coach's
@@ -161,13 +184,17 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stri
 export function jhFilePreview(key: JhgFileKey, shaped: ProfileFile, before: Partial<CareerOpsSetupV2> | null | undefined, after: Partial<CareerOpsSetupV2>, profile: Profile | null | undefined): JhPreviewRow[] {
   const page = findJhFile(key)!.page;
   const fileOnly = profileToSetupPatch(shaped).setup;
-  const afterRows = new Map(jhSectionSummaries({ setup: after as CareerOpsSetupV2, profile }).map((r) => [r.key, r]));
+  // The Narrative file also carries the member's name, which the Contact details editor shows from the account.
+  const fileName = jhFileName(key, shaped);
+  const fileProfile: Profile | null = fileName ? { email: "", ...fileName } : null;
+  const profileAfter = jhFileProfile(key, shaped, profile);
+  const afterRows = new Map(jhSectionSummaries({ setup: after as CareerOpsSetupV2, profile: profileAfter }).map((r) => [r.key, r]));
   return jhSectionsFor(page).map((s) => {
     const base = { key: s.key, label: s.label, href: jhSectionHref(s.key) };
-    const inFile = !jhFieldsEmpty(jhSectionFields(s.key, { setup: fileOnly as CareerOpsSetupV2, profile: null }));
+    const inFile = !jhFieldsEmpty(jhSectionFields(s.key, { setup: fileOnly as CareerOpsSetupV2, profile: fileProfile }));
     if (!inFile) return { ...base, inFile, kind: "keep", headline: "not in the file — left as it is" };
     const b = jhSectionFields(s.key, { setup: before as CareerOpsSetupV2, profile });
-    const a = jhSectionFields(s.key, { setup: after as CareerOpsSetupV2, profile });
+    const a = jhSectionFields(s.key, { setup: after as CareerOpsSetupV2, profile: profileAfter });
     const kind: DiffKind = jhFieldsEmpty(b) ? "add" : same(a, b) ? "keep" : "replace";
     const detail = afterRows.get(s.key)?.summary;
     return { ...base, inFile, kind, headline: kind === "add" ? "adds" : kind === "keep" ? "same as now" : "replaces", detail: kind === "keep" ? undefined : detail };

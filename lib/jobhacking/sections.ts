@@ -225,7 +225,8 @@ export function jhSectionFields(key: JhSectionKey, signals: JhSignals): unknown 
   const p = setup?.personalization ?? {};
   const policy = setup?.policy ?? {};
   switch (key) {
-    case "contact": return { phone: c.phone, linkedin: c.linkedin, github: c.github, location: c.location, portfolio: c.portfolio };
+    // Name and email are the account's (users/{uid}), shown in the same editor — so they count here too.
+    case "contact": return { firstName: signals.profile?.firstName, lastName: signals.profile?.lastName, email: signals.profile?.email, phone: c.phone, linkedin: c.linkedin, github: c.github, location: c.location, portfolio: c.portfolio };
     case "headline": return c.title;
     case "story": return p.exitNarrative;
     case "competencies": return p.crossCuttingAdvantage;

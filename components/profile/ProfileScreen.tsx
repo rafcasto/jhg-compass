@@ -103,7 +103,7 @@ export default function ProfileScreen() {
         panel={(key) => {
           if (!uid) return null;
           switch (key) {
-            case "contact": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="contact" />;
+            case "contact": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="contact" signInEmail={email} />;
             case "headline": return <ContactPolicy uid={uid} setup={setup} profile={profile} part="headline" />;
             case "story": return <Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} saveLabel="Save exit story" />;
             case "northstar": return (

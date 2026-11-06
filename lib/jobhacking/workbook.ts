@@ -51,11 +51,17 @@ const facts = (xs: (Fact | null)[]): Fact[] => xs.filter((f): f is Fact => !!f);
 const lists = (xs: (FactList | null)[]): FactList[] => xs.filter((l): l is FactList => !!l && l.items.length > 0);
 const factList = (label: string, items: readonly string[] | null | undefined): FactList | null => (list(items).length ? { label, items: list(items) } : null);
 
-/** Identity as the coach has it — only what the contact editor does not already show. */
-export const identityFacts = (j: JhgBlock | null | undefined): Fact[] => {
+/**
+ * Identity as the coach has it — only what the contact editor does not already show. The name is
+ * written to the account on upload; the email is shown here when it is not the sign-in one, since
+ * the sign-in email is the account's and the file cannot change it.
+ */
+export const identityFacts = (j: JhgBlock | null | undefined, signInEmail = ""): Fact[] => {
   const i = j?.identity;
   if (!i) return [];
+  const email = text(i.email);
   return facts([
+    email && email.toLowerCase() !== signInEmail.trim().toLowerCase() ? fact("Email in the file", email) : null,
     fact("Location", i.location || [i.city, i.country].filter(Boolean).join(", ")),
     fact("Time zone", i.timezone),
     fact("Preferred channel", i.preferredChannel),
