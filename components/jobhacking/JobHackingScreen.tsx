@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { BookOpen, Building2, Contact, FileText, Linkedin, ListOrdered, MapPin, Medal, Navigation, Quote, ShieldBan, Sparkles, Target, Trophy, Wallet, Factory, Layers, Store, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
@@ -14,6 +14,7 @@ import type { SectionItem } from "@/components/profile/SectionList";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { JH_LIST_OF, findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, type JhPageKey, type JhSectionKey } from "@/lib/jobhacking/sections";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
+import type { Goal } from "@/lib/goal";
 import type { Profile } from "@/lib/types";
 import { cvRuleFacts, cvRuleLists, languageLines } from "@/lib/jobhacking/workbook";
 import CompanyListPanel from "./CompanyListPanel";
@@ -56,6 +57,8 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
 
   const rows = useMemo(() => jhRowsFor(sections, jhSectionSummaries({ setup, profile })), [sections, setup, profile]);
   const goal = useMemo(() => jhGoal({ setup, profile }), [setup, profile]);
+  // What the open True North section is typing — the statement reads it before Save.
+  const [draft, setDraft] = useState<Partial<Goal>>({});
   const email = profile?.email ?? user?.email ?? "";
 
   return (
@@ -66,7 +69,7 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
       title={meta.title}
       intro={meta.intro}
       identity={page === "narrative" ? <Identity profile={profile} email={email} /> : undefined}
-      lead={page === "true-north" ? <TrueNorthStatement goal={goal} /> : undefined}
+      lead={page === "true-north" ? <TrueNorthStatement goal={{ ...goal, ...draft }} /> : undefined}
       items={items}
       rows={rows}
       active={active}
@@ -82,7 +85,7 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
           case "headline": return <div className="space-y-5"><ContactPolicy uid={uid} setup={setup} profile={profile} part="headline" /><HeadlineFacts setup={setup} /></div>;
           case "story": return <div className="space-y-5"><Personalization uid={uid} setup={setup} profile={profile} only={["exitNarrative"]} labels={{ exitNarrative: "Bridge story" }} saveLabel="Save bridge story" /><StoryFacts jhg={jhg} /></div>;
           case "industry": case "roles": case "seniority": case "salary": case "location": case "company-type":
-            return <div className="space-y-5"><TrueNorthPanel uid={uid} setup={setup} profile={profile} section={key} /><TrueNorthFacts section={key} jhg={jhg} /></div>;
+            return <div className="space-y-5"><TrueNorthPanel uid={uid} setup={setup} profile={profile} section={key} onDraft={setDraft} /><TrueNorthFacts section={key} jhg={jhg} /></div>;
           // The True North file's boundaries — read-only.
           case "boundaries": return <BoundariesPanel jhg={jhg} />;
           // The Packer's lists: read-only, the same ranked rows on all three, each with the research written for it.
