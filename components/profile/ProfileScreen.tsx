@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Check, Download, FileUp } from "lucide-react";
@@ -48,7 +48,8 @@ export default function ProfileScreen() {
 
   const [sheet, setSheet] = useState<{ open: boolean; file: File | null }>({ open: false, file: null });
   const [over, setOver] = useState(false);
-  const [status, setStatus] = useState<{ text: string; keys: FileSectionKey[] } | null>(null);
+  const [status, setStatus] = useState<{ text: string; links: { label: string; href: string | null }[] } | null>(null);
+  const fileSectionHref = useCallback((k: FileSectionKey) => { const e = FILE_SECTIONS[k].edit; return e ? sectionHref(e) : null; }, []);
   // Bumped after an unpack so the mounted panel re-reads its initial state.
   const [stamp, setStamp] = useState(0);
 
@@ -73,12 +74,9 @@ export default function ProfileScreen() {
   const statusLine = status && (
     <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-sm border border-jh-line bg-jh-mist/40 px-4 py-3 text-sm text-jh-ink">
       <Check className="h-4 w-4 shrink-0 text-rb-green-dark" aria-hidden /> {status.text}
-      {status.keys.map((k) => {
-        const edit = FILE_SECTIONS[k].edit;
-        return edit
-          ? <Link key={k} href={sectionHref(edit)} className="link text-sm">{FILE_SECTIONS[k].label}</Link>
-          : <span key={k} className="text-sm text-jh-mute">{FILE_SECTIONS[k].label}</span>;
-      })}
+      {status.links.map((l) => l.href
+        ? <Link key={l.label} href={l.href} className="link text-sm">{l.label}</Link>
+        : <span key={l.label} className="text-sm text-jh-mute">{l.label}</span>)}
     </p>
   );
 
@@ -131,12 +129,13 @@ export default function ProfileScreen() {
           profile={profile}
           current={current}
           initialFiles={sheet.file ? [sheet.file] : null}
+          fileSectionHref={fileSectionHref}
           onClose={() => setSheet({ open: false, file: null })}
           onDownloadCurrent={exportProfile}
-          onDone={(keys) => {
+          onDone={(links) => {
             setSheet({ open: false, file: null });
             setStamp((s) => s + 1);
-            setStatus({ text: keys.length ? `Unpacked — ${keys.length} ${keys.length === 1 ? "section" : "sections"} updated:` : "Unpacked — nothing changed.", keys });
+            setStatus({ text: links.length ? `Unpacked — ${links.length} ${links.length === 1 ? "section" : "sections"} updated:` : "Unpacked — nothing changed.", links });
           }}
         />
       )}

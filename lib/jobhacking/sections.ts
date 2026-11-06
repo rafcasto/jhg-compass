@@ -212,6 +212,50 @@ export function jhSectionSummaries(signals: JhSignals): JhSummary[] {
   ];
 }
 
+/**
+ * The stored values behind one section — exactly the fields its editor shows
+ * (docs/UX_JOBHACKING.md §2), as one comparable value. The upload preview
+ * diffs these, so a row in the preview is a section on the page: nothing
+ * more, nothing less (decision 2026-11-07).
+ */
+export function jhSectionFields(key: JhSectionKey, signals: JhSignals): unknown {
+  const { setup } = signals;
+  const g = jhGoal(signals);
+  const c = setup?.contact ?? {};
+  const p = setup?.personalization ?? {};
+  const policy = setup?.policy ?? {};
+  switch (key) {
+    case "contact": return { phone: c.phone, linkedin: c.linkedin, github: c.github, location: c.location, portfolio: c.portfolio };
+    case "headline": return c.title;
+    case "story": return p.exitNarrative;
+    case "competencies": return p.crossCuttingAdvantage;
+    case "industry": return g.subsector;
+    case "roles": return { role: g.role, archetypes: p.targetRoles };
+    case "seniority": return g.seniority;
+    case "salary": return { salary: g.salary, floor: policy.minimumSalary, compTargets: p.compTargets };
+    case "location": return { city: g.city, flexibility: policy.locationFlexibility, rules: p.locationPolicy };
+    case "company-type": return g.companyType;
+    case "boundaries": return setup?.jhg?.trueNorth?.boundaries;
+    case "top3": return setup?.companyLists?.top3;
+    case "top10": return setup?.companyLists?.top10;
+    case "top40": return setup?.companyLists?.all;
+    case "companies": return setup?.portals;
+    case "story-bank": return { proofPoints: setup?.narrative?.proofPoints, stories: setup?.stories, snapshots: setup?.snapshots };
+    case "master-cv": return setup?.cvMarkdown;
+    case "linkedin-profile": return setup?.linkedin;
+  }
+}
+
+/** True when a section's value holds no text and no row — the state a row calls "empty". */
+export function jhFieldsEmpty(v: unknown): boolean {
+  if (v === undefined || v === null) return true;
+  if (typeof v === "string") return v.trim() === "";
+  if (typeof v === "number" || typeof v === "boolean") return false;
+  if (Array.isArray(v)) return v.every(jhFieldsEmpty);
+  if (typeof v === "object") return Object.values(v as Record<string, unknown>).every(jhFieldsEmpty);
+  return false;
+}
+
 /** The rows for one page's sections, in that page's order. */
 export function jhRowsFor(sections: readonly JhSectionDef[], rows: JhSummary[]): JhSummary[] {
   const byKey = new Map(rows.map((r) => [r.key, r]));

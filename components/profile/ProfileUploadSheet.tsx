@@ -7,9 +7,11 @@ import { Sheet, SheetFooter } from "@/components/tracker/Sheet";
 import { paths } from "@/lib/firestore/db";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import { PROFILE_ACCEPT, PROFILE_MAX_BYTES, mergeProfile, parseProfileFile, profileToSetupPatch, type ProfileFile, type ProfileFileParse } from "@/lib/careerops/profile-file";
-import { diffReplaces, profileDiff, type DiffKind, type SectionDiff } from "@/lib/careerops/profile-diff";
+
+const diffReplaces = (rows: ReviewRow[]): boolean => rows.some((d) => d.kind === "replace");
+import { profileDiff, type DiffKind } from "@/lib/careerops/profile-diff";
 import { FILE_SECTIONS, type FileSectionKey } from "@/lib/profile-sections";
-import { JH_FILES, detectJhFile, findJhFile, type JhgFileKey } from "@/lib/jobhacking/profile-files";
+import { JH_FILES, detectJhFile, findJhFile, jhFilePreview, shapeJhFile, type JhgFileKey } from "@/lib/jobhacking/profile-files";
 import type { CareerOpsSetupV2, ProfileFileRecord } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 
@@ -22,8 +24,11 @@ import type { Profile } from "@/lib/types";
 // refused with its paths, and the rest still go through), named for the slot
 // it fills (its own jhg.progress stamp, else its filename), and merged KEY BY
 // KEY onto what is stored and onto the files before it: a field a file does
-// not mention is never dropped. The review lists each file with what it would
-// change; one Unpack writes the lot. A whole profile.yml still works.
+// not mention is never dropped. The review lists, for each of the four files,
+// EXACTLY the sections of the page it fills — one row per section, the page's
+// labels, nothing more, nothing less (decision 2026-11-07) — and what the
+// file would do to each. One Unpack writes the lot. A whole profile.yml still
+// works, reviewed by its storage sections as before.
 //
 // The files are untrusted. Read in the browser, strings extracted, nothing obeyed.
 
@@ -40,7 +45,10 @@ interface Taken {
   file: JhgFileKey | null;
 }
 
-export default function ProfileUploadSheet({ uid, setup, profile, current, initialFiles, expect, onClose, onDone, onDownloadCurrent }: {
+/** One row of the review — a page section (one of the four files) or a storage section (a whole profile.yml). */
+export interface ReviewRow { key: string; label: string; href: string | null; inFile: boolean; kind: DiffKind; headline: string; detail?: string }
+
+export default function ProfileUploadSheet({ uid, setup, profile, current, initialFiles, expect, fileSectionHref, onClose, onDone, onDownloadCurrent }: {
   uid: string;
   setup: CareerOpsSetupV2 | null;
   profile: Profile | null | undefined;
@@ -50,8 +58,11 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
   initialFiles?: File[] | null;
   /** The slot the member opened the sheet from (JobHacking → Settings); a file for another slot is said, not refused. */
   expect?: JhgFileKey | null;
+  /** Where a whole profile.yml's storage section is edited on this portal — the status line's links. */
+  fileSectionHref: (key: FileSectionKey) => string | null;
   onClose: () => void;
-  onDone: (changed: FileSectionKey[], files: JhgFileKey[]) => void;
+  /** The sections the unpack changed, with their links, and which of the four files were unpacked. */
+  onDone: (changed: { label: string; href: string | null }[], files: JhgFileKey[]) => void;
   onDownloadCurrent: () => void;
 }) {
   const [taken, setTaken] = useState<Taken[]>([]);
@@ -86,32 +97,40 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
   const broken = taken.filter((t) => !t.parse.ok && t.parse.errors.length);
   const review = valid.length > 0 ? valid : null;
 
-  // Each file diffs against what is stored PLUS the files before it, so the review reads like the write will happen.
+  // Each file is shaped for its page, merged onto what is stored PLUS the files before it, and reviewed as
+  // the sections of its page — so the rows read exactly as the write will happen.
   const steps = useMemo(() => {
-    let base = current;
-    return valid.map((t) => {
-      const merged = mergeProfile(base, t.parse.profile);
-      const diff = profileDiff(base, merged);
-      base = { ...base, ...merged };
-      return { t, merged, diff };
+    let baseProfile = current;
+    let baseSetup: Partial<CareerOpsSetupV2> = setup ?? {};
+    let patch: Partial<CareerOpsSetupV2> = {};
+    const out = valid.map((t) => {
+      const shaped = shapeJhFile(t.file, t.parse.profile, baseProfile);
+      const merged = mergeProfile(baseProfile, shaped);
+      const step = profileToSetupPatch(merged).setup;
+      const afterSetup = { ...baseSetup, ...step };
+      const rows: ReviewRow[] = t.file
+        ? jhFilePreview(t.file, shaped, baseSetup, afterSetup, profile)
+        : profileDiff(baseProfile, merged).map((d) => ({ key: d.key, label: FILE_SECTIONS[d.key].label, href: fileSectionHref(d.key), inFile: d.inFile, kind: d.kind, headline: d.headline, detail: d.detail }));
+      baseProfile = { ...baseProfile, ...merged };
+      baseSetup = afterSetup;
+      patch = { ...patch, ...step };
+      return { t, rows };
     });
-  }, [current, valid]);
-  const merged = steps.length ? steps[steps.length - 1] : null;
-  const allDiff = steps.flatMap((s) => s.diff.filter((d) => d.inFile));
-  const replaces = allDiff.filter((d) => d.kind === "replace");
+    return { steps: out, patch };
+  }, [current, setup, profile, valid, fileSectionHref]);
+  const { steps: reviewSteps, patch: combinedPatch } = steps;
+  const allRows = reviewSteps.flatMap((s) => s.rows.filter((d) => d.inFile));
+  const replaces = allRows.filter((d) => d.kind === "replace");
 
   async function unpack() {
-    if (!merged) return;
+    if (!reviewSteps.length) return;
     setBusy(true);
     setErr(null);
     try {
-      // One profile from every file, in order, onto what is stored — then one write.
-      let combined = current;
-      for (const s of steps) combined = { ...combined, ...mergeProfile(combined, s.t.parse.profile) };
-      const { setup: patch } = profileToSetupPatch(combined);
+      const patch = combinedPatch;
       const now = Date.now();
       const profileFiles: Partial<Record<JhgFileKey, ProfileFileRecord>> = { ...(setup?.profileFiles ?? {}) };
-      for (const s of steps) {
+      for (const s of reviewSteps) {
         if (s.t.file) profileFiles[s.t.file] = { filename: s.t.filename, at: now };
         else for (const f of JH_FILES) profileFiles[f.key] = { filename: s.t.filename, at: now };
       }
@@ -120,8 +139,9 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
         { ...patch, profileFiles, profileYaml: buildSetupProfileYaml({ profile, setup, overrides: patch }), updatedAt: now },
         { merge: true },
       );
-      const changed = [...new Set(allDiff.filter((d) => d.kind !== "keep").map((d) => d.key))];
-      onDone(changed, steps.map((s) => s.t.file).filter((f): f is JhgFileKey => !!f));
+      const seen = new Set<string>();
+      const changed = allRows.filter((d) => d.kind !== "keep" && !seen.has(d.key) && seen.add(d.key)).map((d) => ({ label: d.label, href: d.href }));
+      onDone(changed, reviewSteps.map((s) => s.t.file).filter((f): f is JhgFileKey => !!f));
     } catch {
       setErr("Couldn't save that — check your connection and try again.");
       setBusy(false);
@@ -193,9 +213,10 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
         </div>
       ) : (
         <div className="space-y-5">
-          {steps.map(({ t, diff }) => {
+          {reviewSteps.map(({ t, rows }) => {
             const slot = findJhFile(t.file);
-            const inFile = diff.filter((d) => d.inFile);
+            // The four files: every section of the page, always. A whole profile: only the storage sections it carries.
+            const shown = slot ? rows : rows.filter((d) => d.inFile);
             const elsewhere = expected && t.file && t.file !== expected.key;
             return (
               <section key={t.id} aria-labelledby={`up-${t.id}`} className="space-y-3">
@@ -205,17 +226,18 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
                       {slot ? `${slot.label} file` : "Whole profile"} · <code className="font-mono text-xs font-normal">{t.filename}</code>
                     </p>
                     <p className="text-xs text-jh-mute mt-0.5">
-                      {slot ? `Fills ${slot.label}.` : "Fills every section it carries."} Anything it doesn&apos;t mention is left exactly as it is.
+                      {slot ? `The ${slot.label} page, section by section.` : "Fills every section it carries."} Anything it doesn&apos;t mention is left exactly as it is.
                     </p>
                     {elsewhere && <p className="mt-1 text-xs text-jh-ink">This is your {slot!.label} file, not {expected!.label} — it goes to {slot!.label}, which is fine.</p>}
                   </div>
-                  {steps.length > 1 && (
+                  {reviewSteps.length > 1 && (
                     <button type="button" onClick={() => setTaken((cur) => cur.filter((x) => x.id !== t.id))} disabled={busy} className="icon-btn" aria-label={`Leave out ${t.filename}`}><X className="h-4 w-4" aria-hidden /></button>
                   )}
                 </div>
                 <ul className="card divide-y divide-jh-line">
-                  {inFile.map((d) => <DiffRow key={d.key} d={d} />)}
+                  {shown.map((d) => <DiffRow key={d.key} d={d} />)}
                 </ul>
+                {slot && <p className="text-xs text-jh-mute">Also kept for the agents, not shown on the page: {slot.alsoKept}.</p>}
                 {t.parse.warnings.length > 0 && (
                   <ul className="space-y-1">
                     {t.parse.warnings.map((w) => (
@@ -233,14 +255,14 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
             );
           })}
 
-          {!expected && steps.length < JH_FILES.length && (
+          {!expected && reviewSteps.length < JH_FILES.length && (
             <label className="btn-secondary btn-sm inline-flex cursor-pointer">
               <Plus className="h-4 w-4" aria-hidden /> Add another file
               <input type="file" accept={PROFILE_ACCEPT} multiple className="sr-only" onChange={(e) => { take(e.target.files); e.target.value = ""; }} />
             </label>
           )}
 
-          {diffReplaces(allDiff) && (
+          {diffReplaces(allRows) && (
             <div className="rounded-sm bg-jh-mist px-4 py-3 text-sm">
               <p className="text-jh-ink">
                 Replacing {replaces.length} {replaces.length === 1 ? "section" : "sections"}. Want a copy of what you have now?
@@ -256,15 +278,14 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
   );
 }
 
-function DiffRow({ d }: { d: SectionDiff }) {
+function DiffRow({ d }: { d: ReviewRow }) {
   const Icon = KIND_ICON[d.kind];
-  const label = FILE_SECTIONS[d.key].label;
   return (
     <li className="flex items-start gap-3 px-4 py-3">
       <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${KIND_TONE[d.kind]}`} strokeWidth={2} aria-hidden />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-baseline gap-x-2">
-          <span className="font-display font-semibold text-[15px] text-jh-ink">{label}</span>
+          <span className="font-display font-semibold text-[15px] text-jh-ink">{d.label}</span>
           <span className="text-sm text-jh-mute">{d.headline}</span>
         </span>
         {d.detail && <span className="block truncate text-sm text-jh-ink">{d.detail}</span>}

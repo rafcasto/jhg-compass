@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Building2, Check, CircleDashed, Download, FileUp, Lock, Navigation, Sparkles, Upload, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
@@ -9,7 +9,7 @@ import ProfileUploadSheet from "@/components/profile/ProfileUploadSheet";
 import PageHeader from "@/components/shell/PageHeader";
 import { PROFILE_FILENAME, PROFILE_MAX_BYTES, profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
-import { FILE_SECTIONS, type FileSectionKey } from "@/lib/profile-sections";
+import type { FileSectionKey } from "@/lib/profile-sections";
 import { JH_FILES, jhFilePage, jhFileStatuses, jhFilesProgress, type JhgFileKey } from "@/lib/jobhacking/profile-files";
 import { JH_FILE_EDIT, jhSectionHref } from "@/lib/jobhacking/sections";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -49,7 +49,8 @@ export default function JobHackingSettings() {
 
   const [sheet, setSheet] = useState<{ open: boolean; files: File[] | null; expect: JhgFileKey | null }>({ open: false, files: null, expect: null });
   const [over, setOver] = useState(false);
-  const [status, setStatus] = useState<{ text: string; keys: FileSectionKey[] } | null>(null);
+  const [status, setStatus] = useState<{ text: string; links: { label: string; href: string | null }[] } | null>(null);
+  const fileSectionHref = useCallback((k: FileSectionKey) => { const e = JH_FILE_EDIT[k]; return e ? jhSectionHref(e) : null; }, []);
 
   const open = (expect: JhgFileKey | null, files: File[] | null = null) => { setStatus(null); setSheet({ open: true, files, expect }); };
 
@@ -65,12 +66,9 @@ export default function JobHackingSettings() {
       {status && (
         <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-sm border border-jh-line bg-jh-mist/40 px-4 py-3 text-sm text-jh-ink">
           <Check className="h-4 w-4 shrink-0 text-rb-green-dark" aria-hidden /> {status.text}
-          {status.keys.map((k) => {
-            const edit = JH_FILE_EDIT[k];
-            return edit
-              ? <Link key={k} href={jhSectionHref(edit)} className="link text-sm">{FILE_SECTIONS[k].label}</Link>
-              : <span key={k} className="text-sm text-jh-mute">{FILE_SECTIONS[k].label}</span>;
-          })}
+          {status.links.map((l) => l.href
+            ? <Link key={l.label} href={l.href} className="link text-sm">{l.label}</Link>
+            : <span key={l.label} className="text-sm text-jh-mute">{l.label}</span>)}
         </p>
       )}
 
@@ -139,13 +137,14 @@ export default function JobHackingSettings() {
           current={current}
           initialFiles={sheet.files}
           expect={sheet.expect}
+          fileSectionHref={fileSectionHref}
           onClose={() => setSheet({ open: false, files: null, expect: null })}
           onDownloadCurrent={() => download(PROFILE_FILENAME, profileToYaml(current))}
-          onDone={(keys, files) => {
+          onDone={(links, files) => {
             setSheet({ open: false, files: null, expect: null });
             const which = files.map((k) => JH_FILES.find((f) => f.key === k)!.label);
             const lead = which.length ? `Unpacked ${which.join(", ")}` : "Unpacked";
-            setStatus({ text: keys.length ? `${lead} — ${keys.length} ${keys.length === 1 ? "section" : "sections"} updated:` : `${lead} — nothing changed.`, keys });
+            setStatus({ text: links.length ? `${lead} — ${links.length} ${links.length === 1 ? "section" : "sections"} updated:` : `${lead} — nothing changed.`, links });
           }}
         />
       )}
