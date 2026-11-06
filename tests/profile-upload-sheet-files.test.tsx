@@ -55,7 +55,7 @@ describe("ProfileUploadSheet — the four files", () => {
     await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
     const [, data, opts] = setDoc.mock.calls[0];
     expect(opts).toEqual({ merge: true });
-    const d = data as CareerOpsSetupV2;
+    const d = data as unknown as CareerOpsSetupV2;
     expect(d.contact).toEqual({ phone: "+64 21 555 0199", linkedin: "https://www.linkedin.com/in/example-ana-ferreira", portfolio: "https://ana-ferreira.example/release-cadence-playbook", title: "I help SaaS scale-ups ship predictably while headcount doubles through release management, incident management, and programme delivery", location: "Wellington, New Zealand" });
     expect(d.personalization?.exitNarrative).toMatch(/^I was the operations analyst/);
     expect(d.personalization?.crossCuttingAdvantage).toBe("Release management; Incident management; Programme delivery");

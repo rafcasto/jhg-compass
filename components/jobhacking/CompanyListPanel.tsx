@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileUp, Sunrise, Sunset, CircleDashed, type LucideProps } from "lucide-react";
+import { ExternalLink, FileUp, Sunrise, Sunset, CircleDashed, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { JH_SETTINGS_HREF } from "@/lib/jobhacking/sections";
 import { companyListLabel, facets, listGroups, type CompanyListKey } from "@/lib/jobhacking/company-lists";
@@ -43,6 +43,7 @@ export default function CompanyListPanel({ listKey, list, jhg }: {
   const label = companyListLabel(listKey);
   const groups = listGroups(list);
   const challenges = listKey === "all" ? (jhg?.targetCompanies?.challenges ?? []).filter((c) => c.company?.trim()) : [];
+  const extraSubSectors = listKey === "all" ? (jhg?.targetCompanies?.extraSubSectors ?? []).filter((x) => x.name?.trim()) : [];
   const anyScores = groups.some((g) => g.companies.some((c) => c.scores));
 
   if (!groups.length) {
@@ -81,6 +82,24 @@ export default function CompanyListPanel({ listKey, list, jhg }: {
           </section>
         );
       })}
+      {extraSubSectors.length > 0 && (
+        <section aria-labelledby={`cl-${listKey}-extra`} className="space-y-3">
+          <h3 id={`cl-${listKey}-extra`} className="section-label flex items-center gap-2">
+            Other sub-sectors your coach looked at <span className="font-mono text-xs font-normal normal-case tracking-normal text-jh-mute">{extraSubSectors.length}</span>
+          </h3>
+          <ul className="divide-y divide-jh-line border-t border-jh-line">
+            {extraSubSectors.map((x, i) => (
+              <li key={`${x.name}-${i}`} className="grid min-h-[44px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2">
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-display text-[15px] font-semibold text-jh-ink">{x.name}{x.outlook && <span className="pill-neutral">{x.outlook.charAt(0).toUpperCase() + x.outlook.slice(1)}</span>}</p>
+                  <p className="truncate text-sm text-jh-mute">{[x.industry, x.growthSignal].filter(Boolean).join(" · ")}</p>
+                </div>
+                {x.source ? <a href={x.source} target="_blank" rel="noreferrer" className="icon-btn" aria-label={`${x.name} — growth source, opens in a new tab`} title="Source"><ExternalLink className="h-4 w-4" strokeWidth={1.5} aria-hidden /></a> : <span />}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {challenges.length > 0 && (
         <section aria-labelledby={`cl-${listKey}-challenges`} className="space-y-3">
           <h3 id={`cl-${listKey}-challenges`} className="section-label flex items-center gap-2">

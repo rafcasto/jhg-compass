@@ -1,0 +1,387 @@
+version: 1
+contact:
+  title: "Revenue Operations Manager for B2B SaaS scale-ups"
+  linkedin: "https://www.linkedin.com/in/laurent-simon-revops-example"
+  portfolio: "https://laurent-simon.example/renewal-forecast-one-pager"
+personalization:
+  adaptiveFraming:
+    - role: "Forecast leadership can trust"
+      emphasize: "Forecast accuracy first; the person who made finance trust the renewal number again"
+      proof: "cv.md — Renewal forecast rebuilt, At-risk renewals saved, Health score launch"
+    - role: "One CRM everyone uses"
+      emphasize: "The CRM consolidation and the data rules that kept it clean afterwards"
+      proof: "cv.md — Three CRMs into one, Bug costs made visible"
+    - role: "Retention engine for customer success"
+      emphasize: "Time to value and churn: the handover design and the health score"
+      proof: "cv.md — Handover in nineteen days, Health score launch, First response under two hours"
+  crossCuttingAdvantage: "I turn messy customer data into numbers that sales, success and finance all accept, then build the routine that keeps them true. I started in support, so I design processes the front line will actually follow."
+  portfolio:
+    url: "https://laurent-simon.example/renewal-forecast-one-pager"
+    description: "The renewal forecast one-pager: error from 18% to 6% in 3 quarters"
+    whenToShare: "Revenue Operations roles; after a first call that mentions forecast pain"
+notes: |-
+  Hard no's (do not apply): Commission-only roles; Roles carrying a personal sales quota; Gambling or tobacco sectors
+  Culture must-haves: RevOps reports to the CRO or COO, not to one sales team; One CRM as the source of truth, or a mandate to get there; deprioritise when absent: Y
+  Soft dislikes (lower, not a no): Pre-seed stage; Companies under 40 staff
+  Notice period: 90 days
+  Never apply: Rhône Retail Group
+  CV house rules: Single column, standard headings, no photo, no tables or graphics; Contact details in the body only; PDF or .docx
+  Top 3 right now: Fourvière Analytics, Gerland Health Software, Presqu'île Payments
+narrative:
+  proofPoints:
+    - name: "Renewal forecast rebuilt"
+      url: "https://laurent-simon.example/renewal-forecast-one-pager"
+      heroMetric: "Forecast error 18% → 6% in 3 quarters"
+    - name: "Three CRMs into one"
+      heroMetric: "3 CRMs into one for 120 enterprise accounts"
+    - name: "Handover in nineteen days"
+      heroMetric: "Time to first value 41 days → 19 days"
+    - name: "Health score launch"
+      heroMetric: "Enterprise churn 9% → about 6% in 12 months"
+    - name: "At-risk renewals saved"
+      heroMetric: "14 renewals saved, EUR 1.2M ARR"
+    - name: "Bug costs made visible"
+      heroMetric: "3 bugs fixed, tickets down 22%"
+    - name: "First response under two hours"
+      heroMetric: "First response 9 hours → 2 hours"
+    - name: "Faster support onboarding"
+      heroMetric: "Support ramp 8 weeks → about 5 weeks"
+stories:
+  - id: "S1"
+    title: "Renewal forecast rebuilt"
+    situation: "The renewal forecast for 120 enterprise accounts missed actuals by 18% and finance had stopped using it."
+    task: "Build a forecast leadership would sign off without rework."
+    action: "I rebuilt the forecast from CRM stage data, added a weekly risk review with account managers, and published accuracy against actuals every month."
+    result: "Forecast error fell from 18% to 6% in 3 quarters; the CFO now uses it in the board pack."
+    reflection: "Publishing the miss every month built more trust than any model change."
+    provenance: "verified"
+  - id: "S2"
+    title: "Three CRMs into one"
+    situation: "After two acquisitions, account data lived in 3 CRMs and nobody agreed on a customer count."
+    task: "Move every enterprise account into one CRM without losing renewal history."
+    action: "I mapped the fields, ran the cleanup with each team owner, and froze the old systems on a fixed date."
+    result: "3 CRMs became one for 120 enterprise accounts in 5 months, signed off by the COO."
+    reflection: "A fixed freeze date did more than any number of reminders."
+    provenance: "verified"
+  - id: "S3"
+    title: "Handover in nineteen days"
+    situation: "New enterprise customers waited weeks for a first working setup after signing."
+    task: "Shorten the time from signature to first value."
+    action: "I designed a handover form sales must complete before closing, and a kickoff checklist the success team runs in week one."
+    result: "Time to first value fell from 41 days to 19 days."
+    reflection: "I would involve sales leadership earlier; the form only stuck once they enforced it."
+    provenance: "verified"
+  - id: "S4"
+    title: "Health score launch"
+    situation: "Churn arrived as a surprise at renewal time."
+    task: "Give account managers an early warning they would act on."
+    action: "I built a health score from product usage, tickets and invoices, and reviewed the red accounts weekly with the team."
+    result: "Enterprise churn fell from 9% to about 6% over 12 months, by my own calculation."
+    reflection: "Fewer inputs made the score easier to trust."
+    provenance: "estimate"
+  - id: "S5"
+    title: "At-risk renewals saved"
+    situation: "A batch of enterprise renewals was flagged at risk late in the year."
+    task: "Save as many as possible before their renewal dates."
+    action: "I ran a renewal playbook: an executive call, a usage review, and a dated recovery plan for each account."
+    result: "14 renewals were saved, worth EUR 1.2M ARR."
+    reflection: "Starting the playbook 90 days out, not 30, is what I changed afterwards."
+    provenance: "verified"
+  - id: "S6"
+    title: "Bug costs made visible"
+    situation: "Support tickets showed the same product bugs again and again, but the cost never reached the product team."
+    task: "Make the cost of those bugs visible."
+    action: "I exported and tagged the tickets, tied them to the accounts at renewal, and presented the result to the CTO."
+    result: "3 bugs were prioritised and fixed; ticket volume fell 22% in 2 quarters."
+    reflection: "Putting a renewal next to each bug changed the conversation."
+    provenance: "verified"
+  - id: "S7"
+    title: "First response under two hours"
+    situation: "Customers waited most of a working day for a first reply."
+    task: "Bring first response time down without adding staff."
+    action: "I wrote reply templates for the top request types and set up routing by language and product."
+    result: "First response time fell from 9 hours to 2 hours in 1 quarter."
+    reflection: "The templates needed a monthly owner, or they went stale."
+    provenance: "verified"
+  - id: "S8"
+    title: "Faster support onboarding"
+    situation: "New support hires took two months to handle tickets alone."
+    task: "Shorten the ramp without lowering quality."
+    action: "I built a week-by-week training path with shadowing and graded practice tickets."
+    result: "Ramp time fell from 8 weeks to about 5 weeks, by my count from the training tracker."
+    reflection: "Graded practice tickets mattered more than the reading list."
+    provenance: "estimate"
+snapshots:
+  - company: "Fourvière Analytics"
+    storyId: "S1"
+    title: "Renewal forecast rebuilt"
+    context: "E-commerce platform with 120 enterprise accounts"
+    challenge: "Forecast missing actuals by 18%"
+    role: "Customer Success Operations Manager"
+    activities:
+      - "Rebuilt the forecast from CRM stage data"
+      - "Added a weekly risk review with account managers"
+      - "Published accuracy against actuals monthly"
+    results:
+      - "18%"
+      - "6%"
+      - "3 quarters"
+    relevance: "Fourvière Analytics is doubling its customer team after a Series C; the same forecast problem"
+    keyDecisions:
+      - "Published the miss every month instead of waiting for a perfect model"
+linkedin:
+  headline: "Revenue Operations Manager for B2B SaaS · Renewal forecast error 18% → 6% · 3 CRMs into one for 120 enterprise accounts"
+  about: |-
+    I make revenue numbers that sales, success and finance all agree on.
+
+    At Saône Commerce I rebuilt the renewal forecast for 120 enterprise accounts: error fell from 18% to 6% in 3 quarters, and finance put it back in the board pack. I consolidated 3 CRMs into one in 5 months, and a new handover between sales and success cut time to first value from 41 days to 19 days.
+
+    How I work: start from the data the front line already touches, agree the rules with the teams who run them, and publish the numbers every month, misses included.
+
+    I'm moving into Revenue Operations at a B2B SaaS scale-up. If your forecast starts arguments, message me here.
+  experience:
+    - title: "Customer Success Operations Manager"
+      company: "Saône Commerce"
+      location: "Lyon, France"
+      start: "2022-04"
+      end: ""
+      description: |-
+        Owned the CRM, the renewal forecast and the sales-to-success handover for an e-commerce platform's enterprise customers.
+
+        Cut renewal forecast error from 18% to 6% in 3 quarters, by rebuilding the forecast from CRM stage data and publishing accuracy against actuals monthly
+        Consolidated 3 CRMs into one for 120 enterprise accounts in 5 months, by running field mapping and cleanup with each team owner to a fixed freeze date
+        Reduced time to first value from 41 days to 19 days, by introducing a mandatory sales handover form and a week-one kickoff checklist
+      skills:
+        - "Revenue Operations"
+        - "Renewal Forecasting"
+        - "CRM Administration"
+    - title: "Customer Support Team Lead"
+      company: "Saône Commerce"
+      location: "Lyon, France"
+      start: "2019-09"
+      end: "2022-03"
+      description: |-
+        Led the support team of the same platform, handling merchant tickets in French and English.
+
+        Got 3 renewal-blocking bugs fixed and cut ticket volume 22% in 2 quarters, by tying tagged tickets to renewals and presenting the cost to the CTO
+        Brought first response time from 9 hours to 2 hours in 1 quarter, by writing reply templates and routing by language and product
+        Shortened new-hire ramp from 8 weeks to about 5 weeks, by building a graded week-by-week training path
+      skills:
+        - "Customer Support Operations"
+        - "Team Leadership"
+        - "Training Design"
+  featured:
+    - kind: "document"
+      title: "The renewal forecast one-pager: error from 18% to 6% in 3 quarters"
+      url: "https://laurent-simon.example/renewal-forecast-one-pager"
+    - kind: "article"
+      title: "Three CRMs into one: the freeze date that made it work"
+      url: "https://laurent-simon.example/three-crms-into-one"
+    - kind: "post"
+      title: "Why I publish the forecast miss every month"
+      url: "https://www.linkedin.com/posts/laurent-simon-revops-example-forecast"
+  skills:
+    - "Revenue Operations"
+    - "Renewal Forecasting"
+    - "CRM Administration"
+    - "Salesforce"
+    - "HubSpot"
+    - "Customer Success Operations"
+    - "Customer Health Scoring"
+    - "Sales Operations"
+    - "Pipeline Management"
+    - "Process Design"
+    - "Data Quality"
+    - "Looker"
+    - "Gainsight"
+    - "Churn Reduction"
+    - "Onboarding Design"
+    - "Stakeholder Management"
+    - "Customer Support Operations"
+    - "Team Leadership"
+    - "Training Design"
+    - "SaaS"
+    - "E-commerce"
+  education:
+    - school: "Université Lumière Lyon 2"
+      degree: "Licence professionnelle"
+      field: "Commerce électronique"
+      start: "2018"
+      end: "2019"
+  certifications:
+    - name: "Salesforce Certified Administrator"
+      issuer: "Salesforce"
+      issued: "2023-06"
+      url: ""
+cv: |-
+  # CV -- Laurent Simon
+
+  **Headline:** Revenue Operations Manager for B2B SaaS scale-ups | Renewal forecasting | CRM consolidation | Sales-to-success handover
+  **Location:** Lyon, France
+  **Email:** laurent.simon@mail.example
+  **Phone:** +33 6 55 01 23 45
+  **LinkedIn:** https://www.linkedin.com/in/laurent-simon-revops-example
+  **Portfolio:** https://laurent-simon.example/renewal-forecast-one-pager
+  **GitHub:** https://github.com/example-laurent-simon
+
+  ## Professional Summary
+
+  Customer Success Operations Manager moving into Revenue Operations, having cut renewal forecast error from 18% to 6% in 3 quarters for 120 enterprise accounts. Consolidated 3 CRMs into one and brought time to first value from 41 days to 19 days. Works from the front line up: processes built with the teams who run them.
+
+  ## Work Experience
+
+  ### Saône Commerce -- Lyon, France
+
+  **Customer Success Operations Manager**
+  April 2022 – Present
+
+  Owned the CRM, the renewal forecast and the sales-to-success handover for an e-commerce platform's enterprise customers.
+
+  - Cut renewal forecast error from 18% to 6% in 3 quarters, by rebuilding the forecast from CRM stage data and publishing accuracy against actuals monthly
+  - Consolidated 3 CRMs into one for 120 enterprise accounts in 5 months, by running field mapping and cleanup with each team owner to a fixed freeze date
+  - Reduced time to first value from 41 days to 19 days, by introducing a mandatory sales handover form and a week-one kickoff checklist
+  - Saved 14 renewals worth EUR 1.2M ARR, by running a dated recovery playbook for every at-risk account
+  - Lowered enterprise churn from 9% to about 6% over 12 months, by launching a health score reviewed weekly with account managers
+
+  ### Saône Commerce -- Lyon, France
+
+  **Customer Support Team Lead**
+  September 2019 – March 2022
+
+  Led the support team of the same platform, handling merchant tickets in French and English.
+
+  - Got 3 renewal-blocking bugs fixed and cut ticket volume 22% in 2 quarters, by tying tagged tickets to renewals and presenting the cost to the CTO
+  - Brought first response time from 9 hours to 2 hours in 1 quarter, by writing reply templates and routing by language and product
+  - Shortened new-hire ramp from 8 weeks to about 5 weeks, by building a graded week-by-week training path
+
+  ## Projects
+
+  - **Renewal forecast rebuilt** -- finance had stopped using the forecast → error from 18% to 6% in 3 quarters
+  - **Three CRMs into one** -- account data split after two acquisitions → one CRM for 120 enterprise accounts in 5 months
+  - **Handover in nineteen days** -- slow starts for new enterprise customers → first value in 19 days instead of 41 days
+
+  ## Education
+
+  - Licence professionnelle, Commerce électronique, Université Lumière Lyon 2 (2019)
+
+  ## Certifications
+
+  - Salesforce Certified Administrator, Salesforce, 2023
+
+  ## Skills
+
+  - **Core expertise:** Renewal forecasting; CRM consolidation; sales-to-success handover; customer health scoring; pipeline hygiene
+  - **Tools:** Salesforce; HubSpot; Gainsight; Looker; Google Sheets
+  - **Languages:** French (native); English (C1, professional); German (A2)
+jhg:
+  progress:
+    artefacts:
+      status: "complete"
+      updated: "2026-11-07"
+  identity:
+    fullName: "Laurent Simon"
+    email: "laurent.simon@mail.example"
+  artefacts:
+    storyFacts:
+      - id: "S1"
+        title: "Renewal forecast rebuilt"
+        role: "Saône Commerce · Customer Success Operations Manager"
+        leadSkill: "Turning messy customer data into a forecast people trust"
+        numbers:
+          - "18%"
+          - "6%"
+          - "3 quarters"
+        sourceStatus: "verified"
+        sourceNote: "Board pack, Q3 2025, forecast vs actual slide"
+      - id: "S2"
+        title: "Three CRMs into one"
+        role: "Saône Commerce · Customer Success Operations Manager"
+        leadSkill: "Designing processes sales and success both follow"
+        numbers:
+          - "3 CRMs"
+          - "120 enterprise accounts"
+          - "5 months"
+        sourceStatus: "verified"
+        sourceNote: "Migration sign-off email from the COO, May 2024"
+      - id: "S3"
+        title: "Handover in nineteen days"
+        role: "Saône Commerce · Customer Success Operations Manager"
+        leadSkill: "Designing processes sales and success both follow"
+        numbers:
+          - "41 days"
+          - "19 days"
+        sourceStatus: "verified"
+        sourceNote: "Onboarding dashboard, H1 2025"
+      - id: "S4"
+        title: "Health score launch"
+        role: "Saône Commerce · Customer Success Operations Manager"
+        leadSkill: "Turning messy customer data into a forecast people trust"
+        numbers:
+          - "9%"
+          - "about 6%"
+          - "12 months"
+        sourceStatus: "estimate"
+        sourceNote: "His own churn calculation from the CRM export; no official report"
+      - id: "S5"
+        title: "At-risk renewals saved"
+        role: "Saône Commerce · Customer Success Operations Manager"
+        leadSkill: "Explaining revenue risk to leadership in plain numbers"
+        numbers:
+          - "14 renewals"
+          - "EUR 1.2M ARR"
+        sourceStatus: "verified"
+        sourceNote: "Quarterly business review deck, Q4 2025"
+      - id: "S6"
+        title: "Bug costs made visible"
+        role: "Saône Commerce · Customer Support Team Lead"
+        leadSkill: "Explaining revenue risk to leadership in plain numbers"
+        numbers:
+          - "3 bugs"
+          - "22%"
+          - "2 quarters"
+        sourceStatus: "verified"
+        sourceNote: "Support report shared with the CTO, 2021"
+      - id: "S7"
+        title: "First response under two hours"
+        role: "Saône Commerce · Customer Support Team Lead"
+        leadSkill: "Designing processes sales and success both follow"
+        numbers:
+          - "9 hours"
+          - "2 hours"
+          - "1 quarter"
+        sourceStatus: "verified"
+        sourceNote: "Helpdesk SLA report, Q2 2020"
+      - id: "S8"
+        title: "Faster support onboarding"
+        role: "Saône Commerce · Customer Support Team Lead"
+        leadSkill: "Designing processes sales and success both follow"
+        numbers:
+          - "8 weeks"
+          - "about 5 weeks"
+        sourceStatus: "estimate"
+        sourceNote: "His own count from the training tracker"
+      - id: "S9"
+        title: "Upsell signal alerts"
+        role: "Saône Commerce · Customer Success Operations Manager"
+        leadSkill: "Turning messy customer data into a forecast people trust"
+        numbers:
+          - "EUR 300K pipeline"
+        sourceStatus: "user_cannot_confirm"
+        sourceNote: "Remembers a sales manager quoting it; no artefact"
+    currentDomain: "Customer success operations for an e-commerce software platform"
+    cvHouseRules:
+      - "Single column, standard headings, no photo, no tables or graphics"
+      - "Contact details in the body only; PDF or .docx"
+    lockedSections:
+      - "Projects"
+    languageLearning:
+      - language: "German"
+        currentLevel: "A2"
+        targetLevel: "B1"
+        targetDate: "June 2027"
+        sentence: "Ich lerne Deutsch, weil viele unserer Kunden in Deutschland sind."
+        countries:
+          - "Germany"
+          - "Switzerland"
+          - "Austria"
+    linkedinPublicUrl: "https://www.linkedin.com/in/laurent-simon-revops-example"

@@ -65,11 +65,14 @@ class Checker {
   errors: SchemaError[] = [];
   warnings: string[] = [];
 
-  unknownKeys(obj: Record<string, unknown>, allowed: readonly string[], path: string) {
+  unknownKeys(obj: Record<string, unknown>, allowed: readonly string[], path: string, lenient = false) {
     for (const k of Object.keys(obj)) {
       if (allowed.includes(k)) continue;
       const hint = closest(k, allowed);
-      this.errors.push({ path: path ? `${path}.${k}` : k, message: hint ? `unknown key (did you mean ${hint}?)` : "unknown key" });
+      const where = path ? `${path}.${k}` : k;
+      // The workbook is the Packer's and grows with it: a key this version does not know is kept and said, not refused.
+      if (lenient) this.warnings.push(`${where} is new to Compass — kept as it is, not shown yet`);
+      else this.errors.push({ path: where, message: hint ? `unknown key (did you mean ${hint}?)` : "unknown key" });
     }
   }
 
@@ -99,10 +102,10 @@ class Checker {
   }
 
   /** A mapping whose keys are all in `allowed`. Returns the record, or null after recording the error. */
-  mapping(v: unknown, path: string, allowed: readonly string[]): Record<string, unknown> | null {
+  mapping(v: unknown, path: string, allowed: readonly string[], lenient = false): Record<string, unknown> | null {
     if (absent(v)) return null;
     if (!isRecord(v)) { this.errors.push({ path, message: `must be a group of fields, got ${describe(v)}` }); return null; }
-    this.unknownKeys(v, allowed, path);
+    this.unknownKeys(v, allowed, path, lenient);
     return v;
   }
 
@@ -123,31 +126,31 @@ class Checker {
     if (typeof v === "string" && v.length > cap) this.warnings.push(`${path} is ${v.length} characters — trimmed to ${cap}`);
   }
 
-  /** A mapping against a declared shape: every key named, every value the kind it says. */
-  shape(v: unknown, path: string, spec: Shape): void {
-    const m = this.mapping(v, path, Object.keys(spec));
+  /** A mapping against a declared shape: every key named, every value the kind it says. `lenient`: an unknown key is a warning, kept. */
+  shape(v: unknown, path: string, spec: Shape, lenient = false): void {
+    const m = this.mapping(v, path, Object.keys(spec), lenient);
     if (!m) return;
-    for (const [k, kind] of Object.entries(spec)) this.kind(m[k], path ? `${path}.${k}` : k, kind);
+    for (const [k, kind] of Object.entries(spec)) this.kind(m[k], path ? `${path}.${k}` : k, kind, lenient);
   }
 
-  private kind(v: unknown, path: string, kind: Kind): void {
+  private kind(v: unknown, path: string, kind: Kind, lenient = false): void {
     if (absent(v)) return;
     if (kind === "string") { this.string(v, path); return; }
     if (kind === "number") { this.number(v, path); return; }
     if (kind === "string[]") { this.stringList(v, path); return; }
-    if ("map" in kind) { this.shape(v, path, kind.map); return; }
+    if ("map" in kind) { this.shape(v, path, kind.map, lenient); return; }
     if ("record" in kind) {
-      const m = this.mapping(v, path, kind.keys);
-      if (m) for (const k of kind.keys) this.kind(m[k], `${path}.${k}`, kind.record);
+      const m = this.mapping(v, path, kind.keys, lenient);
+      if (m) for (const k of kind.keys) this.kind(m[k], `${path}.${k}`, kind.record, lenient);
       return;
     }
     // rows
     if (!Array.isArray(v)) { this.errors.push({ path, message: `must be a list, got ${describe(v)}` }); return; }
     v.forEach((row, i) => {
       const p = `${path}[${i}]`;
-      const r = this.mapping(row, p, Object.keys(kind.rows));
+      const r = this.mapping(row, p, Object.keys(kind.rows), lenient);
       if (!r) { if (!absent(row)) return; this.errors.push({ path: p, message: "empty entry" }); return; }
-      for (const [k, kk] of Object.entries(kind.rows)) this.kind(r[k], `${p}.${k}`, kk);
+      for (const [k, kk] of Object.entries(kind.rows)) this.kind(r[k], `${p}.${k}`, kk, lenient);
       for (const k of kind.required ?? []) if (absent(r[k]) || (typeof r[k] === "string" && !(r[k] as string).trim())) this.errors.push({ path: p, message: `missing ${k}` });
     });
     if (v.length > ROW_CAPS.jhgRows) this.warnings.push(`${path} has ${v.length} entries — only the first ${ROW_CAPS.jhgRows} are kept`);
@@ -160,6 +163,7 @@ export type Kind = "string" | "number" | "string[]" | { map: Shape } | { rows: S
 export type Shape = Record<string, Kind>;
 
 export const SCORES_SHAPE: Shape = Object.fromEntries(SCORE_KEYS.map((k) => [k, "number"]));
+const SUB_SECTOR_ROW: Shape = { name: "string", growthSignal: "string", source: "string", outlook: "string", confirmed: "string" };
 
 export const JHG_SHAPE: Shape = {
   progress: { record: { map: { status: "string", updated: "string" } }, keys: JHG_FILE_KEYS },
@@ -177,7 +181,7 @@ export const JHG_SHAPE: Shape = {
     keepers: "string[]",
     titles: { map: { target: "string[]", analog: "string[]", exclude: "string[]" } },
     clusters: { rows: { name: "string", titles: "string[]", axes: "string[]", buys: "string", level: "string", fit: "string" }, required: ["name"] },
-    industries: { rows: { name: "string", subSectors: { rows: { name: "string", growthSignal: "string", source: "string", outlook: "string", confirmed: "string" }, required: ["name"] } }, required: ["name"] },
+    industries: { rows: { name: "string", subSectors: { rows: SUB_SECTOR_ROW, required: ["name"] } }, required: ["name"] },
     companyType: "string",
   } },
   targetCompanies: { map: {
@@ -185,6 +189,8 @@ export const JHG_SHAPE: Shape = {
       rank: "number", name: "string", companyType: "string", inspiredBy: "string", industry: "string", subSector: "string", outlook: "string", location: "string", website: "string",
       growthSignal: "string", growthSource: "string", knownContact: "string", careersUrl: "string", careersUrlStatus: "string", scores: { map: SCORES_SHAPE },
     }, required: ["name"] },
+    // Sub-sectors the coach looked at beyond the True North industries (the Packer, 2026-11-07).
+    extraSubSectors: { rows: { ...SUB_SECTOR_ROW, industry: "string" }, required: ["name"] },
     challenges: { rows: { company: "string", challenge: "string", resolution: "string" }, required: ["company"] },
     top10: { rows: { rank: "number", name: "string", careersUrl: "string", careersUrlStatus: "string", careersUrlNote: "string", hiringAuthorityTitle: "string", knownPerson: "string", thesis: "string", businessProblem: "string", sayItLoud: "string" }, required: ["name"] },
     top3: { rows: { name: "string", whyNow: "string", firstMove: "string", byDate: "string" }, required: ["name"] },
@@ -195,6 +201,7 @@ export const JHG_SHAPE: Shape = {
     cvHouseRules: "string[]",
     lockedSections: "string[]",
     languageLearning: { rows: { language: "string", currentLevel: "string", targetLevel: "string", targetDate: "string", sentence: "string", countries: "string[]" }, required: ["language"] },
+    linkedinPublicUrl: "string",
   } },
 };
 
@@ -344,8 +351,9 @@ export function validateProfileFile(doc: unknown): SchemaResult {
     }
   }
 
-  // jhg — the workbook block each of the four files carries (added 2026-11-07)
-  c.shape(doc.jhg, "jhg", JHG_SHAPE);
+  // jhg — the workbook block each of the four files carries (added 2026-11-07). The Packer's, so a key
+  // this version does not know is a warning and kept, never a refusal of the whole file.
+  c.shape(doc.jhg, "jhg", JHG_SHAPE, true);
 
   // linkedin — headline · about · experience · featured · skills · education · certifications (added 2026-11-05)
   const li = c.mapping(doc.linkedin, "linkedin", LINKEDIN_KEYS);
