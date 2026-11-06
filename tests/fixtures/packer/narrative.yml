@@ -1,0 +1,35 @@
+version: 1
+contact:
+  phone: "+33 6 55 01 23 45"
+  linkedin: "https://www.linkedin.com/in/example-laurent-simon"
+  github: "https://github.com/example-laurent-simon"
+personalization:
+  exitNarrative: "I started in customer support at a Lyon e-commerce platform, where I was the person who exported the tickets to a spreadsheet to show which product bugs were costing us renewals. That habit turned into a Customer Success Operations role, then into owning the CRM, the renewal forecast and the handover between sales and success for 120 enterprise accounts. I now want to move into Revenue Operations at a B2B SaaS scale-up, because the data I built to protect renewals is the same data that runs the whole revenue engine."
+narrative:
+  headline: "I help B2B SaaS scale-ups protect and grow recurring revenue through CRM architecture, renewal forecasting and sales-to-success handover design"
+  superpowers:
+    - "CRM architecture"
+    - "Renewal forecasting"
+    - "Sales-to-success handover"
+    - "Customer health scoring"
+jhg:
+  progress:
+    narrative:
+      status: "complete"
+      updated: "2026-11-06"
+  identity:
+    fullName: "Laurent Simon"
+    email: "laurent.simon@mail.example"
+    city: "Lyon"
+    country: "France"
+    location: "Lyon, France"
+    timezone: "Europe/Paris"
+    outputLanguage: "en"
+    preferredChannel: "either"
+    contactNote: "Available for calls 9:00–18:00 CET; WhatsApp on the same number"
+  narrative:
+    leadSkills:
+      - "Turning messy customer data into a forecast people trust"
+      - "Designing processes sales and success both follow"
+      - "Explaining revenue risk to leadership in plain numbers"
+    bridgeStoryOneLine: "I was a support agent, I turned ticket data into a Customer Success Operations role that owned the CRM and the renewal forecast, and now I move into Revenue Operations because that data runs the whole revenue engine."

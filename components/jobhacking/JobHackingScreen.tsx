@@ -70,6 +70,8 @@ export default function JobHackingScreen({ page }: { page: JhPageKey }) {
       items={items}
       rows={rows}
       active={active}
+      // Every editor reads its fields once, on mount: remount them when an upload lands (the slot records change).
+      panelKey={JSON.stringify(setup?.profileFiles ?? null)}
       loading={!uid || setupLoading || profileLoading}
       panel={(key) => {
         if (!uid) return null;

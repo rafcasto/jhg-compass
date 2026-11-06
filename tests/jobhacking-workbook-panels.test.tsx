@@ -1,5 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+
+// The editor writes to Firestore; the read view is what is under test.
+vi.mock("@/components/jobhacking/StoryBankEditor", () => ({ default: () => <p>editor</p> }));
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parseProfileFile } from "@/lib/careerops/profile-file";
@@ -34,9 +37,9 @@ describe("Target companies with the workbook", () => {
   it("Top 3 rows carry why now / first move / by date, and scores on the second line", () => {
     const p = read("target-companies");
     render(<CompanyListPanel listKey="top3" list={p.companyLists?.top3} jhg={p.jhg} />);
-    expect(screen.getByText("Why now")).toBeInTheDocument();
+    expect(screen.getAllByText("Why now")).toHaveLength(3);
     expect(screen.getByText(/Series B closed/)).toBeInTheDocument();
-    expect(screen.getAllByText("19 · G5 I5 A4 P5")).toHaveLength(3);
+    expect(screen.getAllByText(/19 · G5 I5 A4 P5/)).toHaveLength(3);
     expect(screen.getByRole("link", { name: /Tōtara Payments careers page — opens/ })).toHaveAttribute("href", "https://boards.example/totara-payments");
   });
 

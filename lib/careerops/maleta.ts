@@ -399,31 +399,42 @@ export function fromMaletaYaml(doc: Record<string, unknown>): Maleta {
 
 // ---- jhg: the workbook, coerced against the same shape the validator checks ----
 // Strings extracted, numbers kept as numbers, rows capped, unknown keys dropped — never obeyed.
-function coerceKind(v: unknown, kind: Kind): unknown {
+function coerceKind(v: unknown, kind: Kind, keepUnknown = false): unknown {
   if (v === undefined || v === null) return undefined;
   if (kind === "string") return str(v);
   if (kind === "number") return num(v);
   if (kind === "string[]") return strArr(v)?.slice(0, ROW_CAPS.jhgRows);
-  if ("map" in kind) return coerceShape(v, kind.map);
+  if ("map" in kind) return coerceShape(v, kind.map, keepUnknown);
   if ("record" in kind) {
     if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
     const r = v as Record<string, unknown>;
-    return pruned(Object.fromEntries(kind.keys.map((k) => [k, coerceKind(r[k], kind.record)])));
+    return pruned(Object.fromEntries(kind.keys.map((k) => [k, coerceKind(r[k], kind.record, keepUnknown)])));
   }
   if (!Array.isArray(v)) return undefined;
   const rows = v.slice(0, ROW_CAPS.jhgRows)
-    .map((row) => coerceShape(row, kind.rows))
+    .map((row) => coerceShape(row, kind.rows, keepUnknown))
     .filter((row): row is Record<string, unknown> => !!row && (kind.required ?? []).every((k) => typeof row[k] === "string" && (row[k] as string).trim() !== ""));
   return rows.length ? rows : undefined;
 }
 
-export function coerceShape(v: unknown, shape: Shape): Record<string, unknown> | undefined {
+export function coerceShape(v: unknown, shape: Shape, keepUnknown = false): Record<string, unknown> | undefined {
   if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
   const r = v as Record<string, unknown>;
-  return pruned(Object.fromEntries(Object.entries(shape).map(([k, kind]) => [k, coerceKind(r[k], kind)])));
+  const known = Object.fromEntries(Object.entries(shape).map(([k, kind]) => [k, coerceKind(r[k], kind, keepUnknown)]));
+  // The workbook keeps what it does not know yet (plain YAML data, nulls dropped) so a newer Packer loses nothing on the way to CareerOps.
+  const extra = keepUnknown ? Object.fromEntries(Object.entries(r).filter(([k]) => !(k in shape)).map(([k, x]) => [k, plain(x)])) : {};
+  return pruned({ ...extra, ...known });
 }
 
-export const jhgFromYaml = (v: unknown): JhgBlock | undefined => coerceShape(v, JHG_SHAPE) as JhgBlock | undefined;
+/** YAML data as it is — scalars, lists and maps — with nulls and empty strings dropped. */
+function plain(v: unknown): unknown {
+  if (v === null || v === undefined || v === "") return undefined;
+  if (Array.isArray(v)) { const xs = v.map(plain).filter((x) => x !== undefined); return xs.length ? xs : undefined; }
+  if (typeof v === "object") return pruned(Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, plain(x)])));
+  return v;
+}
+
+export const jhgFromYaml = (v: unknown): JhgBlock | undefined => coerceShape(v, JHG_SHAPE, true) as JhgBlock | undefined;
 
 /** True when the workbook has anything in it. */
 export const hasJhg = (j: JhgBlock | null | undefined): boolean => !!j && Object.values(j).some((v) => v && typeof v === "object" && Object.keys(v).length > 0);

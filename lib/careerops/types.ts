@@ -319,11 +319,13 @@ export interface JhgTop10 {
 }
 /** The Top 3 with the reason to move now, the first move, and the date to make it by. */
 export interface JhgTop3 { name: string; whyNow?: string; firstMove?: string; byDate?: string }
-export interface JhgTargetCompanies { companies?: JhgCompany[]; challenges?: JhgChallenge[]; top10?: JhgTop10[]; top3?: JhgTop3[] }
+/** A sub-sector the coach looked at beyond the True North industries, with the industry it sits in. */
+export interface JhgExtraSubSector extends JhgSubSector { industry?: string }
+export interface JhgTargetCompanies { companies?: JhgCompany[]; extraSubSectors?: JhgExtraSubSector[]; challenges?: JhgChallenge[]; top10?: JhgTop10[]; top3?: JhgTop3[] }
 /** The fact behind a story: where it happened, the lead skill, the numbers and how the figure is sourced. */
 export interface JhgStoryFact { id?: string; title: string; role?: string; leadSkill?: string; numbers?: string[]; sourceStatus?: string; sourceNote?: string }
 export interface JhgLanguage { language: string; currentLevel?: string; targetLevel?: string; targetDate?: string; sentence?: string; countries?: string[] }
-export interface JhgArtefacts { storyFacts?: JhgStoryFact[]; currentDomain?: string; cvHouseRules?: string[]; lockedSections?: string[]; languageLearning?: JhgLanguage[] }
+export interface JhgArtefacts { storyFacts?: JhgStoryFact[]; currentDomain?: string; cvHouseRules?: string[]; lockedSections?: string[]; languageLearning?: JhgLanguage[]; linkedinPublicUrl?: string }
 export interface JhgBlock {
   progress?: Partial<Record<JhgFileKey, JhgProgress>>;
   identity?: JhgIdentity;

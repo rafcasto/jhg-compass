@@ -1,0 +1,314 @@
+version: 1
+goal:
+  role: "Senior Revenue Operations Manager"
+  seniority: "Senior"
+  subsector: "Revenue intelligence software"
+  companyType: "Scale-up (Series B to D)"
+  city: "Lyon, France"
+  salary: "EUR 62,000–75,000"
+policy:
+  minimumSalary: "EUR 58,000"
+  locationFlexibility: "Remote: Y, CET hours; Local hybrid: Y, up to 2 days a week in Lyon, floor unchanged; Relocate: N"
+  visaStatus: "French citizen; free to work anywhere in the EU"
+  authorizedIn:
+    - "France"
+    - "European Union"
+personalization:
+  targetRoles:
+    - archetype: "Revenue Operations Manager"
+      axes: "renewal forecast, pipeline hygiene; Forecast leadership can trust"
+      buys: "A revenue forecast the board accepts without a spreadsheet argument"
+    - archetype: "CRM Manager"
+      axes: "CRM governance; One CRM everyone uses"
+      buys: "One clean CRM that sales, success and finance all trust"
+    - archetype: "Customer Success Operations Manager"
+      axes: "handover process, renewal forecast; Retention engine for customer success"
+      buys: "Fewer surprise churns and faster time to value for new customers"
+  compTargets: "Target EUR 62,000–75,000; floor EUR 58,000."
+  negotiationScripts:
+    - "I am targeting 70,000 base, given the role owns the renewal forecast end to end"
+    - "My notice is 90 days; I can draft the handover plan in my first week"
+  locationPolicy:
+    - "Will work in: Lyon; remote across France"
+    - "Exclude: Paris-based roles with more than one day a week on site"
+    - "Remote: Y, CET hours"
+    - "Local hybrid: Y, up to 2 days a week in Lyon, floor unchanged"
+    - "Relocate: N"
+    - "Travel for a remote role elsewhere: Up to 4 days a month"
+watchlist:
+  positive:
+    - "Revenue Operations Manager"
+    - "Revenue Operations Lead"
+    - "Customer Success Operations Manager"
+  negative:
+    - "Account Executive"
+    - "Sales Development Representative"
+    - "Data Engineer"
+    - "Junior"
+    - "Intern"
+notes: |-
+  Hard no's (do not apply): Commission-only roles; Roles carrying a personal sales quota; Gambling or tobacco sectors
+  Culture must-haves: RevOps reports to the CRO or COO, not to one sales team; One CRM as the source of truth, or a mandate to get there; deprioritise when absent: Y
+  Soft dislikes (lower, not a no): Pre-seed stage; Companies under 40 staff
+  Notice period: 90 days
+  Never apply: Rhône Retail Group
+jhg:
+  progress:
+    trueNorth:
+      status: "complete"
+      updated: "2026-11-07"
+  identity:
+    fullName: "Laurent Simon"
+    email: "laurent.simon@mail.example"
+  trueNorth:
+    boundaries:
+      currency: "EUR"
+      salaryLower: "62,000"
+      salaryUpper: "75,000"
+      salaryFloor: "58,000"
+      authorizedIn:
+        - "France"
+        - "European Union"
+      needsSponsorship: "N"
+      visaStatus: "French citizen; free to work anywhere in the EU"
+      willWorkIn: "Lyon; remote across France"
+      exclude: "Paris-based roles with more than one day a week on site"
+      remote: "Y, CET hours"
+      localHybrid: "Y, up to 2 days a week in Lyon, floor unchanged"
+      relocate: "N"
+      remoteTravel: "Up to 4 days a month"
+      hardNos:
+        - "Commission-only roles"
+        - "Roles carrying a personal sales quota"
+        - "Gambling or tobacco sectors"
+      cultureMustHaves:
+        - "RevOps reports to the CRO or COO, not to one sales team"
+        - "One CRM as the source of truth, or a mandate to get there"
+      deprioritizeIfAbsent: "Y"
+      softDislikes:
+        - "Pre-seed stage"
+        - "Companies under 40 staff"
+      noticePeriodDays: 90
+      excludeLevels:
+        - "Junior"
+        - "Intern"
+      neverApply:
+        - "Rhône Retail Group"
+      negotiationLines:
+        - "I am targeting 70,000 base, given the role owns the renewal forecast end to end"
+        - "My notice is 90 days; I can draft the handover plan in my first week"
+    postings:
+      - title: "Revenue Operations Manager"
+        company: "Fourvière Analytics"
+        location: "Lyon"
+        url: "https://jobs.example/fourviere-analytics/revops-manager"
+        phrases:
+          - "own the renewal forecast"
+          - "pipeline hygiene across sales and success"
+        verified: "2026-11-07"
+      - title: "Revenue Operations Manager"
+        company: "Saint-Exupéry Logistics Cloud"
+        location: "Lyon (hybrid)"
+        url: "https://jobs.example/saint-exupery-logistics/revops-manager"
+        phrases:
+          - "renewal forecast accuracy"
+          - "CRM governance"
+        verified: "2026-11-07"
+      - title: "Revenue Operations Lead"
+        company: "Croix-Rousse Commerce"
+        location: "Remote France"
+        url: "https://jobs.example/croix-rousse-commerce/revops-lead"
+        phrases:
+          - "pipeline hygiene"
+          - "board-level forecast"
+        verified: "2026-11-07"
+      - title: "Revenue Operations Lead"
+        company: "Gerland Health Software"
+        location: "Lyon"
+        url: "https://jobs.example/gerland-health/revops-lead"
+        phrases:
+          - "renewal forecast"
+          - "handover process between sales and CS"
+        verified: "2026-11-07"
+      - title: "Customer Success Operations Manager"
+        company: "Presqu'île Payments"
+        location: "Lyon"
+        url: "https://jobs.example/presquile-payments/cs-ops-manager"
+        phrases:
+          - "customer health scoring"
+          - "handover process"
+        verified: "2026-11-07"
+      - title: "Customer Success Operations Manager"
+        company: "Confluence Retail Tech"
+        location: "Remote France"
+        url: "https://jobs.example/confluence-retail/cs-ops-manager"
+        phrases:
+          - "renewal forecast"
+          - "CRM governance"
+        verified: "2026-11-07"
+      - title: "Sales Operations Manager"
+        company: "Tête d'Or Software"
+        location: "Lyon"
+        url: "https://jobs.example/tete-dor-software/sales-ops-manager"
+        phrases:
+          - "pipeline hygiene"
+          - "territory planning"
+        verified: "2026-11-07"
+      - title: "Sales Operations Manager"
+        company: "Vaise Industrial Cloud"
+        location: "Lyon (hybrid)"
+        url: "https://jobs.example/vaise-industrial/sales-ops-manager"
+        phrases:
+          - "CRM governance"
+          - "quota modelling"
+        verified: "2026-11-07"
+      - title: "CRM Manager"
+        company: "Part-Dieu Marketplace"
+        location: "Lyon"
+        url: "https://jobs.example/part-dieu-marketplace/crm-manager"
+        phrases:
+          - "CRM governance"
+          - "data quality rules"
+        verified: "2026-11-07"
+      - title: "GTM Operations Manager"
+        company: "Monplaisir SaaS"
+        location: "Remote France"
+        url: "https://jobs.example/monplaisir-saas/gtm-ops-manager"
+        phrases:
+          - "pipeline hygiene"
+          - "handover process"
+        verified: "2026-11-07"
+      - title: "Revenue Operations Manager"
+        company: "Brotteaux Data"
+        location: "Remote France"
+        url: "https://jobs.example/brotteaux-data/revops-manager"
+        phrases:
+          - "renewal forecast"
+          - "CRM governance"
+        verified: "2026-11-07"
+      - title: "Revenue Operations Manager"
+        company: "Villeurbanne Robotics Software"
+        location: "Villeurbanne"
+        url: "https://jobs.example/villeurbanne-robotics/revops-manager"
+        phrases:
+          - "pipeline hygiene"
+          - "renewal forecast"
+        verified: "2026-11-07"
+      - title: "Customer Success Operations Manager"
+        company: "Ainay Learning"
+        location: "Lyon"
+        url: "https://jobs.example/ainay-learning/cs-ops-manager"
+        phrases:
+          - "handover process"
+          - "renewal forecast"
+        verified: "2026-11-07"
+      - title: "Account Executive"
+        company: "Fourvière Analytics"
+        location: "Lyon"
+        url: "https://jobs.example/fourviere-analytics/account-executive"
+        phrases:
+          - "personal quota"
+          - "new logos"
+        verified: "2026-11-07"
+      - title: "Sales Development Representative"
+        company: "Croix-Rousse Commerce"
+        location: "Lyon"
+        url: "https://jobs.example/croix-rousse-commerce/sdr"
+        phrases:
+          - "outbound sequences"
+          - "meetings booked"
+        verified: "2026-11-07"
+      - title: "Data Engineer"
+        company: "Brotteaux Data"
+        location: "Remote France"
+        url: "https://jobs.example/brotteaux-data/data-engineer"
+        phrases:
+          - "dbt models"
+          - "warehouse pipelines"
+        verified: "2026-11-07"
+    keepers:
+      - "renewal forecast"
+      - "CRM governance"
+      - "pipeline hygiene"
+      - "handover process"
+    titles:
+      target:
+        - "Revenue Operations Manager"
+        - "Revenue Operations Lead"
+        - "Customer Success Operations Manager"
+      analog:
+        - "Sales Operations Manager"
+        - "CRM Manager"
+        - "GTM Operations Manager"
+      exclude:
+        - "Account Executive"
+        - "Sales Development Representative"
+        - "Data Engineer"
+    clusters:
+      - name: "Forecast leadership can trust"
+        titles:
+          - "Revenue Operations Manager"
+          - "Revenue Operations Lead"
+          - "Sales Operations Manager"
+        axes:
+          - "renewal forecast"
+          - "pipeline hygiene"
+        buys: "A revenue forecast the board accepts without a spreadsheet argument"
+        level: "Senior"
+        fit: "primary"
+      - name: "One CRM everyone uses"
+        titles:
+          - "CRM Manager"
+          - "GTM Operations Manager"
+        axes:
+          - "CRM governance"
+        buys: "One clean CRM that sales, success and finance all trust"
+        level: "Senior"
+        fit: "secondary"
+      - name: "Retention engine for customer success"
+        titles:
+          - "Customer Success Operations Manager"
+        axes:
+          - "handover process"
+          - "renewal forecast"
+        buys: "Fewer surprise churns and faster time to value for new customers"
+        level: "Senior"
+        fit: "adjacent"
+    industries:
+      - name: "B2B SaaS"
+        subSectors:
+          - name: "Revenue intelligence software"
+            growthSignal: "French market revenue up 19% year on year to June 2026"
+            source: "https://stats.example/fr-revenue-intelligence-2026"
+            outlook: "sunrise"
+            confirmed: "Y"
+          - name: "Customer success platforms"
+            growthSignal: "European seat count up 12% in the year to September 2026"
+            source: "https://stats.example/eu-customer-success-platforms-2026"
+            outlook: "sunrise"
+            confirmed: "Y"
+      - name: "E-commerce enablement"
+        subSectors:
+          - name: "Marketplace software"
+            growthSignal: "French marketplace GMV up 11% in 2025"
+            source: "https://stats.example/fr-marketplace-software-2025"
+            outlook: "sunrise"
+            confirmed: "Y"
+          - name: "Print catalogue services"
+            growthSignal: "French print catalogue spend down 6% in 2025"
+            source: "https://stats.example/fr-print-catalogue-2025"
+            outlook: "sunset"
+            confirmed: "Y"
+      - name: "Industrial software"
+        subSectors:
+          - name: "Manufacturing ERP for mid-market"
+            growthSignal: "Auvergne-Rhône-Alpes licence revenue up 8% in 2025"
+            source: "https://stats.example/ara-manufacturing-erp-2025"
+            outlook: "sunrise"
+            confirmed: "Y"
+          - name: "On-premise MES"
+            growthSignal: ""
+            source: ""
+            outlook: ""
+            confirmed: ""
+    companyType: "Scale-up (Series B to D)"

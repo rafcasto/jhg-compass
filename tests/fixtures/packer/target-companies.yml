@@ -1,0 +1,1665 @@
+version: 1
+watchlist:
+  companies:
+    - name: "Fourvière Analytics"
+      careersUrl: "https://boards.example/fourviere-analytics"
+    - name: "Confluence Retail Tech"
+      careersUrl: "https://boards.example/confluence-retail-tech"
+    - name: "Gerland Health Software"
+      careersUrl: "https://boards.example/gerland-health-software"
+    - name: "Brotteaux Data"
+      careersUrl: "https://brotteaux-data.example/jobs"
+    - name: "Presqu'île Payments"
+      careersUrl: "https://boards.example/presquîle-payments"
+    - name: "Croix-Rousse Commerce"
+    - name: "Saint-Exupéry Logistics Cloud"
+      careersUrl: "https://boards.example/saint-exupery-logistics-cloud"
+    - name: "Monplaisir SaaS"
+      careersUrl: "https://monplaisir-saas.example/jobs"
+    - name: "Ainay Learning"
+      careersUrl: "https://boards.example/ainay-learning"
+    - name: "Tête d'Or Software"
+      careersUrl: "https://boards.example/tete-dor-software"
+companyLists:
+  all:
+    sunrise:
+      - rank: 1
+        name: "Fourvière Analytics"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/fourviere-analytics"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 2
+        name: "Confluence Retail Tech"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/confluence-retail-tech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 3
+          proof: 5
+          total: 18
+      - rank: 3
+        name: "Gerland Health Software"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/gerland-health-software"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 4
+          interest: 5
+          access: 4
+          proof: 5
+          total: 18
+      - rank: 4
+        name: "Brotteaux Data"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "scaleup"
+        careersUrl: "https://brotteaux-data.example/jobs"
+        careersUrlStatus: "corrected"
+        scores:
+          growth: 5
+          interest: 4
+          access: 3
+          proof: 5
+          total: 17
+      - rank: 5
+        name: "Presqu'île Payments"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/presquîle-payments"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 4
+          access: 4
+          proof: 4
+          total: 17
+      - rank: 6
+        name: "Croix-Rousse Commerce"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrlStatus: "none"
+        scores:
+          growth: 4
+          interest: 5
+          access: 2
+          proof: 5
+          total: 16
+      - rank: 7
+        name: "Saint-Exupéry Logistics Cloud"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        companyType: "established"
+        careersUrl: "https://boards.example/saint-exupery-logistics-cloud"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 8
+        name: "Monplaisir SaaS"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "startup"
+        careersUrl: "https://monplaisir-saas.example/jobs"
+        careersUrlStatus: "corrected"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 9
+        name: "Ainay Learning"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/ainay-learning"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 10
+        name: "Tête d'Or Software"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "established"
+        careersUrl: "https://boards.example/tete-dor-software"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 3
+          interest: 4
+          access: 4
+          proof: 4
+          total: 15
+      - rank: 11
+        name: "Part-Dieu Marketplace"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/part-dieu-marketplace"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 12
+        name: "Villeurbanne Robotics Software"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/villeurbanne-robotics-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 3
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 13
+        name: "Rhône Valley CRM"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/rhone-valley-crm"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 2
+          proof: 4
+          total: 14
+      - rank: 14
+        name: "Sans-Souci Subscriptions"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/sans-souci-subscriptions"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 4
+          total: 14
+      - rank: 15
+        name: "Vaise Industrial Cloud"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        companyType: "established"
+        careersUrl: "https://careers.example/vaise-industrial-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 4
+          proof: 4
+          total: 14
+      - rank: 16
+        name: "Perrache Commerce Cloud"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/perrache-commerce-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 3
+          proof: 4
+          total: 14
+      - rank: 17
+        name: "Guillotière Insights"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/guillotiere-insights"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 3
+          access: 2
+          proof: 4
+          total: 14
+      - rank: 18
+        name: "Bellecour Stays"
+        industry: "Travel technology"
+        subSector: "Hotel booking software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/bellecour-stays"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 4
+          proof: 3
+          total: 14
+      - rank: 19
+        name: "Gratte-Ciel Manufacturing Apps"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        companyType: "established"
+        careersUrl: "https://careers.example/gratte-ciel-manufacturing-apps"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 4
+          total: 13
+      - rank: 21
+        name: "Lumière Commerce"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/lumiere-commerce"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 4
+          total: 13
+      - rank: 23
+        name: "Montchat Health Cloud"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "startup"
+        careersUrl: "https://careers.example/montchat-health-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 2
+          proof: 4
+          total: 13
+      - rank: 24
+        name: "Saxe Booking"
+        industry: "Travel technology"
+        subSector: "Hotel booking software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/saxe-booking"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 25
+        name: "Charpennes Data Studio"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/charpennes-data-studio"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 28
+        name: "Cordeliers Logistics"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        companyType: "established"
+        careersUrl: "https://careers.example/cordeliers-logistics"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 29
+        name: "Massena Learning Tech"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "startup"
+        careersUrl: "https://careers.example/massena-learning-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 30
+        name: "Valmy Software Group"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "established"
+        careersUrl: "https://careers.example/valmy-software-group"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 3
+          proof: 4
+          total: 12
+      - rank: 31
+        name: "Debourg Payments"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrlStatus: "none"
+        scores:
+          growth: 4
+          interest: 2
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 32
+        name: "Cuire Commerce Labs"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/cuire-commerce-labs"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 2
+          proof: 3
+          total: 11
+      - rank: 34
+        name: "Laënnec Health Data"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "scaleup"
+        careersUrl: "https://careers.example/laennec-health-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 3
+          proof: 3
+          total: 11
+      - rank: 35
+        name: "Gorge-de-Loup Factory Apps"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        companyType: "established"
+        careersUrl: "https://careers.example/gorge-de-loup-factory-apps"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 4
+          proof: 3
+          total: 11
+      - rank: 36
+        name: "Foch Travel Systems"
+        industry: "Travel technology"
+        subSector: "Hotel booking software"
+        companyType: "established"
+        careersUrl: "https://careers.example/foch-travel-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 3
+          proof: 3
+          total: 11
+      - rank: 37
+        name: "Sergent-Blandan Software"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/sergent-blandan-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 2
+          proof: 3
+          total: 10
+      - rank: 40
+        name: "Duchère Commerce"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "startup"
+        careersUrl: "https://careers.example/duchere-commerce"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 2
+          proof: 2
+          total: 9
+    sunset:
+      - rank: 20
+        name: "Jean-Macé Retail Systems"
+        industry: "E-commerce enablement"
+        subSector: "Print catalogue services"
+        companyType: "established"
+        careersUrl: "https://careers.example/jean-mace-retail-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 4
+          proof: 4
+          total: 13
+      - rank: 26
+        name: "Grange-Blanche Catalogues"
+        industry: "E-commerce enablement"
+        subSector: "Print catalogue services"
+        companyType: "established"
+        careersUrl: "https://careers.example/grange-blanche-catalogues"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 1
+          interest: 3
+          access: 4
+          proof: 4
+          total: 12
+      - rank: 33
+        name: "Ampère Print Services"
+        industry: "E-commerce enablement"
+        subSector: "Print catalogue services"
+        companyType: "established"
+        careersUrlStatus: "none"
+        scores:
+          growth: 1
+          interest: 2
+          access: 4
+          proof: 4
+          total: 11
+      - rank: 39
+        name: "Mermoz Retail Data"
+        industry: "E-commerce enablement"
+        subSector: "Print catalogue services"
+        companyType: "startup"
+        careersUrlStatus: "none"
+        scores:
+          growth: 1
+          interest: 2
+          access: 3
+          proof: 3
+          total: 9
+    unclassified:
+      - rank: 22
+        name: "Hôtel-de-Ville Software"
+        industry: "Industrial software"
+        subSector: "On-premise MES"
+        companyType: "established"
+        careersUrl: "https://careers.example/hotel-de-ville-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 4
+          proof: 4
+          total: 13
+      - rank: 27
+        name: "Hénon Industrial Systems"
+        industry: "Industrial software"
+        subSector: "On-premise MES"
+        companyType: "established"
+        careersUrl: "https://careers.example/henon-industrial-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 3
+          proof: 4
+          total: 12
+      - rank: 38
+        name: "Garibaldi MES Partners"
+        industry: "Industrial software"
+        subSector: "On-premise MES"
+        companyType: "established"
+        careersUrl: "https://careers.example/garibaldi-mes-partners"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 3
+          proof: 3
+          total: 10
+  top10:
+    sunrise:
+      - rank: 1
+        name: "Fourvière Analytics"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/fourviere-analytics"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 2
+        name: "Confluence Retail Tech"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/confluence-retail-tech"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 3
+          proof: 5
+          total: 18
+      - rank: 3
+        name: "Gerland Health Software"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/gerland-health-software"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 4
+          interest: 5
+          access: 4
+          proof: 5
+          total: 18
+      - rank: 4
+        name: "Brotteaux Data"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "scaleup"
+        careersUrl: "https://brotteaux-data.example/jobs"
+        careersUrlStatus: "corrected"
+        scores:
+          growth: 5
+          interest: 4
+          access: 3
+          proof: 5
+          total: 17
+      - rank: 5
+        name: "Presqu'île Payments"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/presquîle-payments"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 4
+          access: 4
+          proof: 4
+          total: 17
+      - rank: 6
+        name: "Croix-Rousse Commerce"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrlStatus: "none"
+        scores:
+          growth: 4
+          interest: 5
+          access: 2
+          proof: 5
+          total: 16
+      - rank: 7
+        name: "Saint-Exupéry Logistics Cloud"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        companyType: "established"
+        careersUrl: "https://boards.example/saint-exupery-logistics-cloud"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 8
+        name: "Monplaisir SaaS"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "startup"
+        careersUrl: "https://monplaisir-saas.example/jobs"
+        careersUrlStatus: "corrected"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 9
+        name: "Ainay Learning"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/ainay-learning"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 10
+        name: "Tête d'Or Software"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "established"
+        careersUrl: "https://boards.example/tete-dor-software"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 3
+          interest: 4
+          access: 4
+          proof: 4
+          total: 15
+    sunset: []
+  top3:
+    sunrise:
+      - rank: 1
+        name: "Fourvière Analytics"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/fourviere-analytics"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 3
+        name: "Gerland Health Software"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/gerland-health-software"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 4
+          interest: 5
+          access: 4
+          proof: 5
+          total: 18
+      - rank: 5
+        name: "Presqu'île Payments"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        companyType: "scaleup"
+        careersUrl: "https://boards.example/presquîle-payments"
+        careersUrlStatus: "confirmed"
+        scores:
+          growth: 5
+          interest: 4
+          access: 4
+          proof: 4
+          total: 17
+    sunset: []
+notes: |-
+  Hard no's (do not apply): Commission-only roles; Roles carrying a personal sales quota; Gambling or tobacco sectors
+  Culture must-haves: RevOps reports to the CRO or COO, not to one sales team; One CRM as the source of truth, or a mandate to get there; deprioritise when absent: Y
+  Soft dislikes (lower, not a no): Pre-seed stage; Companies under 40 staff
+  Notice period: 90 days
+  Never apply: Rhône Retail Group
+  Top 3 right now: Fourvière Analytics, Gerland Health Software, Presqu'île Payments
+jhg:
+  progress:
+    targetCompanies:
+      status: "complete"
+      updated: "2026-11-07"
+  identity:
+    fullName: "Laurent Simon"
+    email: "laurent.simon@mail.example"
+  targetCompanies:
+    companies:
+      - rank: 1
+        name: "Fourvière Analytics"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://fourviere-analytics.example"
+        growthSignal: "Headcount up 10% in the 12 months to October 2026"
+        growthSource: "https://news.example/fourviere-analytics-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/fourviere-analytics"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 4
+          proof: 5
+          total: 19
+      - rank: 2
+        name: "Confluence Retail Tech"
+        companyType: "scaleup"
+        inspiredBy: "industry_growth"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://confluence-retail-tech.example"
+        growthSignal: "Revenue up 17% in 2025 (annual filing)"
+        growthSource: "https://news.example/confluence-retail-tech-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/confluence-retail-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 5
+          access: 3
+          proof: 5
+          total: 18
+      - rank: 3
+        name: "Gerland Health Software"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://gerland-health-software.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 24%"
+        growthSource: "https://news.example/gerland-health-software-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/gerland-health-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 5
+          access: 4
+          proof: 5
+          total: 18
+      - rank: 4
+        name: "Brotteaux Data"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        outlook: "sunrise"
+        location: "Remote France"
+        website: "https://brotteaux-data.example"
+        growthSignal: "Headcount up 31% in the 12 months to October 2026"
+        growthSource: "https://news.example/brotteaux-data-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/brotteaux-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 4
+          access: 3
+          proof: 5
+          total: 17
+      - rank: 5
+        name: "Presqu'île Payments"
+        companyType: "scaleup"
+        inspiredBy: "press_or_funding"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://presquîle-payments.example"
+        growthSignal: "Revenue up 38% in 2025 (annual filing)"
+        growthSource: "https://news.example/presquîle-payments-2026"
+        knownContact: "Camille Roux, former Saône Commerce colleague"
+        careersUrl: "https://careers.example/presquîle-payments"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 4
+          access: 4
+          proof: 4
+          total: 17
+      - rank: 6
+        name: "Croix-Rousse Commerce"
+        companyType: "scaleup"
+        inspiredBy: "competitor"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://croix-rousse-commerce.example"
+        growthSignal: "Headcount up 17% in the 12 months to October 2026"
+        growthSource: "https://news.example/croix-rousse-commerce-2026"
+        knownContact: ""
+        careersUrl: ""
+        careersUrlStatus: "none"
+        scores:
+          growth: 4
+          interest: 5
+          access: 2
+          proof: 5
+          total: 16
+      - rank: 7
+        name: "Saint-Exupéry Logistics Cloud"
+        companyType: "established"
+        inspiredBy: "job_posting"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://saint-exupery-logistics-cloud.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 10%"
+        growthSource: "https://news.example/saint-exupery-logistics-cloud-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/saint-exupery-logistics-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 8
+        name: "Monplaisir SaaS"
+        companyType: "startup"
+        inspiredBy: "event_or_community"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        outlook: "sunrise"
+        location: "Remote France"
+        website: "https://monplaisir-saas.example"
+        growthSignal: "Revenue up 24% in 2025 (annual filing)"
+        growthSource: "https://news.example/monplaisir-saas-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/monplaisir-saas"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 4
+          proof: 4
+          total: 16
+      - rank: 9
+        name: "Ainay Learning"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://ainay-learning.example"
+        growthSignal: "Headcount up 38% in the 12 months to October 2026"
+        growthSource: "https://news.example/ainay-learning-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/ainay-learning"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 10
+        name: "Tête d'Or Software"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://tete-dor-software.example"
+        growthSignal: "Revenue up 10% in 2025 (annual filing)"
+        growthSource: "https://news.example/tete-dor-software-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/tete-dor-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 4
+          proof: 4
+          total: 15
+      - rank: 11
+        name: "Part-Dieu Marketplace"
+        companyType: "scaleup"
+        inspiredBy: "competitor"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://part-dieu-marketplace.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 17%"
+        growthSource: "https://news.example/part-dieu-marketplace-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/part-dieu-marketplace"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 12
+        name: "Villeurbanne Robotics Software"
+        companyType: "scaleup"
+        inspiredBy: "industry_growth"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        outlook: "sunrise"
+        location: "Villeurbanne"
+        website: "https://villeurbanne-robotics-software.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 31%"
+        growthSource: "https://news.example/villeurbanne-robotics-software-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/villeurbanne-robotics-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 3
+          access: 3
+          proof: 4
+          total: 15
+      - rank: 13
+        name: "Rhône Valley CRM"
+        companyType: "startup"
+        inspiredBy: "industry_growth"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        outlook: "sunrise"
+        location: "Remote France"
+        website: "https://rhone-valley-crm.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 38%"
+        growthSource: "https://news.example/rhone-valley-crm-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/rhone-valley-crm"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 4
+          access: 2
+          proof: 4
+          total: 14
+      - rank: 14
+        name: "Sans-Souci Subscriptions"
+        companyType: "scaleup"
+        inspiredBy: "customer_or_supplier"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        outlook: "sunrise"
+        location: "Remote France"
+        website: "https://sans-souci-subscriptions.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 24%"
+        growthSource: "https://news.example/sans-souci-subscriptions-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/sans-souci-subscriptions"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 4
+          access: 3
+          proof: 4
+          total: 14
+      - rank: 15
+        name: "Vaise Industrial Cloud"
+        companyType: "established"
+        inspiredBy: "job_posting"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://vaise-industrial-cloud.example"
+        growthSignal: "Headcount up 24% in the 12 months to October 2026"
+        growthSource: "https://news.example/vaise-industrial-cloud-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/vaise-industrial-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 4
+          proof: 4
+          total: 14
+      - rank: 16
+        name: "Perrache Commerce Cloud"
+        companyType: "scaleup"
+        inspiredBy: "competitor"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://perrache-commerce-cloud.example"
+        growthSignal: "Headcount up 10% in the 12 months to October 2026"
+        growthSource: "https://news.example/perrache-commerce-cloud-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/perrache-commerce-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 3
+          proof: 4
+          total: 14
+      - rank: 17
+        name: "Guillotière Insights"
+        companyType: "startup"
+        inspiredBy: "press_or_funding"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://guillotiere-insights.example"
+        growthSignal: "Revenue up 17% in 2025 (annual filing)"
+        growthSource: "https://news.example/guillotiere-insights-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/guillotiere-insights"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 5
+          interest: 3
+          access: 2
+          proof: 4
+          total: 14
+      - rank: 18
+        name: "Bellecour Stays"
+        companyType: "scaleup"
+        inspiredBy: "network_or_alumni"
+        industry: "Travel technology"
+        subSector: "Hotel booking software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://bellecour-stays.example"
+        growthSignal: "Revenue up 31% in 2025 (annual filing)"
+        growthSource: "https://news.example/bellecour-stays-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/bellecour-stays"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 4
+          proof: 3
+          total: 14
+      - rank: 19
+        name: "Gratte-Ciel Manufacturing Apps"
+        companyType: "established"
+        inspiredBy: "industry_growth"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        outlook: "sunrise"
+        location: "Villeurbanne"
+        website: "https://gratte-ciel-manufacturing-apps.example"
+        growthSignal: "Headcount up 31% in the 12 months to October 2026"
+        growthSource: "https://news.example/gratte-ciel-manufacturing-apps-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/gratte-ciel-manufacturing-apps"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 4
+          total: 13
+      - rank: 20
+        name: "Jean-Macé Retail Systems"
+        companyType: "established"
+        inspiredBy: "competitor"
+        industry: "E-commerce enablement"
+        subSector: "Print catalogue services"
+        outlook: "sunset"
+        location: "Lyon"
+        website: "https://jean-mace-retail-systems.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 10%"
+        growthSource: "https://news.example/jean-mace-retail-systems-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/jean-mace-retail-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 4
+          proof: 4
+          total: 13
+      - rank: 21
+        name: "Lumière Commerce"
+        companyType: "scaleup"
+        inspiredBy: "job_posting"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Remote France"
+        website: "https://lumiere-commerce.example"
+        growthSignal: "Headcount up 17% in the 12 months to October 2026"
+        growthSource: "https://news.example/lumiere-commerce-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/lumiere-commerce"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 4
+          total: 13
+      - rank: 22
+        name: "Hôtel-de-Ville Software"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "Industrial software"
+        subSector: "On-premise MES"
+        outlook: ""
+        location: "Lyon"
+        website: "https://hotel-de-ville-software.example"
+        growthSignal: "Revenue up 24% in 2025 (annual filing)"
+        growthSource: "https://news.example/hotel-de-ville-software-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/hotel-de-ville-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 4
+          proof: 4
+          total: 13
+      - rank: 23
+        name: "Montchat Health Cloud"
+        companyType: "startup"
+        inspiredBy: "event_or_community"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://montchat-health-cloud.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 31%"
+        growthSource: "https://news.example/montchat-health-cloud-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/montchat-health-cloud"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 2
+          proof: 4
+          total: 13
+      - rank: 24
+        name: "Saxe Booking"
+        companyType: "startup"
+        inspiredBy: "network_or_alumni"
+        industry: "Travel technology"
+        subSector: "Hotel booking software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://saxe-booking.example"
+        growthSignal: "Revenue up 38% in 2025 (annual filing)"
+        growthSource: "https://news.example/saxe-booking-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/saxe-booking"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 25
+        name: "Charpennes Data Studio"
+        companyType: "startup"
+        inspiredBy: "industry_growth"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        outlook: "sunrise"
+        location: "Villeurbanne"
+        website: "https://charpennes-data-studio.example"
+        growthSignal: "Headcount up 38% in the 12 months to October 2026"
+        growthSource: "https://news.example/charpennes-data-studio-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/charpennes-data-studio"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 4
+          interest: 3
+          access: 3
+          proof: 3
+          total: 13
+      - rank: 26
+        name: "Grange-Blanche Catalogues"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "E-commerce enablement"
+        subSector: "Print catalogue services"
+        outlook: "sunset"
+        location: "Lyon"
+        website: "https://grange-blanche-catalogues.example"
+        growthSignal: "Headcount up 24% in the 12 months to October 2026"
+        growthSource: "https://news.example/grange-blanche-catalogues-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/grange-blanche-catalogues"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 1
+          interest: 3
+          access: 4
+          proof: 4
+          total: 12
+      - rank: 27
+        name: "Hénon Industrial Systems"
+        companyType: "established"
+        inspiredBy: "industry_growth"
+        industry: "Industrial software"
+        subSector: "On-premise MES"
+        outlook: ""
+        location: "Villeurbanne"
+        website: "https://henon-industrial-systems.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 38%"
+        growthSource: "https://news.example/henon-industrial-systems-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/henon-industrial-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 3
+          access: 3
+          proof: 4
+          total: 12
+      - rank: 28
+        name: "Cordeliers Logistics"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://cordeliers-logistics.example"
+        growthSignal: "Revenue up 10% in 2025 (annual filing)"
+        growthSource: "https://news.example/cordeliers-logistics-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/cordeliers-logistics"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 29
+        name: "Massena Learning Tech"
+        companyType: "startup"
+        inspiredBy: "event_or_community"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        outlook: "sunrise"
+        location: "Remote France"
+        website: "https://massena-learning-tech.example"
+        growthSignal: "Revenue up 31% in 2025 (annual filing)"
+        growthSource: "https://news.example/massena-learning-tech-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/massena-learning-tech"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 30
+        name: "Valmy Software Group"
+        companyType: "established"
+        inspiredBy: "job_posting"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://valmy-software-group.example"
+        growthSignal: "Headcount up 10% in the 12 months to October 2026"
+        growthSource: "https://news.example/valmy-software-group-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/valmy-software-group"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 3
+          proof: 4
+          total: 12
+      - rank: 31
+        name: "Debourg Payments"
+        companyType: "scaleup"
+        inspiredBy: "press_or_funding"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Remote France"
+        website: "https://debourg-payments.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 17%"
+        growthSource: "https://news.example/debourg-payments-2026"
+        knownContact: ""
+        careersUrl: ""
+        careersUrlStatus: "none"
+        scores:
+          growth: 4
+          interest: 2
+          access: 3
+          proof: 3
+          total: 12
+      - rank: 32
+        name: "Cuire Commerce Labs"
+        companyType: "startup"
+        inspiredBy: "competitor"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://cuire-commerce-labs.example"
+        growthSignal: "Revenue up 17% in 2025 (annual filing)"
+        growthSource: "https://news.example/cuire-commerce-labs-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/cuire-commerce-labs"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 3
+          access: 2
+          proof: 3
+          total: 11
+      - rank: 33
+        name: "Ampère Print Services"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "E-commerce enablement"
+        subSector: "Print catalogue services"
+        outlook: "sunset"
+        location: "Lyon"
+        website: "https://ampere-print-services.example"
+        growthSignal: "Revenue up 38% in 2025 (annual filing)"
+        growthSource: "https://news.example/ampere-print-services-2026"
+        knownContact: ""
+        careersUrl: ""
+        careersUrlStatus: "none"
+        scores:
+          growth: 1
+          interest: 2
+          access: 4
+          proof: 4
+          total: 11
+      - rank: 34
+        name: "Laënnec Health Data"
+        companyType: "scaleup"
+        inspiredBy: "industry_growth"
+        industry: "B2B SaaS"
+        subSector: "Customer success platforms"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://laennec-health-data.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 24%"
+        growthSource: "https://news.example/laennec-health-data-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/laennec-health-data"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 3
+          proof: 3
+          total: 11
+      - rank: 35
+        name: "Gorge-de-Loup Factory Apps"
+        companyType: "established"
+        inspiredBy: "customer_or_supplier"
+        industry: "Industrial software"
+        subSector: "Manufacturing ERP for mid-market"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://gorge-de-loup-factory-apps.example"
+        growthSignal: "Headcount up 31% in the 12 months to October 2026"
+        growthSource: "https://news.example/gorge-de-loup-factory-apps-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/gorge-de-loup-factory-apps"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 4
+          proof: 3
+          total: 11
+      - rank: 36
+        name: "Foch Travel Systems"
+        companyType: "established"
+        inspiredBy: "network_or_alumni"
+        industry: "Travel technology"
+        subSector: "Hotel booking software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://foch-travel-systems.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 10%"
+        growthSource: "https://news.example/foch-travel-systems-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/foch-travel-systems"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 3
+          proof: 3
+          total: 11
+      - rank: 37
+        name: "Sergent-Blandan Software"
+        companyType: "startup"
+        inspiredBy: "job_posting"
+        industry: "B2B SaaS"
+        subSector: "Revenue intelligence software"
+        outlook: "sunrise"
+        location: "Remote France"
+        website: "https://sergent-blandan-software.example"
+        growthSignal: "Headcount up 17% in the 12 months to October 2026"
+        growthSource: "https://news.example/sergent-blandan-software-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/sergent-blandan-software"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 2
+          proof: 3
+          total: 10
+      - rank: 38
+        name: "Garibaldi MES Partners"
+        companyType: "established"
+        inspiredBy: "industry_growth"
+        industry: "Industrial software"
+        subSector: "On-premise MES"
+        outlook: ""
+        location: "Lyon"
+        website: "https://garibaldi-mes-partners.example"
+        growthSignal: "Revenue up 24% in 2025 (annual filing)"
+        growthSource: "https://news.example/garibaldi-mes-partners-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/garibaldi-mes-partners"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 2
+          interest: 2
+          access: 3
+          proof: 3
+          total: 10
+      - rank: 39
+        name: "Mermoz Retail Data"
+        companyType: "startup"
+        inspiredBy: "press_or_funding"
+        industry: "E-commerce enablement"
+        subSector: "Print catalogue services"
+        outlook: "sunset"
+        location: "Remote France"
+        website: "https://mermoz-retail-data.example"
+        growthSignal: "Headcount up 38% in the 12 months to October 2026"
+        growthSource: "https://news.example/mermoz-retail-data-2026"
+        knownContact: ""
+        careersUrl: ""
+        careersUrlStatus: "none"
+        scores:
+          growth: 1
+          interest: 2
+          access: 3
+          proof: 3
+          total: 9
+      - rank: 40
+        name: "Duchère Commerce"
+        companyType: "startup"
+        inspiredBy: "competitor"
+        industry: "E-commerce enablement"
+        subSector: "Marketplace software"
+        outlook: "sunrise"
+        location: "Lyon"
+        website: "https://duchere-commerce.example"
+        growthSignal: "Opened a second Lyon office in 2026 and grew staff 31%"
+        growthSource: "https://news.example/duchere-commerce-2026"
+        knownContact: ""
+        careersUrl: "https://careers.example/duchere-commerce"
+        careersUrlStatus: "opened_by_coach"
+        scores:
+          growth: 3
+          interest: 2
+          access: 2
+          proof: 2
+          total: 9
+    extraSubSectors:
+      - name: "Hotel booking software"
+        industry: "Travel technology"
+        growthSignal: "French hotel-tech bookings up 15% in 2025"
+        source: "https://stats.example/fr-hotel-booking-software-2025"
+        outlook: "sunrise"
+        confirmed: "Y"
+    challenges:
+      - company: "Croix-Rousse Commerce"
+        challenge: "Interest 5 with Access 2: a dream, not a target?"
+        resolution: "Kept: a former colleague can introduce him to the RevOps lead; Access stays 2 until that happens"
+      - company: "Guillotière Insights"
+        challenge: "Growth 5 resting on one press article"
+        resolution: "Second source found (hiring page up from 4 to 11 roles); Growth kept at 5"
+      - company: "Rhône Valley CRM"
+        challenge: "Proof 4 with no story yet that matches their buyers"
+        resolution: "Laurent named the CRM consolidation story; Proof kept at 4"
+    top10:
+      - rank: 1
+        name: "Fourvière Analytics"
+        careersUrl: "https://boards.example/fourviere-analytics"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "ATS board, roles listed"
+        hiringAuthorityTitle: "VP Revenue"
+        knownPerson: ""
+        thesis: "You are dealing with renewal forecast missing by double digits each quarter; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "renewal forecast missing by double digits each quarter"
+        sayItLoud: "Y"
+      - rank: 2
+        name: "Confluence Retail Tech"
+        careersUrl: "https://boards.example/confluence-retail-tech"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "ATS board, roles listed"
+        hiringAuthorityTitle: "COO"
+        knownPerson: ""
+        thesis: "You are dealing with three CRMs left over from two acquisitions; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "three CRMs left over from two acquisitions"
+        sayItLoud: "Y"
+      - rank: 3
+        name: "Gerland Health Software"
+        careersUrl: "https://boards.example/gerland-health-software"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "ATS board, roles listed"
+        hiringAuthorityTitle: "Chief Customer Officer"
+        knownPerson: ""
+        thesis: "You are dealing with slow onboarding for new hospital customers; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "slow onboarding for new hospital customers"
+        sayItLoud: "Y"
+      - rank: 4
+        name: "Brotteaux Data"
+        careersUrl: "https://brotteaux-data.example/jobs"
+        careersUrlStatus: "corrected"
+        careersUrlNote: "company site, Careers tab, ATS link was dead"
+        hiringAuthorityTitle: "CRO"
+        knownPerson: ""
+        thesis: "You are dealing with pipeline reviews built on spreadsheets; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "pipeline reviews built on spreadsheets"
+        sayItLoud: "Y"
+      - rank: 5
+        name: "Presqu'île Payments"
+        careersUrl: "https://boards.example/presquîle-payments"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "ATS board, roles listed"
+        hiringAuthorityTitle: "VP Customer Success"
+        knownPerson: "Camille Roux"
+        thesis: "You are dealing with enterprise churn after the first renewal; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "enterprise churn after the first renewal"
+        sayItLoud: "Y"
+      - rank: 6
+        name: "Croix-Rousse Commerce"
+        careersUrl: ""
+        careersUrlStatus: "none"
+        careersUrlNote: ""
+        hiringAuthorityTitle: "CRO"
+        knownPerson: ""
+        thesis: "You are dealing with forecast accuracy before a Series C; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "forecast accuracy before a Series C"
+        sayItLoud: "Y"
+      - rank: 7
+        name: "Saint-Exupéry Logistics Cloud"
+        careersUrl: "https://boards.example/saint-exupery-logistics-cloud"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "ATS board, roles listed"
+        hiringAuthorityTitle: "CFO"
+        knownPerson: ""
+        thesis: "You are dealing with renewal forecast nobody in finance trusts; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "renewal forecast nobody in finance trusts"
+        sayItLoud: "Y"
+      - rank: 8
+        name: "Monplaisir SaaS"
+        careersUrl: "https://monplaisir-saas.example/jobs"
+        careersUrlStatus: "corrected"
+        careersUrlNote: "company site, Careers tab, ATS link was dead"
+        hiringAuthorityTitle: "CEO"
+        knownPerson: ""
+        thesis: "You are dealing with no handover between sales and success; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "no handover between sales and success"
+        sayItLoud: "Y"
+      - rank: 9
+        name: "Ainay Learning"
+        careersUrl: "https://boards.example/ainay-learning"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "ATS board, roles listed"
+        hiringAuthorityTitle: "Head of Customer Success"
+        knownPerson: ""
+        thesis: "You are dealing with customer health scored by gut feel; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "customer health scored by gut feel"
+        sayItLoud: "Y"
+      - rank: 10
+        name: "Tête d'Or Software"
+        careersUrl: "https://boards.example/tete-dor-software"
+        careersUrlStatus: "confirmed"
+        careersUrlNote: "ATS board, roles listed"
+        hiringAuthorityTitle: "COO"
+        knownPerson: ""
+        thesis: "You are dealing with CRM data quality before a new pricing model; I cut renewal forecast error from 18% to 6% for 120 enterprise accounts"
+        businessProblem: "CRM data quality before a new pricing model"
+        sayItLoud: "Y"
+    top3:
+      - name: "Fourvière Analytics"
+        whyNow: "Series C closed 2026-10-21 with a plan to double the customer team (https://news.example/fourviere-analytics-signal)"
+        firstMove: "Answer the open Revenue Operations Manager posting with the forecast one-pager"
+        byDate: "2026-11-10"
+      - name: "Gerland Health Software"
+        whyNow: "New Chief Customer Officer announced 2026-10-14 (https://news.example/gerland-health-software-signal)"
+        firstMove: "Send the handover case study through the careers page and follow the CCO's posts"
+        byDate: "2026-11-12"
+      - name: "Presqu'île Payments"
+        whyNow: "Opened a Lyon customer hub on 2026-10-30 (https://news.example/presquîle-payments-signal)"
+        firstMove: "Ask Camille Roux for a 20-minute call about the RevOps team"
+        byDate: "2026-11-13"
