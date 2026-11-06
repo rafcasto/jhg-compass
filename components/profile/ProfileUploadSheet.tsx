@@ -11,7 +11,7 @@ import { PROFILE_ACCEPT, PROFILE_MAX_BYTES, mergeProfile, parseProfileFile, prof
 const diffReplaces = (rows: ReviewRow[]): boolean => rows.some((d) => d.kind === "replace");
 import { profileDiff, type DiffKind } from "@/lib/careerops/profile-diff";
 import { FILE_SECTIONS, type FileSectionKey } from "@/lib/profile-sections";
-import { JH_FILES, detectJhFile, findJhFile, jhFilePreview, shapeJhFile, type JhgFileKey } from "@/lib/jobhacking/profile-files";
+import { JH_FILES, detectJhFile, findJhFile, jhFileName, jhFileProfile, jhFilePreview, shapeJhFile, type JhgFileKey } from "@/lib/jobhacking/profile-files";
 import type { CareerOpsSetupV2, ProfileFileRecord } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 
@@ -103,22 +103,29 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
     let baseProfile = current;
     let baseSetup: Partial<CareerOpsSetupV2> = setup ?? {};
     let patch: Partial<CareerOpsSetupV2> = {};
+    // The account as it will be: the Narrative file carries the member's name, which lives on users/{uid}.
+    let account = profile;
+    const found: { name: { firstName: string; lastName: string } | null } = { name: null };
     const out = valid.map((t) => {
       const shaped = shapeJhFile(t.file, t.parse.profile, baseProfile);
       const merged = mergeProfile(baseProfile, shaped);
       const step = profileToSetupPatch(merged).setup;
       const afterSetup = { ...baseSetup, ...step };
       const rows: ReviewRow[] = t.file
-        ? jhFilePreview(t.file, shaped, baseSetup, afterSetup, profile)
+        ? jhFilePreview(t.file, shaped, baseSetup, afterSetup, account)
         : profileDiff(baseProfile, merged).map((d) => ({ key: d.key, label: FILE_SECTIONS[d.key].label, href: fileSectionHref(d.key), inFile: d.inFile, kind: d.kind, headline: d.headline, detail: d.detail }));
       baseProfile = { ...baseProfile, ...merged };
       baseSetup = afterSetup;
       patch = { ...patch, ...step };
+      found.name = jhFileName(t.file, shaped) ?? found.name;
+      account = jhFileProfile(t.file, shaped, account);
       return { t, rows };
     });
-    return { steps: out, patch };
+    const name = found.name;
+    const nameChanged = !!name && (name.firstName !== (profile?.firstName ?? "") || name.lastName !== (profile?.lastName ?? ""));
+    return { steps: out, patch, account, name: nameChanged ? name : null };
   }, [current, setup, profile, valid, fileSectionHref]);
-  const { steps: reviewSteps, patch: combinedPatch } = steps;
+  const { steps: reviewSteps, patch: combinedPatch, account: accountAfter, name: nameToWrite } = steps;
   const allRows = reviewSteps.flatMap((s) => s.rows.filter((d) => d.inFile));
   const replaces = allRows.filter((d) => d.kind === "replace");
 
@@ -136,9 +143,11 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
       }
       await setDoc(
         paths.careerOpsSetup(uid),
-        { ...patch, profileFiles, profileYaml: buildSetupProfileYaml({ profile, setup, overrides: patch }), updatedAt: now },
+        { ...patch, profileFiles, profileYaml: buildSetupProfileYaml({ profile: accountAfter, setup, overrides: patch }), updatedAt: now },
         { merge: true },
       );
+      // First and last name are the account's, not the profile's — the Narrative file's identity writes them there.
+      if (nameToWrite) await setDoc(paths.profile(uid), nameToWrite, { merge: true });
       const seen = new Set<string>();
       const changed = allRows.filter((d) => d.kind !== "keep" && !seen.has(d.key) && seen.add(d.key)).map((d) => ({ label: d.label, href: d.href }));
       onDone(changed, reviewSteps.map((s) => s.t.file).filter((f): f is JhgFileKey => !!f));

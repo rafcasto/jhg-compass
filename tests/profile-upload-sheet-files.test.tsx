@@ -11,7 +11,7 @@ import { DEFAULT_TEXT } from "@/lib/content";
 
 const setDoc = vi.fn<(ref: unknown, data: Record<string, unknown>, opts?: unknown) => Promise<void>>(async () => {});
 vi.mock("firebase/firestore", () => ({ setDoc: (ref: unknown, data: Record<string, unknown>, opts?: unknown) => setDoc(ref, data, opts) }));
-vi.mock("@/lib/firestore/db", () => ({ paths: { careerOpsSetup: (uid: string) => `users/${uid}/careerOps/setup` } }));
+vi.mock("@/lib/firestore/db", () => ({ paths: { careerOpsSetup: (uid: string) => `users/${uid}/careerOps/setup`, profile: (uid: string) => `users/${uid}` } }));
 vi.mock("@/lib/firestore/content", () => ({ useContent: () => ({ t: (k: string) => DEFAULT_TEXT[k] ?? k, stages: [] }) }));
 
 import ProfileUploadSheet from "@/components/profile/ProfileUploadSheet";
@@ -44,7 +44,8 @@ describe("ProfileUploadSheet — the four files", () => {
     const onDone = mount(null, [new File([read("narrative")], "narrative.yml", { type: "application/yaml" })], "narrative");
     const rows = await rowsOf();
     expect(rows).toHaveLength(4);
-    expect(rows[0]).toMatch(/^Contact detailsadds/);
+    // The name the file carries (jhg.identity.fullName) goes to the account, which here already says Rafael M — so it replaces.
+    expect(rows[0]).toMatch(/^Contact detailsreplaces.*Ana Ferreira · \+64 21 555 0199/);
     expect(rows[1]).toMatch(/^Headlineadds.*I help SaaS scale-ups ship predictably/);
     expect(rows[2]).toMatch(/^Bridge storyadds.*I was the operations analyst/);
     expect(rows[3]).toMatch(/^Core competenciesadds.*Release management; Incident management; Programme delivery/);
@@ -52,10 +53,14 @@ describe("ProfileUploadSheet — the four files", () => {
     expect(setDoc).not.toHaveBeenCalled();
 
     await userEvent.click(screen.getByRole("button", { name: /Unpack it/ }));
-    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
-    const [, data, opts] = setDoc.mock.calls[0];
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(2));
+    const [ref, data, opts] = setDoc.mock.calls[0];
+    expect(ref).toBe("users/u1/careerOps/setup");
     expect(opts).toEqual({ merge: true });
+    // First and last name live on users/{uid}, not on the setup — the second write.
+    expect(setDoc.mock.calls[1]).toEqual(["users/u1", { firstName: "Ana", lastName: "Ferreira" }, { merge: true }]);
     const d = data as unknown as CareerOpsSetupV2;
+    expect(d.profileYaml).toMatch(/full_name: "?Ana Ferreira/);
     expect(d.contact).toEqual({ phone: "+64 21 555 0199", linkedin: "https://www.linkedin.com/in/example-ana-ferreira", portfolio: "https://ana-ferreira.example/release-cadence-playbook", title: "I help SaaS scale-ups ship predictably while headcount doubles through release management, incident management, and programme delivery", location: "Wellington, New Zealand" });
     expect(d.personalization?.exitNarrative).toMatch(/^I was the operations analyst/);
     expect(d.personalization?.crossCuttingAdvantage).toBe("Release management; Incident management; Programme delivery");

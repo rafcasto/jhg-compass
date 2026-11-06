@@ -41,7 +41,7 @@
   the shared `ProfileUploadSheet` takes several files, and an upload **merges key by key** (`mergeProfile`) — never replace a section whole,
   never drop a field a file doesn't mention. **The upload preview for one of the four files lists exactly the sections of its page, with the
   page's labels — nothing more, nothing less** (`jhFilePreview` over `jhSectionFields`); a file fills the editable fields of its page
-  (`shapeJhFile`: `narrative.headline` → Headline, `narrative.superpowers` → Core competencies), and the page's own file wins a shared field. Each file's `jhg` block (the workbook: identity, boundaries, titles, clusters, postings, company
+  (`shapeJhFile`: `narrative.headline` → Headline, `narrative.superpowers` → Core competencies; `jhg.identity.fullName` → the account's first and last name on `users/{uid}`, since name and email are the account's, not the profile's), and the page's own file wins a shared field. Each file's `jhg` block (the workbook: identity, boundaries, titles, clusters, postings, company
   research, scores, story facts, CV rules) is stored on `CareerOpsSetupV2.jhg` and shown **read-only beside the field it explains** through
   `components/jobhacking/FileFacts.tsx` — never as a page of its own, never editable. `public/*.example.yml` are the Packer's samples and
   `tests/profile-files-examples.test.ts` is the contract; change the schema and update them together.

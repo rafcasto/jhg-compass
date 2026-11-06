@@ -20,8 +20,8 @@ type Jhg = JhgBlock | null | undefined;
 
 // ---- Narrative ----
 
-export function ContactFacts({ jhg }: { jhg: Jhg }) {
-  return <FileFacts id="wb-identity" title="From your Narrative file" from="narrative.yml" facts={identityFacts(jhg)} />;
+export function ContactFacts({ jhg, email = "" }: { jhg: Jhg; email?: string }) {
+  return <FileFacts id="wb-identity" title="From your Narrative file" from="narrative.yml" facts={identityFacts(jhg, email)} />;
 }
 
 export function HeadlineFacts({ setup }: { setup: CareerOpsSetupV2 | null | undefined }) {

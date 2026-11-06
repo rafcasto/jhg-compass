@@ -28,6 +28,14 @@ describe("ContactPolicy — the fields the worker already reads", () => {
     expect(save()).toBeDisabled();
   });
 
+  it("shows the account's email, else the one signed in with — never an empty email field", () => {
+    const { unmount } = render(<ContactPolicy uid="u1" setup={base} profile={profile} part="contact" signInEmail="signed-in@example.com" />);
+    expect(screen.getByDisplayValue("jane@example.com")).toHaveAttribute("readonly");
+    unmount();
+    render(<ContactPolicy uid="u1" setup={base} profile={{ ...profile, email: "" }} part="contact" signInEmail="signed-in@example.com" />);
+    expect(screen.getByDisplayValue("signed-in@example.com")).toHaveAttribute("readonly");
+  });
+
   it("writes the contact fields and puts them in profile.yml under career-ops' names", async () => {
     const user = userEvent.setup();
     render(<ContactPolicy uid="u1" setup={base} profile={profile} />);

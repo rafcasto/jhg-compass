@@ -2,9 +2,10 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { mergeProfile, parseProfileFile, profileFromSetup, profileToSetupPatch } from "@/lib/careerops/profile-file";
-import { JH_FILES, detectJhFile, jhFilePage, jhFilePreview, jhFileStatuses, jhFilesProgress, shapeJhFile } from "@/lib/jobhacking/profile-files";
+import { JH_FILES, detectJhFile, jhFilePage, jhFilePreview, jhFileProfile, jhFileStatuses, jhFilesProgress, shapeJhFile } from "@/lib/jobhacking/profile-files";
 import { JH_FILE_EDIT, JH_SECTIONS, jhSectionSummaries } from "@/lib/jobhacking/sections";
 import { FILE_SECTIONS } from "@/lib/profile-sections";
+import type { Profile } from "@/lib/types";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 
 // The four Packer files as JobHacking → Settings sees them (decision 2026-11-07).
@@ -76,11 +77,12 @@ describe("the Boundaries row and the superpowers on the Core competencies row", 
 
 describe("what a file writes and what the preview says — the page's sections, nothing more, nothing less", () => {
   const file = (name: string) => parseProfileFile(read(name), `${name}.yml`).profile;
-  const preview = (key: "narrative" | "trueNorth" | "targetCompanies" | "artefacts", name: string, before: Partial<CareerOpsSetupV2> = {}) => {
+  const preview = (key: "narrative" | "trueNorth" | "targetCompanies" | "artefacts", name: string, before: Partial<CareerOpsSetupV2> = {}, account: Profile | null = null) => {
     const current = profileFromSetup({ profile: null, setup: before as CareerOpsSetupV2 });
     const shaped = shapeJhFile(key, file(name), current);
     const after = { ...before, ...profileToSetupPatch(mergeProfile(current, shaped)).setup };
-    return { rows: jhFilePreview(key, shaped, before, after, null), after };
+    // The account as the unpack leaves it — the Narrative file writes the name there.
+    return { rows: jhFilePreview(key, shaped, before, after, account), after, account: jhFileProfile(key, shaped, account) };
   };
 
   it("narrative.yml → Contact details · Headline · Bridge story · Core competencies, all added, and the fields are filled", () => {
@@ -105,12 +107,13 @@ describe("what a file writes and what the preview says — the page's sections, 
   });
 
   it("a section the file does not carry is said to be left alone; an identical re-upload is 'same as now'", () => {
-    const { rows, after } = preview("narrative", "narrative");
-    const again = preview("narrative", "narrative", after);
+    const { rows, after, account } = preview("narrative", "narrative");
+    expect(account).toEqual({ email: "", firstName: "Ana", lastName: "Ferreira" });
+    const again = preview("narrative", "narrative", after, account);
     expect(again.rows.every((r) => r.kind === "keep" && r.headline === "same as now")).toBe(true);
     const partialFile = { version: 1, contact: { phone: "+64 21 000" } };
     const partialAfter = { ...after, ...profileToSetupPatch(mergeProfile(profileFromSetup({ profile: null, setup: after as CareerOpsSetupV2 }), partialFile)).setup };
-    const partial = jhFilePreview("narrative", partialFile, after, partialAfter, null);
+    const partial = jhFilePreview("narrative", partialFile, after, partialAfter, account);
     expect(partial.map((r) => r.headline)).toEqual(["replaces", "not in the file — left as it is", "not in the file — left as it is", "not in the file — left as it is"]);
     expect(rows).toHaveLength(4);
   });
