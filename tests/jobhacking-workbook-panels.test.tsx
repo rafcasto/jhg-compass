@@ -1,5 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+
+// The editor writes to Firestore; the read view is what is under test.
+vi.mock("@/components/jobhacking/StoryBankEditor", () => ({ default: () => <p>editor</p> }));
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parseProfileFile } from "@/lib/careerops/profile-file";
