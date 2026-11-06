@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { parseProfileFile } from "@/lib/careerops/profile-file";
-import { JH_FILES, detectJhFile, jhFilePage, jhFileStatuses, jhFilesProgress } from "@/lib/jobhacking/profile-files";
+import { mergeProfile, parseProfileFile, profileFromSetup, profileToSetupPatch } from "@/lib/careerops/profile-file";
+import { JH_FILES, detectJhFile, jhFilePage, jhFilePreview, jhFileStatuses, jhFilesProgress, shapeJhFile } from "@/lib/jobhacking/profile-files";
 import { JH_FILE_EDIT, JH_SECTIONS, jhSectionSummaries } from "@/lib/jobhacking/sections";
 import { FILE_SECTIONS } from "@/lib/profile-sections";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -71,5 +71,59 @@ describe("the Boundaries row and the superpowers on the Core competencies row", 
     expect(rows.find((r) => r.key === "boundaries")).toMatchObject({ state: "done", summary: "2 hard no's · 1 must-have · 1 never apply · 28 days' notice" });
     expect(rows.find((r) => r.key === "competencies")).toMatchObject({ state: "partial", summary: "Release management, Incident management", count: "2" });
     expect(jhSectionSummaries({ setup: null, profile: null }).find((r) => r.key === "boundaries")).toMatchObject({ state: "empty", summary: "Not in your profile yet" });
+  });
+});
+
+describe("what a file writes and what the preview says — the page's sections, nothing more, nothing less", () => {
+  const file = (name: string) => parseProfileFile(read(name), `${name}.yml`).profile;
+  const preview = (key: "narrative" | "trueNorth" | "targetCompanies" | "artefacts", name: string, before: Partial<CareerOpsSetupV2> = {}) => {
+    const current = profileFromSetup({ profile: null, setup: before as CareerOpsSetupV2 });
+    const shaped = shapeJhFile(key, file(name), current);
+    const after = { ...before, ...profileToSetupPatch(mergeProfile(current, shaped)).setup };
+    return { rows: jhFilePreview(key, shaped, before, after, null), after };
+  };
+
+  it("narrative.yml → Contact details · Headline · Bridge story · Core competencies, all added, and the fields are filled", () => {
+    const { rows, after } = preview("narrative", "narrative");
+    expect(rows.map((r) => [r.label, r.kind, r.headline])).toEqual([
+      ["Contact details", "add", "adds"], ["Headline", "add", "adds"], ["Bridge story", "add", "adds"], ["Core competencies", "add", "adds"],
+    ]);
+    expect(rows.map((r) => r.href)).toEqual(["/jobhacking/narrative?section=contact", "/jobhacking/narrative?section=headline", "/jobhacking/narrative?section=story", "/jobhacking/narrative?section=competencies"]);
+    expect(after.contact?.title).toMatch(/^I help SaaS scale-ups ship predictably/);
+    expect(after.contact?.location).toBe("Wellington, New Zealand");
+    expect(after.personalization?.crossCuttingAdvantage).toBe("Release management; Incident management; Programme delivery");
+    expect(rows[1].detail).toMatch(/^I help SaaS scale-ups/);
+    expect(rows[3].detail).toBe("Release management; Incident management; Programme delivery");
+  });
+
+  it("true-north.yml → the seven True North sections; target-companies.yml → Top 3 · Top 10 · Top 40 · Watchlist; artefacts.yml → Story Bank · Master CV · LinkedIn profile", () => {
+    expect(preview("trueNorth", "true-north").rows.map((r) => `${r.label}:${r.kind}`)).toEqual([
+      "Target industry:add", "Target roles:add", "Seniority:add", "Salary range:add", "Location:add", "Company type:add", "Boundaries:add",
+    ]);
+    expect(preview("targetCompanies", "target-companies").rows.map((r) => `${r.label}:${r.kind}`)).toEqual(["Top 3:add", "Top 10:add", "Top 40:add", "Watchlist:add"]);
+    expect(preview("artefacts", "artefacts").rows.map((r) => `${r.label}:${r.kind}`)).toEqual(["Story Bank:add", "Master CV:add", "LinkedIn profile:add"]);
+  });
+
+  it("a section the file does not carry is said to be left alone; an identical re-upload is 'same as now'", () => {
+    const { rows, after } = preview("narrative", "narrative");
+    const again = preview("narrative", "narrative", after);
+    expect(again.rows.every((r) => r.kind === "keep" && r.headline === "same as now")).toBe(true);
+    const partialFile = { version: 1, contact: { phone: "+64 21 000" } };
+    const partialAfter = { ...after, ...profileToSetupPatch(mergeProfile(profileFromSetup({ profile: null, setup: after as CareerOpsSetupV2 }), partialFile)).setup };
+    const partial = jhFilePreview("narrative", partialFile, after, partialAfter, null);
+    expect(partial.map((r) => r.headline)).toEqual(["replaces", "not in the file — left as it is", "not in the file — left as it is", "not in the file — left as it is"]);
+    expect(rows).toHaveLength(4);
+  });
+
+  it("the page's own file wins: the Artefacts file fills Headline and Core competencies only while blank", () => {
+    const narrativeFirst = preview("narrative", "narrative").after;
+    const thenArtefacts = preview("artefacts", "artefacts", narrativeFirst).after;
+    expect(thenArtefacts.contact?.title).toMatch(/^I help SaaS scale-ups/);
+    expect(thenArtefacts.contact?.phone).toBe("+64 21 555 0199");
+    expect(thenArtefacts.personalization?.crossCuttingAdvantage).toBe("Release management; Incident management; Programme delivery");
+    expect(thenArtefacts.personalization?.adaptiveFraming).toHaveLength(3);
+    const artefactsAlone = preview("artefacts", "artefacts").after;
+    expect(artefactsAlone.contact?.title).toBe("Delivery Lead for SaaS teams scaling past product–market fit");
+    expect(artefactsAlone.personalization?.crossCuttingAdvantage).toMatch(/^I measure delivery/);
   });
 });
