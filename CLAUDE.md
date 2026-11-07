@@ -60,6 +60,15 @@
   `components/jobhacking/FileFacts.tsx` — never as a page of its own, never editable. `public/*.example.yml` are the Packer's samples and
   `tests/profile-files-examples.test.ts` is the contract; change the schema and update them together.
 
+- **Share links** (decision 2026-11-07, `docs/UX_SHARE.md`): a JobHacking page — Narrative · True North · Target companies · Artefacts,
+  one link each, never a section, never the Agents area — can be shared read-only at `/share/<token>` as a **document** (title, author
+  line, a heading per section, blocks; no shell, no buttons, no red, `noindex`, prints clean). The control is one `Share` button in the
+  page header plus a status line while the link is on — not a Settings block. The document is `shareDocument()` in
+  `lib/jobhacking/share.ts`, built from the same registry and fields as the page, **less Contact details** (the author line carries the
+  name only; the Master CV renders as written). Tokens are minted server-side (`/api/share`, `lib/server/shares.ts`) into server-only
+  `shareLinks/{token}` with the owner's live record at `users/{uid}/shares/{page}`; switching off then on mints a new token. No
+  feedback box, no expiry, no per-section links — decided against for v1.
+
 ## Design
 
 - Follow `docs/UX_AUDIT_COMPASS_TABS.md §0` on every screen: one button system (`.btn-*`), labels recede

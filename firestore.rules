@@ -42,6 +42,10 @@ service cloud.firestore {
     // ---- registration links: server-only (Admin SDK) ----
     match /registrationLinks/{token} { allow read, write: if false; }
 
+    // ---- share links (a JobHacking page shared read-only, docs/UX_SHARE.md): server-only.
+    //      The owner's own record lives under users/{uid}/shares/{page} (owner read, above). ----
+    match /shareLinks/{token} { allow read, write: if false; }
+
     // default deny
     match /{document=**} { allow read, write: if false; }
   }

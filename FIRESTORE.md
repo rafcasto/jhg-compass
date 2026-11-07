@@ -90,6 +90,11 @@ users/{uid}/careerOpsAnswers/{id}` — answer bank: `{ question, key, answer, so
                                  // owner reads live. data carries the structured part: contacto.dm, apply.answers[],
                                  // followup.body, patterns.stats.
 users/{uid}/careerOps/followup   { days{ <stageId>: number }, updatedAt }   // Tracking → followup cadence rules, owner-writable
+users/{uid}/shares/{page}        { token, createdAt }   // a JobHacking page shared read-only (docs/UX_SHARE.md): page ∈ narrative |
+                                 // true-north | companies | artefacts. Written by /api/share (Admin SDK), deleted on Stop sharing;
+                                 // the owner reads it live for the page header's Share state.
+shareLinks/{token}               { uid, page, createdAt, revokedAt? }   // the public index behind /share/{token}. Server-only
+                                 // (rules deny every client); token = UUID without dashes, a new one per switch-on.
 users/{uid}/careerOpsDocs/{jobId}
                                  { kind: cv|cover, reportJobId, company, role, file, storage: drive|bucket|inline,
                                    driveFileId?, driveLink?, storagePath?, url?, size, pageCount, template?, words?,

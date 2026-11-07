@@ -248,6 +248,7 @@ jhg:                                                     # new — the JobHacker
 | `lib/jobhacking/workbook.ts` | the `jhg` block as facts: identity, boundaries, titles, scores, story facts, CV rules — pure, tested |
 | `components/jobhacking/FileFacts.tsx` | the one read-only block under every editor (§4b) |
 | `components/jobhacking/WorkbookPanels.tsx` | the per-section blocks and the Boundaries section |
+| `lib/jobhacking/share.ts` · `components/jobhacking/SharePage.tsx` · `components/share/SharedDocument.tsx` | a page shared read-only as a document at `/share/<token>` — one Share button in the page header, a status line while the link is on (`docs/UX_SHARE.md`, 2026-11-07) |
 | `components/profile/SectionsPage.tsx` · `SectionList.tsx` | generalised: take `SectionItem[]` (key, label, title, ask, href, icon, group) instead of the profile registry, so Profile, Settings and JobHacking share one layout; `profileItems()` adapts the profile registry |
 | `components/profile/Identity.tsx` | the initials / name / email block, shared |
 
