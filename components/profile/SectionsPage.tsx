@@ -109,7 +109,7 @@ export default function SectionsPage<K extends string>({
           <div className={active ? "hidden" : "md:hidden space-y-6"}>
             {parentRow}
             {identity && <section className="card p-4">{identity}</section>}
-            {actions && <div className="grid grid-cols-2 gap-2 [&>button]:w-full">{actions}</div>}
+            {actions && <div className="flex flex-wrap gap-2 [&>button]:flex-1">{actions}</div>}
             {progressBar}
             <SectionList items={items} rows={rows} variant="rows" label={listLabel} />
           </div>

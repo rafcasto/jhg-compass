@@ -328,3 +328,12 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
   box-shadow: 0 10px 24px rgba(25, 28, 39, .10);
 }
 .coaching-preview > * { flex: 0 0 auto; }
+
+/* ===== Shared page as a document (/share/<token>, docs/UX_SHARE.md) =====
+   On paper the chrome goes (logo line, footer), the column takes the sheet, links read as text. */
+@media print {
+  .share-doc { max-width: none; padding: 0; }
+  .share-doc .share-chrome { display: none; }
+  .share-doc a { text-decoration: none; color: inherit; }
+  .share-doc section { break-inside: avoid-page; }
+}

@@ -29,6 +29,8 @@ export const paths = {
   careerOpsVault: (uid: string) => collection(db, "users", uid, "careerOpsVault"),
   careerOpsFollowup: (uid: string) => doc(db, "users", uid, "careerOps", "followup"),
   careerOpsPortalsStatus: (uid: string) => doc(db, "users", uid, "careerOps", "portalsStatus"),
+  // A shared JobHacking page: { token, createdAt } while its public link is on (docs/UX_SHARE.md). Server-written, owner-read.
+  share: (uid: string, page: string) => doc(db, "users", uid, "shares", page),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
   content: () => doc(db, "config", "content"),

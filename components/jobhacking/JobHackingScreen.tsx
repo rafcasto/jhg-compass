@@ -15,6 +15,7 @@ import SectionsPage from "@/components/profile/SectionsPage";
 import type { SectionItem } from "@/components/profile/SectionList";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { BASE_OF, JH_LIST_OF, findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, type JhPageKey, type JhSectionKey, type ProfilePortal } from "@/lib/jobhacking/sections";
+import { isSharePage, shareEmpty } from "@/lib/jobhacking/share";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Goal } from "@/lib/goal";
 import type { Profile } from "@/lib/types";
@@ -22,6 +23,7 @@ import { cvRuleFacts, cvRuleLists, languageLines } from "@/lib/jobhacking/workbo
 import CompanyListPanel from "./CompanyListPanel";
 import FileFacts from "./FileFacts";
 import LinkedinProfilePanel from "./LinkedinProfilePanel";
+import { ShareButton, ShareStatus, useShare } from "./SharePage";
 import StoryBankPanel from "./StoryBankPanel";
 import WatchlistSection from "./WatchlistSection";
 import TrueNorthPanel from "./TrueNorthPanel";
@@ -38,6 +40,10 @@ import { BoundariesPanel, CompetencyFacts, ContactFacts, HeadlineFacts, StoryFac
 // On Compass (`portal="compass"`) the same pages render under /settings with a
 // `‹ Settings` row back to the hub, plus the Compass-only sections — Work
 // rights, Portfolio / demo, and the Agents area's Portal accounts and Notes.
+//
+// On JobHacking each page can be shared read-only as a document
+// (docs/UX_SHARE.md): one Share button in the header, a status line under it
+// while the link is on. Both read the owner's record live.
 
 const ICONS: Record<JhSectionKey, ComponentType<LucideProps>> = {
   contact: Contact, competencies: Layers, headline: Quote, story: Sparkles,
@@ -76,6 +82,10 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
   const [draft, setDraft] = useState<Partial<Goal>>({});
   const email = profile?.email ?? user?.email ?? "";
   const compass = portal === "compass";
+  // Sharing is the JobHacking portal's; a Compass-only page (Agents) is never shared.
+  const sharePage = !compass && isSharePage(page) ? page : null;
+  const { record: share } = useShare(uid, sharePage);
+  const nothingToShare = useMemo(() => (sharePage ? shareEmpty(sharePage, { setup, profile }) : true), [sharePage, setup, profile]);
 
   return (
     <SectionsPage
@@ -87,6 +97,8 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
       intro={meta.intro}
       identity={page === "narrative" ? <Identity profile={profile} email={email} /> : undefined}
       lead={page === "true-north" ? <TrueNorthStatement goal={{ ...goal, ...draft }} base={base} /> : undefined}
+      actions={sharePage ? <ShareButton page={sharePage} record={share} empty={nothingToShare} /> : undefined}
+      status={sharePage ? <ShareStatus page={sharePage} record={share} /> : undefined}
       items={items}
       rows={rows}
       active={active}
