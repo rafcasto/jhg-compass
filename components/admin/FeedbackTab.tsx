@@ -18,8 +18,11 @@ type ResponseRow = {
   rating?: number | null;
   answers: Record<string, string | number>;
   source: FeedbackSource;
+  unlocks?: string;
   createdAt: number;
 };
+
+const UNLOCK_LABEL: Record<string, string> = { narrative: "Narrative", trueNorth: "True North", targetCompanies: "Target companies", artefacts: "Artefacts" };
 
 const SOURCE_LABEL: Record<FeedbackSource, string> = { global: "Global", link: "Link", lock: "Upload lock" };
 
@@ -107,7 +110,7 @@ export default function FeedbackTab() {
       <section className="card p-5 flex items-center justify-between gap-4">
         <div>
           <p className="font-display font-semibold text-jh-ink">Lock profile uploads until answered</p>
-          <p className="text-jh-mute text-sm">When on, the four Upload buttons on JobHacking → Settings and the Compass Settings hub stay locked until the member submits this survey. Works with the global modal off; a member who already answered is never locked.</p>
+          <p className="text-jh-mute text-sm">When on, each of the four Upload buttons on JobHacking → Settings and the Compass Settings hub stays locked until the member answers this survey for that file — one answer per file, four in all. Works with the global modal off; global and link answers don’t unlock a file.</p>
         </div>
         <Toggle on={cfg.uploadLock} onChange={(v) => set("uploadLock", v)} />
       </section>
@@ -243,7 +246,7 @@ function FeedbackResponses({ cfg, rows }: { cfg: FeedbackConfig; rows: ResponseR
                 {ratingQ && typeof r.rating === "number" && (
                   <span className="pill bg-jh-mist text-jh-ink">{ratingQ.emojis?.[r.rating - 1] ?? ""} {ratingQ.scaleLabels?.[r.rating - 1] ?? r.rating}</span>
                 )}
-                <span className="pill bg-jh-mist text-jh-mute">{SOURCE_LABEL[r.source] ?? r.source}</span>
+                <span className="pill bg-jh-mist text-jh-mute">{SOURCE_LABEL[r.source] ?? r.source}{r.unlocks ? ` · ${UNLOCK_LABEL[r.unlocks] ?? r.unlocks}` : ""}</span>
                 <span className="text-xs text-jh-mute ml-auto">{r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}</span>
               </div>
               <div className="space-y-2">
