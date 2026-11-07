@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { onSnapshot } from "firebase/firestore";
 import { paths } from "./db";
-import type { FeedbackConfig } from "@/lib/types";
+import type { FeedbackConfig, FeedbackResponse } from "@/lib/types";
 import { DEFAULT_FEEDBACK_CONFIG } from "@/lib/feedback-defaults";
 
 // Live admin-editable survey config (config/feedback). Falls back to defaults so
@@ -20,18 +20,25 @@ export function useFeedbackConfig(): FeedbackConfig {
 }
 
 // Whether this user has already submitted feedback — the GLOBAL modal hides once
-// they have. (The per-user link ignores this and always shows.)
+// they have. (The per-user link ignores this and always shows.) `unlocked` is
+// the profile-file slots their answers have unlocked (`unlocks` on each
+// response from the upload lock) — one answer per slot.
 export function useFeedbackSubmission(uid: string | undefined) {
   const [submitted, setSubmitted] = useState(false);
+  const [unlocked, setUnlocked] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!uid) return;
     const unsub = onSnapshot(
       paths.feedbackResponses(uid),
-      (snap) => { setSubmitted(!snap.empty); setLoading(false); },
+      (snap) => {
+        setSubmitted(!snap.empty);
+        setUnlocked(snap.docs.map((d) => (d.data() as FeedbackResponse).unlocks).filter((k): k is string => typeof k === "string" && k.length > 0));
+        setLoading(false);
+      },
       () => setLoading(false)
     );
     return () => unsub();
   }, [uid]);
-  return { submitted, loading };
+  return { submitted, unlocked, loading };
 }

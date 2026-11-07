@@ -12,9 +12,10 @@ import type { Profile } from "@/lib/types";
 // rendered ahead of this, so expiry always takes precedence.
 //
 // Opened from the upload lock (source "lock", `onDismiss` given) it is the
-// member's own choice, so the way out is "Not now", not "Sign out".
+// member's own choice, so the way out is "Not now", not "Sign out"; `unlocks`
+// names the profile-file slot this answer unlocks and is written on the response.
 export default function FeedbackModal({
-  cfg, uid, profile, source, onDone, onDismiss,
+  cfg, uid, profile, source, onDone, onDismiss, unlocks,
 }: {
   cfg: FeedbackConfig;
   uid: string;
@@ -23,6 +24,8 @@ export default function FeedbackModal({
   onDone: () => void;
   /** Given when the member opened the survey themselves — shows "Not now" instead of "Sign out". */
   onDismiss?: () => void;
+  /** The slot this answer unlocks — `{ key, label }`; said above the title and stored on the response. */
+  unlocks?: { key: string; label: string };
 }) {
   const { user, signOut } = useAuth();
   const [answers, setAnswers] = useState<Record<string, string | number>>({});
@@ -63,6 +66,7 @@ export default function FeedbackModal({
       rating: Number.isFinite(rating as number) ? (rating as number) : null,
       answers,
       source,
+      ...(unlocks ? { unlocks: unlocks.key } : {}),
       createdAt: Date.now(),
     };
     try {
@@ -90,6 +94,7 @@ export default function FeedbackModal({
           </>
         ) : (
           <>
+            {unlocks && <p className="label mb-1 text-center">Unlocks {unlocks.label}</p>}
             <h2 className="mb-2">🎙️ {cfg.title}</h2>
             <p className="text-jh-mute mb-6">{cfg.intro}</p>
 

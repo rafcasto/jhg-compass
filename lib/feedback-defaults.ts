@@ -6,7 +6,7 @@ import type { FeedbackConfig } from "./types";
 export const DEFAULT_FEEDBACK_CONFIG: FeedbackConfig = {
   // OFF by default — an admin flips this on to request feedback from everyone.
   enabled: false,
-  // OFF by default — on, the profile-file Upload buttons wait for the survey.
+  // OFF by default — on, each profile-file Upload button waits for its own survey answer.
   uploadLock: false,
   title: "We really value your feedback",
   intro:
