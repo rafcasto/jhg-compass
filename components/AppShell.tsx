@@ -2,7 +2,7 @@
 
 import { useState, type ComponentType } from "react";
 import { usePathname } from "next/navigation";
-import { Compass, Gauge, Columns3, GraduationCap, Shield, Radar, Target, FileText, ListChecks, UserRound, Navigation, Building2, Archive, type LucideProps } from "lucide-react";
+import { Compass, Gauge, Columns3, GraduationCap, Shield, Radar, Target, FileText, ListChecks, type LucideProps } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useContent } from "@/lib/firestore/content";
 import { track } from "@/lib/track-client";
@@ -10,7 +10,8 @@ import { BottomTabBar, MobileHeader } from "@/components/shell/MobileChrome";
 import { DesktopSidebar } from "@/components/shell/DesktopChrome";
 import PortalSwitcher, { type Portal } from "@/components/careerops/PortalSwitcher";
 import { PORTAL_SECTIONS } from "@/lib/careerops/portal-nav";
-import { JH_PAGES, JH_SETTINGS_HREF } from "@/lib/jobhacking/sections";
+import { JH_PAGES, JH_SETTINGS_HREF, SETTINGS_BASE } from "@/lib/jobhacking/sections";
+import { JH_PAGE_ICONS } from "@/components/jobhacking/pageIcons";
 
 type NavItem = {
   href: string;
@@ -19,12 +20,13 @@ type NavItem = {
 };
 
 const SECTION_ICONS: Record<string, ComponentType<LucideProps>> = { sourcing: Radar, scoring: Target, tailoring: FileText, tracking: ListChecks };
-const JH_ICONS: Record<string, ComponentType<LucideProps>> = { narrative: UserRound, "true-north": Navigation, companies: Building2, artefacts: Archive };
 
 // One shell, three portals. Compass: Compass · Performance · Progress · Coaching.
 // CareerOps: Sourcing · Scoring · Tailoring · Tracking. JobHacking: Narrative ·
-// True North · Target companies · Artefacts (Settings in the account group). The logo
-// section is the switcher between them (only shown when the member has more than one).
+// True North · Target companies · Artefacts. The account group is Settings and
+// Sign out on every portal (the Profile row went into Settings, 2026-11-07 —
+// docs/UX_SETTINGS_HUB.md). The logo section is the switcher between the portals
+// (only shown when the member has more than one).
 export interface AppShellAccess {
   agentsEnabled?: boolean;
   jobHackingEnabled?: boolean;
@@ -55,7 +57,7 @@ export default function AppShell({ children, daysLeft, agentsEnabled = false, jo
     { href: "/coaching", label: t("nav.coaching"), icon: GraduationCap },
   ];
   const CAREEROPS_NAV: NavItem[] = PORTAL_SECTIONS.map((s) => ({ href: s.href, label: s.label, icon: SECTION_ICONS[s.key] ?? Compass }));
-  const JOBHACKING_NAV: NavItem[] = JH_PAGES.map((p) => ({ href: p.href, label: p.label, icon: JH_ICONS[p.key] ?? Compass }));
+  const JOBHACKING_NAV: NavItem[] = JH_PAGES.map((p) => ({ href: p.href, label: p.label, icon: JH_PAGE_ICONS[p.key] }));
 
   const base = portal === "careerops" ? CAREEROPS_NAV : portal === "jobhacking" ? JOBHACKING_NAV : COMPASS_NAV;
   const nav: NavItem[] = isAdmin ? [...base, { href: "/admin", label: "Admin", icon: Shield }] : base;
@@ -70,15 +72,14 @@ export default function AppShell({ children, daysLeft, agentsEnabled = false, jo
   ];
   const items = nav.map((n) => ({ key: n.href, label: n.label, icon: n.icon, href: n.href, active: isActive(n.href) }));
 
-  // Account group. JobHacking has Profile as a primary tab, so its account group is Settings
-  // (the profile.yml upload) and Sign out; the Compass and CareerOps shells keep Profile · Settings.
-  const account = portal === "jobhacking"
-    ? { profileHref: null, profileActive: false, settingsHref: JH_SETTINGS_HREF, settingsActive: isActive(JH_SETTINGS_HREF) }
-    : { profileHref: "/profile", profileActive: isActive("/profile"), settingsHref: "/settings", settingsActive: isActive("/settings") };
+  // Account group: Settings · Sign out. JobHacking's Settings is the four-file upload; Compass's
+  // (and CareerOps's) is the hub — who I am, the five areas, the files (docs/UX_SETTINGS_HUB.md).
+  const settingsHref = portal === "jobhacking" ? JH_SETTINGS_HREF : SETTINGS_BASE;
+  const account = { profileHref: null, settingsHref, settingsActive: isActive(settingsHref) };
 
   return (
     <div className="min-h-screen md:flex">
-      {/* ---- Mobile top header (Profile + logout live here on mobile) ---- */}
+      {/* ---- Mobile top header (Settings + logout live here on mobile) ---- */}
       <div className="md:hidden">
         <MobileHeader onSignOut={handleLogout} signingOut={signingOut} {...account} brand={<PortalSwitcher portal={portal} available={available} compact />} />
       </div>

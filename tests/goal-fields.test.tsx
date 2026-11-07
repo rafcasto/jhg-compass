@@ -5,14 +5,15 @@ import GoalFields, { GOAL_LABELS } from "@/components/compass/GoalFields";
 import { EMPTY_GOAL, GOAL_KEYS } from "@/lib/goal";
 
 // The Compass tab and onboarding must render the identical form. This pins the
-// agreed order and labels for both variants so they can't drift again.
+// agreed order and labels for both variants so they can't drift again: the
+// statement's order, with True North's labels (2026-11-07).
 const EXPECTED_ORDER = [
   "Job title",
   "Seniority level",
-  "Industry",
+  "Industry / sub-sector",
+  "Location",
+  "Salary range",
   "Company type",
-  "Geography (country, region, city, area)",
-  "Salary range (compensation)",
 ];
 
 describe("GoalFields", () => {
@@ -34,7 +35,7 @@ describe("GoalFields", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<GoalFields value={{ ...EMPTY_GOAL, role: "PO" }} onChange={onChange} />);
-    await user.type(screen.getByLabelText("Industry"), "x");
+    await user.type(screen.getByLabelText("Industry / sub-sector"), "x");
     expect(onChange).toHaveBeenLastCalledWith({ ...EMPTY_GOAL, role: "PO", subsector: "x" });
     await user.selectOptions(screen.getByLabelText("Company type"), "Government");
     expect(onChange).toHaveBeenLastCalledWith({ ...EMPTY_GOAL, role: "PO", companyType: "Government" });

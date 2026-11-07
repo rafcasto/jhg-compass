@@ -1,14 +1,8 @@
-import { Suspense } from "react";
-import SettingsScreen from "@/components/profile/SettingsScreen";
+import SettingsHub from "@/components/profile/SettingsHub";
 
 // Settings — reached from the Settings link in the shell (sidebar on desktop,
-// header icon on mobile), beside Profile. What the agents work from: master CV,
-// target companies, portal accounts, archetypes, portfolio, notes. docs/UX_PROFILE.md §7.
+// header icon on mobile). The hub: who this is, the five areas of the profile,
+// and the four Packer files. docs/UX_SETTINGS_HUB.md §2.
 export default function SettingsPage() {
-  // useSearchParams needs a Suspense boundary in the app router.
-  return (
-    <Suspense fallback={<p className="text-jh-mute animate-pulse">Loading…</p>}>
-      <SettingsScreen />
-    </Suspense>
-  );
+  return <SettingsHub />;
 }

@@ -44,7 +44,7 @@ describe("NorthStarSource — choosing the process", () => {
     const user = userEvent.setup();
     render(<NorthStarSource uid="u1" setup={setupWith()} profile={profile} />);
     await user.click(intakeRadio());
-    for (const label of [/^Job title$/i, /^Industry$/i, /Company type/i, /Geography/i, /Salary range/i]) {
+    for (const label of [/^Job title$/i, /^Industry \/ sub-sector$/i, /Company type/i, /^Location$/i, /^Salary range$/i]) {
       expect(screen.getByLabelText(label)).toBeInTheDocument();
     }
   });
@@ -61,7 +61,7 @@ describe("NorthStarSource — the override", () => {
     render(<NorthStarSource uid="u1" setup={setupWith()} profile={profile} />);
     await user.click(intakeRadio());
     await user.type(screen.getByLabelText(/^Job title$/i), "Senior Product Owner");
-    await user.type(screen.getByLabelText(/^Industry$/i), "climate-tech");
+    await user.type(screen.getByLabelText(/^Industry \/ sub-sector$/i), "climate-tech");
     await user.click(saveBtn());
 
     await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));

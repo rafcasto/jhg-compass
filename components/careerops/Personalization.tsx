@@ -31,7 +31,7 @@ import type { Profile } from "@/lib/types";
 // ("Archetypes") and the portfolio on its own. The save then writes ONLY those keys over what
 // is stored, so one panel can never wipe a section another panel owns.
 
-const MAX = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8 };
+export const MAX = { targetRoles: 8, adaptiveFraming: 8, negotiationScripts: 6, locationPolicy: 8 };
 const ALL: readonly SectionId[] = SECTIONS.map((s) => s.id);
 
 function Section({ id, heading = true, label: labelOverride, children }: { id: SectionId; heading?: boolean; label?: string; children: React.ReactNode }) {
@@ -54,8 +54,8 @@ function Area({ value, onChange, placeholder, rows = 3, label }: { value: string
   return <textarea aria-label={label} className="field text-sm" style={{ minHeight: `${rows * 1.8}rem` }} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />;
 }
 
-/** A repeatable list of single-line entries (scripts, location rules). */
-function LineList({ label, value, onChange, max, placeholder }: { label: string; value: string[]; onChange: (v: string[]) => void; max: number; placeholder: string }) {
+/** A repeatable list of single-line entries (scripts, location rules). Shared with True North · Salary range. */
+export function LineList({ label, value, onChange, max, placeholder }: { label: string; value: string[]; onChange: (v: string[]) => void; max: number; placeholder: string }) {
   return (
     <div className="space-y-2">
       {value.map((line, i) => (
@@ -76,8 +76,28 @@ function LineList({ label, value, onChange, max, placeholder }: { label: string;
   );
 }
 
+/** The adaptive-framing rows — if the role is… · emphasise… · proof. Shared with True North · Target roles (decision 2026-11-07). */
+export function FramingRows({ value, onChange, max = MAX.adaptiveFraming }: { value: FramingRow[]; onChange: (v: FramingRow[]) => void; max?: number }) {
+  return (
+    <div className="space-y-3">
+      {value.length > 0 && <RowHead cols={["If the role is…", "Emphasise about you…", "Proof"]} />}
+      {value.map((r, i) => (
+        <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_40px] items-center">
+          <input aria-label={`If the role is ${i + 1}`} className="field text-sm" placeholder="If the role is…" value={r.role} onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, role: e.target.value } : x)))} />
+          <input aria-label={`Emphasize ${i + 1}`} className="field text-sm" placeholder="Emphasise about you…" value={r.emphasize} onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, emphasize: e.target.value } : x)))} />
+          <input aria-label={`Proof ${i + 1}`} className="field text-sm" placeholder="Proof (defaults to cv.md)" value={r.proof ?? ""} onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, proof: e.target.value } : x)))} />
+          <button type="button" aria-label={`Remove framing ${i + 1}`} onClick={() => onChange(value.filter((_, j) => j !== i))} className="icon-btn icon-btn-danger justify-self-end sm:justify-self-auto"><X className="h-4 w-4" aria-hidden /></button>
+        </div>
+      ))}
+      {value.length < max && (
+        <button type="button" onClick={() => onChange([...value, { role: "", emphasize: "" }])} className="btn-secondary btn-sm"><Plus className="h-4 w-4" aria-hidden /> Add framing</button>
+      )}
+    </div>
+  );
+}
+
 /** Column headings for the three-field rows — labels recede, values lead. Hidden below sm, where the rows stack. */
-function RowHead({ cols }: { cols: string[] }) {
+export function RowHead({ cols }: { cols: string[] }) {
   return (
     <div className="hidden sm:grid sm:grid-cols-[1fr_1fr_1fr_40px] gap-2" aria-hidden>
       {cols.map((c) => <span key={c} className="label mb-0">{c}</span>)}
@@ -196,20 +216,7 @@ export default function Personalization({ uid, setup, profile, only, saveLabel, 
 
       {show("adaptiveFraming") && (
         <Section id="adaptiveFraming" heading={heading}>
-          <div className="space-y-3">
-            {framing.length > 0 && <RowHead cols={["If the role is…", "Emphasise about you…", "Proof"]} />}
-            {framing.map((r, i) => (
-              <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_40px] items-center">
-                <input aria-label={`If the role is ${i + 1}`} className="field text-sm" placeholder="If the role is…" value={r.role} onChange={(e) => { setFraming(framing.map((x, j) => (j === i ? { ...x, role: e.target.value } : x))); touch(); }} />
-                <input aria-label={`Emphasize ${i + 1}`} className="field text-sm" placeholder="Emphasise about you…" value={r.emphasize} onChange={(e) => { setFraming(framing.map((x, j) => (j === i ? { ...x, emphasize: e.target.value } : x))); touch(); }} />
-                <input aria-label={`Proof ${i + 1}`} className="field text-sm" placeholder="Proof (defaults to cv.md)" value={r.proof ?? ""} onChange={(e) => { setFraming(framing.map((x, j) => (j === i ? { ...x, proof: e.target.value } : x))); touch(); }} />
-                <button type="button" aria-label={`Remove framing ${i + 1}`} onClick={() => { setFraming(framing.filter((_, j) => j !== i)); touch(); }} className="icon-btn icon-btn-danger justify-self-end sm:justify-self-auto"><X className="h-4 w-4" aria-hidden /></button>
-              </div>
-            ))}
-            {framing.length < MAX.adaptiveFraming && (
-              <button type="button" onClick={() => { setFraming([...framing, { role: "", emphasize: "" }]); touch(); }} className="btn-secondary btn-sm"><Plus className="h-4 w-4" aria-hidden /> Add framing</button>
-            )}
-          </div>
+          <FramingRows value={framing} onChange={(v) => { setFraming(v); touch(); }} />
         </Section>
       )}
 

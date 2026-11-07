@@ -2,15 +2,11 @@
 
 import type { ComponentType } from "react";
 import Link from "next/link";
-import {
-  Building2, Check, ChevronRight, Circle, CircleDashed, Compass, Contact, FileText, Globe, KeyRound, Layers, MapPin,
-  Quote, Sparkles, StickyNote, Target, type LucideProps,
-} from "lucide-react";
-import { GROUPS, sectionHref, type ActiveSection, type ActiveSectionKey } from "@/lib/profile-sections";
+import { Check, ChevronRight, Circle, CircleDashed, type LucideProps } from "lucide-react";
 import type { StepState } from "@/lib/careerops/intake-wizard";
 
-// The section list of every sectioned page (Profile, Settings, and the three
-// JobHacking pages), in two densities from one shape:
+// The section list of every sectioned page (the JobHacking pages and the
+// Settings areas) and of the Settings hub, in two densities from one shape:
 //   rail — desktop, beside the content (the sidebar's row recipe)
 //   rows — mobile, the page itself: each row quotes the data, tap to drill in
 // Items may carry a group (Who am I · What's my target); the group's question
@@ -19,8 +15,8 @@ import type { StepState } from "@/lib/careerops/intake-wizard";
 // state (UX audit §0.4).
 //
 // The list knows nothing about where its items come from: `SectionItem` is the
-// one shape both the profile registry (lib/profile-sections) and the JobHacking
-// registry (lib/jobhacking/sections) map onto — see profileItems() below.
+// one shape the registry (lib/jobhacking/sections) maps onto — a section on an
+// area page, an area on the hub.
 
 export interface SectionGroupInfo { key: string; eyebrow: string; label: string }
 
@@ -45,19 +41,6 @@ export interface SectionRow<K extends string = string> {
   summary: string;
   /** A small count for the row's right edge, when one makes sense. */
   count?: string;
-}
-
-export const SECTION_ICONS: Record<ActiveSectionKey, ComponentType<LucideProps>> = {
-  contact: Contact, headline: Quote, story: Sparkles, northstar: Compass, logistics: MapPin, targeting: Target,
-  cv: FileText, companies: Building2, accounts: KeyRound, archetypes: Layers, portfolio: Globe, notes: StickyNote,
-};
-
-/** The profile registry's sections as list items (Profile and Settings pages). */
-export function profileItems(sections: readonly ActiveSection[]): SectionItem<ActiveSectionKey>[] {
-  return sections.map((s) => ({
-    key: s.key, label: s.label, title: s.title, ask: s.ask, href: sectionHref(s.key), icon: SECTION_ICONS[s.key],
-    group: s.group ? GROUPS.find((g) => g.key === s.group) : undefined,
-  }));
 }
 
 /** Consecutive items with the same group, in order. Ungrouped runs have `group: null`. */

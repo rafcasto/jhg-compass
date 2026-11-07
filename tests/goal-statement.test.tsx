@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import GoalStatement from "@/components/compass/GoalStatement";
-import { COMPANY_TYPES, companyTypePhrase, goalFromLegacy, goalFromProfile, normalizeGoal } from "@/lib/goal";
+import { COMPANY_TYPES, TRUE_NORTH_ORDER, TRUE_NORTH_PLACEHOLDERS, companyTypePhrase, goalFromLegacy, goalFromProfile, normalizeGoal, trueNorthText } from "@/lib/goal";
 
 const goal = {
   role: "Senior Product Owner",
@@ -11,19 +11,31 @@ const goal = {
   salary: "180,000 – 220,000",
 };
 
+// The Compass goal statement IS the True North statement (decision 2026-11-07):
+// one sentence on the Compass tab, onboarding step 2 and True North, from one
+// template in lib/goal.
 describe("GoalStatement", () => {
-  it("renders every field as an italic value", () => {
+  it("renders every blank as an italic value, in the True North sentence", () => {
     render(<GoalStatement goal={goal} />);
-    for (const [k, v] of Object.entries(goal)) {
-      const el = screen.getByText(k === "companyType" ? `a ${v}` : v);
+    const expected: Record<string, string> = { role: goal.role, industry: goal.subsector, location: goal.city, salary: goal.salary, companyType: `a ${goal.companyType}` };
+    for (const [k, v] of Object.entries(expected)) {
+      const el = screen.getByText(v);
       expect(el.tagName).toBe("EM");
       expect(el).toHaveAttribute("data-field", k);
       expect(el).not.toHaveAttribute("data-empty");
     }
     const text = screen.getByTestId("goal-statement").textContent!;
-    expect(text).toContain("In 60 days from now, I'm working as Senior Product Owner, making $180,000 – 220,000 yearly before tax.");
-    expect(text).toContain("I'm based in Auckland, New Zealand and specialise in thriving industry climate-tech SaaS.");
-    expect(text).toContain("I enjoy working for a Scaleup (established), with flexible working arrangements.");
+    expect(text).toContain("In 60 days, I'm working as Senior Product Owner, in climate-tech SaaS.");
+    expect(text).toContain("I'm based in Auckland, New Zealand and I'm making 180,000 – 220,000 yearly before tax.");
+    expect(text).toContain("I enjoy working for a Scaleup (established).");
+    expect(text).not.toContain("flexible working arrangements");
+  });
+
+  it("reads as the one True North text, word for word", () => {
+    render(<GoalStatement goal={goal} />);
+    // A <br> is a line break in the sentence — read it as a space.
+    const spoken = Array.from(screen.getByTestId("goal-statement").childNodes).map((n) => (n.nodeName === "BR" ? " " : n.textContent)).join("");
+    expect(spoken.replace(/\s+/g, " ").trim()).toBe(trueNorthText(goal));
   });
 
   it("puts the seniority level in front of the title, without doubling a level already typed into it", () => {
@@ -34,19 +46,20 @@ describe("GoalStatement", () => {
     expect(screen.getByText("Senior Product Owner")).toBeInTheDocument();
   });
 
-  it("breaks the line after 'before tax.' and after the subsector", () => {
+  it("breaks the line after the industry and after 'before tax.'", () => {
     const { container } = render(<GoalStatement goal={goal} />);
     const html = container.querySelector("p")!.innerHTML;
-    expect(html).toMatch(/before tax\.<br>/);
     expect(html).toMatch(/climate-tech SaaS<\/em>\.<br>/);
+    expect(html).toMatch(/before tax\.<br>/);
     expect(container.querySelectorAll("br")).toHaveLength(2);
   });
 
-  it("shows dimmed placeholders for blank fields", () => {
+  it("shows the template's own labels for blanks", () => {
     render(<GoalStatement goal={{}} />);
     const blanks = screen.getAllByText(/^\[.+\]$/);
+    expect(blanks.map((b) => b.textContent)).toEqual(TRUE_NORTH_ORDER.map((k) => TRUE_NORTH_PLACEHOLDERS[k]));
     expect(blanks.map((b) => b.textContent)).toEqual([
-      "[Seniority Level + Job title]", "[Target Salary]", "[City]", "[Specific Sub-sector]", "[Company Type]",
+      "[Target Role + Target Seniority]", "[Target Industry]", "[Target Location]", "[Target Salary]", "[Target Company Type]",
     ]);
     blanks.forEach((b) => expect(b).toHaveAttribute("data-empty", "true"));
   });

@@ -9,13 +9,24 @@
   `profile.yml`. Existing `maleta*` identifiers in `lib/careerops/maleta.ts`, `MaletaUpload.tsx`,
   `StartChooser.tsx`, `IntakeScreen.tsx`, `docs/LA_MALETA.md` and their tests are legacy; rename them when
   touched, and never add new ones.
-- The profile is edited on two sibling pages in the shell's account group (decision 2026-11-01,
-  `docs/UX_PROFILE.md §7`): `/profile` is *who I am and what I'm aiming at* (Who am I = exactly contact details, headline, exit story;
-  What's my target = target role & market, salary floor & location, comp & location policy); `/settings` is *what the agents work
-  from* (master CV, target companies, portal accounts, archetypes & core competencies, portfolio / demo, notes). Neither is gated
-  on CareerOps being enabled — only the **Portal accounts** section needs it (the vault key comes from the
-  worker). Export and upload of the whole `profile.yml` live on `/profile`. Both pages render from
-  `lib/profile-sections.ts` through `components/profile/SectionsPage.tsx`; add a section there, not a page.
+- **Settings is the profile** (decision 2026-11-07, `docs/UX_SETTINGS_HUB.md`): the Compass shell's account group is **Settings · Sign out**
+  — there is no Profile page or row any more (`/profile*` redirects, `lib/settings-redirects.mjs`). `/settings` is a **hub**
+  (`components/profile/SettingsHub.tsx`: identity · five area rows that quote the member's data · the four Packer files) and
+  `/settings/<area>` renders the **same sectioned pages as the JobHacking portal** (`components/profile/SettingsArea.tsx` →
+  `JobHackingScreen portal="compass"`): Narrative · True North · Target companies · Artefacts, plus the Compass-only **Agents** area.
+  **One registry for both portals** — `lib/jobhacking/sections.ts`; a section the JobHacking menu never shows carries `only: "compass"`
+  (Work rights under True North, Portfolio / demo under Artefacts, Portal accounts and Notes under Agents) and `jhSectionsFor(page,
+  { portal, careerOps })` filters it; `jhSectionHref(key, base)` / `jhPageHref(key, base)` take the portal's base (`BASE_OF`). The
+  JobHacking portal's pages must keep rendering exactly as specified — never add a Compass field without the flag. The retired
+  two-page registry (`PROFILE_SECTIONS`, `sectionsFor("profile" | "settings")`) is gone; `lib/profile-sections.ts` keeps only what both
+  portals share (`FILE_SECTIONS`, `sectionSummaries`). Portal accounts still needs CareerOps (the vault key comes from the worker). The
+  whole-`profile.yml` export and the four-file upload (`ProfileFilesPanel`, shared with JobHacking → Settings) live on the hub.
+  Add a section to the registry, not a page; a page under the hub passes `parent` to `SectionsPage` for its `‹ Settings` row.
+- **One statement** (decision 2026-11-07): the Compass goal statement, onboarding step 2 and the True North statement are **one
+  sentence** from `lib/goal.ts` (`trueNorthBlanks · trueNorthText · TRUE_NORTH_PLACEHOLDERS`): *In 60 days, I'm working as [Target Role +
+  Target Seniority], in [Target Industry]. I'm based in [Target Location] and I'm making [Target Salary] yearly before tax. I enjoy working
+  for [Target Company Type].* `GoalFields` (Compass edit mode and onboarding) uses the statement's field order and True North's labels.
+  Never write a second template.
 
 - **JobHacking portal** (decision 2026-11-03, `docs/UX_JOBHACKING.md`): a third portal — Narrative · True North · Target
   companies · Artefacts, plus Settings (upload only) — on the **same documents** as Compass. Its registry is `lib/jobhacking/sections.ts`;

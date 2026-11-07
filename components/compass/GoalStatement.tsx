@@ -1,40 +1,34 @@
-import { companyTypePhrase, roleWithSeniority, type Goal } from "@/lib/goal";
+import { TRUE_NORTH_PLACEHOLDERS, trueNorthBlanks, type Goal, type TrueNorthBlanks } from "@/lib/goal";
 
-// The fixed goal-statement sentence. Every member value is italic + white; blanks
-// render a dimmed placeholder so the shape of the sentence is always visible.
+// The fixed goal-statement sentence — the True North statement (decision
+// 2026-11-07: one sentence on the Compass tab, onboarding step 2 and True
+// North). Every member value is italic + white; blanks render the template's
+// own bracketed label, dimmed, so the shape of the sentence is always visible.
 // Pure component — no hooks, no data access — so it is trivially testable and
-// re-renders live while the edit form is being typed into. Shared by the
-// Compass tab and onboarding step 2.
+// re-renders live while the edit form is being typed into.
 //
-// Template:
-//   In 60 days from now, I'm working as [Seniority Level + Job title], making $[Target Salary] yearly before tax.
-//   I'm based in [City] and specialise in thriving industry [Specific Sub-sector].
-//   I enjoy working for [Company Type], with flexible working arrangements.
+//   In 60 days, I'm working as [Target Role + Target Seniority], in [Target Industry].
+//   I'm based in [Target Location] and I'm making [Target Salary] yearly before tax.
+//   I enjoy working for [Target Company Type].
 
-function V({ value, placeholder, name }: { value?: string; placeholder: string; name: string }) {
-  const v = value?.trim();
+function V({ blanks, name }: { blanks: TrueNorthBlanks; name: keyof TrueNorthBlanks }) {
+  const v = blanks[name];
   return (
-    <em
-      data-field={name}
-      data-empty={v ? undefined : "true"}
-      className={v ? "italic text-white" : "italic text-white/55"}
-    >
-      {v || placeholder}
+    <em data-field={name} data-empty={v ? undefined : "true"} className={v ? "italic text-white" : "italic text-white/55"}>
+      {v || TRUE_NORTH_PLACEHOLDERS[name]}
     </em>
   );
 }
 
 export default function GoalStatement({ goal }: { goal: Goal }) {
+  const blanks = trueNorthBlanks(goal);
   return (
     <p className="goal-statement" data-testid="goal-statement">
-      In 60 days from now, I&apos;m working as <V name="role" value={roleWithSeniority(goal)} placeholder="[Seniority Level + Job title]" />, making $
-      <V name="salary" value={goal.salary} placeholder="[Target Salary]" /> yearly before tax.
+      In 60 days, I&apos;m working as <V blanks={blanks} name="role" />, in <V blanks={blanks} name="industry" />.
       <br />
-      I&apos;m based in <V name="city" value={goal.city} placeholder="[City]" /> and specialise in thriving industry{" "}
-      <V name="subsector" value={goal.subsector} placeholder="[Specific Sub-sector]" />.
+      I&apos;m based in <V blanks={blanks} name="location" /> and I&apos;m making <V blanks={blanks} name="salary" /> yearly before tax.
       <br />
-      I enjoy working for <V name="companyType" value={companyTypePhrase(goal.companyType)} placeholder="[Company Type]" />, with flexible
-      working arrangements.
+      I enjoy working for <V blanks={blanks} name="companyType" />.
     </p>
   );
 }

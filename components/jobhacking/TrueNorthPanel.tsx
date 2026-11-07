@@ -5,7 +5,8 @@ import { setDoc } from "firebase/firestore";
 import { Check, Plus, Save, TriangleAlert, X } from "lucide-react";
 import { paths } from "@/lib/firestore/db";
 import { goalWrites } from "@/lib/careerops/goal-save";
-import { coercePersonalization, type TargetRoleRow } from "@/lib/careerops/personalization";
+import { coercePersonalization, type FramingRow, type TargetRoleRow } from "@/lib/careerops/personalization";
+import { FramingRows, LineList, MAX } from "@/components/careerops/Personalization";
 import { buildSetupProfileMd, buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import type { CareerOpsPolicy, CareerOpsSetupV2 } from "@/lib/careerops/types";
 import { COMPANY_TYPES, EMPTY_GOAL, type Goal } from "@/lib/goal";
@@ -15,7 +16,9 @@ import type { Profile } from "@/lib/types";
 // The six True North sections — docs/UX_JOBHACKING.md §3. Each one is a few
 // fields from up to three stored objects (the goal, policy, personalization),
 // and its Save writes ONLY those fields over what is stored, so no section can
-// wipe another's.
+// wipe another's. Target roles carries the adaptive framing per archetype and
+// Salary range the negotiation scripts (decision 2026-11-07,
+// docs/UX_SETTINGS_HUB.md §1): the field sits where its question is asked.
 //
 // The goal has two homes (lib/careerops/goal-save.ts): the Compass goal on
 // users/{uid}, and the intake override on the setup document — which an
@@ -35,6 +38,7 @@ const SAVE_LABEL: Record<TrueNorthSection, string> = {
 
 const cleanRows = (rows: TargetRoleRow[]) => rows.map((r) => ({ archetype: r.archetype.trim(), axes: r.axes?.trim() || undefined, buys: r.buys?.trim() || undefined })).filter((r) => r.archetype);
 const cleanLines = (lines: string[]) => lines.map((l) => l.trim()).filter(Boolean);
+const cleanFraming = (rows: FramingRow[]) => rows.map((r) => ({ role: r.role.trim(), emphasize: r.emphasize.trim(), proof: r.proof?.trim() || undefined })).filter((r) => r.role && r.emphasize);
 
 function Hint({ children }: { children: React.ReactNode }) {
   return <span className="block text-xs text-jh-mute mt-1">{children}</span>;
@@ -52,7 +56,9 @@ export default function TrueNorthPanel({ uid, setup, profile, section, onDraft }
   const [goal, setGoal] = useState<Goal>({ ...EMPTY_GOAL, ...live });
   const [policy, setPolicy] = useState<CareerOpsPolicy>(setup?.policy ?? {});
   const [roles, setRoles] = useState<TargetRoleRow[]>(setup?.personalization?.targetRoles ?? []);
+  const [framing, setFraming] = useState<FramingRow[]>(setup?.personalization?.adaptiveFraming ?? []);
   const [compTargets, setComp] = useState(setup?.personalization?.compTargets ?? "");
+  const [scripts, setScripts] = useState<string[]>(setup?.personalization?.negotiationScripts ?? []);
   const [rules, setRules] = useState<string[]>(setup?.personalization?.locationPolicy ?? []);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -96,8 +102,8 @@ export default function TrueNorthPanel({ uid, setup, profile, section, onDraft }
 
       if (touchesPersonalization) {
         const next: Record<string, unknown> = { ...(setup?.personalization ?? {}) };
-        if (section === "roles") next.targetRoles = cleanRows(roles);
-        if (section === "salary") next.compTargets = compTargets.trim();
+        if (section === "roles") { next.targetRoles = cleanRows(roles); next.adaptiveFraming = cleanFraming(framing); }
+        if (section === "salary") { next.compTargets = compTargets.trim(); next.negotiationScripts = cleanLines(scripts); }
         if (section === "location") next.locationPolicy = cleanLines(rules);
         patch.personalization = coercePersonalization(next);
         patch.profileMd = buildSetupProfileMd({ setup, overrides: { personalization: patch.personalization } });
@@ -153,6 +159,13 @@ export default function TrueNorthPanel({ uid, setup, profile, section, onDraft }
             )}
             <p className="text-xs text-jh-mute">{roles.length} of {MAX_ROLES} added</p>
           </div>
+          <div className="space-y-3 border-t border-jh-line pt-4">
+            <div>
+              <p className="font-display font-semibold text-jh-ink">Adaptive framing</p>
+              <p className="text-xs text-jh-mute mt-0.5 max-w-2xl">For each archetype: what to emphasise about you, and which part of your CV proves it.</p>
+            </div>
+            <FramingRows value={framing} onChange={(v) => { setFraming(v); touch(); }} />
+          </div>
         </>
       )}
 
@@ -181,6 +194,11 @@ export default function TrueNorthPanel({ uid, setup, profile, section, onDraft }
             <textarea className="field text-sm min-h-[5.4rem]" value={compTargets} placeholder="e.g. Target AUD 140,000–165,000; floor AUD 130,000. Up to 3 days in the CBD, floor unchanged." onChange={(e) => { setComp(e.target.value); touch(); }} />
             <Hint>What the market pays for your target roles and how you frame your own number.</Hint>
           </label>
+          <div className="space-y-2 sm:col-span-2 border-t border-jh-line pt-4">
+            <p className="label mb-0">Negotiation scripts</p>
+            <LineList label="Script" value={scripts} onChange={(v) => { setScripts(v); touch(); }} max={MAX.negotiationScripts} placeholder="e.g. I'm targeting 150k. I'm flexible on structure — what matters is the total package." />
+            <p className="text-xs text-jh-mute">What you actually say when the offer comes in low, or they push a location discount.</p>
+          </div>
         </div>
       )}
 

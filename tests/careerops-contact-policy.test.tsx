@@ -175,6 +175,22 @@ describe("ContactPolicy — `part` shows one slice and saves only that slice", (
     expect(String(data.profileYaml)).toContain('phone: "+64 21 000 0000"');
   });
 
+  it("workRights: visa · work rights · sponsorship only, and a save keeps the walk-away number it does not show (Compass → Settings, 2026-11-07)", async () => {
+    const user = userEvent.setup();
+    render(<ContactPolicy uid="u1" setup={stored} profile={profile} part="workRights" />);
+    expect(screen.queryByLabelText(/Walk-away salary/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Location flexibility/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Phone$/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Already authorised to work in/i)).toHaveValue("New Zealand");
+    await user.type(screen.getByLabelText(/Visa \/ right to work/i), "NZ citizen");
+    await user.click(screen.getByLabelText(/I need visa sponsorship/i));
+    await user.click(screen.getByRole("button", { name: /Save work rights/i }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
+    const [, data] = setDoc.mock.calls[0];
+    expect(data.policy).toEqual({ minimumSalary: "160,000", visaStatus: "NZ citizen", authorizedIn: ["New Zealand"], needsSponsorship: true });
+    expect(data).not.toHaveProperty("contact");
+  });
+
   it("contact: the name is written to the account document, after the setup, and profile.yml already carries it", async () => {
     const user = userEvent.setup();
     render(<ContactPolicy uid="u1" setup={stored} profile={profile} part="contact" />);

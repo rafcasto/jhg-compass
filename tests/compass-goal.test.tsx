@@ -26,10 +26,10 @@ describe("CompassGoal", () => {
     expect(screen.queryByRole("button", { name: /edit/i })).not.toBeInTheDocument();
     expect(screen.getByText("Complete your objective")).toBeInTheDocument();
     expect(screen.getByLabelText("Job title")).toHaveValue("Product Owner");
-    expect(screen.getByLabelText("Industry")).toHaveValue("fintech");
+    expect(screen.getByLabelText("Industry / sub-sector")).toHaveValue("fintech");
     expect(screen.getByLabelText("Company type")).toHaveValue("Small Business");
-    expect(screen.getByLabelText("Geography (country, region, city, area)")).toHaveValue("Wellington");
-    expect(screen.getByLabelText("Salary range (compensation)")).toHaveValue("200,000");
+    expect(screen.getByLabelText("Location")).toHaveValue("Wellington");
+    expect(screen.getByLabelText("Salary range")).toHaveValue("200,000");
     const opts = within(screen.getByLabelText("Company type")).getAllByRole("option").map((o) => o.textContent);
     expect(opts).toEqual([
       "Select…",
@@ -60,7 +60,7 @@ describe("CompassGoal", () => {
     const onSave = vi.fn();
     render(<CompassGoal goal={saved} onSave={onSave} />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
-    const city = screen.getByLabelText("Geography (country, region, city, area)");
+    const city = screen.getByLabelText("Location");
     await user.clear(city);
     await user.type(city, "Auckland");
     expect(screen.getByTestId("goal-statement")).toHaveTextContent("based in Auckland");
@@ -72,7 +72,7 @@ describe("CompassGoal", () => {
     expect(screen.getByTestId("goal-statement")).not.toHaveTextContent("Auckland");
 
     await user.click(screen.getByRole("button", { name: /edit/i }));
-    expect(screen.getByLabelText("Geography (country, region, city, area)")).toHaveValue("Wellington");
+    expect(screen.getByLabelText("Location")).toHaveValue("Wellington");
   });
 
   it("Save objective hands the trimmed draft to onSave and leaves edit mode", async () => {
@@ -80,7 +80,7 @@ describe("CompassGoal", () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     render(<CompassGoal goal={saved} onSave={onSave} />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
-    const salary = screen.getByLabelText("Salary range (compensation)");
+    const salary = screen.getByLabelText("Salary range");
     await user.clear(salary);
     await user.type(salary, " 180,000 – 220,000 ");
     await user.click(screen.getByRole("button", { name: "Save objective" }));

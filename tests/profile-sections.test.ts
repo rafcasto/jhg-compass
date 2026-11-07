@@ -1,77 +1,27 @@
 import { describe, it, expect } from "vitest";
-import {
-  ACTIVE_SECTIONS, DEFAULT_SECTION, FILE_SECTIONS, GROUPS, PROFILE_SECTIONS, groupedSections, parseSection, profileProgress,
-  rowsFor, sectionHref, sectionSummaries, sectionsFor,
-} from "@/lib/profile-sections";
+import { FILE_SECTIONS, sectionSummaries } from "@/lib/profile-sections";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 
+// What both portals share about the profile: the storage sections of the file,
+// and one summary row per stored field group. Which section is shown where is
+// lib/jobhacking/sections.ts (tests/jobhacking-sections.test.ts).
+
 const profile = { email: "ana@example.com", goal: { role: "Delivery Lead", city: "Wellington", salary: "NZ$ 150,000" } } as Profile;
 
-describe("profile sections — the registry", () => {
-  it("splits the profile between two pages: who I am / what I target on Profile, what the agents work from on Settings", () => {
-    expect(sectionsFor("profile").map((s) => s.key)).toEqual(["contact", "headline", "story", "northstar", "logistics", "targeting"]);
-    expect(sectionsFor("settings").map((s) => s.key)).toEqual(["cv", "companies", "archetypes", "portfolio", "notes"]);
-    expect(ACTIVE_SECTIONS.length).toBe(12);
-  });
-
-  it("only offers portal accounts to a member with CareerOps switched on — the vault needs the worker's key", () => {
-    expect(sectionsFor("settings", { careerOps: true }).map((s) => s.key)).toEqual(["cv", "companies", "accounts", "archetypes", "portfolio", "notes"]);
-    expect(parseSection("accounts", sectionsFor("settings"))).toBeNull();
-    expect(parseSection("accounts", sectionsFor("settings", { careerOps: true }))).toBe("accounts");
-  });
-
-  it("Who am I is exactly contact details · headline · exit story (decision 2026-11-01)", () => {
-    const who = sectionsFor("profile").filter((s) => s.group === "who");
-    expect(who.map((s) => s.label)).toEqual(["Contact details", "Headline", "Exit story"]);
-    // Core competencies moved to Settings · Archetypes with the framing they feed.
-    expect(sectionsFor("settings").find((s) => s.key === "archetypes")?.title).toBe("Role archetypes and core competencies");
-  });
-
-  it("groups the Profile page in the JobHackers vocabulary and hides the reserved sections", () => {
-    expect(GROUPS.map((g) => `${g.eyebrow}: ${g.label}`)).toEqual(["Profile: Who am I", "North Star: What's my target", "Artefacts: What value do I create"]);
-    const grouped = groupedSections(sectionsFor("profile"));
-    expect(grouped.map((g) => [g.group?.key, g.sections.map((s) => s.key)])).toEqual([
-      ["who", ["contact", "headline", "story"]],
-      ["target", ["northstar", "logistics", "targeting"]],
-    ]);
-    // Artefacts (stories, proof bank) and the culture screen are registered but not rendered.
-    expect(PROFILE_SECTIONS.filter((s) => !s.available).map((s) => s.key)).toEqual(["culture", "stories", "proof"]);
-    // Settings is flat: one unnamed group.
-    expect(groupedSections(sectionsFor("settings")).map((g) => g.group)).toEqual([null]);
-  });
-
-  it("parses ?section= per page, and sends unknown, reserved, absent or other-page keys to the overview", () => {
-    expect(parseSection("story", sectionsFor("profile"))).toBe("story");
-    expect(parseSection("cv", sectionsFor("profile"))).toBeNull();
-    expect(parseSection("cv", sectionsFor("settings"))).toBe("cv");
-    expect(parseSection("proof")).toBeNull();
-    expect(parseSection("nope")).toBeNull();
-    expect(parseSection(null)).toBeNull();
-    expect(DEFAULT_SECTION).toEqual({ profile: "contact", settings: "cv" });
-  });
-
-  it("deep-links to whichever page edits a section", () => {
-    expect(sectionHref("story")).toBe("/profile?section=story");
-    expect(sectionHref("companies")).toBe("/settings?section=companies");
-  });
-
-  it("maps every editable section of the file to a page section a member can go to; the artefacts have none yet", () => {
+describe("profile sections — the file", () => {
+  it("names every storage section of profile.yml, in the file's order", () => {
     expect(Object.keys(FILE_SECTIONS)).toEqual(["northstar", "contact", "targeting", "watchlist", "companyLists", "notes", "cv", "artefacts", "linkedin", "narrative", "jhg"]);
-    for (const f of Object.values(FILE_SECTIONS)) if (f.edit) expect(ACTIVE_SECTIONS.some((s) => s.key === f.edit)).toBe(true);
-    expect(FILE_SECTIONS.watchlist.edit).toBe("companies");
-    expect(FILE_SECTIONS.artefacts.edit).toBeNull();
-    expect(FILE_SECTIONS.linkedin.edit).toBeNull(); // read on JobHacking → Artefacts only
-    expect(FILE_SECTIONS.companyLists.edit).toBeNull(); // read on the JobHacking portal only (JH_FILE_EDIT)
+    expect(FILE_SECTIONS.watchlist.label).toBe("Target companies");
+    expect(FILE_SECTIONS.jhg.label).toBe("Workbook");
   });
 });
 
 describe("profile sections — what each row says", () => {
-  it("says Not set everywhere for a new member, on both pages", () => {
+  it("says Not set everywhere for a new member", () => {
     const rows = sectionSummaries({ setup: null, profile: null });
+    expect(rows.length).toBe(12);
     expect(rows.every((r) => r.summary === "Not set" && r.state === "empty")).toBe(true);
-    expect(profileProgress(rowsFor(sectionsFor("profile"), rows))).toEqual({ done: 0, total: 6, pct: 0 });
-    expect(profileProgress(rowsFor(sectionsFor("settings", { careerOps: true }), rows))).toEqual({ done: 0, total: 6, pct: 0 });
   });
 
   it("quotes the Compass goal when the setup has none", () => {
@@ -115,7 +65,7 @@ describe("profile sections — what each row says", () => {
     expect(rows.logistics.state).toBe("partial");
     expect(rows.targeting.summary).toBe("Target NZ$ 150–175k · 1 location rule");
     expect(rows.targeting.count).toBe("2/3");
-    // Settings
+    // What the agents work from
     expect(rows.cv.summary).toMatch(/^\d+ words · Ready to score$/);
     expect(rows.companies.summary).toBe("Xero, Tracksuit, Dovetail…");
     expect(rows.companies.count).toBe("4");
@@ -125,9 +75,6 @@ describe("profile sections — what each row says", () => {
     expect(rows.archetypes.count).toBe("2");
     expect(rows.portfolio.summary).toBe("ana.nz · The release-cadence playbook");
     expect(rows.notes.summary).toBe("Hard no's: on-site 5 days");
-
-    expect(profileProgress(rowsFor(sectionsFor("profile"), Object.values(rows)))).toEqual({ done: 4, total: 6, pct: 67 });
-    expect(profileProgress(rowsFor(sectionsFor("settings", { careerOps: true }), Object.values(rows)))).toEqual({ done: 6, total: 6, pct: 100 });
   });
 
   it("contact: the account's name and email count, but 'done' needs the phone and one more", () => {

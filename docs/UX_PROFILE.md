@@ -369,3 +369,7 @@ The CareerOps portal's own Setup screen (`/careerops/setup`) and the intake wiza
 | Shell account group | Profile · Sign out | Profile · Settings · Sign out (desktop rows; three 44px icons on mobile) |
 
 Remaining to reach 10: `Personalization`'s three-column rows still stack as unlabelled inputs below `sm` (§4.3 pattern — summary rows + edit sheet — not yet applied); `CvPanel`'s review step still shows a 2-up editor/preview at `md` that is cramped at 768px.
+
+## 8. Revision 2026-11-07 — the Profile page retired into Settings
+
+**Decision:** the two sibling pages of §7 are gone. The Compass account group is **Settings · Sign out**; `/settings` is a hub and `/settings/<area>` renders the JobHacking pages on Compass — Narrative · True North · Target companies · Artefacts, plus the Compass-only Agents area. The IA, the mapping of every §7.1 field to its new section, the redirects and the build record are in `docs/UX_SETTINGS_HUB.md`. §1–§6 (upload → review → confirm, the sectioned layout, the visual spec) still describe the system the hub and its areas are built from; §7's registry (`PROFILE_SECTIONS`) no longer exists — `lib/jobhacking/sections.ts` is the one registry.

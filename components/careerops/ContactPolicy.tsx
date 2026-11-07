@@ -14,16 +14,17 @@ import type { Profile } from "@/lib/types";
 // Until this card existed, Compass emitted none of them, so every generated CV
 // went out with no LinkedIn, no portfolio and no phone.
 //
-// `part` splits it across the Profile page (docs/UX_PROFILE.md §7):
-//   contact   WHO AM I · Contact details — name · phone · email · LinkedIn · location · portfolio
-//   headline  WHO AM I · Headline — the lane statement (candidate.title)
-//   policy    WHAT'S MY TARGET · Salary floor & location
-//   both      the intake wizard: all of it in one card
+// `part` splits it across the sectioned pages (docs/UX_SETTINGS_HUB.md §1):
+//   contact     Narrative · Contact details — name · phone · email · LinkedIn · location · portfolio
+//   headline    Narrative · Headline — the lane statement (candidate.title)
+//   workRights  True North · Work rights — visa · where work rights are held · sponsorship (Compass only)
+//   policy      the walk-away number and flexibility too (the intake's logistics step)
+//   both        the intake wizard: all of it in one card
 // Each part saves only what it shows, over what is stored, so no panel can
 // wipe another's fields. The name lives on the account (users/{uid}); the rest
 // on the CareerOps setup document. Email is the sign-in email — shown, not edited.
 
-export type ContactPolicyPart = "contact" | "headline" | "policy" | "both";
+export type ContactPolicyPart = "contact" | "headline" | "policy" | "workRights" | "both";
 
 interface Field { key: keyof CareerOpsContact; label: string; placeholder: string; hint?: string; optional?: boolean }
 
@@ -36,18 +37,20 @@ const CONTACT: Field[] = [
   { key: "portfolio", label: "Portfolio URL", placeholder: "https://yoursite.dev", optional: true },
 ];
 
-const SAVE_LABEL: Record<ContactPolicyPart, string> = { both: "Save details", contact: "Save contact details", headline: "Save headline", policy: "Save logistics" };
+const SAVE_LABEL: Record<ContactPolicyPart, string> = { both: "Save details", contact: "Save contact details", headline: "Save headline", policy: "Save logistics", workRights: "Save work rights" };
 const INTRO: Record<ContactPolicyPart, string> = {
   both: "These go straight onto your generated CV and cover letter, and into application forms the agents fill for you. All optional — but anything you leave blank is simply missing from those documents.",
   contact: "These go straight onto your generated CV and cover letter, and into application forms the agents fill for you. Anything you leave blank is simply missing from those documents.",
   headline: "The agents put this under your name on every CV and open every summary with it. One line — the lane you're in, not a list of skills.",
   policy: "Scoring weighs every offer against these. Anything blank is treated as unknown, never guessed.",
+  workRights: "Scoring checks every posting against these — one that won't sponsor is a hard blocker when you need it. Anything blank is treated as unknown, never guessed.",
 };
 const SAVED: Record<ContactPolicyPart, string> = {
   both: "Saved. Your next generated CV, cover letter and form fill will use these.",
   contact: "Saved. Your next generated CV, cover letter and form fill will use these.",
   headline: "Saved. Your next generated CV and summary open with this.",
   policy: "Saved. Scoring weighs these from your next evaluation.",
+  workRights: "Saved. Scoring checks these from your next evaluation.",
 };
 
 const splitList = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
@@ -77,6 +80,8 @@ export default function ContactPolicy({ uid, setup, profile, part = "both", sign
   const showHeadline = part === "headline" || part === "both";
   const showContact = part === "contact" || part === "both";
   const showPolicy = part === "policy" || part === "both";
+  // Visa, work rights and sponsorship — shown with the policy, or on their own.
+  const showRights = showPolicy || part === "workRights";
   const touch = () => { setDirty(true); setMsg(null); };
   // The account's email, else the one signed in with — a member whose users document has no email still sees it.
   const email = profile?.email?.trim() || signInEmail || "";
@@ -98,15 +103,16 @@ export default function ContactPolicy({ uid, setup, profile, part = "both", sign
         }
         patch.contact = next;
       }
-      if (showPolicy) {
+      if (showRights) {
+        // Only the shown policy fields change; the stored ones this part does not show survive.
+        const next: CareerOpsPolicy = { ...(setup?.policy ?? {}) };
+        const put = (key: "minimumSalary" | "locationFlexibility" | "visaStatus", value: string | undefined) => { const v = trimmed(value); if (v) next[key] = v; else delete next[key]; };
+        if (showPolicy) { put("minimumSalary", policy.minimumSalary); put("locationFlexibility", policy.locationFlexibility); }
+        put("visaStatus", policy.visaStatus);
+        if (policy.needsSponsorship) next.needsSponsorship = true; else delete next.needsSponsorship;
         const list = splitList(authorized);
-        patch.policy = {
-          ...(policy.minimumSalary?.trim() ? { minimumSalary: policy.minimumSalary.trim() } : {}),
-          ...(policy.locationFlexibility?.trim() ? { locationFlexibility: policy.locationFlexibility.trim() } : {}),
-          ...(policy.visaStatus?.trim() ? { visaStatus: policy.visaStatus.trim() } : {}),
-          ...(policy.needsSponsorship ? { needsSponsorship: true } : {}),
-          ...(list.length ? { authorizedIn: list } : {}),
-        };
+        if (list.length) next.authorizedIn = list; else delete next.authorizedIn;
+        patch.policy = next;
       }
       const name = showContact ? { firstName: firstName.trim(), lastName: lastName.trim() } : {};
       const nameChanged = showContact && (name.firstName !== (profile?.firstName ?? "") || name.lastName !== (profile?.lastName ?? ""));
@@ -167,9 +173,10 @@ export default function ContactPolicy({ uid, setup, profile, part = "both", sign
         </div>
       )}
 
-      {showPolicy && (
+      {showRights && (
         <>
           <div className={`grid gap-4 sm:grid-cols-2 ${showContact || showHeadline ? "border-t border-jh-line pt-4" : ""}`}>
+            {showPolicy && <>
             <label className="block">
               <span className="label">Walk-away salary</span>
               <input
@@ -189,6 +196,7 @@ export default function ContactPolicy({ uid, setup, profile, part = "both", sign
                 onChange={(e) => { setPolicy((p) => ({ ...p, locationFlexibility: e.target.value })); touch(); }}
               />
             </label>
+            </>}
             <label className="block">
               <span className="label">Visa / right to work</span>
               <input
