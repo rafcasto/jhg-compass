@@ -21,11 +21,11 @@ export interface TabItem {
 }
 
 export function MobileHeader({
-  onSignOut, signingOut = false, position = "sticky", brand, profileHref = "/profile", profileActive = false, settingsHref = "/settings", settingsActive = false,
+  onSignOut, signingOut = false, position = "sticky", brand, profileHref = null, profileActive = false, settingsHref = "/settings", settingsActive = false,
 }: { onSignOut?: () => void; signingOut?: boolean; position?: "sticky" | "static"; brand?: ReactNode; profileHref?: string | null; profileActive?: boolean; settingsHref?: string; settingsActive?: boolean }) {
   const live = position === "sticky";
-  // Right slot: three icon-only 44×44 targets (Profile · Settings · Sign out). Icon-only
-  // because with text labels the cluster would fight the brand on a 390px screen.
+  // Right slot: icon-only 44×44 targets (Settings · Sign out; a Profile one only when asked for).
+  // Icon-only because with text labels the cluster would fight the brand on a 390px screen.
   const iconCls = (active: boolean) => `flex items-center justify-center h-11 w-11 rounded-sm transition-colors duration-200 ease-out ${active ? "text-jh-red" : "text-jh-mute hover:text-jh-ink"}`;
   const profileCls = iconCls(profileActive);
   const settingsCls = iconCls(settingsActive);

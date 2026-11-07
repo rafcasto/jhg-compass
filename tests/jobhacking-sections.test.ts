@@ -1,15 +1,17 @@
 import { describe, it, expect } from "vitest";
 import {
-  JH_FILE_EDIT, JH_LIST_OF, JH_PAGES, JH_SECTIONS, JH_SETTINGS_HREF, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor,
-  parseJhSection, trueNorthBlanks, trueNorthText,
+  AGENTS_PAGE, JH_FILE_EDIT, JH_LIST_OF, JH_PAGES, JH_SECTIONS, JH_SETTINGS_HREF, SETTINGS_BASE, findJhPage, jhAreaRows, jhFileEditHref, jhGoal, jhPageHref, jhPagesFor,
+  jhRowsFor, jhSectionFields, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, trueNorthBlanks, trueNorthText,
 } from "@/lib/jobhacking/sections";
 import { FILE_SECTIONS } from "@/lib/profile-sections";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 
-// The JobHacking portal's registry — docs/UX_JOBHACKING.md. The menu and the
-// sections are the ones Rafael specified on 2026-11-03; every section reads a
-// field profile.yml carries (decision: never invent one).
+// The one registry of the profile pages — docs/UX_JOBHACKING.md,
+// docs/UX_SETTINGS_HUB.md. The JobHacking menu and sections are the ones Rafael
+// specified on 2026-11-03 and render exactly so; Compass → Settings renders the
+// same pages plus the sections only its agents read (`only: "compass"`,
+// 2026-11-07). Every section reads a field profile.yml carries (never invent one).
 
 const profile = { email: "priya@example.com", firstName: "Priya", lastName: "Natarajan" } as Profile;
 const setup = {
@@ -61,7 +63,33 @@ describe("JobHacking — pages and sections", () => {
   it("Artefacts is the Packer's story bank, the master CV, then the LinkedIn profile (decision 2026-11-05)", () => {
     expect(jhSectionsFor("artefacts").map((s) => s.label)).toEqual(["Story Bank", "Master CV", "LinkedIn profile"]);
     expect(jhSectionsFor("artefacts").map((s) => s.key)).toEqual(["story-bank", "master-cv", "linkedin-profile"]);
-    expect(JH_SECTIONS.length).toBe(18);
+    expect(JH_SECTIONS.length).toBe(22);
+  });
+
+  it("Compass → Settings renders the same pages plus the Agents area, and the Compass-only sections in place (decision 2026-11-07)", () => {
+    expect(jhPagesFor("jobhacking")).toEqual([...JH_PAGES]);
+    expect(jhPagesFor("compass").map((p) => p.key)).toEqual(["narrative", "true-north", "companies", "artefacts", "agents"]);
+    expect(AGENTS_PAGE.only).toBe("compass");
+    expect(findJhPage("agents")?.label).toBe("Agents");
+    // Work rights after Location; Portfolio last among the artefacts; the JobHacking pages never see them.
+    expect(jhSectionsFor("true-north", { portal: "compass" }).map((s) => s.key)).toEqual(["industry", "roles", "seniority", "salary", "location", "work-rights", "company-type", "boundaries"]);
+    expect(jhSectionsFor("artefacts", { portal: "compass" }).map((s) => s.key)).toEqual(["story-bank", "master-cv", "linkedin-profile", "portfolio"]);
+    expect(jhSectionsFor("narrative", { portal: "compass" })).toEqual(jhSectionsFor("narrative"));
+    expect(jhSectionsFor("companies", { portal: "compass" })).toEqual(jhSectionsFor("companies"));
+    // Portal accounts need the CareerOps worker; the JobHacking portal has no Agents page at all.
+    expect(jhSectionsFor("agents", { portal: "compass" }).map((s) => s.key)).toEqual(["notes"]);
+    expect(jhSectionsFor("agents", { portal: "compass", careerOps: true }).map((s) => s.key)).toEqual(["accounts", "notes"]);
+    expect(jhSectionsFor("agents")).toEqual([]);
+    expect((JH_SECTIONS as readonly { key: string; only?: string }[]).filter((s) => s.only === "compass").map((s) => s.key)).toEqual(["work-rights", "portfolio", "accounts", "notes"]);
+  });
+
+  it("links a page and a section on either portal", () => {
+    expect(jhPageHref("true-north")).toBe("/jobhacking/true-north");
+    expect(jhPageHref("true-north", SETTINGS_BASE)).toBe("/settings/true-north");
+    expect(jhSectionHref("salary", SETTINGS_BASE)).toBe("/settings/true-north?section=salary");
+    expect(jhSectionHref("notes", SETTINGS_BASE)).toBe("/settings/agents?section=notes");
+    expect(parseJhSection("work-rights", jhSectionsFor("true-north", { portal: "compass" }))).toBe("work-rights");
+    expect(parseJhSection("work-rights", jhSectionsFor("true-north"))).toBeNull();
   });
 
   it("deep-links each section on its own page and parses ?section= per page", () => {
@@ -73,7 +101,7 @@ describe("JobHacking — pages and sections", () => {
     expect(parseJhSection(null)).toBeNull();
   });
 
-  it("names a JobHacking section for every file section that has one, and none for the rest", () => {
+  it("names a section for every file section, and links it only on the portal that shows it", () => {
     expect(Object.keys(JH_FILE_EDIT).sort()).toEqual(Object.keys(FILE_SECTIONS).sort());
     expect(JH_FILE_EDIT.northstar).toBe("roles");
     expect(JH_FILE_EDIT.watchlist).toBe("companies");
@@ -81,7 +109,12 @@ describe("JobHacking — pages and sections", () => {
     expect(JH_FILE_EDIT.cv).toBe("master-cv");
     expect(JH_FILE_EDIT.artefacts).toBe("story-bank");
     expect(JH_FILE_EDIT.linkedin).toBe("linkedin-profile");
-    expect(JH_FILE_EDIT.notes).toBeNull();
+    expect(JH_FILE_EDIT.notes).toBe("notes");
+    expect(jhFileEditHref("cv")).toBe("/jobhacking/artefacts?section=master-cv");
+    expect(jhFileEditHref("cv", "compass")).toBe("/settings/artefacts?section=master-cv");
+    // Notes is Compass only — the JobHacking status line has nowhere to send the member.
+    expect(jhFileEditHref("notes")).toBeNull();
+    expect(jhFileEditHref("notes", "compass")).toBe("/settings/agents?section=notes");
   });
 });
 
@@ -142,6 +175,45 @@ describe("JobHacking — rows", () => {
 
   it("returns a page's rows in that page's order", () => {
     expect(jhRowsFor(jhSectionsFor("true-north"), jhSectionSummaries({ setup, profile })).map((r) => r.key)).toEqual(["industry", "roles", "seniority", "salary", "location", "company-type", "boundaries"]);
+  });
+
+  it("summarises the Compass-only sections from the same stored fields", () => {
+    const all = Object.fromEntries(jhSectionSummaries({ setup, profile, accounts: 2 }).map((r) => [r.key, r]));
+    expect(all["work-rights"]).toMatchObject({ state: "done", summary: "Australian permanent resident · Australia" });
+    expect(all.accounts).toMatchObject({ state: "done", summary: "2 accounts saved · encrypted for the worker", count: "2" });
+    expect(all.portfolio).toMatchObject({ state: "empty", summary: "Not set" });
+    expect(all.notes).toMatchObject({ state: "empty", summary: "Not set" });
+    const sponsored = Object.fromEntries(jhSectionSummaries({ setup: { policy: { authorizedIn: ["Chile"], needsSponsorship: true } } as CareerOpsSetupV2, profile }).map((r) => [r.key, r]));
+    expect(sponsored["work-rights"]).toMatchObject({ state: "partial", summary: "Chile · needs sponsorship" });
+  });
+
+  it("Target roles carries the framing and Salary range the negotiation scripts, so the upload preview sees them (decision 2026-11-07)", () => {
+    const withExtras = { ...setup, personalization: { ...setup.personalization, adaptiveFraming: [{ role: "CSM", emphasize: "Retention" }], negotiationScripts: ["I'm targeting 150k."] } } as CareerOpsSetupV2;
+    expect(jhSectionFields("roles", { setup: withExtras, profile })).toMatchObject({ role: "Customer Success Manager", framing: [{ role: "CSM", emphasize: "Retention" }] });
+    expect(jhSectionFields("salary", { setup: withExtras, profile })).toMatchObject({ scripts: ["I'm targeting 150k."] });
+    expect(jhSectionFields("work-rights", { setup, profile })).toEqual({ visaStatus: "Australian permanent resident", authorizedIn: ["Australia"], needsSponsorship: undefined });
+    expect(jhSectionFields("accounts", { setup, profile })).toBeNull();
+  });
+});
+
+describe("Compass → Settings — the hub's rows", () => {
+  it("one row per area: done when every section is, partial from the first, the first filled section's line, done/total", () => {
+    const areas = Object.fromEntries(jhAreaRows({ setup, profile, accounts: 1 }, { portal: "compass", careerOps: true }).map((r) => [r.key, r]));
+    expect(Object.keys(areas)).toEqual(["narrative", "true-north", "companies", "artefacts", "agents"]);
+    expect(areas.narrative).toMatchObject({ state: "done", count: "4/4" });
+    expect(areas.narrative.summary).toContain("Priya Natarajan");
+    // True North on Compass has eight sections; this setup fills seven (work rights too) — the boundaries are not in the file.
+    expect(areas["true-north"]).toMatchObject({ state: "partial", summary: "HR tech SaaS", count: "7/8" });
+    expect(areas.companies).toMatchObject({ state: "done", count: "4/4" });
+    expect(areas.artefacts).toMatchObject({ state: "partial", count: "3/4" });
+    expect(areas.agents).toMatchObject({ state: "partial", summary: "1 account saved · encrypted for the worker", count: "1/2" });
+  });
+
+  it("is empty everywhere for a new member, and never lists the Agents area for JobHacking", () => {
+    const fresh = jhAreaRows({ setup: null, profile: null }, { portal: "compass" });
+    expect(fresh.every((r) => r.state === "empty" && r.summary === "Not set")).toBe(true);
+    expect(fresh.map((r) => r.count)).toEqual(["0/4", "0/8", "0/4", "0/4", "0/1"]);
+    expect(jhAreaRows({ setup: null, profile: null }).map((r) => r.key)).toEqual(["narrative", "true-north", "companies", "artefacts"]);
   });
 });
 

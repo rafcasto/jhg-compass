@@ -12,6 +12,7 @@ const diffReplaces = (rows: ReviewRow[]): boolean => rows.some((d) => d.kind ===
 import { profileDiff, type DiffKind } from "@/lib/careerops/profile-diff";
 import { FILE_SECTIONS, type FileSectionKey } from "@/lib/profile-sections";
 import { JH_FILES, detectJhFile, findJhFile, jhFileName, jhFileProfile, jhFilePreview, shapeJhFile, type JhgFileKey } from "@/lib/jobhacking/profile-files";
+import type { ProfilePortal } from "@/lib/jobhacking/sections";
 import type { CareerOpsSetupV2, ProfileFileRecord } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 
@@ -48,7 +49,7 @@ interface Taken {
 /** One row of the review — a page section (one of the four files) or a storage section (a whole profile.yml). */
 export interface ReviewRow { key: string; label: string; href: string | null; inFile: boolean; kind: DiffKind; headline: string; detail?: string }
 
-export default function ProfileUploadSheet({ uid, setup, profile, current, initialFiles, expect, fileSectionHref, onClose, onDone, onDownloadCurrent }: {
+export default function ProfileUploadSheet({ uid, setup, profile, current, initialFiles, expect, portal = "jobhacking", careerOps = false, fileSectionHref, onClose, onDone, onDownloadCurrent }: {
   uid: string;
   setup: CareerOpsSetupV2 | null;
   profile: Profile | null | undefined;
@@ -58,6 +59,9 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
   initialFiles?: File[] | null;
   /** The slot the member opened the sheet from (JobHacking → Settings); a file for another slot is said, not refused. */
   expect?: JhgFileKey | null;
+  /** Which portal the review is for — its pages' sections, its links (docs/UX_SETTINGS_HUB.md). */
+  portal?: ProfilePortal;
+  careerOps?: boolean;
   /** Where a whole profile.yml's storage section is edited on this portal — the status line's links. */
   fileSectionHref: (key: FileSectionKey) => string | null;
   onClose: () => void;
@@ -112,7 +116,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
       const step = profileToSetupPatch(merged).setup;
       const afterSetup = { ...baseSetup, ...step };
       const rows: ReviewRow[] = t.file
-        ? jhFilePreview(t.file, shaped, baseSetup, afterSetup, account)
+        ? jhFilePreview(t.file, shaped, baseSetup, afterSetup, account, { portal, careerOps })
         : profileDiff(baseProfile, merged).map((d) => ({ key: d.key, label: FILE_SECTIONS[d.key].label, href: fileSectionHref(d.key), inFile: d.inFile, kind: d.kind, headline: d.headline, detail: d.detail }));
       baseProfile = { ...baseProfile, ...merged };
       baseSetup = afterSetup;
@@ -124,7 +128,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
     const name = found.name;
     const nameChanged = !!name && (name.firstName !== (profile?.firstName ?? "") || name.lastName !== (profile?.lastName ?? ""));
     return { steps: out, patch, account, name: nameChanged ? name : null };
-  }, [current, setup, profile, valid, fileSectionHref]);
+  }, [current, setup, profile, valid, fileSectionHref, portal, careerOps]);
   const { steps: reviewSteps, patch: combinedPatch, account: accountAfter, name: nameToWrite } = steps;
   const allRows = reviewSteps.flatMap((s) => s.rows.filter((d) => d.inFile));
   const replaces = allRows.filter((d) => d.kind === "replace");

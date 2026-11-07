@@ -6,13 +6,16 @@ import { ArrowLeft } from "lucide-react";
 import PageHeader from "@/components/shell/PageHeader";
 import SectionList, { type SectionItem, type SectionRow } from "./SectionList";
 
-// The one layout behind every sectioned page — /profile, /settings and the
-// JobHacking pages — docs/UX_PROFILE.md §1, §7; docs/UX_JOBHACKING.md.
+// The one layout behind every sectioned page — the JobHacking pages and the
+// Settings areas — docs/UX_PROFILE.md §1; docs/UX_JOBHACKING.md;
+// docs/UX_SETTINGS_HUB.md §3.
 //
 // Desktop (≥ md): a sticky 232px rail beside the content column; the active
 // section lives in ?section= and the first section opens when it is absent.
 // Mobile: the overview IS the page (identity, lead, actions, progress, rows); a
 // section drills in with a `‹ Page` back row and prev / next at the bottom.
+// A page under a hub (Settings → True North) names its `parent`: a `‹ Settings`
+// row leads the desktop rail and the mobile overview.
 // Every page passes its items, the rows that summarise them, and a panel
 // renderer; everything else here is the same on purpose.
 
@@ -25,7 +28,7 @@ export function sectionsProgress(rows: readonly SectionRow[]): SectionsProgress 
 }
 
 export default function SectionsPage<K extends string>({
-  id, backHref, eyebrow, title, intro, actions, identity, lead, items, rows, active, panel, panelKey, loading = false, status,
+  id, backHref, eyebrow, title, intro, actions, identity, lead, items, rows, active, panel, panelKey, loading = false, status, parent,
 }: {
   /** Prefix for the section heading's id (one per page). */
   id: string;
@@ -49,6 +52,8 @@ export default function SectionsPage<K extends string>({
   loading?: boolean;
   /** A role="status" line under the header. */
   status?: ReactNode;
+  /** The hub this page sits under — a back row at the top of the rail and of the mobile overview. */
+  parent?: { label: string; href: string };
 }) {
   const progress = sectionsProgress(rows);
   const shown: K = active ?? items[0].key;
@@ -58,6 +63,11 @@ export default function SectionsPage<K extends string>({
   const i = items.findIndex((s) => s.key === shown);
   const prev = items[i - 1], next = items[i + 1];
   const listLabel = `${title} sections`;
+  const parentRow = parent && (
+    <Link href={parent.href} className="-ml-2 inline-flex min-h-[44px] items-center gap-1 px-2 font-display font-semibold text-sm text-jh-mute hover:text-jh-ink">
+      <ArrowLeft className="h-4 w-4" strokeWidth={1.5} aria-hidden /> {parent.label}
+    </Link>
+  );
 
   const progressBar = (
     <div>
@@ -88,6 +98,7 @@ export default function SectionsPage<K extends string>({
       <div className="md:grid md:grid-cols-[232px_minmax(0,1fr)] md:items-start md:gap-8">
         {/* ---- Desktop rail ---- */}
         <aside className="hidden md:block md:sticky md:top-11 space-y-5">
+          {parentRow && <div className="-mt-2">{parentRow}</div>}
           {identity}
           <SectionList items={items} rows={rows} active={shown} variant="rail" label={listLabel} />
           <div className="border-t border-jh-line pt-4">{progressBar}</div>
@@ -96,6 +107,7 @@ export default function SectionsPage<K extends string>({
         <div className="min-w-0">
           {/* ---- Mobile overview ---- */}
           <div className={active ? "hidden" : "md:hidden space-y-6"}>
+            {parentRow}
             {identity && <section className="card p-4">{identity}</section>}
             {actions && <div className="grid grid-cols-2 gap-2 [&>button]:w-full">{actions}</div>}
             {progressBar}

@@ -11,17 +11,17 @@ import type { TabItem } from "./MobileChrome";
 // Widths / paddings are mirrored in COACHING_DESKTOP (lib/coaching-screen.ts).
 export const DESKTOP_SIDEBAR_WIDTH = 232;
 
-// One row recipe for every sidebar link (primary tabs + Profile) so they can't
+// One row recipe for every sidebar link (primary tabs + Settings) so they can't
 // drift apart: 8px radius, 44px tall, active = red text + icon on the red tint.
 const rowCls = (active?: boolean) =>
   `flex items-center gap-3 rounded-sm px-3 min-h-[44px] font-display font-semibold text-sm w-full text-left transition-colors duration-200 ease-out ${active ? "bg-jh-red-soft text-jh-red" : "text-jh-mute hover:bg-jh-mist hover:text-jh-ink"}`;
 
 export function DesktopSidebar({
   items, onSignOut, signingOut = false, position = "fixed", footer, brand,
-  profileHref = "/profile", profileActive = false, settingsHref = "/settings", settingsActive = false,
+  profileHref = null, profileActive = false, settingsHref = "/settings", settingsActive = false,
 }: {
   items: TabItem[]; onSignOut?: () => void; signingOut?: boolean; position?: "fixed" | "static"; footer?: ReactNode; brand?: ReactNode;
-  /** null hides the Profile row — the JobHacking portal has Profile in its primary nav instead. */
+  /** A Profile row above Settings; none by default — the profile lives under Settings (2026-11-07). */
   profileHref?: string | null; profileActive?: boolean; settingsHref?: string; settingsActive?: boolean;
 }) {
   const fixed = position === "fixed";
@@ -53,8 +53,8 @@ export function DesktopSidebar({
         })}
       </nav>
       {/* Account group — separated from the product nav by a hairline + 16px, not a box.
-          Profile (who I am) and Settings (what the agents work from) are navigation
-          (hover → ink); Sign out is the exit (hover → red). */}
+          Settings (who I am, what the agents work from) is navigation (hover → ink);
+          Sign out is the exit (hover → red). */}
       <div className="mt-auto pt-4 border-t border-jh-line space-y-1" aria-label="Account">
         {footer}
         {profileHref !== null && (fixed

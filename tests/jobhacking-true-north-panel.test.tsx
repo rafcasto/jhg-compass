@@ -64,4 +64,29 @@ describe("TrueNorthPanel", () => {
     expect(ref).toBe("users/u1");
     expect((data as { goal: { role: string; seniority: string; city: string } }).goal).toMatchObject({ role: "Customer Success Operations Lead", seniority: "Senior", city: "Lyon" });
   });
+
+  it("Target roles saves the adaptive framing with the archetypes; Salary range the negotiation scripts — and leaves the rest of personalization alone (decision 2026-11-07)", async () => {
+    const user = userEvent.setup();
+    const withP = { ...uploaded, personalization: { compTargets: "Target EUR 75k", exitNarrative: "Keep me." } } as CareerOpsSetupV2;
+    const { unmount } = render(<TrueNorthPanel uid="u1" setup={withP} profile={profile} section="roles" />);
+    await user.click(screen.getByRole("button", { name: "Add framing" }));
+    await user.type(screen.getByLabelText("If the role is 1"), "RevOps");
+    await user.type(screen.getByLabelText("Emphasize 1"), "Forecast accuracy");
+    await user.click(screen.getByRole("button", { name: "Save target roles" }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
+    let data = setDoc.mock.calls[0][1] as { personalization: Record<string, unknown> };
+    expect(data.personalization.adaptiveFraming).toEqual([{ role: "RevOps", emphasize: "Forecast accuracy" }]);
+    expect(data.personalization).toMatchObject({ compTargets: "Target EUR 75k", exitNarrative: "Keep me." });
+    unmount();
+    setDoc.mockClear();
+
+    render(<TrueNorthPanel uid="u1" setup={withP} profile={profile} section="salary" />);
+    await user.click(screen.getByRole("button", { name: "Add script" }));
+    await user.type(screen.getByLabelText("Script 1"), "I'm targeting 80k.");
+    await user.click(screen.getByRole("button", { name: "Save salary range" }));
+    await waitFor(() => expect(setDoc).toHaveBeenCalledTimes(1));
+    data = setDoc.mock.calls[0][1] as { personalization: Record<string, unknown> };
+    expect(data.personalization.negotiationScripts).toEqual(["I'm targeting 80k."]);
+    expect(data.personalization).toMatchObject({ compTargets: "Target EUR 75k", exitNarrative: "Keep me." });
+  });
 });

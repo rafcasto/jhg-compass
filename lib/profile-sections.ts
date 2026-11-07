@@ -1,22 +1,15 @@
-// The sections of the member's profile — one registry that the Profile page,
-// the Settings page, their rails (desktop), their overview rows (mobile) and
-// the upload diff all read from. docs/UX_PROFILE.md §7.
+// What both portals share about the member's profile — docs/UX_PROFILE.md,
+// docs/UX_SETTINGS_HUB.md:
 //
-// Two pages, one profile.yml:
+//   • the storage sections of profile.yml (FILE_SECTIONS) — the grouping the
+//     upload review of a whole profile.yml diffs at;
+//   • one summary row per stored field group (sectionSummaries) — the line a
+//     list row quotes, and the state glyph beside it.
 //
-//   /profile   WHO AM I            contact details · headline · exit story
-//              WHAT'S MY TARGET    target role & market · salary floor & location · comp & location policy
-//              WHAT VALUE DO I CREATE  (reserved — stories, proof bank)
-//   /settings  what the agents work from: master CV · target companies ·
-//              portal accounts · archetypes & core competencies · portfolio / demo · notes
-//
-// The grouping is the JobHackers vocabulary (Profile / North Star / Artefacts);
-// the keys are the storage model's. The export is still the whole file: a
-// section's page says where it is EDITED, not where it is stored.
-//
-// Reserved sections (proof points, stories, culture screen) are registered
-// with `available: false` and never rendered: a field the agents do not read
-// yet is a broken promise. Flip the flag the day the worker reads them.
+// The PAGES — which section is shown where, on JobHacking and on Compass →
+// Settings — are lib/jobhacking/sections.ts (one registry, decision
+// 2026-11-07; the two-page Profile / Settings registry that lived here was
+// retired with the Profile page).
 //
 // Pure — no React. Tested.
 
@@ -26,136 +19,33 @@ import { SECTION_COPY } from "./careerops/personalization";
 import type { CareerOpsSetupV2 } from "./careerops/types";
 import type { Profile } from "./types";
 
-export type PageKey = "profile" | "settings";
-export type GroupKey = "who" | "target" | "value";
-
-export interface SectionGroup {
-  key: GroupKey;
-  /** The JobHackers name — the eyebrow above the group. */
-  eyebrow: string;
-  /** The question the group answers. */
-  label: string;
-}
-
-export const GROUPS = [
-  { key: "who", eyebrow: "Profile", label: "Who am I" },
-  { key: "target", eyebrow: "North Star", label: "What's my target" },
-  { key: "value", eyebrow: "Artefacts", label: "What value do I create" },
-] as const satisfies readonly SectionGroup[];
-
-export interface ProfileSection {
-  key: string;
-  /** Where it is edited. */
-  page: PageKey;
-  /** Profile-page sections sit in one of the three groups; Settings is flat. */
-  group?: GroupKey;
-  /** Rail / row label — short. */
-  label: string;
-  /** The heading on the section itself. */
-  title: string;
-  /** One line under the heading: what this section is for. */
-  ask: string;
-  /** False = registered for later, never rendered. */
-  available: boolean;
-  /** Needs the CareerOps worker (the member must have the portal switched on). */
-  requires?: "careerOps";
-}
-
-export const PROFILE_SECTIONS = [
-  // ---- /profile · Who am I ----
-  { key: "contact", page: "profile", group: "who", label: "Contact details", title: "Contact details", ask: "Your name, phone, email, LinkedIn, location and portfolio — the header of every generated CV and cover letter, and the contact block of every application form.", available: true },
-  { key: "headline", page: "profile", group: "who", label: "Headline", title: "Headline", ask: "Your lane statement: one line under your name that says what you do and for whom. It opens every CV and summary the agents write.", available: true },
-  { key: "story", page: "profile", group: "who", label: "Exit story", title: "Exit story", ask: "Why you're leaving and where you're heading — the frame for every summary, cover letter and interview answer.", available: true },
-  // ---- /profile · What's my target ----
-  { key: "northstar", page: "profile", group: "target", label: "Target role & market", title: "Target role and market", ask: "Role, industry, company type, geography and salary range — the North Star every evaluation is scored against.", available: true },
-  { key: "logistics", page: "profile", group: "target", label: "Salary floor & location", title: "Salary floor, location and right to work", ask: "The number below which you walk, how flexible you are on location, your visa status and where you already hold work rights.", available: true },
-  { key: "targeting", page: "profile", group: "target", label: "Comp & location policy", title: "Comp targets and location policy", ask: "What the market pays for your target roles, what you say when an offer comes in low, and where you will and won't work.", available: true },
-  { key: "culture", page: "profile", group: "target", label: "Culture screen", title: "Culture screen", ask: "Reserved.", available: false },
-  // ---- /profile · What value do I create (reserved until the worker reads them) ----
-  { key: "stories", page: "profile", group: "value", label: "Stories", title: "Interview stories", ask: "Reserved.", available: false },
-  { key: "proof", page: "profile", group: "value", label: "Proof bank", title: "Proof bank", ask: "Reserved.", available: false },
-  // ---- /settings ----
-  { key: "cv", page: "settings", label: "Master CV", title: "Your master CV", ask: "The only source of truth about what you have done. Every tailored CV starts from it, and the Evaluator quotes it as evidence.", available: true },
-  { key: "companies", page: "settings", label: "Target companies", title: "Target companies", ask: "The companies you're targeting and their careers pages — where the Scout looks — plus the title keywords it includes and excludes.", available: true },
-  { key: "accounts", page: "settings", label: "Portal accounts", title: "Career portal accounts", ask: "The candidate accounts you created on Workday, SuccessFactors and other portals, so the agents can read the whole application form. Encrypted in your browser.", available: true, requires: "careerOps" },
-  { key: "archetypes", page: "settings", label: "Archetypes", title: "Role archetypes and core competencies", ask: "The role archetypes the Evaluator scores fit against, how to frame you for each one, and the core competencies that cut across all of them.", available: true },
-  { key: "portfolio", page: "settings", label: "Portfolio / demo", title: "Portfolio or demo", ask: "A live demo, dashboard or public project the agents can point to, and when it's worth sharing.", available: true },
-  { key: "notes", page: "settings", label: "Notes for the agents", title: "Notes for the agents", ask: "Hard no's, never-apply companies, CV house rules — free text every agent reads before it acts.", available: true },
-] as const satisfies readonly ProfileSection[];
-
-export type ProfileSectionKey = (typeof PROFILE_SECTIONS)[number]["key"];
-export type ActiveSectionKey = Exclude<ProfileSectionKey, "culture" | "stories" | "proof">;
-export type ActiveSection = ProfileSection & { key: ActiveSectionKey };
-
-/** Every section that can render, both pages, in order. */
-export const ACTIVE_SECTIONS = PROFILE_SECTIONS.filter((s) => s.available) as readonly ActiveSection[];
-
-export interface PageOptions {
-  /** The member has the CareerOps portal switched on — unlocks sections that need the worker. */
-  careerOps?: boolean;
-}
-
-/** The sections one page renders, in order. */
-export function sectionsFor(page: PageKey, opts: PageOptions = {}): readonly ActiveSection[] {
-  return ACTIVE_SECTIONS.filter((s) => s.page === page && (!s.requires || opts.careerOps));
-}
-
-/** The groups a page's sections fall into, in order, each with the sections it holds. Settings has one unnamed group. */
-export function groupedSections(sections: readonly ActiveSection[]): { group: SectionGroup | null; sections: ActiveSection[] }[] {
-  const out: { group: SectionGroup | null; sections: ActiveSection[] }[] = [];
-  for (const s of sections) {
-    const group = s.group ? (GROUPS as readonly SectionGroup[]).find((g) => g.key === s.group) ?? null : null;
-    const last = out[out.length - 1];
-    if (last && last.group?.key === group?.key) last.sections.push(s);
-    else out.push({ group, sections: [s] });
-  }
-  return out;
-}
-
-/** What the desktop rail opens when the URL names no section. */
-export const DEFAULT_SECTION: Record<PageKey, ActiveSectionKey> = { profile: "contact", settings: "cv" };
-
-export const PAGE_HREF: Record<PageKey, string> = { profile: "/profile", settings: "/settings" };
-
-export const findSection = (key: string): ProfileSection | undefined =>
-  (PROFILE_SECTIONS as readonly ProfileSection[]).find((s) => s.key === key);
-
-/**
- * `?section=story` → "story"; unknown, reserved or absent → null (the overview).
- * With `sections` given, anything outside that list is also null — a Settings
- * URL cannot open a Profile section, and `accounts` needs CareerOps.
- */
-export function parseSection(raw: string | null | undefined, sections: readonly ActiveSection[] = ACTIVE_SECTIONS): ActiveSectionKey | null {
-  return sections.some((s) => s.key === raw) ? (raw as ActiveSectionKey) : null;
-}
-
-/** Deep link to a section on whichever page edits it. */
-export const sectionHref = (key: ActiveSectionKey): string => `${PAGE_HREF[findSection(key)?.page ?? "profile"]}?section=${key}`;
+/** The stored field groups a row summarises — the keys the registry borrows by. */
+export type ActiveSectionKey =
+  | "contact" | "headline" | "story" | "northstar" | "logistics" | "targeting"
+  | "cv" | "companies" | "accounts" | "archetypes" | "portfolio" | "notes";
 
 // ---- the file's sections ----
 //
 // profile.yml is grouped by storage (goal · contact+policy · personalization ·
-// watchlist · notes · cv). The upload review diffs the file at that level, so
-// each file section names the page section a member goes to afterwards.
+// watchlist · notes · cv · …). The upload review of a whole profile.yml diffs
+// the file at that level; where a member goes afterwards is jhFileEditHref()
+// in lib/jobhacking/sections.
 
 export const FILE_SECTIONS = {
-  northstar: { label: "North Star", edit: "northstar" },
-  contact: { label: "Contact & logistics", edit: "contact" },
-  targeting: { label: "Targeting", edit: "story" },
-  watchlist: { label: "Target companies", edit: "companies" },
-  // The Packer's ranked lists — read on JobHacking → Target companies (JH_FILE_EDIT), no Compass page shows them.
-  companyLists: { label: "Company lists", edit: null },
-  notes: { label: "Notes", edit: "notes" },
-  cv: { label: "Master CV", edit: "cv" },
-  // Read and edited on JobHacking → Artefacts → Story Bank (JH_FILE_EDIT) — no Compass page shows them.
-  artefacts: { label: "Stories & proof points", edit: null },
-  // Read on JobHacking → Artefacts → LinkedIn profile (JH_FILE_EDIT), edited nowhere.
-  linkedin: { label: "LinkedIn profile", edit: null },
-  // narrative.headline · superpowers — the Narrative file's positioning line (2026-11-07). Read on JobHacking → Narrative.
-  narrative: { label: "Narrative headline & superpowers", edit: null },
-  // jhg — the JobHackers workbook behind the four files (2026-11-07). Read beside the JobHacking sections it explains.
-  jhg: { label: "Workbook", edit: null },
-} as const satisfies Record<string, { label: string; edit: ActiveSectionKey | null }>;
+  northstar: { label: "North Star" },
+  contact: { label: "Contact & logistics" },
+  targeting: { label: "Targeting" },
+  watchlist: { label: "Target companies" },
+  companyLists: { label: "Company lists" },
+  notes: { label: "Notes" },
+  cv: { label: "Master CV" },
+  artefacts: { label: "Stories & proof points" },
+  linkedin: { label: "LinkedIn profile" },
+  // narrative.headline · superpowers — the Narrative file's positioning line (2026-11-07).
+  narrative: { label: "Narrative headline & superpowers" },
+  // jhg — the JobHackers workbook behind the four files (2026-11-07). Read beside the sections it explains.
+  jhg: { label: "Workbook" },
+} as const satisfies Record<string, { label: string }>;
 
 export type FileSectionKey = keyof typeof FILE_SECTIONS;
 
@@ -188,7 +78,7 @@ const firstLine = (s: string | undefined): string => (s ?? "").split("\n").map((
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const host = (url: string): string => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; } };
 
-/** Every active section's row, both pages. Filter by `sectionsFor(page)` to render one page. */
+/** Every storage row. The registry (lib/jobhacking/sections) borrows the ones it shows and adds its own. */
 export function sectionSummaries({ setup, profile, accounts = 0 }: SectionSignals): SectionSummary[] {
   const goal = effectiveGoal({ source: setup?.goalSource, compassGoal: profile?.goal, intakeGoal: setup?.intakeGoal });
   const g = goal.goal;
@@ -268,20 +158,6 @@ export function sectionSummaries({ setup, profile, accounts = 0 }: SectionSignal
       summary: notes ? clip(firstLine(notes)) : NOT_SET,
     },
   ];
-}
-
-/** The rows for one page's sections, in that page's order. */
-export function rowsFor(sections: readonly ActiveSection[], rows: SectionSummary[]): SectionSummary[] {
-  const byKey = new Map(rows.map((r) => [r.key, r]));
-  return sections.map((s) => byKey.get(s.key)!).filter(Boolean);
-}
-
-export interface ProfileProgress { done: number; total: number; pct: number }
-
-/** Over every rendered section of a page — the whole picture, not just the required three. */
-export function profileProgress(rows: SectionSummary[]): ProfileProgress {
-  const done = rows.filter((r) => r.state === "done").length;
-  return { done, total: rows.length, pct: rows.length ? Math.round((done / rows.length) * 100) : 0 };
 }
 
 /** Member-facing name of one of the eight targeting sub-sections, for summaries and diffs. */

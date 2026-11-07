@@ -18,7 +18,7 @@ export interface CompassGoalLabels {
 export const DEFAULT_LABELS: CompassGoalLabels = {
   eyebrow: "Clear objective",
   title: "Compass",
-  goalEyebrow: "Your goal statement",
+  goalEyebrow: "Your True North",
   editTitle: "Complete your objective",
   editIntro: "Every field feeds the statement above.",
 };

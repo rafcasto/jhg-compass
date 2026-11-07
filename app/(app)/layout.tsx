@@ -10,6 +10,7 @@ import AppShell from "@/components/AppShell";
 import Paywall from "@/components/Paywall";
 import VerifyEmail from "@/components/VerifyEmail";
 import FeedbackGate from "@/components/FeedbackGate";
+import { JH_HOME } from "@/lib/jobhacking/sections";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, emailVerified, isAdmin } = useAuth();
@@ -37,7 +38,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const jobHackingOnly = hasAccess && !compassEnabled && jobHackingEnabled && !isAdmin;
   useEffect(() => {
     if (!user || !emailVerified || accessLoading) return;
-    if (jobHackingOnly) router.replace("/jobhacking/profile");
+    if (jobHackingOnly) router.replace(JH_HOME);
   }, [user, emailVerified, accessLoading, jobHackingOnly, router]);
 
   // Send verified-but-not-onboarded users to the onboarding wizard (req 3).

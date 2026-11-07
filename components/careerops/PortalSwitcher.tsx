@@ -11,9 +11,9 @@ export type Portal = "compass" | "careerops" | "jobhacking";
 export const JOBHACKING_HOME = "/jobhacking/narrative";
 
 export const PORTALS: { key: Portal; label: string; hint: string; href: string; icon: typeof Compass }[] = [
-  { key: "compass", label: "Compass", hint: "Goal, performance, progress board, coaching", href: "/compass", icon: Compass },
+  { key: "compass", label: "Compass", hint: "True North, performance, progress board, coaching, your profile", href: "/compass", icon: Compass },
   { key: "careerops", label: "CareerOps", hint: "Sourcing · Scoring · Tailoring · Tracking", href: PORTAL_HOME, icon: Briefcase },
-  { key: "jobhacking", label: "JobHacking", hint: "Profile · True North · Target companies", href: JOBHACKING_HOME, icon: Target },
+  { key: "jobhacking", label: "JobHacking", hint: "Narrative · True North · Target companies · Artefacts", href: JOBHACKING_HOME, icon: Target },
 ];
 
 // The logo section of every shell. When the member has more than one portal

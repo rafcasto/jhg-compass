@@ -23,7 +23,9 @@ export interface Goal {
 }
 
 // Display order of the form fields — shared by Compass edit mode and onboarding.
-export const GOAL_KEYS = ["role", "seniority", "subsector", "companyType", "city", "salary"] as const;
+// The order of the statement (2026-11-07): title + level, industry, location,
+// salary, company type.
+export const GOAL_KEYS = ["role", "seniority", "subsector", "city", "salary", "companyType"] as const;
 export type GoalKey = (typeof GOAL_KEYS)[number];
 
 export const COMPANY_TYPES = [
@@ -103,4 +105,55 @@ export function normalizeGoal(g: Goal): Goal {
   for (const k of GOAL_KEYS) out[k] = (g[k] ?? "").trim();
   out.companyType = normalizeCompanyType(out.companyType);
   return out;
+}
+
+// ---- the statement ----
+//
+// One sentence everywhere — the Compass tab, onboarding step 2, JobHacking →
+// True North and Settings → True North (decision 2026-11-07: the Compass goal
+// statement reads as the True North statement):
+//
+//   In 60 days, I'm working as [Target Role + Target Seniority], in [Target Industry].
+//   I'm based in [Target Location] and I'm making [Target Salary] yearly before tax.
+//   I enjoy working for [Target Company Type].
+//
+// Every blank maps to exactly one goal field; the statement never invents one.
+
+export interface TrueNorthBlanks {
+  /** "Senior Customer Success Manager" — seniority in front of the title, never doubled. */
+  role: string;
+  industry: string;
+  location: string;
+  salary: string;
+  /** With its article, as it reads inline: "a Scale-up", "the Government". */
+  companyType: string;
+}
+
+export const TRUE_NORTH_PLACEHOLDERS: Record<keyof TrueNorthBlanks, string> = {
+  role: "[Target Role + Target Seniority]",
+  industry: "[Target Industry]",
+  location: "[Target Location]",
+  salary: "[Target Salary]",
+  companyType: "[Target Company Type]",
+};
+
+/** The blanks in the order they appear in the statement. */
+export const TRUE_NORTH_ORDER: readonly (keyof TrueNorthBlanks)[] = ["role", "industry", "location", "salary", "companyType"];
+
+export function trueNorthBlanks(goal: Goal | null | undefined): TrueNorthBlanks {
+  const g = goal ?? {};
+  return {
+    role: roleWithSeniority(g),
+    industry: (g.subsector ?? "").trim(),
+    location: (g.city ?? "").trim(),
+    salary: (g.salary ?? "").trim(),
+    companyType: companyTypePhrase(g.companyType),
+  };
+}
+
+/** The statement as one line of text, blanks shown as their placeholders. */
+export function trueNorthText(goal: Goal | null | undefined): string {
+  const b = trueNorthBlanks(goal);
+  const v = (k: keyof TrueNorthBlanks) => b[k] || TRUE_NORTH_PLACEHOLDERS[k];
+  return `In 60 days, I'm working as ${v("role")}, in ${v("industry")}. I'm based in ${v("location")} and I'm making ${v("salary")} yearly before tax. I enjoy working for ${v("companyType")}.`;
 }

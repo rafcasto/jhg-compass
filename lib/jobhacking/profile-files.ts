@@ -14,7 +14,7 @@ import type { DiffKind } from "../careerops/profile-diff";
 import type { CareerOpsSetupV2, JhgFileKey } from "../careerops/types";
 import type { FileSectionKey } from "../profile-sections";
 import type { Profile } from "../types";
-import { JH_PAGES, jhFieldsEmpty, jhSectionFields, jhSectionHref, jhSectionSummaries, jhSectionsFor, type JhPageKey, type JhSectionKey } from "./sections";
+import { BASE_OF, JH_PAGES, jhFieldsEmpty, jhSectionFields, jhSectionHref, jhSectionSummaries, jhSectionsFor, type JhPageKey, type JhSectionKey, type PortalOptions } from "./sections";
 import { isoDate } from "./workbook";
 
 export type { JhgFileKey };
@@ -181,22 +181,23 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stri
  * that adds, replaces or keeps what is stored — `before` is the setup as it is,
  * `after` as it will be once this file (and any before it) is unpacked.
  */
-export function jhFilePreview(key: JhgFileKey, shaped: ProfileFile, before: Partial<CareerOpsSetupV2> | null | undefined, after: Partial<CareerOpsSetupV2>, profile: Profile | null | undefined): JhPreviewRow[] {
+export function jhFilePreview(key: JhgFileKey, shaped: ProfileFile, before: Partial<CareerOpsSetupV2> | null | undefined, after: Partial<CareerOpsSetupV2>, profile: Profile | null | undefined, opts: PortalOptions = {}): JhPreviewRow[] {
   const page = findJhFile(key)!.page;
+  const base = BASE_OF[opts.portal ?? "jobhacking"];
   const fileOnly = profileToSetupPatch(shaped).setup;
   // The Narrative file also carries the member's name, which the Contact details editor shows from the account.
   const fileName = jhFileName(key, shaped);
   const fileProfile: Profile | null = fileName ? { email: "", ...fileName } : null;
   const profileAfter = jhFileProfile(key, shaped, profile);
   const afterRows = new Map(jhSectionSummaries({ setup: after as CareerOpsSetupV2, profile: profileAfter }).map((r) => [r.key, r]));
-  return jhSectionsFor(page).map((s) => {
-    const base = { key: s.key, label: s.label, href: jhSectionHref(s.key) };
+  return jhSectionsFor(page, opts).map((s) => {
+    const base_ = { key: s.key, label: s.label, href: jhSectionHref(s.key, base) };
     const inFile = !jhFieldsEmpty(jhSectionFields(s.key, { setup: fileOnly as CareerOpsSetupV2, profile: fileProfile }));
-    if (!inFile) return { ...base, inFile, kind: "keep", headline: "not in the file — left as it is" };
+    if (!inFile) return { ...base_, inFile, kind: "keep", headline: "not in the file — left as it is" };
     const b = jhSectionFields(s.key, { setup: before as CareerOpsSetupV2, profile });
     const a = jhSectionFields(s.key, { setup: after as CareerOpsSetupV2, profile: profileAfter });
     const kind: DiffKind = jhFieldsEmpty(b) ? "add" : same(a, b) ? "keep" : "replace";
     const detail = afterRows.get(s.key)?.summary;
-    return { ...base, inFile, kind, headline: kind === "add" ? "adds" : kind === "keep" ? "same as now" : "replaces", detail: kind === "keep" ? undefined : detail };
+    return { ...base_, inFile, kind, headline: kind === "add" ? "adds" : kind === "keep" ? "same as now" : "replaces", detail: kind === "keep" ? undefined : detail };
   });
 }
