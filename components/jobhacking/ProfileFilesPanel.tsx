@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Building2, Check, CircleDashed, Download, FileUp, Lock, Navigation, Sparkles, Upload, type LucideProps } from "lucide-react";
+import { BookOpen, Building2, Check, CircleDashed, Download, FileUp, Lock, LockKeyhole, Navigation, Sparkles, Upload, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
+import FeedbackModal from "@/components/FeedbackModal";
 import ProfileUploadSheet from "@/components/profile/ProfileUploadSheet";
+import { useFeedbackConfig, useFeedbackSubmission } from "@/lib/firestore/feedback";
+import { uploadLockLine, uploadsLocked } from "@/lib/feedback-lock";
 import { PROFILE_FILENAME, PROFILE_MAX_BYTES, profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { FileSectionKey } from "@/lib/profile-sections";
 import { JH_FILES, jhFilePage, jhFileStatuses, jhFilesProgress, type JhgFileKey } from "@/lib/jobhacking/profile-files";
@@ -23,6 +26,13 @@ import type { Profile } from "@/lib/types";
 //
 // A page that takes drops anywhere passes them in through `dropped`; the panel
 // opens the sheet with them.
+//
+// The upload lock (docs/UX_JOBHACKING.md §4c): while the admin flag
+// `config/feedback.uploadLock` is on and the member has not submitted the
+// survey, every way in — the red button, the four row buttons, a drop — opens
+// the survey instead of the sheet. The page's one red button is then "Answer
+// the survey" (an action the member cannot take is never the red one), the
+// row buttons go mute with a lock glyph, and the lock lifts live on submit.
 
 const ICONS: Record<JhgFileKey, ComponentType<LucideProps>> = { narrative: Sparkles, trueNorth: Navigation, targetCompanies: Building2, artefacts: BookOpen };
 
@@ -53,11 +63,23 @@ export default function ProfileFilesPanel({ uid, setup, profile, portal, careerO
   const statuses = useMemo(() => jhFileStatuses(setup), [setup]);
   const progress = jhFilesProgress(statuses);
 
+  // The upload lock — admin flag + whether this member has answered.
+  const feedback = useFeedbackConfig();
+  const submission = useFeedbackSubmission(uid);
+  const locked = uploadsLocked({ uploadLock: feedback.uploadLock, submitted: submission.submitted, loading: submission.loading });
+  const [survey, setSurvey] = useState(false);
+
   const [sheet, setSheet] = useState<{ open: boolean; files: File[] | null; expect: JhgFileKey | null }>({ open: false, files: null, expect: null });
   const [status, setStatus] = useState<{ text: string; links: { label: string; href: string | null }[] } | null>(null);
   const fileSectionHref = useCallback((k: FileSectionKey) => jhFileEditHref(k, portal), [portal]);
-  const open = useCallback((expect: JhgFileKey | null, files: File[] | null = null) => { setStatus(null); setSheet({ open: true, files, expect }); }, []);
+  const open = useCallback((expect: JhgFileKey | null, files: File[] | null = null) => {
+    setStatus(null);
+    if (locked) { setSurvey(true); return; }
+    setSheet({ open: true, files, expect });
+  }, [locked]);
   useEffect(() => { if (dropped) open(null, dropped.files); }, [dropped, open]);
+  // The lock lifted (the member answered, or the admin turned it off) while the survey was up.
+  useEffect(() => { if (!locked) setSurvey(false); }, [locked]);
 
   const exportAll = () => downloadText(PROFILE_FILENAME, profileToYaml(current));
 
@@ -76,11 +98,17 @@ export default function ProfileFilesPanel({ uid, setup, profile, portal, careerO
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 id="jh-files-title" className="text-lg">Your profile files</h2>
-            <p className="mt-1 text-sm text-jh-mute">{progress.done} of {progress.total} uploaded. Each file fills one area; together they are your whole profile.</p>
+            {locked
+              ? <p className="mt-1 text-sm text-jh-mute">{progress.done} of {progress.total} uploaded. Uploads are locked until you answer a short survey. {uploadLockLine(feedback)}</p>
+              : <p className="mt-1 text-sm text-jh-mute">{progress.done} of {progress.total} uploaded. Each file fills one area; together they are your whole profile.</p>}
           </div>
-          <button type="button" onClick={() => open(null)} className="btn-primary btn-sm">
-            <FileUp className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Upload files
-          </button>
+          {locked
+            ? <button type="button" onClick={() => setSurvey(true)} className="btn-primary btn-sm">
+                <LockKeyhole className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Answer the survey
+              </button>
+            : <button type="button" onClick={() => open(null)} className="btn-primary btn-sm">
+                <FileUp className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Upload files
+              </button>}
         </div>
 
         {/* One slot per file — the row grammar of the rest of the portal: a glyph, one heavy name, a mute line, one action. */}
@@ -105,16 +133,22 @@ export default function ProfileFilesPanel({ uid, setup, profile, portal, careerO
                     <Link href={jhPageHref(page.key, base)} className="link text-sm">Open {page.label}</Link>
                   </p>
                 </div>
-                <button type="button" onClick={() => open(f.key)} className="btn-secondary btn-sm" aria-label={`Upload ${f.filename}`}>
-                  <Upload className="h-4 w-4" strokeWidth={1.5} aria-hidden /> {s.uploaded ? "Replace" : "Upload"}
-                </button>
+                {locked
+                  ? <button type="button" onClick={() => setSurvey(true)} className="btn btn-sm border-jh-line bg-transparent text-jh-mute hover:border-jh-line-2 hover:text-jh-ink" aria-label={`Upload ${f.filename} — locked until you answer the survey`} title="Locked until you answer the survey">
+                      <Lock className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Locked
+                    </button>
+                  : <button type="button" onClick={() => open(f.key)} className="btn-secondary btn-sm" aria-label={`Upload ${f.filename}`}>
+                      <Upload className="h-4 w-4" strokeWidth={1.5} aria-hidden /> {s.uploaded ? "Replace" : "Upload"}
+                    </button>}
               </li>
             );
           })}
         </ol>
 
         <div className={`rounded-sm border-[1.5px] border-dashed p-6 text-center transition-colors ${over ? "border-jh-red bg-jh-red/5" : "border-jh-line-2"}`}>
-          <p className="text-sm text-jh-ink">Drop one file — or all four — anywhere on this page</p>
+          {locked
+            ? <p className="inline-flex items-center gap-1.5 text-sm text-jh-mute"><Lock className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Dropping files unlocks after the survey</p>
+            : <p className="text-sm text-jh-ink">Drop one file — or all four — anywhere on this page</p>}
           <p className="text-xs text-jh-mute mt-1">.yml · up to {PROFILE_MAX_BYTES / 1024} kB each · each lands in its own slot</p>
           <p className="mt-3 inline-flex items-center justify-center gap-1 text-xs text-jh-mute"><Lock className="h-3 w-3" aria-hidden /> Read in your browser. Nothing is saved until you confirm.</p>
         </div>
@@ -128,6 +162,17 @@ export default function ProfileFilesPanel({ uid, setup, profile, portal, careerO
           </button>
         </div>
       </section>
+
+      {survey && locked && (
+        <FeedbackModal
+          cfg={feedback}
+          uid={uid}
+          profile={profile ?? null}
+          source="lock"
+          onDone={() => setSurvey(false)}
+          onDismiss={() => setSurvey(false)}
+        />
+      )}
 
       {sheet.open && (
         <ProfileUploadSheet

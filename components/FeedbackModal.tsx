@@ -4,20 +4,25 @@ import { useMemo, useState } from "react";
 import { MessageSquareHeart } from "lucide-react";
 import { addDoc, paths } from "@/lib/firestore/db";
 import { useAuth } from "@/components/AuthProvider";
-import type { FeedbackConfig, FeedbackResponse } from "@/lib/types";
+import type { FeedbackConfig, FeedbackResponse, FeedbackSource } from "@/lib/types";
 import type { Profile } from "@/lib/types";
 
 // Blocking feedback survey — mirrors the Paywall pattern (same overlay + card),
 // but it only disappears once the user SUBMITS. The expired-access Paywall is
 // rendered ahead of this, so expiry always takes precedence.
+//
+// Opened from the upload lock (source "lock", `onDismiss` given) it is the
+// member's own choice, so the way out is "Not now", not "Sign out".
 export default function FeedbackModal({
-  cfg, uid, profile, source, onDone,
+  cfg, uid, profile, source, onDone, onDismiss,
 }: {
   cfg: FeedbackConfig;
   uid: string;
   profile: Profile | null;
-  source: "global" | "link";
+  source: FeedbackSource;
   onDone: () => void;
+  /** Given when the member opened the survey themselves — shows "Not now" instead of "Sign out". */
+  onDismiss?: () => void;
 }) {
   const { user, signOut } = useAuth();
   const [answers, setAnswers] = useState<Record<string, string | number>>({});
@@ -137,9 +142,9 @@ export default function FeedbackModal({
             <button onClick={submit} disabled={busy} className="btn-primary w-full mt-7 disabled:opacity-60">
               {busy ? "Sending…" : cfg.submitLabel}
             </button>
-            <button onClick={() => signOut()} className="btn-ghost mt-3 w-full text-sm">
-              Sign out
-            </button>
+            {onDismiss
+              ? <button type="button" onClick={onDismiss} className="btn-ghost mt-3 w-full text-sm">Not now</button>
+              : <button onClick={() => signOut()} className="btn-ghost mt-3 w-full text-sm">Sign out</button>}
           </>
         )}
       </div>
