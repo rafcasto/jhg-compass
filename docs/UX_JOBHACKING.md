@@ -127,6 +127,14 @@ Rejected: a table for the stories (same reason as §3b); rendering snapshots as 
 
 After an unpack, a `role="status"` line — *Unpacked Narrative, Artefacts — 6 sections updated:* — lists the updated file sections, each a link to its JobHacking section where one exists (`JH_FILE_EDIT`; `narrative` → Headline, `jhg` → Boundaries).
 
+### 4c. The upload lock (decision 2026-11-07)
+
+**Decision (Rafael):** an admin can make the survey the price of an upload. `config/feedback.uploadLock` — the toggle *Lock profile uploads until answered*, beside the global modal in Admin → User interactions → Feedback — locks the four slots' Upload buttons on JobHacking → Settings and the Compass Settings hub (one panel, `ProfileFilesPanel`) until the member has submitted the feedback survey. Independent of the global modal and the per-user link; a member who has already answered (any source) is never locked. Pure rule in `lib/feedback-lock.ts` (`uploadsLocked`): flag on **and** not submitted — the lock holds while the submission check is still loading.
+
+**The locked panel (RUI):** one red button, and it is the one action the member can take — **Answer the survey** replaces *Upload files* (an action you cannot take is never the red one). The header's mute line says why and what it costs — *Uploads are locked until you answer a short survey. Answer 4 short questions and every slot unlocks.* The four row buttons go mute: `.btn` on the hairline, `text-jh-mute`, a lock glyph, **Locked**, `aria-label` *Upload narrative.yml — locked until you answer the survey*; they are not disabled — tapping one opens the survey, so there is no dead end. A drop on the page opens the survey too, and the drop zone says *Dropping files unlocks after the survey*. The export (*Download everything as one profile.yml*) is not an upload and stays. Nothing turns red or amber: the lock is a gate, not an error.
+
+**The survey from the lock** is the same `FeedbackModal`, `source: "lock"` (the admin's Responses list shows *Upload lock*), with **Not now** where the blocking modal has *Sign out* — the member opened it, so they can close it. The lock lifts live: `useFeedbackSubmission` is a snapshot, so the slots turn into *Upload* / *Replace* the moment the response is written, and the survey closes itself if the admin turns the flag off while it is open.
+
 ### 4b. What the pages show from the files
 
 **Rule (2026-11-07):** every field the four files carry is shown on the page it belongs to, beside the field it explains, **read-only**, through one block (`components/jobhacking/FileFacts.tsx`: a `.section-label` *From your True North file*, a `dl` of label · value, lists as `.pill-visible`, one `.icon-btn` per URL, nothing red). The editors above are untouched; the member edits what they always edited, and the coach's working data sits under it.

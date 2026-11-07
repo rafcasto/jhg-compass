@@ -6,6 +6,8 @@ import type { FeedbackConfig } from "./types";
 export const DEFAULT_FEEDBACK_CONFIG: FeedbackConfig = {
   // OFF by default — an admin flips this on to request feedback from everyone.
   enabled: false,
+  // OFF by default — on, the profile-file Upload buttons wait for the survey.
+  uploadLock: false,
   title: "We really value your feedback",
   intro:
     "Could you please take a few minutes to answer 4 important questions? It helps us make JobHacker Compass better for you.",

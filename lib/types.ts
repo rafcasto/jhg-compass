@@ -176,8 +176,11 @@ export interface FeedbackQuestion {
 
 // Stored at config/feedback. `enabled` drives the GLOBAL modal (shown to every
 // user until they submit); the per-user link (?feedback=1) shows it regardless.
+// `uploadLock` locks the four profile-file Upload buttons (JobHacking → Settings,
+// Compass → Settings hub) until the member has submitted the survey.
 export interface FeedbackConfig {
   enabled: boolean;
+  uploadLock: boolean;
   title: string;
   intro: string;
   submitLabel: string;
@@ -188,13 +191,16 @@ export interface FeedbackConfig {
 
 // A submitted survey — stored under users/{uid}/feedback/{autoId}. `answers`
 // is keyed by question id; `rating` is a convenience copy of the first rating.
+// `source`: the global modal, the per-user link, or the upload lock on Settings.
+export type FeedbackSource = "global" | "link" | "lock";
+
 export interface FeedbackResponse {
   uid?: string;
   email?: string;
   firstName?: string;
   rating?: number | null;
   answers: Record<string, string | number>;
-  source: "global" | "link";
+  source: FeedbackSource;
   createdAt: number;
 }
 

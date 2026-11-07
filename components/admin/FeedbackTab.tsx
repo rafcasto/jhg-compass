@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy, Check, Plus, Trash2, MessageSquareHeart } from "lucide-react";
 import { auth } from "@/lib/firebase/client";
-import type { FeedbackConfig, FeedbackQuestion } from "@/lib/types";
+import type { FeedbackConfig, FeedbackQuestion, FeedbackSource } from "@/lib/types";
 import { DEFAULT_FEEDBACK_CONFIG, newFeedbackQuestionId } from "@/lib/feedback-defaults";
 
 async function authedFetch(url: string, init: RequestInit = {}) {
@@ -17,9 +17,11 @@ type ResponseRow = {
   firstName?: string;
   rating?: number | null;
   answers: Record<string, string | number>;
-  source: "global" | "link";
+  source: FeedbackSource;
   createdAt: number;
 };
+
+const SOURCE_LABEL: Record<FeedbackSource, string> = { global: "Global", link: "Link", lock: "Upload lock" };
 
 export default function FeedbackTab() {
   const [cfg, setCfg] = useState<FeedbackConfig | null>(null);
@@ -99,6 +101,15 @@ export default function FeedbackTab() {
           <p className="text-jh-mute text-sm">When on, every user sees the survey until they submit it.</p>
         </div>
         <Toggle on={cfg.enabled} onChange={(v) => set("enabled", v)} />
+      </section>
+
+      {/* ---- Upload lock ---- */}
+      <section className="card p-5 flex items-center justify-between gap-4">
+        <div>
+          <p className="font-display font-semibold text-jh-ink">Lock profile uploads until answered</p>
+          <p className="text-jh-mute text-sm">When on, the four Upload buttons on JobHacking → Settings and the Compass Settings hub stay locked until the member submits this survey. Works with the global modal off; a member who already answered is never locked.</p>
+        </div>
+        <Toggle on={cfg.uploadLock} onChange={(v) => set("uploadLock", v)} />
       </section>
 
       {/* ---- Per-user link ---- */}
@@ -232,7 +243,7 @@ function FeedbackResponses({ cfg, rows }: { cfg: FeedbackConfig; rows: ResponseR
                 {ratingQ && typeof r.rating === "number" && (
                   <span className="pill bg-jh-mist text-jh-ink">{ratingQ.emojis?.[r.rating - 1] ?? ""} {ratingQ.scaleLabels?.[r.rating - 1] ?? r.rating}</span>
                 )}
-                <span className="pill bg-jh-mist text-jh-mute capitalize">{r.source}</span>
+                <span className="pill bg-jh-mist text-jh-mute">{SOURCE_LABEL[r.source] ?? r.source}</span>
                 <span className="text-xs text-jh-mute ml-auto">{r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}</span>
               </div>
               <div className="space-y-2">
