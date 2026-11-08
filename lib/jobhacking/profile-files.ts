@@ -14,7 +14,7 @@ import type { DiffKind } from "../careerops/profile-diff";
 import type { CareerOpsSetupV2, JhgFileKey } from "../careerops/types";
 import type { FileSectionKey } from "../profile-sections";
 import type { Profile } from "../types";
-import { BASE_OF, JH_PAGES, jhFieldsEmpty, jhSectionFields, jhSectionHref, jhSectionSummaries, jhSectionsFor, type JhPageKey, type JhSectionKey, type PortalOptions } from "./sections";
+import { BASE_OF, findJhPage, jhFieldsEmpty, jhSectionFields, jhSectionHref, jhSectionSummaries, jhSectionsFor, type JhPageKey, type JhSectionKey, type PortalOptions } from "./sections";
 import { isoDate } from "./workbook";
 
 export type { JhgFileKey };
@@ -43,7 +43,7 @@ export const JH_FILES = [
 ] as const satisfies readonly JhFile[];
 
 export const findJhFile = (key: string | null | undefined): JhFile | undefined => (JH_FILES as readonly JhFile[]).find((f) => f.key === key);
-export const jhFilePage = (key: JhgFileKey) => JH_PAGES.find((p) => p.key === findJhFile(key)!.page)!;
+export const jhFilePage = (key: JhgFileKey) => findJhPage(findJhFile(key)!.page)!;
 
 const FILENAME_HINT: Record<JhgFileKey, RegExp> = {
   narrative: /narrative/i,

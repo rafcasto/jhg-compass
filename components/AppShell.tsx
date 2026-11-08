@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useState, type ComponentType, type ReactNode } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useState, type ComponentType } from "react";
+import { usePathname } from "next/navigation";
 import { Compass, Gauge, Columns3, GraduationCap, Shield, Radar, Target, FileText, ListChecks, type LucideProps } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useContent } from "@/lib/firestore/content";
@@ -10,8 +10,8 @@ import { BottomTabBar, MobileHeader } from "@/components/shell/MobileChrome";
 import { DesktopSidebar } from "@/components/shell/DesktopChrome";
 import PortalSwitcher, { type Portal } from "@/components/careerops/PortalSwitcher";
 import { PORTAL_SECTIONS } from "@/lib/careerops/portal-nav";
-import { JH_NAV, JH_PAGES, JH_SETTINGS_HREF, SETTINGS_BASE, jhNavActive } from "@/lib/jobhacking/sections";
-import { JH_PAGE_ICONS, JH_SECTION_ICONS } from "@/components/jobhacking/pageIcons";
+import { JH_NAV, JH_PAGES, JH_SETTINGS_HREF, SETTINGS_BASE, jhNavActive, jhPageActive } from "@/lib/jobhacking/sections";
+import { JH_PAGE_ICONS } from "@/components/jobhacking/pageIcons";
 import type { TabItem } from "@/components/shell/MobileChrome";
 
 type NavItem = {
@@ -20,20 +20,15 @@ type NavItem = {
   icon: ComponentType<LucideProps>;
 };
 
-/** Hands the `?section=` of the URL to a renderer — under a Suspense boundary, as the app router asks of useSearchParams. */
-function WithSection({ render }: { render: (section: string | null) => ReactNode }) {
-  const params = useSearchParams();
-  return <>{render(params.get("section"))}</>;
-}
-
 const SECTION_ICONS: Record<string, ComponentType<LucideProps>> = { sourcing: Radar, scoring: Target, tailoring: FileText, tracking: ListChecks };
 
 // One shell, three portals. Compass: Compass · Performance · Progress · Coaching.
 // CareerOps: Sourcing · Scoring · Tailoring · Tracking. JobHacking: two groups
-// in the sidebar (decision 2026-11-08, docs/UX_JOBHACKING.md §9) — JobHacker
-// Compass: Narrative · True North · Target companies; Artefacts: Story Bank ·
-// Master CV · LN — and the four pages in the mobile bottom bar, where six
-// labels won't fit and the Artefacts overview rows are the sub-menu. The account
+// in the sidebar (decisions 2026-11-08/09, docs/UX_JOBHACKING.md §9–10) —
+// JobHacker Compass: Narrative · True North · Target companies; Artefacts: Story
+// Bank · Master CV · LN, three pages under the Artefacts hub — and the four
+// pages in the mobile bottom bar, where six labels won't fit; the Artefacts tab
+// lands on the hub and is lit on the pages under it. The account
 // group is Settings and Sign out on every portal (the Profile row went into
 // Settings, 2026-11-07 — docs/UX_SETTINGS_HUB.md). The logo section is the
 // switcher between the portals (only shown when the member has more than one).
@@ -67,20 +62,17 @@ export default function AppShell({ children, daysLeft, agentsEnabled = false, jo
     { href: "/coaching", label: t("nav.coaching"), icon: GraduationCap },
   ];
   const CAREEROPS_NAV: NavItem[] = PORTAL_SECTIONS.map((s) => ({ href: s.href, label: s.label, icon: SECTION_ICONS[s.key] ?? Compass }));
-  const JOBHACKING_NAV: NavItem[] = JH_PAGES.map((p) => ({ href: p.href, label: p.label, icon: JH_PAGE_ICONS[p.key] }));
+  // The bottom bar's four tabs; a tab is lit on its page or on a page under it (Artefacts → Story Bank).
+  const JOBHACKING_NAV: (NavItem & { active?: boolean })[] = JH_PAGES.map((p) => ({ href: p.href, label: p.label, icon: JH_PAGE_ICONS[p.key], active: jhPageActive(p.key, pathname) }));
 
   const base = portal === "careerops" ? CAREEROPS_NAV : portal === "jobhacking" ? JOBHACKING_NAV : COMPASS_NAV;
   const admin: NavItem[] = isAdmin ? [{ href: "/admin", label: "Admin", icon: Shield }] : [];
   const nav: NavItem[] = [...base, ...admin];
   const isActive = (href: string) => pathname.startsWith(href);
-  const toTab = (n: NavItem): TabItem => ({ key: n.href, label: n.label, icon: n.icon, href: n.href, active: isActive(n.href) });
-  // JobHacking's sidebar: the two groups, each row lit by the registry's rule (a section row needs the URL's ?section=).
-  const sidebarItems = (section: string | null): TabItem[] => portal !== "jobhacking" ? nav.map(toTab) : [
-    ...JH_NAV.flatMap((g) => g.items.map((i): TabItem => ({
-      key: i.key, label: i.label, href: i.href, group: g.label,
-      icon: i.section ? JH_SECTION_ICONS[i.section] : JH_PAGE_ICONS[i.page],
-      active: jhNavActive(i, pathname, section),
-    }))),
+  const toTab = (n: NavItem & { active?: boolean }): TabItem => ({ key: n.href, label: n.label, icon: n.icon, href: n.href, active: n.active ?? isActive(n.href) });
+  // JobHacking's sidebar: the two groups, each row a page lit by the registry's rule.
+  const sidebarItems: TabItem[] = portal !== "jobhacking" ? nav.map(toTab) : [
+    ...JH_NAV.flatMap((g) => g.items.map((i): TabItem => ({ key: i.key, label: i.label, href: i.href, group: g.label, icon: JH_PAGE_ICONS[i.page], active: jhNavActive(i, pathname) }))),
     ...admin.map(toTab),
   ];
 
@@ -97,9 +89,9 @@ export default function AppShell({ children, daysLeft, agentsEnabled = false, jo
   // (and CareerOps's) is the hub — who I am, the five areas, the files (docs/UX_SETTINGS_HUB.md).
   const settingsHref = portal === "jobhacking" ? JH_SETTINGS_HREF : SETTINGS_BASE;
   const account = { profileHref: null, settingsHref, settingsActive: isActive(settingsHref) };
-  const sidebar = (section: string | null) => (
+  const sidebar = (
     <DesktopSidebar
-      items={sidebarItems(section)}
+      items={sidebarItems}
       brand={<PortalSwitcher portal={portal} available={available} />}
       onSignOut={handleLogout} signingOut={signingOut} {...account}
       footer={daysLeft != null ? (
@@ -119,9 +111,7 @@ export default function AppShell({ children, daysLeft, agentsEnabled = false, jo
 
       {/* ---- Desktop sidebar (shared with the admin preview) ---- */}
       <div className="hidden md:block">
-        {portal === "jobhacking"
-          ? <Suspense fallback={sidebar(null)}><WithSection render={sidebar} /></Suspense>
-          : sidebar(null)}
+        {sidebar}
       </div>
 
       {/* ---- Main ---- */}

@@ -2,7 +2,7 @@
 
 **Status:** built (2026-11-07). Scope: the JobHacking portal. Compass → Settings renders the same pages without the control.
 
-**Ask (Rafael, 2026-11-07):** a public, shareable, read-only link to a page's content so a member can send it to someone and get feedback. Four links — **Narrative · True North · Target companies · Artefacts** — one per page. No comments, no feedback box: feedback travels back wherever the link was sent. The page should read like a Word document, not like the app.
+**Ask (Rafael, 2026-11-07):** a public, shareable, read-only link to a page's content so a member can send it to someone and get feedback. Four links — **Narrative · True North · Target companies · Artefacts** — one per page. **Revised 2026-11-09** (`docs/UX_JOBHACKING.md §10`): the three artefacts are pages of their own, so the links are six — **Narrative · True North · Target companies · Story Bank · Master CV · LinkedIn profile**; the Artefacts hub has no link, and an Artefacts link minted before still renders all three. No comments, no feedback box: feedback travels back wherever the link was sent. The page should read like a Word document, not like the app.
 
 **Method:** Refactoring UI's seven principles, applied through the portal's own system (`docs/UX_AUDIT_COMPASS_TABS.md §0`, `docs/UX_JOBHACKING.md`). Nothing new was designed where the system had the answer; the new piece is the document grammar of the public page.
 

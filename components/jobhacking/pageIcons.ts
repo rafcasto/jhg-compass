@@ -7,11 +7,13 @@ import type { JhPageKey, JhSectionKey } from "@/lib/jobhacking/sections";
 // the same glyph for the same page.
 export const JH_PAGE_ICONS: Record<JhPageKey, ComponentType<LucideProps>> = {
   narrative: UserRound, "true-north": Navigation, companies: Building2, artefacts: Archive, agents: Bot,
+  // The artefact pages carry their section's glyph — one page, one section, one icon (2026-11-09).
+  "story-bank": BookOpen, "master-cv": FileText, linkedin: Linkedin,
 };
 
-// One icon per section — the section heading on every sectioned page, and the
-// JobHacking sidebar's Artefacts rows (decision 2026-11-08), so the glyph beside
-// "Story Bank" in the menu is the glyph above the Story Bank.
+// One icon per section — the section heading on every sectioned page. The
+// artefact pages reuse theirs above, so the glyph beside "Story Bank" in the
+// menu is the glyph above the Story Bank.
 export const JH_SECTION_ICONS: Record<JhSectionKey, ComponentType<LucideProps>> = {
   contact: Contact, competencies: Layers, headline: Quote, story: Sparkles,
   industry: Factory, roles: Target, seniority: Navigation, salary: Wallet, location: MapPin, "work-rights": ShieldCheck, "company-type": Store, boundaries: ShieldBan,

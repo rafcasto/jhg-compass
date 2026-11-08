@@ -1,4 +1,4 @@
-import { settingsRedirects } from "./lib/settings-redirects.mjs";
+import { jobhackingRedirects, settingsRedirects } from "./lib/settings-redirects.mjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -9,6 +9,8 @@ const nextConfig = {
       { source: "/jobhacking/profile", destination: "/jobhacking/narrative", permanent: true },
       // The Profile page went into Settings (2026-11-07) — every old section link lands on the section that edits it now.
       ...settingsRedirects(),
+      // The three artefacts became pages of their own (2026-11-09) — a section link into /jobhacking/artefacts lands on its page.
+      ...jobhackingRedirects(),
     ];
   },
 };

@@ -1,7 +1,9 @@
 // Share a JobHacking page as a read-only document — docs/UX_SHARE.md
 // (decision 2026-11-07).
 //
-// One link per page: Narrative · True North · Target companies · Artefacts.
+// One link per page: Narrative · True North · Target companies, and (2026-11-09)
+// each artefact page — Story Bank · Master CV · LinkedIn profile. An Artefacts
+// link minted before the split stays live and shows all three.
 // The member switches a page's link on from the page header; anyone with the
 // link reads the page at /share/<token> as a document — a title, the author
 // line, every section as a heading with its content under it — not as the app.
@@ -23,7 +25,7 @@ import { trueNorthText } from "../goal";
 import type { Profile } from "../types";
 import { companyTypeLabel, industryLine, listGroups, watchlistRows, type CompanyListKey } from "./company-lists";
 import { LINKEDIN_SECTIONS, dateRange, linkedinPresent, roleLine, roleMeta } from "./linkedin-profile";
-import { JH_LIST_OF, JH_PAGES, findJhPage, jhGoal, jhSectionsFor, type JhPageKey, type JhSectionDef, type JhSectionKey, type JhSignals } from "./sections";
+import { JH_LIST_OF, jhPagesFor, findJhPage, jhGoal, jhSectionsFor, type JhPageKey, type JhSectionDef, type JhSectionKey, type JhSignals } from "./sections";
 import { proofPoints, provenanceLabel, snapshotDetail, snapshotFigures, storyRows, storyStar } from "./story-bank";
 import {
   boundaryFacts, boundaryLists, companyFacts, cvRuleFacts, cvRuleLists, fitLabel, isoDate, languageLines, locationFacts, outlookLabel, salaryFacts, scoresLine,
@@ -32,9 +34,10 @@ import {
 
 // ---- the pages, the link ----
 
-/** The pages a member can share — the four JobHacking menu pages, in menu order. */
-export const SHARE_PAGES = JH_PAGES.map((p) => p.key) as readonly SharePageKey[];
+/** Every page a link can point at — the JobHacking pages, hub included (links minted before 2026-11-09). */
 export type SharePageKey = Exclude<JhPageKey, "agents">;
+/** The pages a member can switch a link on — the JobHacking pages with a header of their own; the Artefacts hub has none. */
+export const SHARE_PAGES = jhPagesFor("jobhacking").filter((p) => !jhPagesFor("jobhacking").some((c) => c.parent === p.key)).map((p) => p.key) as readonly SharePageKey[];
 export const isSharePage = (v: unknown): v is SharePageKey => typeof v === "string" && (SHARE_PAGES as readonly string[]).includes(v);
 
 /** `shareLinks/{token}` — the public index, server-only. */
