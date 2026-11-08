@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  AGENTS_PAGE, JH_FILE_EDIT, JH_LIST_OF, JH_PAGES, JH_SECTIONS, JH_SETTINGS_HREF, SETTINGS_BASE, findJhPage, jhAreaRows, jhFileEditHref, jhGoal, jhPageHref, jhPagesFor,
+  AGENTS_PAGE, JH_FILE_EDIT, JH_LIST_OF, JH_NAV, JH_PAGES, JH_SECTIONS, JH_SETTINGS_HREF, SETTINGS_BASE, findJhPage, jhAreaRows, jhFileEditHref, jhGoal, jhNavActive, jhPageHref, jhPagesFor, jhSectionsInMenu,
   jhRowsFor, jhSectionFields, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, trueNorthBlanks, trueNorthText,
 } from "@/lib/jobhacking/sections";
 import { FILE_SECTIONS } from "@/lib/profile-sections";
@@ -40,10 +40,46 @@ const setup = {
 } as CareerOpsSetupV2;
 
 describe("JobHacking — pages and sections", () => {
-  it("has the four menu pages in order, and Settings apart from them", () => {
+  it("has the four pages in order, and Settings apart from them", () => {
     expect(JH_PAGES.map((p) => p.label)).toEqual(["Narrative", "True North", "Target companies", "Artefacts"]);
     expect(JH_PAGES.map((p) => p.href)).toEqual(["/jobhacking/narrative", "/jobhacking/true-north", "/jobhacking/companies", "/jobhacking/artefacts"]);
     expect(JH_SETTINGS_HREF).toBe("/jobhacking/settings");
+  });
+
+  describe("the shell's menu is two groups over the same pages (decision 2026-11-08)", () => {
+    it("Compass: Narrative · True North · Target companies — the pages; Artefacts: Story Bank · Master CV · LinkedIn profile — that page's sections", () => {
+      expect(JH_NAV.map((g) => g.label)).toEqual(["Compass", "Artefacts"]);
+      expect(JH_NAV[0].items.map((i) => [i.label, i.href, i.section])).toEqual([
+        ["Narrative", "/jobhacking/narrative", undefined], ["True North", "/jobhacking/true-north", undefined], ["Target companies", "/jobhacking/companies", undefined],
+      ]);
+      expect(JH_NAV[1].items.map((i) => [i.label, i.href, i.page])).toEqual([
+        ["Story Bank", "/jobhacking/artefacts?section=story-bank", "artefacts"], ["Master CV", "/jobhacking/artefacts?section=master-cv", "artefacts"], ["LinkedIn profile", "/jobhacking/artefacts?section=linkedin-profile", "artefacts"],
+      ]);
+      // The same labels as the page's own rail — the menu never renames a section.
+      expect(JH_NAV[1].items.map((i) => i.label)).toEqual(jhSectionsFor("artefacts").map((s) => s.label));
+    });
+    it("only the Artefacts page hands its rail to the sidebar; the registry's pages are unchanged", () => {
+      expect(jhSectionsInMenu("artefacts")).toBe(true);
+      expect(["narrative", "true-north", "companies", "agents"].map((p) => jhSectionsInMenu(p as never))).toEqual([false, false, false, false]);
+      expect(jhPagesFor("jobhacking").map((p) => p.key)).toEqual(["narrative", "true-north", "companies", "artefacts"]);
+    });
+    it("lights one row per URL: a page row by its path; a section row by its page and the open section, the first when ?section= is absent", () => {
+      const [narrative, trueNorth] = JH_NAV[0].items;
+      const [storyBank, masterCv, linkedin] = JH_NAV[1].items;
+      expect(jhNavActive(narrative, "/jobhacking/narrative", null)).toBe(true);
+      expect(jhNavActive(narrative, "/jobhacking/narrative", "contact")).toBe(true);
+      expect(jhNavActive(trueNorth, "/jobhacking/narrative", null)).toBe(false);
+      expect(jhNavActive(storyBank, "/jobhacking/artefacts", null)).toBe(true);
+      expect(jhNavActive(masterCv, "/jobhacking/artefacts", null)).toBe(false);
+      expect(jhNavActive(masterCv, "/jobhacking/artefacts", "master-cv")).toBe(true);
+      expect(jhNavActive(storyBank, "/jobhacking/artefacts", "master-cv")).toBe(false);
+      expect(jhNavActive(linkedin, "/jobhacking/artefacts", "linkedin-profile")).toBe(true);
+      // An unknown section is the overview, which opens on the first section.
+      expect(jhNavActive(storyBank, "/jobhacking/artefacts", "nope")).toBe(true);
+      // Another portal's path, or a sibling path with the same prefix, lights nothing.
+      expect(jhNavActive(storyBank, "/settings/artefacts", "story-bank")).toBe(false);
+      expect(jhNavActive(narrative, "/jobhacking/narrative-x", null)).toBe(false);
+    });
   });
 
   it("Narrative is exactly Contact details · Headline · Bridge story · Core competencies", () => {

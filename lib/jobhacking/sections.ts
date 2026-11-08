@@ -17,6 +17,11 @@
 //
 //   * Compass only.
 //
+// The JobHacking shell's menu (decision 2026-11-08, docs/UX_JOBHACKING.md §9)
+// is JH_NAV: two groups — Compass (Narrative · True North · Target companies)
+// and Artefacts (Story Bank · Master CV · LinkedIn profile) — over the same
+// pages; the Artefacts rows are that page's sections.
+//
 // Same documents as Compass (decision F, 2026-11-03): users/{uid} and
 // users/{uid}/careerOps/setup. A section here is another door onto the same
 // field, never a copy. The mapping is in the doc's §2; nothing here reads a
@@ -152,6 +157,53 @@ export const jhSectionHref = (key: JhSectionKey, base: string = JH_BASE): string
 /** `?section=roles` → "roles"; unknown, absent or another page's key → null (the overview). */
 export function parseJhSection(raw: string | null | undefined, sections: readonly JhSectionDef[] = JH_SECTIONS as readonly JhSectionDef[]): JhSectionKey | null {
   return sections.some((s) => s.key === raw) ? (raw as JhSectionKey) : null;
+}
+
+// ---- the JobHacking shell's menu (decision 2026-11-08, docs/UX_JOBHACKING.md §9) ----
+//
+// Two groups, not four flat rows. **Compass** is who you are and where you're
+// going — Narrative · True North · Target companies — and **Artefacts** is what
+// you bring — Story Bank · Master CV · LinkedIn profile. The Artefacts rows are
+// that page's sections: on desktop the sidebar is the page's rail, so the page
+// renders without one (`jhSectionsInMenu`); on mobile the bottom bar keeps the
+// four pages and the Artefacts overview rows stay the sub-menu, as on every
+// sectioned page. The registry itself is unchanged — Artefacts is still one
+// page for the share link, the upload preview and the Settings hub.
+
+export type JhNavGroupKey = "compass" | "artefacts";
+export interface JhNavItem {
+  key: string;
+  label: string;
+  href: string;
+  page: JhPageKey;
+  /** Set when the row is a section of its page, not the page itself. */
+  section?: JhSectionKey;
+}
+export interface JhNavGroup { key: JhNavGroupKey; label: string; items: readonly JhNavItem[] }
+
+const navPage = (key: JhPageKey): JhNavItem => { const p = findJhPage(key)!; return { key: p.key, label: p.label, href: p.href, page: p.key }; };
+const navSection = (s: JhSectionDef): JhNavItem => ({ key: s.key, label: s.label, href: jhSectionHref(s.key), page: s.page, section: s.key });
+
+export const JH_NAV: readonly JhNavGroup[] = [
+  { key: "compass", label: "Compass", items: [navPage("narrative"), navPage("true-north"), navPage("companies")] },
+  { key: "artefacts", label: "Artefacts", items: jhSectionsFor("artefacts").map(navSection) },
+];
+
+/** True when a page's sections are rows of the shell's menu — on desktop the sidebar is its rail. */
+export const jhSectionsInMenu = (page: JhPageKey): boolean => JH_NAV.some((g) => g.items.some((i) => i.page === page && !!i.section));
+
+/**
+ * Whether a menu row is the lit one for a URL. A page row: its path. A section
+ * row: its page's path and the open section — the first of its page when
+ * `?section=` is absent or unknown, since that is the section the page opens on.
+ */
+export function jhNavActive(item: JhNavItem, pathname: string, section: string | null | undefined): boolean {
+  const href = jhPageHref(item.page);
+  if (pathname !== href && !pathname.startsWith(`${href}/`)) return false;
+  if (!item.section) return true;
+  const rows = JH_NAV.flatMap((g) => g.items).filter((i) => i.page === item.page && i.section);
+  const open = rows.find((i) => i.section === section) ?? rows[0];
+  return open.key === item.key;
 }
 
 /**

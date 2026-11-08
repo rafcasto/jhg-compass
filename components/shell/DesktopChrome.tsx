@@ -16,6 +16,18 @@ export const DESKTOP_SIDEBAR_WIDTH = 232;
 const rowCls = (active?: boolean) =>
   `flex items-center gap-3 rounded-sm px-3 min-h-[44px] font-display font-semibold text-sm w-full text-left transition-colors duration-200 ease-out ${active ? "bg-jh-red-soft text-jh-red" : "text-jh-mute hover:bg-jh-mist hover:text-jh-ink"}`;
 
+/** Consecutive rows under the same heading, in order; rows with no group run on their own with `group: null`. */
+export function groupTabs(items: readonly TabItem[]): { group: string | null; items: TabItem[] }[] {
+  const out: { group: string | null; items: TabItem[] }[] = [];
+  for (const it of items) {
+    const group = it.group ?? null;
+    const last = out[out.length - 1];
+    if (last && last.group === group) last.items.push(it);
+    else out.push({ group, items: [it] });
+  }
+  return out;
+}
+
 export function DesktopSidebar({
   items, onSignOut, signingOut = false, position = "fixed", footer, brand,
   profileHref = null, profileActive = false, settingsHref = "/settings", settingsActive = false,
@@ -42,15 +54,22 @@ export function DesktopSidebar({
           </div>
         )}
       </div>
-      <nav className="flex-1 space-y-1" aria-label="Primary">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const cls = rowCls(item.active);
-          const inner = <><Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden /> {item.label}</>;
-          return fixed
-            ? <Link key={item.key} href={item.href} className={cls} aria-current={item.active ? "page" : undefined}>{inner}</Link>
-            : <span key={item.key} className={cls} aria-current={item.active ? "page" : undefined}>{inner}</span>;
-        })}
+      {/* Grouped rows (JobHacking: Compass · Artefacts) read as the section rails do — a
+          `.section-label` heading over its rows, 16px between groups, 4px within. */}
+      <nav className="flex-1 space-y-4" aria-label="Primary">
+        {groupTabs(items).map(({ group, items: list }, gi) => (
+          <div key={group ?? gi} className="space-y-1">
+            {group && <p className="section-label px-3 pb-1">{group}</p>}
+            {list.map((item) => {
+              const Icon = item.icon;
+              const cls = rowCls(item.active);
+              const inner = <><Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden /> {item.label}</>;
+              return fixed
+                ? <Link key={item.key} href={item.href} className={cls} aria-current={item.active ? "page" : undefined}>{inner}</Link>
+                : <span key={item.key} className={cls} aria-current={item.active ? "page" : undefined}>{inner}</span>;
+            })}
+          </div>
+        ))}
       </nav>
       {/* Account group — separated from the product nav by a hairline + 16px, not a box.
           Settings (who I am, what the agents work from) is navigation (hover → ink);
