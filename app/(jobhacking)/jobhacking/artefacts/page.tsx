@@ -1,12 +1,6 @@
-import { Suspense } from "react";
-import JobHackingScreen from "@/components/jobhacking/JobHackingScreen";
+import ArtefactsHub from "@/components/jobhacking/ArtefactsHub";
 
-// JobHacking · artefacts — docs/UX_JOBHACKING.md §3d.
+// JobHacking · artefacts — the hub of the three artefact pages, docs/UX_JOBHACKING.md §10.
 export default function Page() {
-  // useSearchParams needs a Suspense boundary in the app router.
-  return (
-    <Suspense fallback={<p className="text-jh-mute animate-pulse">Loading…</p>}>
-      <JobHackingScreen page="artefacts" />
-    </Suspense>
-  );
+  return <ArtefactsHub />;
 }

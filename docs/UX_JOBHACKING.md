@@ -1,6 +1,6 @@
 # JobHacking portal
 
-**Decision (2026-11-03):** a third portal beside Compass and CareerOps, in the same shell. Three menu pages — **Narrative · True North · Target companies** — plus **Settings**, which is one thing: upload a `profile.yml`. **Decision (2026-11-05):** Target companies opens on the Packer's three ranked lists — **Top 3 · Top 10 · Top 40** — read-only, grouped sunrise / sunset, with the watchlist as the fourth section (§3b). **Decision (2026-11-05):** a fourth menu page, **Artefacts** — **Story Bank · Master CV · LinkedIn profile** — the Packer's proof points, stories and snapshots read-only, the one master CV, and the LinkedIn profile to build, block by block (§3d). It renders from the same documents as Compass (`users/{uid}` and `users/{uid}/careerOps/setup`): a section here is another door onto the same field, never a copy. **Decision (2026-11-08):** the desktop menu is two groups — **JobHacker Compass** (Narrative · True North · Target companies) and **Artefacts** (Story Bank · Master CV · LN) — over the same four pages (§9).
+**Decision (2026-11-03):** a third portal beside Compass and CareerOps, in the same shell. Three menu pages — **Narrative · True North · Target companies** — plus **Settings**, which is one thing: upload a `profile.yml`. **Decision (2026-11-05):** Target companies opens on the Packer's three ranked lists — **Top 3 · Top 10 · Top 40** — read-only, grouped sunrise / sunset, with the watchlist as the fourth section (§3b). **Decision (2026-11-05):** a fourth menu page, **Artefacts** — **Story Bank · Master CV · LinkedIn profile** — the Packer's proof points, stories and snapshots read-only, the one master CV, and the LinkedIn profile to build, block by block (§3d). It renders from the same documents as Compass (`users/{uid}` and `users/{uid}/careerOps/setup`): a section here is another door onto the same field, never a copy. **Decision (2026-11-08):** the desktop menu is two groups — **JobHacker Compass** (Narrative · True North · Target companies) and **Artefacts** (Story Bank · Master CV · LN) (§9). **Decision (2026-11-09):** the three artefacts are **pages of their own** — `/jobhacking/story-bank · /jobhacking/master-cv · /jobhacking/linkedin` — each with the layout every page has, one section each for now; `/jobhacking/artefacts` is their hub (§10).
 
 **Method:** Refactoring UI's seven principles, applied through the Compass profile pages' own system (`docs/UX_PROFILE.md`, `docs/UX_AUDIT_COMPASS_TABS.md §0`). Nothing new was designed where the Compass system already had the answer; the one new piece is the True North statement.
 
@@ -269,6 +269,8 @@ The registry here is now rendered by two portals (`docs/UX_SETTINGS_HUB.md`). No
 
 ## 9. Revision 2026-11-08 — the menu in two groups
 
+> **Superseded in part by §10 (2026-11-09).** The two groups stand. What changed: the Artefacts rows are no longer deep links into one page with its rail hidden — they are three pages of their own, each with its rail. `rail={false}` and `jhSectionsInMenu` are gone.
+
 **Decision (Rafael's call).** The JobHacking sidebar is **two groups**, not four flat rows:
 
 | Group | Rows | What it is |
@@ -289,3 +291,31 @@ Then Settings · Sign out in the account group, as before. The source is `JH_NAV
 Rejected: three routes (`/jobhacking/story-bank` …) — a second home for sections that share, upload and the hub already address by page; clickable group headings (a heading that is also a link to the first row is two controls for one row); grouping the bottom bar; renaming the section itself to *LN* (the upload preview and the share document would inherit an abbreviation).
 
 Scores: `/jobhacking/artefacts` stays **9 / 10** — the sidebar replaces the rail one for one; the Compass group's three pages are untouched.
+
+## 10. Revision 2026-11-09 — the three artefacts are pages of their own
+
+**Ask (Rafael):** "for the sub menus under Artefacts, follow the exact same pattern as the portal's" — Story Bank, Master CV and LN should each open like Narrative, True North and Target companies do: a page with its own header, its own rail, its own overview rows on mobile. He will break each artefact into several sections later; for now the pattern is replicated with one section each. Confirmed before the change: own page · own rail · one row for now; **one share link per page**.
+
+**The pages.** `ARTEFACT_PAGES` in `lib/jobhacking/sections.ts`:
+
+| Page | URL | Sections today | Parent |
+|---|---|---|---|
+| Story Bank | `/jobhacking/story-bank` | Story Bank | Artefacts |
+| Master CV | `/jobhacking/master-cv` | Master CV | Artefacts |
+| LinkedIn profile | `/jobhacking/linkedin` | LinkedIn profile | Artefacts |
+
+Each is `only: "jobhacking"` with `parent: "artefacts"`, and renders through `JobHackingScreen page="…"` → `SectionsPage`: eyebrow *JobHacking*, title, intro, the rail (one row, its state glyph and count), the progress bar, the mobile overview → drill-in, prev / next. Nothing new was laid out. A section says which page is its own with **`jhPage`** (`story-bank` → `story-bank`, `master-cv` → `master-cv`, `linkedin-profile` → `linkedin`); `jhSectionPage(s, portal)` resolves it per portal, `jhSectionsFor(page, { portal })` answers both by area (`artefacts` → the three, as the file preview and an Artefacts share link read it) and by page of its own, and `jhSectionHref` links to the JobHacking page on `/jobhacking` and to the area on `/settings`. **Compass → Settings is untouched:** one *Artefacts* area with the three sections and Portfolio, the same hrefs as before.
+
+**The hub.** `/jobhacking/artefacts` is `ArtefactsHub`: the page header plus one row per artefact page in the Settings hub's row grammar (state glyph · label · what it holds · count · chevron). It is where the mobile **Artefacts** tab lands — the bottom bar keeps its four tabs, and the tab is lit on the hub and on the three pages under it (`jhPageActive`) — and where a link to `/jobhacking/artefacts` still goes. On desktop it is a landing, not a second menu: the sidebar already lists the three. The artefact pages carry a `‹ Artefacts` row on **mobile only** (`parent.mobileOnly`): on desktop the sidebar's Artefacts group already places them, so the row would be a second way to say the same thing.
+
+**The menu.** `JH_NAV`'s Artefacts group is now three page rows (`/jobhacking/story-bank` …), lit by path like every other row — the shell no longer reads `?section=`, so the Suspense boundary around the sidebar went too. **LN** stays the menu's word (`JH_NAV_LABEL`, by page now); the page's label and title read *LinkedIn profile*.
+
+**Share — one link per page.** `SHARE_PAGES` is every JobHacking page with a header of its own: Narrative · True North · Target companies · Story Bank · Master CV · LinkedIn profile. The hub has no Share button and `POST /api/share { page: "artefacts" }` is refused; an **Artefacts link minted before this** stays live and still renders all three sections (`shareDocument("artefacts")` reads the area). `docs/UX_SHARE.md` carries the change.
+
+**Redirects.** `jobhackingRedirects()` (`lib/settings-redirects.mjs`, `next.config.mjs`): `/jobhacking/artefacts?section=story-bank` → `/jobhacking/story-bank`, and the other two likewise; the query rides along, so the page opens on the section it had.
+
+**Icons.** `JH_PAGE_ICONS` gives each artefact page its section's glyph — one page, one section, one icon in the menu, the hub row and the section heading.
+
+Rejected: keeping one Artefacts page with the sidebar as its rail (§9 — the member wants the portal's own page pattern, and a rail that will fill in); six tabs in the bottom bar; a `‹ Artefacts` row on desktop; letting the hub mint a share link (it has no content of its own).
+
+Scores: `/jobhacking/story-bank · master-cv · linkedin` **9 / 10** — the Narrative layout, one row for now (a one-row rail reads a little empty until the sections arrive; that is the ask); `/jobhacking/artefacts` **9 / 10** — the Settings hub's rows, no second control.

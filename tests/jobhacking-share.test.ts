@@ -37,7 +37,12 @@ const flat = (v: unknown): string => JSON.stringify(v);
 
 describe("the pages and the link", () => {
   it("shares the four JobHacking menu pages, in menu order, and nothing else", () => {
-    expect(SHARE_PAGES).toEqual(["narrative", "true-north", "companies", "artefacts"]);
+    // One link per page with a header of its own (2026-11-09): the hub is not one; an Artefacts link minted before still renders.
+    expect(SHARE_PAGES).toEqual(["narrative", "true-north", "companies", "story-bank", "master-cv", "linkedin"]);
+    expect(isSharePage("artefacts")).toBe(false);
+    expect(shareDocument("artefacts", signals).sections.map((s) => s.key)).toEqual(["story-bank", "master-cv", "linkedin-profile"]);
+    expect(shareDocument("story-bank", signals).sections.map((s) => s.key)).toEqual(["story-bank"]);
+    expect(shareDocument("linkedin", signals).title).toBe("LinkedIn profile");
     expect(isSharePage("agents")).toBe(false);
     expect(isSharePage("true-north")).toBe(true);
     expect(isSharePage(undefined)).toBe(false);

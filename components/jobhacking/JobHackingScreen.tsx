@@ -12,7 +12,7 @@ import NotesPanel from "@/components/profile/NotesPanel";
 import SectionsPage from "@/components/profile/SectionsPage";
 import type { SectionItem } from "@/components/profile/SectionList";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
-import { BASE_OF, JH_LIST_OF, findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, jhSectionsInMenu, parseJhSection, type JhPageKey, type JhSectionKey, type ProfilePortal } from "@/lib/jobhacking/sections";
+import { BASE_OF, JH_LIST_OF, findJhPage, jhGoal, jhPageHref, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, type JhPageKey, type JhSectionKey, type ProfilePortal } from "@/lib/jobhacking/sections";
 import { isSharePage, shareEmpty } from "@/lib/jobhacking/share";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Goal } from "@/lib/goal";
@@ -44,9 +44,10 @@ import { BoundariesPanel, CompetencyFacts, ContactFacts, HeadlineFacts, StoryFac
 // (docs/UX_SHARE.md): one Share button in the header, a status line under it
 // while the link is on. Both read the owner's record live.
 //
-// On JobHacking the Artefacts page's sections are rows of the shell's menu
-// (decision 2026-11-08, docs/UX_JOBHACKING.md §9): the sidebar is its rail on
-// desktop, so the page renders without one. Mobile is unchanged.
+// On JobHacking the three artefacts are pages of their own under the Artefacts
+// hub (decision 2026-11-09, docs/UX_JOBHACKING.md §10) — the same layout as
+// every page, one section each for now. Their `‹ Artefacts` row shows on
+// mobile only: on desktop the sidebar's Artefacts group already places them.
 
 export default function JobHackingScreen({ page, portal = "jobhacking", careerOps = false, accounts = 0, publicKey = null }: {
   page: JhPageKey;
@@ -86,7 +87,7 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
     <SectionsPage
       id={`${compass ? "settings" : "jobhacking"}-${page}`}
       backHref={`${base}/${page}`}
-      parent={compass ? { label: "Settings", href: base } : undefined}
+      parent={compass ? { label: "Settings", href: base } : meta.parent ? { label: findJhPage(meta.parent)!.label, href: jhPageHref(meta.parent, base), mobileOnly: true } : undefined}
       eyebrow={compass ? "Settings" : "JobHacking"}
       title={meta.title}
       intro={meta.intro}
@@ -97,7 +98,6 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
       items={items}
       rows={rows}
       active={active}
-      rail={compass || !jhSectionsInMenu(page)}
       // Every editor reads its fields once, on mount: remount them when an upload lands (the slot records change).
       panelKey={JSON.stringify(setup?.profileFiles ?? null)}
       loading={!uid || setupLoading || profileLoading}

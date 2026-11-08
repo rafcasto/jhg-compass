@@ -17,10 +17,15 @@
 //
 //   * Compass only.
 //
-// The JobHacking shell's menu (decision 2026-11-08, docs/UX_JOBHACKING.md §9)
-// is JH_NAV: two groups — JobHacker Compass (Narrative · True North · Target
-// companies) and Artefacts (Story Bank · Master CV · LN) — over the same pages;
-// the Artefacts rows are that page's sections.
+// On JobHacking the three artefacts are pages of their own (decision
+// 2026-11-09, docs/UX_JOBHACKING.md §10) — /jobhacking/story-bank ·
+// /jobhacking/master-cv · /jobhacking/linkedin — each with the layout every
+// page has (header · rail · overview rows), one section each for now; a
+// section says which page is its own with `jhPage`. /jobhacking/artefacts is
+// their hub (the mobile tab's landing, old links). On Compass → Settings,
+// Artefacts stays one area. The shell's menu is JH_NAV: two groups — JobHacker
+// Compass (Narrative · True North · Target companies) and Artefacts (Story Bank
+// · Master CV · LN).
 //
 // Same documents as Compass (decision F, 2026-11-03): users/{uid} and
 // users/{uid}/careerOps/setup. A section here is another door onto the same
@@ -46,7 +51,7 @@ export const JH_BASE = "/jobhacking";
 export const SETTINGS_BASE = "/settings";
 export const BASE_OF: Record<ProfilePortal, string> = { compass: SETTINGS_BASE, jobhacking: JH_BASE };
 
-export type JhPageKey = "narrative" | "true-north" | "companies" | "artefacts" | "agents";
+export type JhPageKey = "narrative" | "true-north" | "companies" | "artefacts" | "story-bank" | "master-cv" | "linkedin" | "agents";
 
 export interface JhPage {
   key: JhPageKey;
@@ -57,6 +62,8 @@ export interface JhPage {
   intro: string;
   /** Rendered by one portal only. */
   only?: ProfilePortal;
+  /** The hub this page sits under (the artefact pages → Artefacts): the mobile tab that lights for it, its `‹ Artefacts` row. */
+  parent?: JhPageKey;
 }
 
 export const JH_PAGES = [
@@ -66,6 +73,17 @@ export const JH_PAGES = [
   { key: "artefacts", label: "Artefacts", href: "/jobhacking/artefacts", title: "Artefacts", intro: "What you bring to every application: the stories and proof points behind every answer, the master CV every tailored CV starts from, and the LinkedIn profile to build from them." },
 ] as const satisfies readonly JhPage[];
 
+/**
+ * JobHacking only (decision 2026-11-09): the three artefacts as pages of their
+ * own under the Artefacts hub, each with the layout every page has. One section
+ * each today; the rails fill in as each artefact is broken down.
+ */
+export const ARTEFACT_PAGES = [
+  { key: "story-bank", label: "Story Bank", href: "/jobhacking/story-bank", title: "Story Bank", only: "jobhacking", parent: "artefacts", intro: "The evidence behind every answer: your proof points, the stories that carry them, and the snapshots that aim a story at one company." },
+  { key: "master-cv", label: "Master CV", href: "/jobhacking/master-cv", title: "Master CV", only: "jobhacking", parent: "artefacts", intro: "The one document every tailored CV starts from — and the house rules it follows." },
+  { key: "linkedin", label: "LinkedIn profile", href: "/jobhacking/linkedin", title: "LinkedIn profile", only: "jobhacking", parent: "artefacts", intro: "The profile to build, block by block, each one written to paste." },
+] as const satisfies readonly JhPage[];
+
 /** Compass only: what the agents read that no coach file page shows (docs/UX_SETTINGS_HUB.md §1). */
 export const AGENTS_PAGE = {
   key: "agents", label: "Agents", href: "/settings/agents", title: "Agents", only: "compass",
@@ -73,18 +91,26 @@ export const AGENTS_PAGE = {
 } as const satisfies JhPage;
 
 /** Every page, both portals. */
-export const ALL_PAGES: readonly JhPage[] = [...JH_PAGES, AGENTS_PAGE];
+export const ALL_PAGES: readonly JhPage[] = [...JH_PAGES, ...ARTEFACT_PAGES, AGENTS_PAGE];
 /** The pages one portal renders, in order. */
 export const jhPagesFor = (portal: ProfilePortal): readonly JhPage[] => ALL_PAGES.filter((p) => !p.only || p.only === portal);
 /** A page's URL on a portal: /jobhacking/true-north · /settings/true-north. */
 export const jhPageHref = (key: JhPageKey, base: string = JH_BASE): string => `${base}/${key}`;
+/** The pages under a hub, in order (Artefacts → Story Bank · Master CV · LinkedIn profile). */
+export const jhChildPages = (key: JhPageKey): readonly JhPage[] => ALL_PAGES.filter((p) => p.parent === key);
+/** True when a URL is on a page or on one of the pages under it — the menu row and the mobile tab light by this. */
+export const jhPageActive = (key: JhPageKey, pathname: string): boolean =>
+  [jhPageHref(key), ...jhChildPages(key).map((p) => p.href)].some((href) => pathname === href || pathname.startsWith(`${href}/`));
 
 export const JH_HOME = JH_PAGES[0].href;
 export const JH_SETTINGS_HREF = "/jobhacking/settings";
 
 export interface JhSection {
   key: string;
+  /** The page (Compass → Settings: the area) this section sits on. */
   page: JhPageKey;
+  /** On JobHacking, the page of its own this section sits on instead (the artefacts, decision 2026-11-09). */
+  jhPage?: JhPageKey;
   /** Rail / row label — short. */
   label: string;
   /** The heading on the section itself. */
@@ -121,9 +147,9 @@ export const JH_SECTIONS = [
   { key: "top40", page: "companies", label: "Top 40", title: "Top 40", ask: "The whole field, ranked — every company your coach classified as sunrise (growing) or sunset (shrinking), with the industry and sub-sector each one sits in." },
   { key: "companies", page: "companies", label: "Watchlist", title: "Watchlist", ask: "The careers pages to watch — the page that lists each company's jobs — plus the title keywords to include and exclude. A company without a careers page stays on the list until you add one." },
   // ---- Artefacts (decision 2026-11-05): the story bank (read, edited on request) · the master CV · the LinkedIn profile to build, read-only ----
-  { key: "story-bank", page: "artefacts", label: "Story Bank", title: "Story Bank", ask: "Your proof points — each result and the one number that proves it — the stories behind them, and the snapshots that point a story at one target company." },
-  { key: "master-cv", page: "artefacts", label: "Master CV", title: "Master CV", ask: "The only source of truth about what you have done. Every tailored CV starts from it, and the Evaluator quotes it as evidence." },
-  { key: "linkedin-profile", page: "artefacts", label: "LinkedIn profile", title: "LinkedIn profile", ask: "Your LinkedIn, section by section — headline, About, each role, Featured, skills, education, certifications — written to paste, each block against LinkedIn's limit." },
+  { key: "story-bank", page: "artefacts", jhPage: "story-bank", label: "Story Bank", title: "Story Bank", ask: "Your proof points — each result and the one number that proves it — the stories behind them, and the snapshots that point a story at one target company." },
+  { key: "master-cv", page: "artefacts", jhPage: "master-cv", label: "Master CV", title: "Master CV", ask: "The only source of truth about what you have done. Every tailored CV starts from it, and the Evaluator quotes it as evidence." },
+  { key: "linkedin-profile", page: "artefacts", jhPage: "linkedin", label: "LinkedIn profile", title: "LinkedIn profile", ask: "Your LinkedIn, section by section — headline, About, each role, Featured, skills, education, certifications — written to paste, each block against LinkedIn's limit." },
   // Compass only (2026-11-07): an artefact the agents can point to.
   { key: "portfolio", page: "artefacts", label: "Portfolio / demo", title: "Portfolio or demo", ask: "A live demo, dashboard or public project the agents can point to, and when it's worth sharing.", only: "compass" },
   // ---- Agents (Compass only, 2026-11-07): what only the agents read ----
@@ -147,12 +173,21 @@ export interface PortalOptions {
   careerOps?: boolean;
 }
 
-/** The sections one page renders on one portal, in order. */
-export const jhSectionsFor = (page: JhPageKey, { portal = "jobhacking", careerOps = false }: PortalOptions = {}): readonly JhSectionDef[] =>
-  (JH_SECTIONS as readonly JhSectionDef[]).filter((s) => s.page === page && (!s.only || s.only === portal) && (!s.requires || careerOps));
+/** The page a section is rendered on, per portal: its own page on JobHacking where it has one, else its area. */
+export const jhSectionPage = (s: JhSection, portal: ProfilePortal): JhPageKey => (portal === "jobhacking" ? s.jhPage ?? s.page : s.page);
 
-/** Deep link to a section on its page: /jobhacking/true-north?section=salary · /settings/true-north?section=salary. */
-export const jhSectionHref = (key: JhSectionKey, base: string = JH_BASE): string => `${jhPageHref(findJhSection(key)!.page, base)}?section=${key}`;
+/**
+ * The sections one page renders on one portal, in order. Asked by area
+ * (`artefacts`) it answers for the area — the file preview and a shared
+ * Artefacts link read it that way; asked by a page of its own (`story-bank`)
+ * it answers for that page.
+ */
+export const jhSectionsFor = (page: JhPageKey, { portal = "jobhacking", careerOps = false }: PortalOptions = {}): readonly JhSectionDef[] =>
+  (JH_SECTIONS as readonly JhSectionDef[]).filter((s) => (s.page === page || jhSectionPage(s, portal) === page) && (!s.only || s.only === portal) && (!s.requires || careerOps));
+
+/** Deep link to a section on its page: /jobhacking/true-north?section=salary · /settings/true-north?section=salary · /jobhacking/story-bank?section=story-bank. */
+export const jhSectionHref = (key: JhSectionKey, base: string = JH_BASE): string =>
+  `${jhPageHref(jhSectionPage(findJhSection(key)!, base === JH_BASE ? "jobhacking" : "compass"), base)}?section=${key}`;
 
 /** `?section=roles` → "roles"; unknown, absent or another page's key → null (the overview). */
 export function parseJhSection(raw: string | null | undefined, sections: readonly JhSectionDef[] = JH_SECTIONS as readonly JhSectionDef[]): JhSectionKey | null {
@@ -163,53 +198,28 @@ export function parseJhSection(raw: string | null | undefined, sections: readonl
 //
 // Two groups, not four flat rows. **JobHacker Compass** is who you are and
 // where you're going — Narrative · True North · Target companies — and
-// **Artefacts** is what you bring — Story Bank · Master CV · LN. The Artefacts
-// rows are that page's sections: on desktop the sidebar is the page's rail, so
-// the page renders without one (`jhSectionsInMenu`); on mobile the bottom bar
-// keeps the four pages and the Artefacts overview rows stay the sub-menu, as on
-// every sectioned page. A menu row may carry a shorter label than its section
-// (LN for LinkedIn profile — Rafael's call, 2026-11-08); the section's own
-// label and heading are untouched. The registry itself is unchanged — Artefacts
-// is still one page for the share link, the upload preview and the Settings hub.
+// **Artefacts** is what you bring — Story Bank · Master CV · LN, the three
+// pages under the Artefacts hub (2026-11-09). Every row is a page with the
+// layout every page has. A row may carry a shorter word than its page (LN for
+// LinkedIn profile — Rafael's call, 2026-11-08); the page's own label and
+// heading are untouched. The mobile bottom bar keeps the four JH_PAGES, the
+// Artefacts tab landing on the hub and lit on the pages under it.
 
 export type JhNavGroupKey = "compass" | "artefacts";
-export interface JhNavItem {
-  key: string;
-  label: string;
-  href: string;
-  page: JhPageKey;
-  /** Set when the row is a section of its page, not the page itself. */
-  section?: JhSectionKey;
-}
+export interface JhNavItem { key: JhPageKey; label: string; href: string; page: JhPageKey }
 export interface JhNavGroup { key: JhNavGroupKey; label: string; items: readonly JhNavItem[] }
 
-const navPage = (key: JhPageKey): JhNavItem => { const p = findJhPage(key)!; return { key: p.key, label: p.label, href: p.href, page: p.key }; };
-const navSection = (s: JhSectionDef): JhNavItem => ({ key: s.key, label: JH_NAV_LABEL[s.key] ?? s.label, href: jhSectionHref(s.key), page: s.page, section: s.key });
-
-/** The menu's shorter word for a section, where it has one. */
-const JH_NAV_LABEL: Partial<Record<JhSectionKey, string>> = { "linkedin-profile": "LN" };
+/** The menu's shorter word for a page, where it has one. */
+const JH_NAV_LABEL: Partial<Record<JhPageKey, string>> = { linkedin: "LN" };
+const navPage = (key: JhPageKey): JhNavItem => { const p = findJhPage(key)!; return { key: p.key, label: JH_NAV_LABEL[p.key] ?? p.label, href: p.href, page: p.key }; };
 
 export const JH_NAV: readonly JhNavGroup[] = [
   { key: "compass", label: "JobHacker Compass", items: [navPage("narrative"), navPage("true-north"), navPage("companies")] },
-  { key: "artefacts", label: "Artefacts", items: jhSectionsFor("artefacts").map(navSection) },
+  { key: "artefacts", label: "Artefacts", items: ARTEFACT_PAGES.map((p) => navPage(p.key)) },
 ];
 
-/** True when a page's sections are rows of the shell's menu — on desktop the sidebar is its rail. */
-export const jhSectionsInMenu = (page: JhPageKey): boolean => JH_NAV.some((g) => g.items.some((i) => i.page === page && !!i.section));
-
-/**
- * Whether a menu row is the lit one for a URL. A page row: its path. A section
- * row: its page's path and the open section — the first of its page when
- * `?section=` is absent or unknown, since that is the section the page opens on.
- */
-export function jhNavActive(item: JhNavItem, pathname: string, section: string | null | undefined): boolean {
-  const href = jhPageHref(item.page);
-  if (pathname !== href && !pathname.startsWith(`${href}/`)) return false;
-  if (!item.section) return true;
-  const rows = JH_NAV.flatMap((g) => g.items).filter((i) => i.page === item.page && i.section);
-  const open = rows.find((i) => i.section === section) ?? rows[0];
-  return open.key === item.key;
-}
+/** Whether a menu row is the lit one for a URL — its page's path (or a page under it). */
+export const jhNavActive = (item: JhNavItem, pathname: string): boolean => jhPageActive(item.page, pathname);
 
 /**
  * Where an uploaded profile.yml's sections land in this portal — the links on

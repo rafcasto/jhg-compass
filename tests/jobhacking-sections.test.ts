@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  AGENTS_PAGE, JH_FILE_EDIT, JH_LIST_OF, JH_NAV, JH_PAGES, JH_SECTIONS, JH_SETTINGS_HREF, SETTINGS_BASE, findJhPage, jhAreaRows, jhFileEditHref, jhGoal, jhNavActive, jhPageHref, jhPagesFor, jhSectionsInMenu,
+  AGENTS_PAGE, ARTEFACT_PAGES, JH_FILE_EDIT, JH_LIST_OF, JH_NAV, JH_PAGES, JH_SECTIONS, JH_SETTINGS_HREF, SETTINGS_BASE, findJhPage, jhAreaRows, jhChildPages, jhFileEditHref, jhGoal, jhNavActive, jhPageActive, jhPageHref, jhPagesFor,
   jhRowsFor, jhSectionFields, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, trueNorthBlanks, trueNorthText,
 } from "@/lib/jobhacking/sections";
 import { FILE_SECTIONS } from "@/lib/profile-sections";
@@ -46,40 +46,65 @@ describe("JobHacking — pages and sections", () => {
     expect(JH_SETTINGS_HREF).toBe("/jobhacking/settings");
   });
 
-  describe("the shell's menu is two groups over the same pages (decision 2026-11-08)", () => {
-    it("JobHacker Compass: Narrative · True North · Target companies — the pages; Artefacts: Story Bank · Master CV · LN — that page's sections", () => {
+  describe("the three artefacts are pages of their own under the Artefacts hub (decision 2026-11-09)", () => {
+    it("Story Bank · Master CV · LinkedIn profile — JobHacking only, each under Artefacts, each with its section's layout", () => {
+      expect(ARTEFACT_PAGES.map((p) => [p.key, p.label, p.href, p.only, p.parent])).toEqual([
+        ["story-bank", "Story Bank", "/jobhacking/story-bank", "jobhacking", "artefacts"],
+        ["master-cv", "Master CV", "/jobhacking/master-cv", "jobhacking", "artefacts"],
+        ["linkedin", "LinkedIn profile", "/jobhacking/linkedin", "jobhacking", "artefacts"],
+      ]);
+      expect(jhChildPages("artefacts")).toEqual([...ARTEFACT_PAGES]);
+      expect(jhChildPages("narrative")).toEqual([]);
+      expect(jhPagesFor("jobhacking").map((p) => p.key)).toEqual(["narrative", "true-north", "companies", "artefacts", "story-bank", "master-cv", "linkedin"]);
+      // One section each for now — the rails fill in as each artefact is broken down.
+      expect(jhSectionsFor("story-bank").map((s) => s.key)).toEqual(["story-bank"]);
+      expect(jhSectionsFor("master-cv").map((s) => s.key)).toEqual(["master-cv"]);
+      expect(jhSectionsFor("linkedin").map((s) => s.key)).toEqual(["linkedin-profile"]);
+      // Asked by area, the registry still answers for the three — the file preview and an Artefacts share link read it so.
+      expect(jhSectionsFor("artefacts").map((s) => s.key)).toEqual(["story-bank", "master-cv", "linkedin-profile"]);
+    });
+    it("Compass → Settings is untouched: one Artefacts area, no artefact pages, the Compass hrefs as before", () => {
+      expect(jhPagesFor("compass").map((p) => p.key)).toEqual(["narrative", "true-north", "companies", "artefacts", "agents"]);
+      expect(jhSectionsFor("story-bank", { portal: "compass" })).toEqual([]);
+      expect(jhSectionsFor("artefacts", { portal: "compass" }).map((s) => s.key)).toEqual(["story-bank", "master-cv", "linkedin-profile", "portfolio"]);
+      expect(jhSectionHref("master-cv", SETTINGS_BASE)).toBe("/settings/artefacts?section=master-cv");
+      expect(jhFileEditHref("cv", "compass")).toBe("/settings/artefacts?section=master-cv");
+    });
+    it("on JobHacking a section's link goes to its own page; the upload status line follows", () => {
+      expect(jhSectionHref("story-bank")).toBe("/jobhacking/story-bank?section=story-bank");
+      expect(jhSectionHref("master-cv")).toBe("/jobhacking/master-cv?section=master-cv");
+      expect(jhSectionHref("linkedin-profile")).toBe("/jobhacking/linkedin?section=linkedin-profile");
+      expect(jhSectionHref("headline")).toBe("/jobhacking/narrative?section=headline");
+      expect(jhFileEditHref("cv")).toBe("/jobhacking/master-cv?section=master-cv");
+      expect(jhFileEditHref("linkedin")).toBe("/jobhacking/linkedin?section=linkedin-profile");
+    });
+    it("a page is active on its path or on a page under it — the Artefacts tab lights on Story Bank", () => {
+      expect(jhPageActive("artefacts", "/jobhacking/artefacts")).toBe(true);
+      expect(jhPageActive("artefacts", "/jobhacking/story-bank")).toBe(true);
+      expect(jhPageActive("artefacts", "/jobhacking/linkedin")).toBe(true);
+      expect(jhPageActive("artefacts", "/jobhacking/narrative")).toBe(false);
+      expect(jhPageActive("story-bank", "/jobhacking/artefacts")).toBe(false);
+      expect(jhPageActive("narrative", "/jobhacking/narrative-x")).toBe(false);
+    });
+  });
+
+  describe("the shell's menu is two groups of pages (decisions 2026-11-08/09)", () => {
+    it("JobHacker Compass: Narrative · True North · Target companies; Artefacts: Story Bank · Master CV · LN — the three pages of their own", () => {
       expect(JH_NAV.map((g) => g.label)).toEqual(["JobHacker Compass", "Artefacts"]);
-      expect(JH_NAV[0].items.map((i) => [i.label, i.href, i.section])).toEqual([
-        ["Narrative", "/jobhacking/narrative", undefined], ["True North", "/jobhacking/true-north", undefined], ["Target companies", "/jobhacking/companies", undefined],
-      ]);
-      expect(JH_NAV[1].items.map((i) => [i.label, i.href, i.page])).toEqual([
-        ["Story Bank", "/jobhacking/artefacts?section=story-bank", "artefacts"], ["Master CV", "/jobhacking/artefacts?section=master-cv", "artefacts"], ["LN", "/jobhacking/artefacts?section=linkedin-profile", "artefacts"],
-      ]);
-      // The same sections as the page's own rail, in order; only LN is the menu's shorter word (the section itself still reads LinkedIn profile).
-      expect(JH_NAV[1].items.map((i) => i.section)).toEqual(jhSectionsFor("artefacts").map((s) => s.key));
-      expect(jhSectionsFor("artefacts").map((s) => s.label)).toEqual(["Story Bank", "Master CV", "LinkedIn profile"]);
+      expect(JH_NAV[0].items.map((i) => [i.label, i.href])).toEqual([["Narrative", "/jobhacking/narrative"], ["True North", "/jobhacking/true-north"], ["Target companies", "/jobhacking/companies"]]);
+      expect(JH_NAV[1].items.map((i) => [i.label, i.href])).toEqual([["Story Bank", "/jobhacking/story-bank"], ["Master CV", "/jobhacking/master-cv"], ["LN", "/jobhacking/linkedin"]]);
+      // LN is the menu's word only — the page and its section still read LinkedIn profile.
+      expect(findJhPage("linkedin")?.label).toBe("LinkedIn profile");
+      expect(findJhPage("linkedin")?.title).toBe("LinkedIn profile");
     });
-    it("only the Artefacts page hands its rail to the sidebar; the registry's pages are unchanged", () => {
-      expect(jhSectionsInMenu("artefacts")).toBe(true);
-      expect(["narrative", "true-north", "companies", "agents"].map((p) => jhSectionsInMenu(p as never))).toEqual([false, false, false, false]);
-      expect(jhPagesFor("jobhacking").map((p) => p.key)).toEqual(["narrative", "true-north", "companies", "artefacts"]);
-    });
-    it("lights one row per URL: a page row by its path; a section row by its page and the open section, the first when ?section= is absent", () => {
-      const [narrative, trueNorth] = JH_NAV[0].items;
-      const [storyBank, masterCv, linkedin] = JH_NAV[1].items;
-      expect(jhNavActive(narrative, "/jobhacking/narrative", null)).toBe(true);
-      expect(jhNavActive(narrative, "/jobhacking/narrative", "contact")).toBe(true);
-      expect(jhNavActive(trueNorth, "/jobhacking/narrative", null)).toBe(false);
-      expect(jhNavActive(storyBank, "/jobhacking/artefacts", null)).toBe(true);
-      expect(jhNavActive(masterCv, "/jobhacking/artefacts", null)).toBe(false);
-      expect(jhNavActive(masterCv, "/jobhacking/artefacts", "master-cv")).toBe(true);
-      expect(jhNavActive(storyBank, "/jobhacking/artefacts", "master-cv")).toBe(false);
-      expect(jhNavActive(linkedin, "/jobhacking/artefacts", "linkedin-profile")).toBe(true);
-      // An unknown section is the overview, which opens on the first section.
-      expect(jhNavActive(storyBank, "/jobhacking/artefacts", "nope")).toBe(true);
-      // Another portal's path, or a sibling path with the same prefix, lights nothing.
-      expect(jhNavActive(storyBank, "/settings/artefacts", "story-bank")).toBe(false);
-      expect(jhNavActive(narrative, "/jobhacking/narrative-x", null)).toBe(false);
+    it("lights one row per URL, by page", () => {
+      const [narrative] = JH_NAV[0].items;
+      const [storyBank, masterCv] = JH_NAV[1].items;
+      expect(jhNavActive(narrative, "/jobhacking/narrative")).toBe(true);
+      expect(jhNavActive(storyBank, "/jobhacking/story-bank")).toBe(true);
+      expect(jhNavActive(masterCv, "/jobhacking/story-bank")).toBe(false);
+      expect(jhNavActive(storyBank, "/jobhacking/artefacts")).toBe(false);
+      expect(jhNavActive(storyBank, "/settings/artefacts")).toBe(false);
     });
   });
 
@@ -104,7 +129,7 @@ describe("JobHacking — pages and sections", () => {
   });
 
   it("Compass → Settings renders the same pages plus the Agents area, and the Compass-only sections in place (decision 2026-11-07)", () => {
-    expect(jhPagesFor("jobhacking")).toEqual([...JH_PAGES]);
+    expect(jhPagesFor("jobhacking").slice(0, 4)).toEqual([...JH_PAGES]);
     expect(jhPagesFor("compass").map((p) => p.key)).toEqual(["narrative", "true-north", "companies", "artefacts", "agents"]);
     expect(AGENTS_PAGE.only).toBe("compass");
     expect(findJhPage("agents")?.label).toBe("Agents");
@@ -147,7 +172,8 @@ describe("JobHacking — pages and sections", () => {
     expect(JH_FILE_EDIT.artefacts).toBe("story-bank");
     expect(JH_FILE_EDIT.linkedin).toBe("linkedin-profile");
     expect(JH_FILE_EDIT.notes).toBe("notes");
-    expect(jhFileEditHref("cv")).toBe("/jobhacking/artefacts?section=master-cv");
+    // On JobHacking the CV's section is a page of its own since 2026-11-09.
+    expect(jhFileEditHref("cv")).toBe("/jobhacking/master-cv?section=master-cv");
     expect(jhFileEditHref("cv", "compass")).toBe("/settings/artefacts?section=master-cv");
     // Notes is Compass only — the JobHacking status line has nowhere to send the member.
     expect(jhFileEditHref("notes")).toBeNull();
@@ -250,7 +276,8 @@ describe("Compass → Settings — the hub's rows", () => {
     const fresh = jhAreaRows({ setup: null, profile: null }, { portal: "compass" });
     expect(fresh.every((r) => r.state === "empty" && r.summary === "Not set")).toBe(true);
     expect(fresh.map((r) => r.count)).toEqual(["0/4", "0/8", "0/4", "0/4", "0/1"]);
-    expect(jhAreaRows({ setup: null, profile: null }).map((r) => r.key)).toEqual(["narrative", "true-north", "companies", "artefacts"]);
+    // JobHacking: the four pages, then the three artefact pages (one section each — the hub's rows read them).
+    expect(jhAreaRows({ setup: null, profile: null }).map((r) => [r.key, r.count])).toEqual([["narrative", "0/4"], ["true-north", "0/7"], ["companies", "0/4"], ["artefacts", "0/3"], ["story-bank", "0/1"], ["master-cv", "0/1"], ["linkedin", "0/1"]]);
   });
 });
 

@@ -16,9 +16,9 @@ const grouped = [
   { key: "narrative", label: "Narrative", icon: UserRound, href: "/jobhacking/narrative", group: "JobHacker Compass" },
   { key: "true-north", label: "True North", icon: Navigation, href: "/jobhacking/true-north", group: "JobHacker Compass" },
   { key: "companies", label: "Target companies", icon: Building2, href: "/jobhacking/companies", group: "JobHacker Compass" },
-  { key: "story-bank", label: "Story Bank", icon: BookOpen, href: "/jobhacking/artefacts?section=story-bank", group: "Artefacts", active: true },
-  { key: "master-cv", label: "Master CV", icon: FileText, href: "/jobhacking/artefacts?section=master-cv", group: "Artefacts" },
-  { key: "linkedin-profile", label: "LN", icon: Linkedin, href: "/jobhacking/artefacts?section=linkedin-profile", group: "Artefacts" },
+  { key: "story-bank", label: "Story Bank", icon: BookOpen, href: "/jobhacking/story-bank", group: "Artefacts", active: true },
+  { key: "master-cv", label: "Master CV", icon: FileText, href: "/jobhacking/master-cv", group: "Artefacts" },
+  { key: "linkedin", label: "LN", icon: Linkedin, href: "/jobhacking/linkedin", group: "Artefacts" },
   { key: "/admin", label: "Admin", icon: Shield, href: "/admin" },
 ];
 
@@ -37,7 +37,7 @@ describe("grouped sidebar", () => {
     expect(links.map((l) => l.textContent?.trim())).toEqual(["Narrative", "True North", "Target companies", "Story Bank", "Master CV", "LN", "Admin"]);
     expect(within(primary).getByRole("link", { name: "Story Bank" })).toHaveAttribute("aria-current", "page");
     expect(within(primary).getByRole("link", { name: "Master CV" })).not.toHaveAttribute("aria-current");
-    expect(within(primary).getByRole("link", { name: "Master CV" })).toHaveAttribute("href", "/jobhacking/artefacts?section=master-cv");
+    expect(within(primary).getByRole("link", { name: "Master CV" })).toHaveAttribute("href", "/jobhacking/master-cv");
     // A heading is text, never a link or a button.
     expect(within(primary).queryByRole("link", { name: "JobHacker Compass" })).not.toBeInTheDocument();
     expect(within(primary).queryByRole("button")).not.toBeInTheDocument();

@@ -33,11 +33,14 @@
   its pages render through the same `components/profile/SectionsPage.tsx`. Switched on per member (`features.jobHacking`) or by a
   "JobHacking only" registration link (`features.compass: false`). Never invent a field for it: every section reads
   something `profile.yml` carries. `goal.seniority` is a real goal field (True North · Target seniority).
-  **The menu is two groups** (decision 2026-11-08, `docs/UX_JOBHACKING.md §9`): `JH_NAV` — **JobHacker Compass** (Narrative · True
-  North · Target companies) and **Artefacts** (Story Bank · Master CV · **LN**, that page's sections via `jhSectionHref`; LN is the
-  menu's word, `JH_NAV_LABEL` — the section stays *LinkedIn profile*) — drawn by `DesktopSidebar` as `.section-label` headings over
-  the one row recipe. Artefacts stays one registry page; on JobHacking it renders `rail={false}` (the sidebar is its rail). The
-  mobile bottom bar keeps the four pages.
+  **The menu is two groups** (decisions 2026-11-08/09, `docs/UX_JOBHACKING.md §9–10`): `JH_NAV` — **JobHacker Compass** (Narrative ·
+  True North · Target companies) and **Artefacts** (Story Bank · Master CV · **LN**; LN is the menu's word, `JH_NAV_LABEL` — the page
+  stays *LinkedIn profile*) — drawn by `DesktopSidebar` as `.section-label` headings over the one row recipe. **The three artefacts are
+  pages of their own on JobHacking** (`ARTEFACT_PAGES`: `/jobhacking/story-bank · master-cv · linkedin`, `only: "jobhacking"`, `parent:
+  "artefacts"`), each the same `SectionsPage` layout with one section for now; a section names its own page with `jhPage`, and
+  `jhSectionsFor` answers by area (`artefacts` → the three) as well as by page. `/jobhacking/artefacts` is their hub (`ArtefactsHub`) —
+  the mobile tab's landing; the bottom bar keeps the four pages. Compass → Settings keeps one Artefacts area. Share is one link per page
+  with a header (`SHARE_PAGES`, six); the hub mints none.
   Target companies (decision 2026-11-05, `docs/UX_JOBHACKING.md §3b`) is **Top 3 · Top 10 · Top 40 · Watchlist**: the first three
   read `companyLists.top3 · top10 · all` (the Packer's ranked lists, sunrise / sunset), are read-only, and never feed the Scout's
   `watchlist`; `all` is shown as "Top 40". They render through `components/jobhacking/CompanyListPanel.tsx` — the same ranked
