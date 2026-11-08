@@ -1,6 +1,6 @@
 # JobHacking portal
 
-**Decision (2026-11-03):** a third portal beside Compass and CareerOps, in the same shell. Three menu pages — **Narrative · True North · Target companies** — plus **Settings**, which is one thing: upload a `profile.yml`. **Decision (2026-11-05):** Target companies opens on the Packer's three ranked lists — **Top 3 · Top 10 · Top 40** — read-only, grouped sunrise / sunset, with the watchlist as the fourth section (§3b). **Decision (2026-11-05):** a fourth menu page, **Artefacts** — **Story Bank · Master CV · LinkedIn profile** — the Packer's proof points, stories and snapshots read-only, the one master CV, and the LinkedIn profile to build, block by block (§3d). It renders from the same documents as Compass (`users/{uid}` and `users/{uid}/careerOps/setup`): a section here is another door onto the same field, never a copy.
+**Decision (2026-11-03):** a third portal beside Compass and CareerOps, in the same shell. Three menu pages — **Narrative · True North · Target companies** — plus **Settings**, which is one thing: upload a `profile.yml`. **Decision (2026-11-05):** Target companies opens on the Packer's three ranked lists — **Top 3 · Top 10 · Top 40** — read-only, grouped sunrise / sunset, with the watchlist as the fourth section (§3b). **Decision (2026-11-05):** a fourth menu page, **Artefacts** — **Story Bank · Master CV · LinkedIn profile** — the Packer's proof points, stories and snapshots read-only, the one master CV, and the LinkedIn profile to build, block by block (§3d). It renders from the same documents as Compass (`users/{uid}` and `users/{uid}/careerOps/setup`): a section here is another door onto the same field, never a copy. **Decision (2026-11-08):** the desktop menu is two groups — **JobHacker Compass** (Narrative · True North · Target companies) and **Artefacts** (Story Bank · Master CV · LN) — over the same four pages (§9).
 
 **Method:** Refactoring UI's seven principles, applied through the Compass profile pages' own system (`docs/UX_PROFILE.md`, `docs/UX_AUDIT_COMPASS_TABS.md §0`). Nothing new was designed where the Compass system already had the answer; the one new piece is the True North statement.
 
@@ -266,3 +266,26 @@ jhg:                                                     # new — the JobHacker
 ## 8. Revision 2026-11-07 — the same pages on Compass → Settings
 
 The registry here is now rendered by two portals (`docs/UX_SETTINGS_HUB.md`). Nothing on the JobHacking menu changed: `jhSectionsFor(page)` defaults to the JobHacking portal and returns exactly the lists above. Compass → Settings renders the same pages under `/settings/<area>` plus sections flagged `only: "compass"` (Work rights, Portfolio / demo, the Agents area) that this portal never sees. Two fields joined sections both portals share, where their question is asked: **Target roles** now carries the adaptive framing per archetype (`personalization.adaptiveFraming`), **Salary range** the negotiation scripts (`personalization.negotiationScripts`); the upload preview sees them through `jhSectionFields`. The True North statement is the one goal statement everywhere — `lib/goal.ts` owns the sentence; `TrueNorthStatement` takes a `base` so its links go to the portal it is on. JobHacking → Settings renders the shared `ProfileFilesPanel`.
+
+## 9. Revision 2026-11-08 — the menu in two groups
+
+**Decision (Rafael's call).** The JobHacking sidebar is **two groups**, not four flat rows:
+
+| Group | Rows | What it is |
+|---|---|---|
+| **JobHacker Compass** | Narrative · True North · Target companies | Who you are, where you're going, where |
+| **Artefacts** | Story Bank · Master CV · LN | What you bring |
+
+Then Settings · Sign out in the account group, as before. The source is `JH_NAV` in `lib/jobhacking/sections.ts`; the shell (`AppShell`) maps it onto the sidebar's rows, each carrying its `group`, and `DesktopSidebar` draws a group as the section rails already do — a `.section-label` heading over its rows, 16px between groups, 4px within (`groupTabs`). One row recipe; the heading is text, never a link.
+
+**The registry did not change.** Artefacts is still one page (`/jobhacking/artefacts`): the share link (`docs/UX_SHARE.md`), the upload preview (§4b), the Settings hub's area row and Compass → Settings → Artefacts all read it as before. The Artefacts rows of the menu are that page's three sections, linked through `jhSectionHref` (`?section=story-bank` …). A menu row may carry a shorter word than its section (`JH_NAV_LABEL`): **LN** for LinkedIn profile (Rafael's call, 2026-11-08) — the section's own label (rail, mobile rows, upload preview) and its heading still read *LinkedIn profile*, so the full name is one tap away and nothing else in the portal is renamed. The group is **JobHacker Compass**, not *Compass* alone (Rafael's call, same day): the portal switcher already offers a *Compass* portal, and the product's full name keeps the two apart.
+
+**No duplicate menu.** On desktop the sidebar is now the Artefacts page's rail, so the page renders without one: `JobHackingScreen` passes `rail={false}` to `SectionsPage` when `jhSectionsInMenu(page)` and the portal is JobHacking. The section keeps the rail layout's measure (`md:max-w-[840px]` = 1104 − 232 − 32) so Story Bank rows and the CV editor read at the same width as every other section. The one thing lost on desktop is the rail's progress bar and state glyphs for those three sections; the Settings hub's Artefacts row and the mobile overview still carry them.
+
+**Mobile is unchanged.** The bottom bar keeps the four pages — six 11px labels (*Target companies*, *LinkedIn profile*) do not fit 390px, and a tab bar has no headings — and the Artefacts overview rows (state glyph · summary · chevron) stay the sub-menu, as on every sectioned page. Compass → Settings renders the same page with its rail, as before.
+
+**Which row is lit** is the registry's rule, `jhNavActive(item, pathname, section)`: a page row by its path; a section row by its page's path and the open section — the first of its page when `?section=` is absent or unknown, because that is the section the page opens on. The shell reads `?section=` through `useSearchParams` under a Suspense boundary (the app router's requirement), with the section-less sidebar as the fallback.
+
+Rejected: three routes (`/jobhacking/story-bank` …) — a second home for sections that share, upload and the hub already address by page; clickable group headings (a heading that is also a link to the first row is two controls for one row); grouping the bottom bar; renaming the section itself to *LN* (the upload preview and the share document would inherit an abbreviation).
+
+Scores: `/jobhacking/artefacts` stays **9 / 10** — the sidebar replaces the rail one for one; the Compass group's three pages are untouched.

@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { BookOpen, Building2, Contact, FileText, Globe, KeyRound, Linkedin, ListOrdered, MapPin, Medal, Navigation, Quote, ShieldBan, ShieldCheck, Sparkles, StickyNote, Target, Trophy, Wallet, Factory, Layers, Store, type LucideProps } from "lucide-react";
-import type { ComponentType } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import PortalAccounts from "@/components/agents/PortalAccounts";
 import ContactPolicy from "@/components/careerops/ContactPolicy";
@@ -14,7 +12,7 @@ import NotesPanel from "@/components/profile/NotesPanel";
 import SectionsPage from "@/components/profile/SectionsPage";
 import type { SectionItem } from "@/components/profile/SectionList";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
-import { BASE_OF, JH_LIST_OF, findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, type JhPageKey, type JhSectionKey, type ProfilePortal } from "@/lib/jobhacking/sections";
+import { BASE_OF, JH_LIST_OF, findJhPage, jhGoal, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, jhSectionsInMenu, parseJhSection, type JhPageKey, type JhSectionKey, type ProfilePortal } from "@/lib/jobhacking/sections";
 import { isSharePage, shareEmpty } from "@/lib/jobhacking/share";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Goal } from "@/lib/goal";
@@ -23,6 +21,7 @@ import { cvRuleFacts, cvRuleLists, languageLines } from "@/lib/jobhacking/workbo
 import CompanyListPanel from "./CompanyListPanel";
 import FileFacts from "./FileFacts";
 import LinkedinProfilePanel from "./LinkedinProfilePanel";
+import { JH_SECTION_ICONS } from "./pageIcons";
 import { ShareButton, ShareStatus, useShare } from "./SharePage";
 import StoryBankPanel from "./StoryBankPanel";
 import WatchlistSection from "./WatchlistSection";
@@ -44,14 +43,10 @@ import { BoundariesPanel, CompetencyFacts, ContactFacts, HeadlineFacts, StoryFac
 // On JobHacking each page can be shared read-only as a document
 // (docs/UX_SHARE.md): one Share button in the header, a status line under it
 // while the link is on. Both read the owner's record live.
-
-const ICONS: Record<JhSectionKey, ComponentType<LucideProps>> = {
-  contact: Contact, competencies: Layers, headline: Quote, story: Sparkles,
-  industry: Factory, roles: Target, seniority: Navigation, salary: Wallet, location: MapPin, "work-rights": ShieldCheck, "company-type": Store, boundaries: ShieldBan,
-  top3: Trophy, top10: Medal, top40: ListOrdered, companies: Building2,
-  "story-bank": BookOpen, "master-cv": FileText, "linkedin-profile": Linkedin, portfolio: Globe,
-  accounts: KeyRound, notes: StickyNote,
-};
+//
+// On JobHacking the Artefacts page's sections are rows of the shell's menu
+// (decision 2026-11-08, docs/UX_JOBHACKING.md §9): the sidebar is its rail on
+// desktop, so the page renders without one. Mobile is unchanged.
 
 export default function JobHackingScreen({ page, portal = "jobhacking", careerOps = false, accounts = 0, publicKey = null }: {
   page: JhPageKey;
@@ -69,7 +64,7 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
   const meta = findJhPage(page)!;
   const sections = useMemo(() => jhSectionsFor(page, { portal, careerOps }), [page, portal, careerOps]);
   const items = useMemo<SectionItem<JhSectionKey>[]>(
-    () => sections.map((s) => ({ key: s.key, label: s.label, title: s.title, ask: s.ask, href: jhSectionHref(s.key, base), icon: ICONS[s.key] })),
+    () => sections.map((s) => ({ key: s.key, label: s.label, title: s.title, ask: s.ask, href: jhSectionHref(s.key, base), icon: JH_SECTION_ICONS[s.key] })),
     [sections, base],
   );
   const { data: profile, loading: profileLoading } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
@@ -102,6 +97,7 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
       items={items}
       rows={rows}
       active={active}
+      rail={compass || !jhSectionsInMenu(page)}
       // Every editor reads its fields once, on mount: remount them when an upload lands (the slot records change).
       panelKey={JSON.stringify(setup?.profileFiles ?? null)}
       loading={!uid || setupLoading || profileLoading}

@@ -16,6 +16,10 @@ import SectionList, { type SectionItem, type SectionRow } from "./SectionList";
 // section drills in with a `‹ Page` back row and prev / next at the bottom.
 // A page under a hub (Settings → True North) names its `parent`: a `‹ Settings`
 // row leads the desktop rail and the mobile overview.
+// A page whose sections are rows of the shell's menu (JobHacking → Artefacts,
+// docs/UX_JOBHACKING.md §9) passes `rail={false}`: on desktop the sidebar is
+// its rail, so the section renders alone at the same measure as every other
+// page's content column; mobile is unchanged.
 // Every page passes its items, the rows that summarise them, and a panel
 // renderer; everything else here is the same on purpose.
 
@@ -28,7 +32,7 @@ export function sectionsProgress(rows: readonly SectionRow[]): SectionsProgress 
 }
 
 export default function SectionsPage<K extends string>({
-  id, backHref, eyebrow, title, intro, actions, identity, lead, items, rows, active, panel, panelKey, loading = false, status, parent,
+  id, backHref, eyebrow, title, intro, actions, identity, lead, items, rows, active, panel, panelKey, loading = false, status, parent, rail = true,
 }: {
   /** Prefix for the section heading's id (one per page). */
   id: string;
@@ -54,6 +58,8 @@ export default function SectionsPage<K extends string>({
   status?: ReactNode;
   /** The hub this page sits under — a back row at the top of the rail and of the mobile overview. */
   parent?: { label: string; href: string };
+  /** false when the shell's sidebar lists this page's sections: no desktop rail, the section alone. */
+  rail?: boolean;
 }) {
   const progress = sectionsProgress(rows);
   const shown: K = active ?? items[0].key;
@@ -95,14 +101,17 @@ export default function SectionsPage<K extends string>({
 
       {lead && <div className={active ? "hidden md:block" : ""}>{lead}</div>}
 
-      <div className="md:grid md:grid-cols-[232px_minmax(0,1fr)] md:items-start md:gap-8">
+      {/* Without a rail the column keeps the rail layout's measure: 1104 − 232 − 32 = 840px. */}
+      <div className={rail ? "md:grid md:grid-cols-[232px_minmax(0,1fr)] md:items-start md:gap-8" : "md:max-w-[840px]"}>
         {/* ---- Desktop rail ---- */}
-        <aside className="hidden md:block md:sticky md:top-11 space-y-5">
-          {parentRow && <div className="-mt-2">{parentRow}</div>}
-          {identity}
-          <SectionList items={items} rows={rows} active={shown} variant="rail" label={listLabel} />
-          <div className="border-t border-jh-line pt-4">{progressBar}</div>
-        </aside>
+        {rail && (
+          <aside className="hidden md:block md:sticky md:top-11 space-y-5">
+            {parentRow && <div className="-mt-2">{parentRow}</div>}
+            {identity}
+            <SectionList items={items} rows={rows} active={shown} variant="rail" label={listLabel} />
+            <div className="border-t border-jh-line pt-4">{progressBar}</div>
+          </aside>
+        )}
 
         <div className="min-w-0">
           {/* ---- Mobile overview ---- */}
