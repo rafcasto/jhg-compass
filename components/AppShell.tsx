@@ -30,9 +30,9 @@ const SECTION_ICONS: Record<string, ComponentType<LucideProps>> = { sourcing: Ra
 
 // One shell, three portals. Compass: Compass · Performance · Progress · Coaching.
 // CareerOps: Sourcing · Scoring · Tailoring · Tracking. JobHacking: two groups
-// in the sidebar (decision 2026-11-08, docs/UX_JOBHACKING.md §9) — Compass:
-// Narrative · True North · Target companies; Artefacts: Story Bank · Master CV ·
-// LinkedIn profile — and the four pages in the mobile bottom bar, where six
+// in the sidebar (decision 2026-11-08, docs/UX_JOBHACKING.md §9) — JobHacker
+// Compass: Narrative · True North · Target companies; Artefacts: Story Bank ·
+// Master CV · LN — and the four pages in the mobile bottom bar, where six
 // labels won't fit and the Artefacts overview rows are the sub-menu. The account
 // group is Settings and Sign out on every portal (the Profile row went into
 // Settings, 2026-11-07 — docs/UX_SETTINGS_HUB.md). The logo section is the

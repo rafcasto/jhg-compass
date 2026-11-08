@@ -47,16 +47,17 @@ describe("JobHacking — pages and sections", () => {
   });
 
   describe("the shell's menu is two groups over the same pages (decision 2026-11-08)", () => {
-    it("Compass: Narrative · True North · Target companies — the pages; Artefacts: Story Bank · Master CV · LinkedIn profile — that page's sections", () => {
-      expect(JH_NAV.map((g) => g.label)).toEqual(["Compass", "Artefacts"]);
+    it("JobHacker Compass: Narrative · True North · Target companies — the pages; Artefacts: Story Bank · Master CV · LN — that page's sections", () => {
+      expect(JH_NAV.map((g) => g.label)).toEqual(["JobHacker Compass", "Artefacts"]);
       expect(JH_NAV[0].items.map((i) => [i.label, i.href, i.section])).toEqual([
         ["Narrative", "/jobhacking/narrative", undefined], ["True North", "/jobhacking/true-north", undefined], ["Target companies", "/jobhacking/companies", undefined],
       ]);
       expect(JH_NAV[1].items.map((i) => [i.label, i.href, i.page])).toEqual([
-        ["Story Bank", "/jobhacking/artefacts?section=story-bank", "artefacts"], ["Master CV", "/jobhacking/artefacts?section=master-cv", "artefacts"], ["LinkedIn profile", "/jobhacking/artefacts?section=linkedin-profile", "artefacts"],
+        ["Story Bank", "/jobhacking/artefacts?section=story-bank", "artefacts"], ["Master CV", "/jobhacking/artefacts?section=master-cv", "artefacts"], ["LN", "/jobhacking/artefacts?section=linkedin-profile", "artefacts"],
       ]);
-      // The same labels as the page's own rail — the menu never renames a section.
-      expect(JH_NAV[1].items.map((i) => i.label)).toEqual(jhSectionsFor("artefacts").map((s) => s.label));
+      // The same sections as the page's own rail, in order; only LN is the menu's shorter word (the section itself still reads LinkedIn profile).
+      expect(JH_NAV[1].items.map((i) => i.section)).toEqual(jhSectionsFor("artefacts").map((s) => s.key));
+      expect(jhSectionsFor("artefacts").map((s) => s.label)).toEqual(["Story Bank", "Master CV", "LinkedIn profile"]);
     });
     it("only the Artefacts page hands its rail to the sidebar; the registry's pages are unchanged", () => {
       expect(jhSectionsInMenu("artefacts")).toBe(true);

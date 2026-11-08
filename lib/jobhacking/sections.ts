@@ -18,9 +18,9 @@
 //   * Compass only.
 //
 // The JobHacking shell's menu (decision 2026-11-08, docs/UX_JOBHACKING.md §9)
-// is JH_NAV: two groups — Compass (Narrative · True North · Target companies)
-// and Artefacts (Story Bank · Master CV · LinkedIn profile) — over the same
-// pages; the Artefacts rows are that page's sections.
+// is JH_NAV: two groups — JobHacker Compass (Narrative · True North · Target
+// companies) and Artefacts (Story Bank · Master CV · LN) — over the same pages;
+// the Artefacts rows are that page's sections.
 //
 // Same documents as Compass (decision F, 2026-11-03): users/{uid} and
 // users/{uid}/careerOps/setup. A section here is another door onto the same
@@ -161,14 +161,16 @@ export function parseJhSection(raw: string | null | undefined, sections: readonl
 
 // ---- the JobHacking shell's menu (decision 2026-11-08, docs/UX_JOBHACKING.md §9) ----
 //
-// Two groups, not four flat rows. **Compass** is who you are and where you're
-// going — Narrative · True North · Target companies — and **Artefacts** is what
-// you bring — Story Bank · Master CV · LinkedIn profile. The Artefacts rows are
-// that page's sections: on desktop the sidebar is the page's rail, so the page
-// renders without one (`jhSectionsInMenu`); on mobile the bottom bar keeps the
-// four pages and the Artefacts overview rows stay the sub-menu, as on every
-// sectioned page. The registry itself is unchanged — Artefacts is still one
-// page for the share link, the upload preview and the Settings hub.
+// Two groups, not four flat rows. **JobHacker Compass** is who you are and
+// where you're going — Narrative · True North · Target companies — and
+// **Artefacts** is what you bring — Story Bank · Master CV · LN. The Artefacts
+// rows are that page's sections: on desktop the sidebar is the page's rail, so
+// the page renders without one (`jhSectionsInMenu`); on mobile the bottom bar
+// keeps the four pages and the Artefacts overview rows stay the sub-menu, as on
+// every sectioned page. A menu row may carry a shorter label than its section
+// (LN for LinkedIn profile — Rafael's call, 2026-11-08); the section's own
+// label and heading are untouched. The registry itself is unchanged — Artefacts
+// is still one page for the share link, the upload preview and the Settings hub.
 
 export type JhNavGroupKey = "compass" | "artefacts";
 export interface JhNavItem {
@@ -182,10 +184,13 @@ export interface JhNavItem {
 export interface JhNavGroup { key: JhNavGroupKey; label: string; items: readonly JhNavItem[] }
 
 const navPage = (key: JhPageKey): JhNavItem => { const p = findJhPage(key)!; return { key: p.key, label: p.label, href: p.href, page: p.key }; };
-const navSection = (s: JhSectionDef): JhNavItem => ({ key: s.key, label: s.label, href: jhSectionHref(s.key), page: s.page, section: s.key });
+const navSection = (s: JhSectionDef): JhNavItem => ({ key: s.key, label: JH_NAV_LABEL[s.key] ?? s.label, href: jhSectionHref(s.key), page: s.page, section: s.key });
+
+/** The menu's shorter word for a section, where it has one. */
+const JH_NAV_LABEL: Partial<Record<JhSectionKey, string>> = { "linkedin-profile": "LN" };
 
 export const JH_NAV: readonly JhNavGroup[] = [
-  { key: "compass", label: "Compass", items: [navPage("narrative"), navPage("true-north"), navPage("companies")] },
+  { key: "compass", label: "JobHacker Compass", items: [navPage("narrative"), navPage("true-north"), navPage("companies")] },
   { key: "artefacts", label: "Artefacts", items: jhSectionsFor("artefacts").map(navSection) },
 ];
 

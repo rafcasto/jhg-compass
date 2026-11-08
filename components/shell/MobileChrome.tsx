@@ -18,7 +18,7 @@ export interface TabItem {
   icon: ComponentType<LucideProps>;
   href: string;
   active?: boolean;
-  /** The sidebar heading this row sits under (JobHacking: Compass · Artefacts). The bottom bar ignores it. */
+  /** The sidebar heading this row sits under (JobHacking: JobHacker Compass · Artefacts). The bottom bar ignores it. */
   group?: string;
 }
 

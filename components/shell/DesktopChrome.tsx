@@ -54,7 +54,7 @@ export function DesktopSidebar({
           </div>
         )}
       </div>
-      {/* Grouped rows (JobHacking: Compass · Artefacts) read as the section rails do — a
+      {/* Grouped rows (JobHacking: JobHacker Compass · Artefacts) read as the section rails do — a
           `.section-label` heading over its rows, 16px between groups, 4px within. */}
       <nav className="flex-1 space-y-4" aria-label="Primary">
         {groupTabs(items).map(({ group, items: list }, gi) => (
