@@ -5,16 +5,17 @@ import { mergeProfile, parseProfileFile, profileFromSetup, profileToSetupPatch, 
 import { profileDiff } from "@/lib/careerops/profile-diff";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 
-// The Packer writes the profile as four files (decision 2026-11-07):
-// narrative · true-north · target-companies · artefacts. public/*.example.yml
+// The Packer writes the profile as six files (decision 2026-11-07; six since
+// 2026-11-09): narrative · true-north · target-companies · story-bank ·
+// master-cv · linkedin. public/*.example.yml
 // are the Packer's own samples, and this is the contract: every key they carry
 // is accepted, read, stored, shown and exported again. Change the schema
 // without updating the samples and this fails.
 
 const read = (name: string) => readFileSync(path.resolve(__dirname, `../public/${name}.example.yml`), "utf8");
-const FILES = ["narrative", "true-north", "target-companies", "artefacts"] as const;
+const FILES = ["narrative", "true-north", "target-companies", "story-bank", "master-cv", "linkedin"] as const;
 
-describe("the four Packer files", () => {
+describe("the six Packer files", () => {
   for (const name of FILES) {
     it(`${name}.example.yml matches the schema with no errors`, () => {
       const r = parseProfileFile(read(name), `${name}.example.yml`);
@@ -68,26 +69,47 @@ describe("the four Packer files", () => {
     expect(tc.top3?.map((c) => c.byDate)).toEqual(["2026-11-04", "2026-11-05", "2026-11-06"]);
   });
 
-  it("artefacts — reads STAR-R stories, snapshot context, proof-point URLs, LinkedIn, the CV and the story facts", () => {
-    const p = parseProfileFile(read("artefacts"), "artefacts.yml").profile;
-    expect(p.contact).toEqual({ title: "Delivery Lead for SaaS teams scaling past product–market fit" });
+  it("story-bank — reads STAR-R stories, snapshot context, proof-point URLs, the framing and the story facts", () => {
+    const p = parseProfileFile(read("story-bank"), "story-bank.yml").profile;
+    expect(p.contact).toEqual({ portfolio: "https://ana-ferreira.example/release-cadence-playbook" });
     expect(p.personalization?.adaptiveFraming).toHaveLength(3);
     expect(p.personalization?.portfolio?.url).toBe("https://ana-ferreira.example/release-cadence-playbook");
     expect(p.narrative?.proofPoints?.[0]).toEqual({ name: "Fortnightly release train", url: "https://ana-ferreira.example/release-cadence-playbook", heroMetric: "Monthly to fortnightly releases, 9 teams" });
     expect(p.stories?.[0]).toMatchObject({ id: "S1", situation: "a 110-engineer logistics SaaS doubling in size", task: "Own fortnightly release train", reflection: "Measure the outcome the business already watches before changing anything.", provenance: "verified" });
     expect(p.snapshots?.[0]).toMatchObject({ company: "Kauri Logistics Cloud", storyId: "S1", role: "Delivery Lead", activities: ["Mapped every team's release steps", "Introduced one release train with readiness checks", "Published the cadence and the numbers weekly"], results: ["9 teams", "2 quarters"], keyDecisions: ["Kept team-owned readiness checks instead of a central release team"] });
-    expect(p.linkedin?.experience).toHaveLength(2);
+    expect(p.jhg?.progress?.storyBank).toEqual({ status: "complete", updated: "2026-11-06" });
+    expect(p.jhg?.artefacts?.storyFacts).toHaveLength(10);
+    expect(p.jhg?.artefacts?.storyFacts?.[9].sourceStatus).toBe("user_cannot_confirm");
+    expect(p.linkedin).toBeUndefined();
+    expect(p.cv).toBeUndefined();
+  });
+
+  it("master-cv — reads the CV, its headline and LinkedIn URL, the notes and the CV rules", () => {
+    const p = parseProfileFile(read("master-cv"), "master-cv.yml").profile;
+    expect(p.contact).toEqual({ title: "Delivery Lead for SaaS teams scaling past product–market fit", linkedin: "https://www.linkedin.com/in/example-ana-ferreira" });
     expect(p.cv).toMatch(/^# CV -- Ana Ferreira/);
+    expect(p.notes).toMatch(/^Hard no's/);
+    expect(p.jhg?.progress?.masterCv).toEqual({ status: "complete", updated: "2026-11-06" });
     const a = p.jhg?.artefacts!;
-    expect(a.storyFacts).toHaveLength(10);
-    expect(a.storyFacts?.[9].sourceStatus).toBe("user_cannot_confirm");
+    expect(a.storyFacts).toBeUndefined();
+    expect(a.currentDomain).toBe("logistics and accounting SaaS");
     expect(a.cvHouseRules).toHaveLength(2);
     expect(a.lockedSections).toEqual(["Projects"]);
     expect(a.languageLearning?.[0]).toMatchObject({ language: "te reo Māori", countries: ["New Zealand"] });
+    expect(a.linkedinPublicUrl).toBe("https://www.linkedin.com/in/example-ana-ferreira");
+    expect(p.stories).toBeUndefined();
+  });
+
+  it("linkedin — reads the LinkedIn profile and nothing else", () => {
+    const p = parseProfileFile(read("linkedin"), "linkedin.yml").profile;
+    expect(p.linkedin?.experience).toHaveLength(2);
+    expect(p.linkedin?.skills).toHaveLength(5);
+    expect(p.jhg?.progress?.linkedin).toEqual({ status: "complete", updated: "2026-11-06" });
+    expect(Object.keys(p).filter((k) => p[k as keyof typeof p] !== undefined).sort()).toEqual(["jhg", "linkedin", "version"]);
   });
 });
 
-describe("merging the four files, in any order, into one profile", () => {
+describe("merging the six files, in any order, into one profile", () => {
   const parsed = Object.fromEntries(FILES.map((n) => [n, parseProfileFile(read(n), `${n}.yml`).profile])) as Record<(typeof FILES)[number], ProfileFile>;
 
   const unpackAll = (order: readonly (typeof FILES)[number][]): CareerOpsSetupV2 => {
@@ -99,8 +121,8 @@ describe("merging the four files, in any order, into one profile", () => {
     return setup as CareerOpsSetupV2;
   };
 
-  it("keeps the Narrative file's phone when the Artefacts file brings only the title", () => {
-    const setup = unpackAll(["narrative", "artefacts"]);
+  it("keeps the Narrative file's phone when the Master CV file brings only the title and LinkedIn URL", () => {
+    const setup = unpackAll(["narrative", "master-cv"]);
     expect(setup.contact).toEqual({ phone: "+64 21 555 0199", linkedin: "https://www.linkedin.com/in/example-ana-ferreira", portfolio: "https://ana-ferreira.example/release-cadence-playbook", title: "Delivery Lead for SaaS teams scaling past product–market fit" });
   });
 
@@ -117,7 +139,7 @@ describe("merging the four files, in any order, into one profile", () => {
   it("accumulates progress and identity across the files and keeps each working block", () => {
     const a = unpackAll(FILES), b = unpackAll([...FILES].reverse());
     for (const setup of [a, b]) {
-      expect(Object.keys(setup.jhg?.progress ?? {}).sort()).toEqual(["artefacts", "narrative", "targetCompanies", "trueNorth"]);
+      expect(Object.keys(setup.jhg?.progress ?? {}).sort()).toEqual(["linkedin", "masterCv", "narrative", "storyBank", "targetCompanies", "trueNorth"]);
       expect(setup.jhg?.identity?.timezone).toBe("Pacific/Auckland");
       expect(setup.jhg?.trueNorth?.postings).toHaveLength(15);
       expect(setup.jhg?.targetCompanies?.top3).toHaveLength(3);
@@ -125,6 +147,16 @@ describe("merging the four files, in any order, into one profile", () => {
       expect(setup.jhg?.narrative?.leadSkills).toHaveLength(3);
     }
     expect(a.jhg).toEqual(b.jhg);
+  });
+
+  it("the artefacts working block is shared — story-bank.yml's facts and master-cv.yml's rules sit together, in either order", () => {
+    for (const order of [["story-bank", "master-cv"], ["master-cv", "story-bank"]] as const) {
+      const a = unpackAll(order).jhg?.artefacts!;
+      expect(a.storyFacts).toHaveLength(10);
+      expect(a.cvHouseRules).toHaveLength(2);
+      expect(a.lockedSections).toEqual(["Projects"]);
+      expect(a.linkedinPublicUrl).toMatch(/^https:/);
+    }
   });
 
   it("round-trips the merged profile through export without loss", () => {
@@ -141,7 +173,7 @@ describe("merging the four files, in any order, into one profile", () => {
 
   it("the review diffs the merged result — a second file adds, never drops", () => {
     const current = profileFromSetup({ profile: null, setup: unpackAll(["narrative"]) });
-    const d = profileDiff(current, mergeProfile(current, parsed.artefacts)).find((x) => x.key === "contact")!;
+    const d = profileDiff(current, mergeProfile(current, parsed["master-cv"])).find((x) => x.key === "contact")!;
     expect(d.kind).toBe("add");
     expect(d.headline).toBe("adds 1, keeps 3");
   });

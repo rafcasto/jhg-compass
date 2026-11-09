@@ -13,7 +13,7 @@
 | Surface today | What's wrong (Refactoring UI lens) |
 |---|---|
 | Account group: **Profile · Settings · Sign out** | Two doors onto one `profile.yml`. "Who am I" vs "what the agents work from" is a storage split, not a member's question — the Compass tab's goal is on *Profile*, the companies it is scored against are on *Settings*, and the page cross-links to say so. **Hierarchy:** two equal rows for one thing. |
-| `/profile` — 6 sections, 2 groups, Export · Upload | Fine on its own; but Upload here only knows one whole-file `profile.yml`, while JobHacking → Settings knows the Packer's **four files**. Two upload grammars for one member. |
+| `/profile` — 6 sections, 2 groups, Export · Upload | Fine on its own; but Upload here only knows one whole-file `profile.yml`, while JobHacking → Settings knows the Packer's **six files** (four at the time of this audit). Two upload grammars for one member. |
 | `/settings` — 6 flat sections | Flat list mixes *master CV* (the member's most important artefact) with *notes* and *portfolio*. **Hierarchy:** everything the same weight. |
 | JobHacking portal — Narrative · True North · Target companies · Artefacts · Settings | The better IA (JobHackers vocabulary, True North statement, ranked company lists, story bank, LinkedIn blocks, workbook facts beside each field). A Compass member with `features.jobHacking` off never sees it; one with it on sees the same fields twice under two names (*Exit story* / *Bridge story*). |
 
@@ -74,13 +74,15 @@ Everything the agents work from. Upload your coach's files, or open any area and
 │ ━━━━━━━━━━━━━ 43%│  │ │ ○ Agents           Not set                             0/2 ›│ │
 │                  │  │ └───────────────────────────────────────────────────────────┘ │
 │                  │  │                                                               │
-│                  │  │ YOUR PROFILE FILES                    2 of 4   [⬆ Upload files]│
+│                  │  │ YOUR PROFILE FILES                    2 of 6                  │
 │                  │  │ ┌───────────────────────────────────────────────────────────┐ │
 │                  │  │ │ ✦ Narrative   narrative.yml   ✓ Uploaded 3 Nov    [Replace]│ │
 │                  │  │ │ ➤ True North  true-north.yml  ✓ Uploaded 3 Nov    [Replace]│ │
 │                  │  │ │ ▦ Target cos  target-comp…yml ◌ Not uploaded yet   [Upload]│ │
-│                  │  │ │ ▤ Artefacts   artefacts.yml   ◌ Not uploaded yet   [Upload]│ │
-│                  │  │ │ ┈ Drop one file — or all four — anywhere on this page ┈   │ │
+│                  │  │ │ ▤ Story Bank  story-bank.yml  ◌ Not uploaded yet   [Upload]│ │
+│                  │  │ │ ▤ Master CV   master-cv.yml   ◌ Not uploaded yet   [Upload]│ │
+│                  │  │ │ ▤ LinkedIn    linkedin.yml    ◌ Not uploaded yet   [Upload]│ │
+│                  │  │ │ ┈ Drop one file — or all of them — anywhere on this page ┈│ │
 │                  │  │ └───────────────────────────────────────────────────────────┘ │
 └──────────────────┘  └───────────────────────────────────────────────────────────────┘
 ```
@@ -108,7 +110,7 @@ Everything the agents work from. Upload your coach's files, or open any area and
 ## 5. What does not change
 
 - Storage. Still `users/{uid}` + `users/{uid}/careerOps/setup`; every panel saves the subset it saves today; `goalWrites` / `goalInEffect` stay the one reading of the goal.
-- `profile.yml` schema, the four Packer files, `mergeProfile`, `ProfileUploadSheet`, `jhFilePreview`, `public/*.example.yml`, `tests/profile-files-examples.test.ts`.
+- `profile.yml` schema, the six Packer files (four at the time; decision 2026-11-09, `docs/UX_JOBHACKING.md §4`), `mergeProfile`, `ProfileUploadSheet`, `jhFilePreview`, `public/*.example.yml`, `tests/profile-files-examples.test.ts`.
 - Every panel: `ContactPolicy`, `Personalization`, `TrueNorthPanel`, `CompanyListPanel`, `WatchlistSection` + `WatchlistPanel`, `StoryBankPanel` + editor, `CvPanel`, `LinkedinProfilePanel`, `PortalAccounts`, `NotesPanel`, `FileFacts`, `WorkbookPanels`.
 - The JobHacking portal's four pages and its Settings (the files panel is the same component under the same header), the JobHacking-only registration path, the admin TOFU switches.
 - The Compass tab, Performance, Progress, Coaching, onboarding wizard, CareerOps intake / setup.

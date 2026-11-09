@@ -10,7 +10,7 @@ import CompanyListPanel from "@/components/jobhacking/CompanyListPanel";
 import StoryBankPanel from "@/components/jobhacking/StoryBankPanel";
 import { BoundariesPanel, TrueNorthFacts } from "@/components/jobhacking/WorkbookPanels";
 
-// The four files' working data on the pages — docs/UX_JOBHACKING.md §4b.
+// The six files' working data on the pages — docs/UX_JOBHACKING.md §4b.
 
 const read = (name: string) => parseProfileFile(readFileSync(path.resolve(__dirname, `../public/${name}.example.yml`), "utf8"), `${name}.yml`).profile;
 
@@ -54,7 +54,7 @@ describe("Target companies with the workbook", () => {
 
 describe("Story Bank with STAR-R and story facts", () => {
   it("shows situation · task · action · reflection, the fact behind the story, and the snapshot detail", () => {
-    const p = read("artefacts");
+    const p = read("story-bank");
     render(<StoryBankPanel uid="u1" source={{ narrative: p.narrative, stories: p.stories, snapshots: p.snapshots }} jhg={p.jhg} />);
     expect(screen.getAllByText("Situation")).toHaveLength(9);
     expect(screen.getByText("a 110-engineer logistics SaaS doubling in size")).toBeInTheDocument();

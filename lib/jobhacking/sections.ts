@@ -178,12 +178,14 @@ export const jhSectionPage = (s: JhSection, portal: ProfilePortal): JhPageKey =>
 
 /**
  * The sections one page renders on one portal, in order. Asked by area
- * (`artefacts`) it answers for the area — the file preview and a shared
- * Artefacts link read it that way; asked by a page of its own (`story-bank`)
- * it answers for that page.
+ * (`artefacts`) it answers for the area — a shared Artefacts link reads it
+ * that way; asked by a page of its own (`story-bank`) it answers for that page
+ * on either portal — the Compass Settings hub has no such page, but its six
+ * file slots preview by the file's page and link into the Artefacts area
+ * (decision 2026-11-09).
  */
 export const jhSectionsFor = (page: JhPageKey, { portal = "jobhacking", careerOps = false }: PortalOptions = {}): readonly JhSectionDef[] =>
-  (JH_SECTIONS as readonly JhSectionDef[]).filter((s) => (s.page === page || jhSectionPage(s, portal) === page) && (!s.only || s.only === portal) && (!s.requires || careerOps));
+  (JH_SECTIONS as readonly JhSectionDef[]).filter((s) => (s.page === page || s.jhPage === page) && (!s.only || s.only === portal) && (!s.requires || careerOps));
 
 /** Deep link to a section on its page: /jobhacking/true-north?section=salary · /settings/true-north?section=salary · /jobhacking/story-bank?section=story-bank. */
 export const jhSectionHref = (key: JhSectionKey, base: string = JH_BASE): string =>

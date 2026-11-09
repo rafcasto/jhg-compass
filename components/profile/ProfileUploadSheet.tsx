@@ -25,7 +25,7 @@ import type { Profile } from "@/lib/types";
 // refused with its paths, and the rest still go through), named for the slot
 // it fills (its own jhg.progress stamp, else its filename), and merged KEY BY
 // KEY onto what is stored and onto the files before it: a field a file does
-// not mention is never dropped. The review lists, for each of the four files,
+// not mention is never dropped. The review lists, for each of the six files,
 // EXACTLY the sections of the page it fills — one row per section, the page's
 // labels, nothing more, nothing less (decision 2026-11-07) — and what the
 // file would do to each. One Unpack writes the lot. A whole profile.yml still
@@ -42,11 +42,11 @@ interface Taken {
   filename: string;
   raw: string;
   parse: ProfileFileParse;
-  /** Which of the four it is; null for a whole profile.yml. */
+  /** Which of the six it is; null for a whole profile.yml. */
   file: JhgFileKey | null;
 }
 
-/** One row of the review — a page section (one of the four files) or a storage section (a whole profile.yml). */
+/** One row of the review — a page section (one of the six files) or a storage section (a whole profile.yml). */
 export interface ReviewRow { key: string; label: string; href: string | null; inFile: boolean; kind: DiffKind; headline: string; detail?: string }
 
 export default function ProfileUploadSheet({ uid, setup, profile, current, initialFiles, expect, portal = "jobhacking", careerOps = false, fileSectionHref, onClose, onDone, onDownloadCurrent }: {
@@ -65,7 +65,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
   /** Where a whole profile.yml's storage section is edited on this portal — the status line's links. */
   fileSectionHref: (key: FileSectionKey) => string | null;
   onClose: () => void;
-  /** The sections the unpack changed, with their links, and which of the four files were unpacked. */
+  /** The sections the unpack changed, with their links, and which of the six files were unpacked. */
   onDone: (changed: { label: string; href: string | null }[], files: JhgFileKey[]) => void;
   onDownloadCurrent: () => void;
 }) {
@@ -175,7 +175,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
     <Sheet
       title={title}
       eyebrow={review ? "Step 2 of 2 · Review" : "Step 1 of 2 · Pick a file"}
-      description={review ? undefined : expected ? `${expected.filename} from your coach's Packer. It is read in your browser and nothing is saved until you confirm.` : "One of the four files your coach's Packer writes — or all four at once. Read in your browser; nothing is saved until you confirm."}
+      description={review ? undefined : expected ? `${expected.filename} from your coach's Packer. It is read in your browser and nothing is saved until you confirm.` : `One of the ${JH_FILES.length} files your coach's Packer writes — or all of them at once. Read in your browser; nothing is saved until you confirm.`}
       size="lg"
       onClose={onClose}
       dirty={!!review}
@@ -217,7 +217,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
           className={`rounded-sm border-[1.5px] border-dashed p-8 text-center transition-colors ${over ? "border-jh-red bg-jh-red/5" : "border-jh-line-2"}`}
         >
           <p className="text-sm text-jh-ink">{expected ? `Drop ${expected.filename} here` : "Drop your files here"}</p>
-          <p className="text-xs text-jh-mute mt-1">.yml · up to {PROFILE_MAX_BYTES / 1024} kB each{expected ? "" : " · one file or all four"}</p>
+          <p className="text-xs text-jh-mute mt-1">.yml · up to {PROFILE_MAX_BYTES / 1024} kB each{expected ? "" : " · one file or all of them"}</p>
           <label className="btn-secondary mt-4 inline-flex text-xs px-3 py-2 cursor-pointer">
             <Upload className="h-3.5 w-3.5" /> {expected ? "Choose the file" : "Choose files"}
             <input ref={fileRef} type="file" accept={PROFILE_ACCEPT} multiple={!expected} className="sr-only" onChange={(e) => { take(e.target.files); e.target.value = ""; }} />
@@ -228,7 +228,7 @@ export default function ProfileUploadSheet({ uid, setup, profile, current, initi
         <div className="space-y-5">
           {reviewSteps.map(({ t, rows }) => {
             const slot = findJhFile(t.file);
-            // The four files: every section of the page, always. A whole profile: only the storage sections it carries.
+            // The six files: every section of the page, always. A whole profile: only the storage sections it carries.
             const shown = slot ? rows : rows.filter((d) => d.inFile);
             const elsewhere = expected && t.file && t.file !== expected.key;
             return (

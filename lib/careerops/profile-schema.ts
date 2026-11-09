@@ -37,9 +37,9 @@ export const STORY_KEYS = ["id", "title", "situation", "task", "action", "result
 export const SNAPSHOT_KEYS = ["company", "storyId", "title", "context", "challenge", "role", "activities", "results", "relevance", "keyDecisions"] as const;
 const SNAPSHOT_LIST_KEYS = ["activities", "results", "keyDecisions"] as const;
 export const NARRATIVE_KEYS = ["proofPoints", "headline", "superpowers"] as const;
-// jhg — the JobHackers workbook the four Packer files carry (added 2026-11-07). One spec per block, checked like the rest.
+// jhg — the JobHackers workbook the Packer files carry (added 2026-11-07; six files since 2026-11-09). One spec per block, checked like the rest.
 export const JHG_KEYS = ["progress", "identity", "narrative", "trueNorth", "targetCompanies", "artefacts"] as const;
-export const JHG_FILE_KEYS = ["narrative", "trueNorth", "targetCompanies", "artefacts"] as const;
+export const JHG_FILE_KEYS = ["narrative", "trueNorth", "targetCompanies", "storyBank", "masterCv", "linkedin"] as const;
 // linkedin — one block per LinkedIn section (added 2026-11-05). Text limits are LinkedIn's own; a block over
 // its limit is kept whole and said once — the panel shows it as over, which is the point of knowing the limit.
 export const LINKEDIN_KEYS = ["headline", "about", "experience", "featured", "skills", "education", "certifications"] as const;

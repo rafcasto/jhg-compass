@@ -22,7 +22,7 @@ type ResponseRow = {
   createdAt: number;
 };
 
-const UNLOCK_LABEL: Record<string, string> = { narrative: "Narrative", trueNorth: "True North", targetCompanies: "Target companies", artefacts: "Artefacts" };
+const UNLOCK_LABEL: Record<string, string> = { narrative: "Narrative", trueNorth: "True North", targetCompanies: "Target companies", storyBank: "Story Bank", masterCv: "Master CV", linkedin: "LinkedIn", artefacts: "Artefacts (retired file)" };
 
 const SOURCE_LABEL: Record<FeedbackSource, string> = { global: "Global", link: "Link", lock: "Upload lock" };
 

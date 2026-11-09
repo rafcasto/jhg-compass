@@ -13,7 +13,7 @@ import type { Profile } from "@/lib/types";
 // in it. Built from the same registry and the same fields as the page.
 
 const read = (name: string) => readFileSync(path.resolve(__dirname, `../public/${name}.example.yml`), "utf8");
-const FILES = ["narrative", "true-north", "target-companies", "artefacts"] as const;
+const FILES = ["narrative", "true-north", "target-companies", "story-bank", "master-cv", "linkedin"] as const;
 
 /** The four Packer samples unpacked, as Settings does it — the fullest profile there is. */
 function unpackAll(): CareerOpsSetupV2 {

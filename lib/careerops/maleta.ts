@@ -182,14 +182,15 @@ export function mergeMaleta(current: Maleta, incoming: Maleta): Maleta {
   if (incoming.jhg) {
     const cur = current.jhg ?? {};
     const inc = incoming.jhg;
-    // progress and identity accumulate across the four files; each working block belongs to one file and is replaced whole.
+    // progress and identity accumulate across the six files. A working block that belongs to one file is replaced
+    // whole; `artefacts` is shared by story-bank.yml (storyFacts) and master-cv.yml (the CV rules), so it merges by key.
     out.jhg = pruned({
       progress: mergeMap(cur.progress, inc.progress) ?? cur.progress,
       identity: mergeMap(cur.identity, inc.identity) ?? cur.identity,
       narrative: inc.narrative ?? cur.narrative,
       trueNorth: inc.trueNorth ?? cur.trueNorth,
       targetCompanies: inc.targetCompanies ?? cur.targetCompanies,
-      artefacts: inc.artefacts ?? cur.artefacts,
+      artefacts: mergeMap(cur.artefacts, inc.artefacts) ?? cur.artefacts,
     } as JhgBlock);
   }
   return out;

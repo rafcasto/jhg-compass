@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { DEFAULT_TEXT } from "@/lib/content";
 
-// The upload sheet with one of the four Packer files, end to end: drop →
+// The upload sheet with one of the six Packer files, end to end: drop →
 // review lists the page's sections, nothing more → Unpack writes the page's
 // fields (docs/UX_JOBHACKING.md §4, decision 2026-11-07).
 
@@ -16,11 +16,11 @@ vi.mock("@/lib/firestore/content", () => ({ useContent: () => ({ t: (k: string) 
 
 import ProfileUploadSheet from "@/components/profile/ProfileUploadSheet";
 import { profileFromSetup } from "@/lib/careerops/profile-file";
-import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
+import type { CareerOpsSetupV2, JhgFileKey } from "@/lib/careerops/types";
 
 const read = (name: string) => readFileSync(path.resolve(__dirname, `../public/${name}.example.yml`), "utf8");
 
-function mount(setup: CareerOpsSetupV2 | null, files: File[], expect?: "narrative" | "trueNorth" | "targetCompanies" | "artefacts") {
+function mount(setup: CareerOpsSetupV2 | null, files: File[], expect?: JhgFileKey) {
   const onDone = vi.fn();
   render(
     <ProfileUploadSheet
@@ -73,11 +73,13 @@ describe("ProfileUploadSheet — the four files", () => {
     );
   });
 
-  it("true-north.yml reviews as the seven True North sections; dropping all four at once lists each page", async () => {
+  it("true-north.yml reviews as the seven True North sections; dropping several at once lists each page — one row for each artefact file", async () => {
     mount(null, [
       new File([read("true-north")], "true-north.yml"),
       new File([read("target-companies")], "target-companies.yml"),
-      new File([read("artefacts")], "artefacts.yml"),
+      new File([read("story-bank")], "story-bank.yml"),
+      new File([read("master-cv")], "master-cv.yml"),
+      new File([read("linkedin")], "linkedin.yml"),
     ]);
     // The review's section lists are the `.card` ones; a file's warnings render as a list too.
     const lists = (await screen.findAllByRole("list")).filter((l) => l.classList.contains("card"));
@@ -85,8 +87,10 @@ describe("ProfileUploadSheet — the four files", () => {
     expect(labels).toEqual([
       ["Target industry", "Target roles", "Seniority", "Salary range", "Location", "Company type", "Boundaries"],
       ["Top 3", "Top 10", "Top 40", "Watchlist"],
-      ["Story Bank", "Master CV", "LinkedIn profile"],
+      ["Story Bank"],
+      ["Master CV"],
+      ["LinkedIn profile"],
     ]);
-    expect(screen.getByRole("button", { name: /Unpack 3 files/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Unpack 5 files/ })).toBeInTheDocument();
   });
 });
