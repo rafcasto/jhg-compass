@@ -8,15 +8,15 @@ import { JSON_SCHEMA, load } from "js-yaml";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 
 // tests/fixtures/packer/*.yml are a second set of real Packer files (Laurent,
-// 2026-11-07) — the ones that showed the samples were not the whole shape
-// (extraSubSectors, linkedinPublicUrl, contact.github). Every attribute they
-// carry must be accepted with no error and no warning, and each must land on
-// its page.
+// 2026-11-07; the three artefact files from the v7 Packer, 2026-11-09) — the
+// ones that showed the samples were not the whole shape (extraSubSectors,
+// linkedinPublicUrl, contact.github). Every attribute they carry must be
+// accepted with no error and no warning, and each must land on its page.
 
 const read = (name: string) => readFileSync(path.resolve(__dirname, `fixtures/packer/${name}.yml`), "utf8");
-const FILES = [["narrative", "narrative"], ["true-north", "trueNorth"], ["target-companies", "targetCompanies"], ["artefacts", "artefacts"]] as const;
+const FILES = [["narrative", "narrative"], ["true-north", "trueNorth"], ["target-companies", "targetCompanies"], ["story-bank", "storyBank"], ["master-cv", "masterCv"], ["linkedin", "linkedin"]] as const;
 
-describe("a second Packer's four files", () => {
+describe("a second Packer's six files", () => {
   for (const [name, key] of FILES) {
     it(`${name}.yml — no errors, no unknown-key warnings, detected as ${key}`, () => {
       const r = parseProfileFile(read(name), `${name}.yml`);
@@ -50,12 +50,32 @@ describe("a second Packer's four files", () => {
     expect(jhFileName("narrative", { jhg: { identity: { email: "x@y.z" } } })).toBeNull();
   });
 
-  it("target-companies.yml keeps the extra sub-sectors and an unclassified group; artefacts.yml keeps the public LinkedIn URL", () => {
+  it("target-companies.yml keeps the extra sub-sectors and an unclassified group; master-cv.yml keeps the public LinkedIn URL", () => {
     const tc = parseProfileFile(read("target-companies"), "target-companies.yml").profile;
     expect(tc.jhg?.targetCompanies?.extraSubSectors?.[0]).toMatchObject({ name: "Hotel booking software", industry: "Travel technology", outlook: "sunrise" });
     expect(tc.companyLists?.all?.unclassified?.length).toBeGreaterThan(0);
-    const a = parseProfileFile(read("artefacts"), "artefacts.yml").profile;
-    expect(a.jhg?.artefacts?.linkedinPublicUrl).toMatch(/^https?:/);
+    const cv = parseProfileFile(read("master-cv"), "master-cv.yml").profile;
+    expect(cv.jhg?.artefacts?.linkedinPublicUrl).toMatch(/^https?:/);
+  });
+
+  it("the three artefact files each review as their one page section, and together keep every artefacts fact", () => {
+    let setup: Partial<CareerOpsSetupV2> = {};
+    const rows: string[] = [];
+    for (const [name, key] of [["story-bank", "storyBank"], ["master-cv", "masterCv"], ["linkedin", "linkedin"]] as const) {
+      const current = profileFromSetup({ profile: null, setup: setup as CareerOpsSetupV2 });
+      const shaped = shapeJhFile(key, parseProfileFile(read(name), `${name}.yml`).profile, current);
+      const after = { ...setup, ...profileToSetupPatch(mergeProfile(current, shaped)).setup };
+      rows.push(...jhFilePreview(key, shaped, setup, after, null).map((r) => `${r.label}: ${r.headline}`));
+      setup = after;
+    }
+    expect(rows).toEqual(["Story Bank: adds", "Master CV: adds", "LinkedIn profile: adds"]);
+    expect(setup.jhg?.artefacts?.storyFacts).toHaveLength(9);
+    expect(setup.jhg?.artefacts?.cvHouseRules).toHaveLength(2);
+    expect(setup.jhg?.artefacts?.languageLearning?.[0].language).toBe("German");
+    expect(Object.keys(setup.jhg?.progress ?? {}).sort()).toEqual(["linkedin", "masterCv", "storyBank"]);
+    expect(setup.linkedin?.experience).toHaveLength(2);
+    expect(setup.cvMarkdown).toMatch(/^# CV -- Laurent Simon/);
+    expect(setup.narrative?.proofPoints).toHaveLength(8);
   });
 
   it("a key the Packer adds tomorrow is kept with a warning, never a refusal", () => {

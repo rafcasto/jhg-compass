@@ -1,6 +1,6 @@
 version: 1
 contact:
-  title: "Delivery Lead for SaaS teams scaling past product–market fit"
+  portfolio: "https://ana-ferreira.example/release-cadence-playbook"
 personalization:
   adaptiveFraming:
     - role: "Delivery reliability under growth"
@@ -17,14 +17,6 @@ personalization:
     url: "https://ana-ferreira.example/release-cadence-playbook"
     description: "The release-cadence playbook: monthly to fortnightly across 9 teams in 2 quarters"
     whenToShare: "Delivery Lead, Engineering Operations Manager; after a first conversation that names release pain"
-notes: |-
-  Hard no's (do not apply): on-site 5 days; hands-on coding roles; defence or gambling sectors
-  Culture must-haves: engineers present in planning; incidents reviewed without blame; no unpaid take-home over 6 hours; deprioritise when absent: Y
-  Soft dislikes (lower, not a no): pre-seed stage; agencies; companies under 30 staff
-  Notice period: 28 days
-  Never apply: Rapid Freight Systems; Kiwi Bet Online
-  CV house rules: Single column, standard section headings, no tables, no photo, no graphics, nothing in header/footer; Contact details in the body only; standard fonts 10–12 pt when rendered; .docx or PDF only
-  Top 3 right now: Kauri Logistics Cloud, Harbourline Health Tech, Tōtara Payments
 narrative:
   proofPoints:
     - name: "Fortnightly release train"
@@ -167,138 +159,9 @@ snapshots:
       - "7"
       - "12 months"
     relevance: "Tōtara freezes releases around peak trading because of incident risk"
-linkedin:
-  headline: "Delivery Lead for SaaS scale-ups · Monthly to fortnightly releases across 9 teams · Incidents cut from 14 to 7 a month"
-  about: |-
-    I make releases boring at SaaS companies that are growing fast.
-
-    At FreightDesk Software I moved nine teams from monthly to fortnightly releases in 2 quarters while engineering doubled, and production incidents fell from 14 to 7 a month in 12 months. Before that, at Ledgerline, I redesigned on-call so out-of-hours pages dropped from 22 to 6 a month in 1 quarter.
-
-    What the work looks like: one release train that every team owns, blameless reviews tied to service ownership, and a weekly commitments review so enterprise dates hold. I measure delivery in the numbers the business already tracks, so engineering and leadership argue about the same facts.
-
-    I'm looking for a Delivery Lead role at a SaaS scale-up where releases have started to hurt. If that's your team, message me here.
-  experience:
-    - title: "Delivery Lead"
-      company: "FreightDesk Software"
-      location: "Wellington, New Zealand"
-      start: "2022-03"
-      end: ""
-      description: |-
-        Led delivery for a logistics SaaS engineering organisation that doubled in size across nine teams.
-
-        Moved release cadence from monthly to fortnightly across 9 teams in 2 quarters, by introducing a single release train with team-owned readiness checks
-        Halved production incidents from 14 to 7 a month in 12 months, by pairing blameless reviews with service ownership
-      skills:
-        - "Release management"
-        - "Incident management"
-        - "Programme delivery"
-    - title: "Delivery Manager (promoted from Operations Analyst)"
-      company: "Ledgerline"
-      location: "Auckland, New Zealand"
-      start: "2019-07"
-      end: "2022-02"
-      description: |-
-        Ran delivery for an accounting-integrations SaaS team selling to accounting firms in New Zealand and Australia.
-
-        Reduced out-of-hours pages from 22 to 6 a month in 1 quarter, by redesigning the on-call rota around service ownership
-      skills:
-        - "Incident management"
-        - "On-call design"
-  featured:
-    - kind: "document"
-      title: "The release-cadence playbook: monthly to fortnightly across 9 teams in 2 quarters"
-      url: "https://ana-ferreira.example/release-cadence-playbook"
-    - kind: "article"
-      title: "How 240 tenants moved on the date we sold"
-      url: "https://ana-ferreira.example/tenant-migration"
-    - kind: "post"
-      title: "Halving incidents without a blame culture"
-      url: "https://www.linkedin.com/posts/example-ana-ferreira-incidents"
-  skills:
-    - "Release management"
-    - "Incident management"
-    - "Programme delivery"
-    - "On-call design"
-    - "Cost of delivery"
-  education:
-    - school: "Victoria University of Wellington"
-      degree: "Bachelor of Commerce"
-      field: "Information Systems"
-      start: "2014"
-      end: "2017"
-  certifications:
-    - name: "ICAgile Certified Professional in Agile Coaching"
-      issuer: "ICAgile"
-      issued: "2021-05"
-      url: ""
-cv: |-
-  # CV -- Ana Ferreira
-
-  **Headline:** Delivery Lead for SaaS teams scaling past product–market fit | Release management | Incident reduction | Customer commitments
-  **Location:** Wellington, New Zealand
-  **Email:** ana.ferreira@mail.example
-  **Phone:** +64 21 555 0199
-  **LinkedIn:** https://www.linkedin.com/in/example-ana-ferreira
-  **Portfolio:** https://ana-ferreira.example/release-cadence-playbook
-
-  ## Professional Summary
-
-  Delivery Lead specialising in release management for B2B SaaS scale-ups, moving 9 teams from monthly to fortnightly releases in 2 quarters. Known for incident reduction from 14 to 7 a month, customer commitments kept at 18 of 18, and cross-team dependencies cleared from about 30% to 12% blocked work. Experienced in release cadence, on-call design and CI tooling, with a focus on predictable delivery while headcount doubles.
-
-  ## Work Experience
-
-  ### FreightDesk Software -- Wellington, New Zealand
-
-  **Delivery Lead**
-  March 2022 – Present
-
-  Led delivery for a logistics SaaS engineering organisation that doubled in size across nine teams.
-
-  - Moved release cadence from monthly to fortnightly across 9 teams in 2 quarters, by introducing a single release train with team-owned readiness checks
-  - Halved production incidents from 14 to 7 a month in 12 months, by pairing blameless reviews with service ownership
-  - Migrated 240 enterprise tenants in 11 months on the sold date, by agreeing a dated plan with every account owner
-  - Kept 18 of 18 committed enterprise delivery dates over 24 months across 3 product lines, by running a weekly commitments review
-  - Cut CI spend by 31% in 1 quarter, by consolidating 3 pipeline tools into one
-
-  ### Ledgerline -- Auckland, New Zealand
-
-  **Delivery Manager (promoted from Operations Analyst)**
-  July 2019 – February 2022
-
-  Ran delivery for an accounting-integrations SaaS team selling to accounting firms in New Zealand and Australia.
-
-  - Reduced out-of-hours pages from 22 to 6 a month in 1 quarter, by redesigning the on-call rota around service ownership
-  - Cut blocked work from about 30% to 12% of tickets in 6 months, by creating one cross-team dependency board every team updated before planning
-
-  ## Projects
-
-  - **Fortnightly release train** -- 9 teams on separate calendars → one release train, monthly to fortnightly in 2 quarters
-  - **Tenant migration programme** -- platform migration promised to enterprise customers → 240 tenants in 11 months, on the sold date
-  - **Incident halving** -- rising incidents during rapid hiring → 14 to 7 a month in 12 months
-  - **Cadence playbook reuse** -- the release playbook adopted by 2 other Wellington SaaS teams
-
-  ## Education
-
-  - Bachelor of Commerce (Information Systems), Victoria University of Wellington (2017)
-
-  ## Certifications
-
-  - ICAgile Certified Professional in Agile Coaching, ICAgile, 2021
-
-  ## Awards
-
-  - Operational Excellence award, FreightDesk Software, 2023
-
-  ## Skills
-
-  - **Core expertise:** Release management; release cadence; incident reduction; on-call design; cross-team dependencies; customer commitments
-  - **Adjacent credibility:** Programme delivery; stakeholder reporting; cost of delivery
-  - **Industry keywords:** B2B SaaS; logistics software; enterprise migrations
-  - **Tools and software:** Jira; Linear; GitHub Actions; Buildkite
-  - **Languages:** English (native); te reo Māori (beginner)
 jhg:
   progress:
-    artefacts:
+    storyBank:
       status: "complete"
       updated: "2026-11-06"
   identity:
@@ -399,17 +262,3 @@ jhg:
           - "1"
         sourceStatus: "user_cannot_confirm"
         sourceNote: "Remembered; no artefact"
-    currentDomain: "logistics and accounting SaaS"
-    cvHouseRules:
-      - "Single column, standard section headings, no tables, no photo, no graphics, nothing in header/footer"
-      - "Contact details in the body only; standard fonts 10–12 pt when rendered; .docx or PDF only"
-    lockedSections:
-      - "Projects"
-    languageLearning:
-      - language: "te reo Māori"
-        currentLevel: "beginner"
-        targetLevel: "conversational"
-        targetDate: "end of 2027"
-        sentence: "Kei te ako ahau i te reo Māori."
-        countries:
-          - "New Zealand"

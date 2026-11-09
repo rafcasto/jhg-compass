@@ -1,17 +1,22 @@
-// The four Packer files — docs/UX_JOBHACKING.md §4 (decision 2026-11-07).
+// The six Packer files — docs/UX_JOBHACKING.md §4 (decision 2026-11-07; six
+// files since 2026-11-09).
 //
-// The Packer writes a member's profile as four .yml files, one per JobHacking
-// page: narrative · true-north · target-companies · artefacts. Each is a
-// subset of the one profile.yml schema, with a `jhg.progress.<file>` stamp
-// that says which it is. The Settings page has one slot per file; a member
-// drops one, or all four at once, and each lands in its slot. A whole
-// profile.yml (no stamp) still works — it fills every slot.
+// The Packer writes a member's profile as six .yml files, one per JobHacking
+// page: narrative · true-north · target-companies · story-bank · master-cv ·
+// linkedin. Each is a subset of the one profile.yml schema, with a
+// `jhg.progress.<file>` stamp that says which it is. The Settings page has one
+// slot per file; a member drops one, or all six at once, and each lands in its
+// slot. A whole profile.yml (no stamp) still works — it fills every slot.
+//
+// The one artefacts.yml the Packer used to write is retired: it is no longer
+// a slot (a stale one still uploads as a whole profile), but a member who
+// unpacked one before keeps the three artefact slots marked as uploaded.
 //
 // Pure — no React. Tested.
 
 import { profileToSetupPatch, type ProfileFile } from "../careerops/profile-file";
 import type { DiffKind } from "../careerops/profile-diff";
-import type { CareerOpsSetupV2, JhgFileKey } from "../careerops/types";
+import type { CareerOpsSetupV2, JhgFileKey, JhgProgress, ProfileFileRecord } from "../careerops/types";
 import type { FileSectionKey } from "../profile-sections";
 import type { Profile } from "../types";
 import { BASE_OF, findJhPage, jhFieldsEmpty, jhSectionFields, jhSectionHref, jhSectionSummaries, jhSectionsFor, type JhPageKey, type JhSectionKey, type PortalOptions } from "./sections";
@@ -39,8 +44,13 @@ export const JH_FILES = [
   { key: "narrative", label: "Narrative", filename: "narrative.yml", page: "narrative", carries: "Contact details, headline, bridge story, core competencies.", sections: ["contact", "targeting", "narrative", "jhg"], alsoKept: "your lead skills and the one-line bridge story" },
   { key: "trueNorth", label: "True North", filename: "true-north.yml", page: "true-north", carries: "Target industry, roles, seniority, salary range, location, company type, boundaries.", sections: ["northstar", "contact", "targeting", "watchlist", "notes", "jhg"], alsoKept: "your title keywords, work rights, negotiation scripts and notes, and the titles, clusters and postings behind the roles" },
   { key: "targetCompanies", label: "Target companies", filename: "target-companies.yml", page: "companies", carries: "Top 3, Top 10, Top 40, watchlist.", sections: ["watchlist", "companyLists", "notes", "jhg"], alsoKept: "your notes and the research behind the lists" },
-  { key: "artefacts", label: "Artefacts", filename: "artefacts.yml", page: "artefacts", carries: "Story Bank, master CV, LinkedIn profile.", sections: ["contact", "targeting", "artefacts", "linkedin", "cv", "notes", "jhg"], alsoKept: "your adaptive framing, portfolio, notes, CV house rules and story facts" },
+  { key: "storyBank", label: "Story Bank", filename: "story-bank.yml", page: "story-bank", carries: "Proof points, STAR-R stories, snapshots.", sections: ["contact", "targeting", "artefacts", "jhg"], alsoKept: "your adaptive framing, portfolio and the facts behind each story" },
+  { key: "masterCv", label: "Master CV", filename: "master-cv.yml", page: "master-cv", carries: "The master CV and its house rules.", sections: ["contact", "notes", "cv", "jhg"], alsoKept: "your notes, CV house rules, locked sections and language goals" },
+  { key: "linkedin", label: "LinkedIn profile", filename: "linkedin.yml", page: "linkedin", carries: "Headline, About, roles, Featured, skills, education, certifications.", sections: ["linkedin", "jhg"], alsoKept: "the file's progress stamp" },
 ] as const satisfies readonly JhFile[];
+
+/** The slots the retired artefacts.yml used to fill — a stored record or stamp for it counts for all three. */
+const LEGACY_ARTEFACTS_SLOTS: readonly JhgFileKey[] = ["storyBank", "masterCv", "linkedin"];
 
 export const findJhFile = (key: string | null | undefined): JhFile | undefined => (JH_FILES as readonly JhFile[]).find((f) => f.key === key);
 export const jhFilePage = (key: JhgFileKey) => findJhPage(findJhFile(key)!.page)!;
@@ -49,12 +59,15 @@ const FILENAME_HINT: Record<JhgFileKey, RegExp> = {
   narrative: /narrative/i,
   trueNorth: /true[-_ ]?north/i,
   targetCompanies: /target[-_ ]?compan|companies/i,
-  artefacts: /artefact|artifact/i,
+  storyBank: /story[-_ ]?bank|stories/i,
+  masterCv: /master[-_ ]?cv|\bcv\b/i,
+  linkedin: /linkedin|^ln\b/i,
 };
 
 /**
- * Which of the four a parsed file is: its own `jhg.progress` stamp first,
- * then the filename. null for a file that is neither — a whole profile.yml.
+ * Which of the six a parsed file is: its own `jhg.progress` stamp first,
+ * then the filename. null for a file that is neither — a whole profile.yml
+ * (or the retired artefacts.yml, which fills what it carries the same way).
  */
 export function detectJhFile(profile: Pick<ProfileFile, "jhg">, filename?: string): JhgFileKey | null {
   const stamped = (JH_FILES as readonly JhFile[]).filter((f) => !!profile.jhg?.progress?.[f.key]);
@@ -79,9 +92,13 @@ export interface JhFileStatus {
 
 /** The state of each slot on the Settings page. */
 export function jhFileStatuses(setup: CareerOpsSetupV2 | null | undefined): JhFileStatus[] {
+  // A member who unpacked the retired artefacts.yml keeps its record and stamp under `artefacts`; the three slots it filled read from them.
+  const legacyRec = (setup?.profileFiles as Partial<Record<string, ProfileFileRecord>> | undefined)?.artefacts;
+  const legacyStamp = (setup?.jhg?.progress as Partial<Record<string, JhgProgress>> | undefined)?.artefacts;
   return (JH_FILES as readonly JhFile[]).map((f) => {
-    const rec = setup?.profileFiles?.[f.key];
-    const stamp = setup?.jhg?.progress?.[f.key];
+    const legacy = LEGACY_ARTEFACTS_SLOTS.includes(f.key);
+    const rec = setup?.profileFiles?.[f.key] ?? (legacy ? legacyRec : undefined);
+    const stamp = setup?.jhg?.progress?.[f.key] ?? (legacy ? legacyStamp : undefined);
     const packer = stamp ? [stamp.status?.trim(), stamp.updated ? isoDate(stamp.updated) : ""].filter(Boolean).join(" · ") : "";
     return {
       key: f.key,
@@ -93,7 +110,7 @@ export function jhFileStatuses(setup: CareerOpsSetupV2 | null | undefined): JhFi
   });
 }
 
-/** "2 of 4 files uploaded" */
+/** "2 of 6 files uploaded" */
 export const jhFilesProgress = (statuses: readonly JhFileStatus[]): { done: number; total: number } =>
   ({ done: statuses.filter((s) => s.uploaded).length, total: statuses.length });
 
@@ -132,8 +149,11 @@ export function jhFileProfile(key: JhgFileKey | null, incoming: Pick<ProfileFile
 /**
  * The parsed file as the page reads it. The Narrative file's positioning line is the
  * Headline field, its superpowers are the Core competencies field, the coach's
- * location is the contact location. The Artefacts file carries a CV headline and core
- * competencies too; those belong to the Narrative page, so it fills them only while blank.
+ * location is the contact location. The Master CV file carries a CV headline and the
+ * Story Bank file a cross-cutting advantage too; those are the Narrative page's Headline
+ * and Core competencies, so each fills its one only while blank. Everything else the
+ * three artefact files share with Narrative (the LinkedIn URL, the portfolio) merges
+ * plainly — the later file wins (decision 2026-11-09).
  */
 export function shapeJhFile(key: JhgFileKey | null, incoming: ProfileFile, current: ProfileFile): ProfileFile {
   if (key === "narrative") {
@@ -146,17 +166,13 @@ export function shapeJhFile(key: JhgFileKey | null, incoming: ProfileFile, curre
     if (superpowers.length) out.personalization = { ...(incoming.personalization ?? {}), crossCuttingAdvantage: text(incoming.personalization?.crossCuttingAdvantage) || superpowers.join("; ") };
     return out;
   }
-  if (key === "artefacts") {
-    const out: ProfileFile = { ...incoming };
-    if (incoming.contact?.title !== undefined && text(current.contact?.title)) {
-      const { title: _title, ...rest } = incoming.contact;
-      out.contact = Object.keys(rest).length ? rest : undefined;
-    }
-    if (incoming.personalization?.crossCuttingAdvantage !== undefined && text(current.personalization?.crossCuttingAdvantage)) {
-      const { crossCuttingAdvantage: _cca, ...rest } = incoming.personalization;
-      out.personalization = Object.keys(rest).length ? rest : undefined;
-    }
-    return out;
+  if (key === "masterCv" && incoming.contact?.title !== undefined && text(current.contact?.title)) {
+    const { title: _title, ...rest } = incoming.contact;
+    return { ...incoming, contact: Object.keys(rest).length ? rest : undefined };
+  }
+  if (key === "storyBank" && incoming.personalization?.crossCuttingAdvantage !== undefined && text(current.personalization?.crossCuttingAdvantage)) {
+    const { crossCuttingAdvantage: _cca, ...rest } = incoming.personalization;
+    return { ...incoming, personalization: Object.keys(rest).length ? rest : undefined };
   }
   return incoming;
 }

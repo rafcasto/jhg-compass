@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { lockedSlots, slotLocked, uploadLockLine } from "@/lib/feedback-lock";
 import { DEFAULT_FEEDBACK_CONFIG } from "@/lib/feedback-defaults";
 
-const SLOTS = ["narrative", "trueNorth", "targetCompanies", "artefacts"];
+const SLOTS = ["narrative", "trueNorth", "targetCompanies", "storyBank", "masterCv", "linkedin"];
 
 describe("slotLocked", () => {
   it("is off while the admin flag is off, whatever the member has done", () => {
@@ -16,7 +16,7 @@ describe("slotLocked", () => {
     const input = { uploadLock: true, unlocked: ["narrative"], loading: false };
     expect(slotLocked(input, "narrative")).toBe(false);
     expect(slotLocked(input, "trueNorth")).toBe(true);
-    expect(lockedSlots(input, SLOTS)).toEqual(["trueNorth", "targetCompanies", "artefacts"]);
+    expect(lockedSlots(input, SLOTS)).toEqual(["trueNorth", "targetCompanies", "storyBank", "masterCv", "linkedin"]);
   });
   it("a global or link answer (no slot) unlocks nothing", () => {
     expect(lockedSlots({ uploadLock: true, unlocked: [], loading: false }, SLOTS)).toEqual(SLOTS);

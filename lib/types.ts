@@ -194,7 +194,7 @@ export interface FeedbackConfig {
 // is keyed by question id; `rating` is a convenience copy of the first rating.
 // `source`: the global modal, the per-user link, or the upload lock on Settings —
 // then `unlocks` is the slot the answer unlocked (a JhgFileKey: narrative ·
-// trueNorth · targetCompanies · artefacts).
+// trueNorth · targetCompanies · storyBank · masterCv · linkedin).
 export type FeedbackSource = "global" | "link" | "lock";
 
 export interface FeedbackResponse {

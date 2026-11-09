@@ -11,7 +11,7 @@
   touched, and never add new ones.
 - **Settings is the profile** (decision 2026-11-07, `docs/UX_SETTINGS_HUB.md`): the Compass shell's account group is **Settings · Sign out**
   — there is no Profile page or row any more (`/profile*` redirects, `lib/settings-redirects.mjs`). `/settings` is a **hub**
-  (`components/profile/SettingsHub.tsx`: identity · five area rows that quote the member's data · the four Packer files) and
+  (`components/profile/SettingsHub.tsx`: identity · five area rows that quote the member's data · the six Packer files) and
   `/settings/<area>` renders the **same sectioned pages as the JobHacking portal** (`components/profile/SettingsArea.tsx` →
   `JobHackingScreen portal="compass"`): Narrative · True North · Target companies · Artefacts, plus the Compass-only **Agents** area.
   **One registry for both portals** — `lib/jobhacking/sections.ts`; a section the JobHacking menu never shows carries `only: "compass"`
@@ -20,7 +20,7 @@
   JobHacking portal's pages must keep rendering exactly as specified — never add a Compass field without the flag. The retired
   two-page registry (`PROFILE_SECTIONS`, `sectionsFor("profile" | "settings")`) is gone; `lib/profile-sections.ts` keeps only what both
   portals share (`FILE_SECTIONS`, `sectionSummaries`). Portal accounts still needs CareerOps (the vault key comes from the worker). The
-  whole-`profile.yml` export and the four-file upload (`ProfileFilesPanel`, shared with JobHacking → Settings) live on the hub.
+  whole-`profile.yml` export and the six-file upload (`ProfileFilesPanel`, shared with JobHacking → Settings) live on the hub.
   Add a section to the registry, not a page; a page under the hub passes `parent` to `SectionsPage` for its `‹ Settings` row.
 - **One statement** (decision 2026-11-07): the Compass goal statement, onboarding step 2 and the True North statement are **one
   sentence** from `lib/goal.ts` (`trueNorthBlanks · trueNorthText · TRUE_NORTH_PLACEHOLDERS`): *In 60 days, I'm working as [Target Role +
@@ -58,12 +58,13 @@
   **One goal** (decision 2026-11-07, `docs/UX_JOBHACKING.md §2`): the goal has two homes (`profile.goal`, `setup.intakeGoal` while `goalSource` is
   `"intake"`) but one reading — every statement shows `goalInEffect` and every save goes through `goalWrites` (`lib/careerops/goal-save.ts`);
   never read `profile.goal` directly for a statement, never write a goal to a home that is not in effect.
-  **The four Packer files** (decision 2026-11-07, `docs/UX_JOBHACKING.md §4, §4b, §5`): the Packer writes `narrative.yml · true-north.yml ·
-  target-companies.yml · artefacts.yml`, subsets of the one schema; JobHacking → Settings is four slots (`lib/jobhacking/profile-files.ts`),
+  **The six Packer files** (decision 2026-11-07, revised 2026-11-09, `docs/UX_JOBHACKING.md §4, §4b, §5`): the Packer writes `narrative.yml · true-north.yml ·
+  target-companies.yml · story-bank.yml · master-cv.yml · linkedin.yml`, subsets of the one schema; JobHacking → Settings is six slots (`lib/jobhacking/profile-files.ts`;
+  the Compass Settings hub shows the same six; the old `artefacts.yml` is no slot — a stored one still counts the three artefact slots as uploaded),
   the shared `ProfileUploadSheet` takes several files, and an upload **merges key by key** (`mergeProfile`) — never replace a section whole,
-  never drop a field a file doesn't mention. **The upload preview for one of the four files lists exactly the sections of its page, with the
-  page's labels — nothing more, nothing less** (`jhFilePreview` over `jhSectionFields`); a file fills the editable fields of its page
-  (`shapeJhFile`: `narrative.headline` → Headline, `narrative.superpowers` → Core competencies; `jhg.identity.fullName` → the account's first and last name on `users/{uid}`, since name and email are the account's, not the profile's), and the page's own file wins a shared field. Each file's `jhg` block (the workbook: identity, boundaries, titles, clusters, postings, company
+  never drop a field a file doesn't mention. **The upload preview for one of the six files lists exactly the sections of its page, with the
+  page's labels — nothing more, nothing less** (`jhFilePreview` over `jhSectionFields`; each artefact file is one row); a file fills the editable fields of its page
+  (`shapeJhFile`: `narrative.headline` → Headline, `narrative.superpowers` → Core competencies; `jhg.identity.fullName` → the account's first and last name on `users/{uid}`, since name and email are the account's, not the profile's), and the page's own file wins a shared field (`master-cv.yml` fills Headline and `story-bank.yml` Core competencies only while blank; everything else merges plainly, later file wins). `jhg.artefacts` is shared by `story-bank.yml` (`storyFacts`) and `master-cv.yml` (the CV rules) and merges by key. Each file's `jhg` block (the workbook: identity, boundaries, titles, clusters, postings, company
   research, scores, story facts, CV rules) is stored on `CareerOpsSetupV2.jhg` and shown **read-only beside the field it explains** through
   `components/jobhacking/FileFacts.tsx` — never as a page of its own, never editable. `public/*.example.yml` are the Packer's samples and
   `tests/profile-files-examples.test.ts` is the contract; change the schema and update them together.

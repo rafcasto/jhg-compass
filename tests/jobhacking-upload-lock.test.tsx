@@ -32,7 +32,7 @@ describe("the upload lock", () => {
     mount();
     expect(screen.queryByRole("button", { name: "Upload files" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Answer the survey" })).toBeNull();
-    expect(screen.getAllByRole("button", { name: /^Upload .*\.yml$/ })).toHaveLength(4);
+    expect(screen.getAllByRole("button", { name: /^Upload .*\.yml$/ })).toHaveLength(6);
     expect(screen.queryByText(/unlock/i)).toBeNull();
     await user.click(screen.getByRole("button", { name: "Upload narrative.yml" }));
     expect(screen.getByTestId("upload-sheet")).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe("the upload lock", () => {
     mount();
     expect(screen.queryByRole("button", { name: "Answer the survey" })).toBeNull();
     const slots = screen.getAllByRole("button", { name: /^Unlock .*\.yml — answer a short survey$/ });
-    expect(slots).toHaveLength(4);
+    expect(slots).toHaveLength(6);
     expect(slots[0]).toHaveTextContent("Unlock");
     expect(screen.getByText(/Each file unlocks with a short survey — 4 questions, once per file/)).toBeInTheDocument();
     expect(screen.getByText(/Dropping files works once every file is unlocked/)).toBeInTheDocument();
@@ -67,24 +67,24 @@ describe("the upload lock", () => {
     const user = userEvent.setup();
     mount();
     expect(screen.getByRole("button", { name: "Upload narrative.yml" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /^Unlock .*\.yml/ })).toHaveLength(3);
+    expect(screen.getAllByRole("button", { name: /^Unlock .*\.yml/ })).toHaveLength(5);
     await user.click(screen.getByRole("button", { name: "Upload narrative.yml" }));
     expect(screen.getByTestId("upload-sheet")).toBeInTheDocument();
   });
 
   it("holds the lock while the submission check is loading", () => {
     feedback.cfg = { enabled: false, uploadLock: true };
-    feedback.loading = true; feedback.unlocked = ["narrative", "trueNorth", "targetCompanies", "artefacts"];
+    feedback.loading = true; feedback.unlocked = ["narrative", "trueNorth", "targetCompanies", "storyBank", "masterCv", "linkedin"];
     mount();
-    expect(screen.getAllByRole("button", { name: /^Unlock .*\.yml/ })).toHaveLength(4);
+    expect(screen.getAllByRole("button", { name: /^Unlock .*\.yml/ })).toHaveLength(6);
   });
 
   it("is fully open once every file is answered", () => {
     feedback.cfg = { enabled: false, uploadLock: true };
-    feedback.unlocked = ["narrative", "trueNorth", "targetCompanies", "artefacts"];
+    feedback.unlocked = ["narrative", "trueNorth", "targetCompanies", "storyBank", "masterCv", "linkedin"];
     mount();
     expect(screen.queryByRole("button", { name: /^Unlock/ })).toBeNull();
-    expect(screen.getAllByRole("button", { name: /^Upload .*\.yml$/ })).toHaveLength(4);
-    expect(screen.getByText(/Drop one file — or all four/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Upload .*\.yml$/ })).toHaveLength(6);
+    expect(screen.getByText(/Drop one file — or all of them/)).toBeInTheDocument();
   });
 });

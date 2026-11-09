@@ -65,7 +65,8 @@ describe("JobHacking — pages and sections", () => {
     });
     it("Compass → Settings is untouched: one Artefacts area, no artefact pages, the Compass hrefs as before", () => {
       expect(jhPagesFor("compass").map((p) => p.key)).toEqual(["narrative", "true-north", "companies", "artefacts", "agents"]);
-      expect(jhSectionsFor("story-bank", { portal: "compass" })).toEqual([]);
+      // Asked by an artefact page on Compass (the six file slots preview by the file's page) it still answers — the href is the area's.
+      expect(jhSectionsFor("story-bank", { portal: "compass" }).map((s) => s.key)).toEqual(["story-bank"]);
       expect(jhSectionsFor("artefacts", { portal: "compass" }).map((s) => s.key)).toEqual(["story-bank", "master-cv", "linkedin-profile", "portfolio"]);
       expect(jhSectionHref("master-cv", SETTINGS_BASE)).toBe("/settings/artefacts?section=master-cv");
       expect(jhFileEditHref("cv", "compass")).toBe("/settings/artefacts?section=master-cv");

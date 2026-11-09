@@ -1,0 +1,73 @@
+version: 1
+linkedin:
+  headline: "Delivery Lead for SaaS scale-ups · Monthly to fortnightly releases across 9 teams · Incidents cut from 14 to 7 a month"
+  about: |-
+    I make releases boring at SaaS companies that are growing fast.
+
+    At FreightDesk Software I moved nine teams from monthly to fortnightly releases in 2 quarters while engineering doubled, and production incidents fell from 14 to 7 a month in 12 months. Before that, at Ledgerline, I redesigned on-call so out-of-hours pages dropped from 22 to 6 a month in 1 quarter.
+
+    What the work looks like: one release train that every team owns, blameless reviews tied to service ownership, and a weekly commitments review so enterprise dates hold. I measure delivery in the numbers the business already tracks, so engineering and leadership argue about the same facts.
+
+    I'm looking for a Delivery Lead role at a SaaS scale-up where releases have started to hurt. If that's your team, message me here.
+  experience:
+    - title: "Delivery Lead"
+      company: "FreightDesk Software"
+      location: "Wellington, New Zealand"
+      start: "2022-03"
+      end: ""
+      description: |-
+        Led delivery for a logistics SaaS engineering organisation that doubled in size across nine teams.
+
+        Moved release cadence from monthly to fortnightly across 9 teams in 2 quarters, by introducing a single release train with team-owned readiness checks
+        Halved production incidents from 14 to 7 a month in 12 months, by pairing blameless reviews with service ownership
+      skills:
+        - "Release management"
+        - "Incident management"
+        - "Programme delivery"
+    - title: "Delivery Manager (promoted from Operations Analyst)"
+      company: "Ledgerline"
+      location: "Auckland, New Zealand"
+      start: "2019-07"
+      end: "2022-02"
+      description: |-
+        Ran delivery for an accounting-integrations SaaS team selling to accounting firms in New Zealand and Australia.
+
+        Reduced out-of-hours pages from 22 to 6 a month in 1 quarter, by redesigning the on-call rota around service ownership
+      skills:
+        - "Incident management"
+        - "On-call design"
+  featured:
+    - kind: "document"
+      title: "The release-cadence playbook: monthly to fortnightly across 9 teams in 2 quarters"
+      url: "https://ana-ferreira.example/release-cadence-playbook"
+    - kind: "article"
+      title: "How 240 tenants moved on the date we sold"
+      url: "https://ana-ferreira.example/tenant-migration"
+    - kind: "post"
+      title: "Halving incidents without a blame culture"
+      url: "https://www.linkedin.com/posts/example-ana-ferreira-incidents"
+  skills:
+    - "Release management"
+    - "Incident management"
+    - "Programme delivery"
+    - "On-call design"
+    - "Cost of delivery"
+  education:
+    - school: "Victoria University of Wellington"
+      degree: "Bachelor of Commerce"
+      field: "Information Systems"
+      start: "2014"
+      end: "2017"
+  certifications:
+    - name: "ICAgile Certified Professional in Agile Coaching"
+      issuer: "ICAgile"
+      issued: "2021-05"
+      url: ""
+jhg:
+  progress:
+    linkedin:
+      status: "complete"
+      updated: "2026-11-06"
+  identity:
+    fullName: "Ana Ferreira"
+    email: "ana.ferreira@mail.example"

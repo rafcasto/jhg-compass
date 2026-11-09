@@ -1,0 +1,93 @@
+version: 1
+linkedin:
+  headline: "Revenue Operations Manager for B2B SaaS · Renewal forecast error 18% → 6% · 3 CRMs into one for 120 enterprise accounts"
+  about: |-
+    I make revenue numbers that sales, success and finance all agree on.
+
+    At Saône Commerce I rebuilt the renewal forecast for 120 enterprise accounts: error fell from 18% to 6% in 3 quarters, and finance put it back in the board pack. I consolidated 3 CRMs into one in 5 months, and a new handover between sales and success cut time to first value from 41 days to 19 days.
+
+    How I work: start from the data the front line already touches, agree the rules with the teams who run them, and publish the numbers every month, misses included.
+
+    I'm moving into Revenue Operations at a B2B SaaS scale-up. If your forecast starts arguments, message me here.
+  experience:
+    - title: "Customer Success Operations Manager"
+      company: "Saône Commerce"
+      location: "Lyon, France"
+      start: "2022-04"
+      end: ""
+      description: |-
+        Owned the CRM, the renewal forecast and the sales-to-success handover for an e-commerce platform's enterprise customers.
+
+        Cut renewal forecast error from 18% to 6% in 3 quarters, by rebuilding the forecast from CRM stage data and publishing accuracy against actuals monthly
+        Consolidated 3 CRMs into one for 120 enterprise accounts in 5 months, by running field mapping and cleanup with each team owner to a fixed freeze date
+        Reduced time to first value from 41 days to 19 days, by introducing a mandatory sales handover form and a week-one kickoff checklist
+      skills:
+        - "Revenue Operations"
+        - "Renewal Forecasting"
+        - "CRM Administration"
+    - title: "Customer Support Team Lead"
+      company: "Saône Commerce"
+      location: "Lyon, France"
+      start: "2019-09"
+      end: "2022-03"
+      description: |-
+        Led the support team of the same platform, handling merchant tickets in French and English.
+
+        Got 3 renewal-blocking bugs fixed and cut ticket volume 22% in 2 quarters, by tying tagged tickets to renewals and presenting the cost to the CTO
+        Brought first response time from 9 hours to 2 hours in 1 quarter, by writing reply templates and routing by language and product
+        Shortened new-hire ramp from 8 weeks to about 5 weeks, by building a graded week-by-week training path
+      skills:
+        - "Customer Support Operations"
+        - "Team Leadership"
+        - "Training Design"
+  featured:
+    - kind: "document"
+      title: "The renewal forecast one-pager: error from 18% to 6% in 3 quarters"
+      url: "https://laurent-simon.example/renewal-forecast-one-pager"
+    - kind: "article"
+      title: "Three CRMs into one: the freeze date that made it work"
+      url: "https://laurent-simon.example/three-crms-into-one"
+    - kind: "post"
+      title: "Why I publish the forecast miss every month"
+      url: "https://www.linkedin.com/posts/laurent-simon-revops-example-forecast"
+  skills:
+    - "Revenue Operations"
+    - "Renewal Forecasting"
+    - "CRM Administration"
+    - "Salesforce"
+    - "HubSpot"
+    - "Customer Success Operations"
+    - "Customer Health Scoring"
+    - "Sales Operations"
+    - "Pipeline Management"
+    - "Process Design"
+    - "Data Quality"
+    - "Looker"
+    - "Gainsight"
+    - "Churn Reduction"
+    - "Onboarding Design"
+    - "Stakeholder Management"
+    - "Customer Support Operations"
+    - "Team Leadership"
+    - "Training Design"
+    - "SaaS"
+    - "E-commerce"
+  education:
+    - school: "Université Lumière Lyon 2"
+      degree: "Licence professionnelle"
+      field: "Commerce électronique"
+      start: "2018"
+      end: "2019"
+  certifications:
+    - name: "Salesforce Certified Administrator"
+      issuer: "Salesforce"
+      issued: "2023-06"
+      url: ""
+jhg:
+  progress:
+    linkedin:
+      status: "complete"
+      updated: "2026-11-09"
+  identity:
+    fullName: "Laurent Simon"
+    email: "laurent.simon@mail.example"

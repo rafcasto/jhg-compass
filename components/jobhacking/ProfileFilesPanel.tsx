@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Building2, Check, CircleDashed, Download, Lock, Navigation, Sparkles, Upload, type LucideProps } from "lucide-react";
+import { BookOpen, Building2, Check, CircleDashed, Download, FileText, Linkedin, Lock, Navigation, Sparkles, Upload, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import FeedbackModal from "@/components/FeedbackModal";
 import ProfileUploadSheet from "@/components/profile/ProfileUploadSheet";
@@ -15,7 +15,7 @@ import { BASE_OF, jhFileEditHref, jhPageHref, type ProfilePortal } from "@/lib/j
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
 
-// The four Packer files — docs/UX_JOBHACKING.md §4, docs/UX_SETTINGS_HUB.md §2.
+// The six Packer files — docs/UX_JOBHACKING.md §4, docs/UX_SETTINGS_HUB.md §2.
 //
 // One card, used by JobHacking → Settings and by the Compass Settings hub: a
 // slot per file (what it fills, whether it has been uploaded and when, one
@@ -35,7 +35,7 @@ import type { Profile } from "@/lib/types";
 // turns into Upload / Replace live on submit. Drops wait until every slot is
 // unlocked.
 
-const ICONS: Record<JhgFileKey, ComponentType<LucideProps>> = { narrative: Sparkles, trueNorth: Navigation, targetCompanies: Building2, artefacts: BookOpen };
+const ICONS: Record<JhgFileKey, ComponentType<LucideProps>> = { narrative: Sparkles, trueNorth: Navigation, targetCompanies: Building2, storyBank: BookOpen, masterCv: FileText, linkedin: Linkedin };
 
 export function downloadText(name: string, text: string) {
   const blob = new Blob([text], { type: "application/yaml;charset=utf-8" });
@@ -142,7 +142,7 @@ export default function ProfileFilesPanel({ uid, setup, profile, portal, careerO
         <div className={`rounded-sm border-[1.5px] border-dashed p-6 text-center transition-colors ${over ? "border-jh-red bg-jh-red/5" : "border-jh-line-2"}`}>
           {anyLocked
             ? <p className="inline-flex items-center gap-1.5 text-sm text-jh-mute"><Lock className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Dropping files works once every file is unlocked</p>
-            : <p className="text-sm text-jh-ink">Drop one file — or all four — anywhere on this page</p>}
+            : <p className="text-sm text-jh-ink">Drop one file — or all of them — anywhere on this page</p>}
           <p className="text-xs text-jh-mute mt-1">.yml · up to {PROFILE_MAX_BYTES / 1024} kB each · each lands in its own slot</p>
           <p className="mt-3 inline-flex items-center justify-center gap-1 text-xs text-jh-mute"><Lock className="h-3 w-3" aria-hidden /> Read in your browser. Nothing is saved until you confirm.</p>
         </div>

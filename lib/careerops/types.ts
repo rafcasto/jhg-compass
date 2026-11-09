@@ -275,8 +275,8 @@ export interface CompanyLists { top3?: CompanyList; top10?: CompanyList; all?: C
 
 // ---- the JobHackers workbook (profile.yml top-level `jhg`; added 2026-11-07) ----
 //
-// The four Packer files — narrative.yml · true-north.yml · target-companies.yml ·
-// artefacts.yml — each carry a `jhg` block: the file's progress stamp, the
+// The six Packer files — narrative.yml · true-north.yml · target-companies.yml ·
+// story-bank.yml · master-cv.yml · linkedin.yml — each carry a `jhg` block: the file's progress stamp, the
 // member's identity as the coach has it, and the working data behind the
 // sections above (titles and clusters behind the roles, boundaries behind the
 // policy, scores and theses behind the ranked lists, story facts behind the
@@ -284,7 +284,9 @@ export interface CompanyLists { top3?: CompanyList; top10?: CompanyList; all?: C
 // before CareerOps reads it; the JobHacking pages show it beside the field it
 // explains. Every key here is one the files carry — none is invented.
 
-export type JhgFileKey = "narrative" | "trueNorth" | "targetCompanies" | "artefacts";
+// The three artefact files (decision 2026-11-09) replaced one artefacts.yml; the `artefacts` working block is shared by
+// story-bank.yml (storyFacts) and master-cv.yml (the CV rules), merged key by key.
+export type JhgFileKey = "narrative" | "trueNorth" | "targetCompanies" | "storyBank" | "masterCv" | "linkedin";
 export interface JhgProgress { status?: string; updated?: string }
 export interface JhgIdentity {
   fullName?: string; email?: string; city?: string; country?: string; location?: string; timezone?: string; outputLanguage?: string;
@@ -359,9 +361,9 @@ export interface CareerOpsSetupV2 extends CareerOpsSetup {
   companyLists?: CompanyLists;
   /** The LinkedIn profile to build (profile.yml `linkedin`). Read on JobHacking → Artefacts → LinkedIn profile; edited nowhere. */
   linkedin?: LinkedinProfile;
-  /** The JobHackers workbook (profile.yml `jhg`), merged from the four Packer files. Read beside the fields it explains; edited nowhere. */
+  /** The JobHackers workbook (profile.yml `jhg`), merged from the six Packer files. Read beside the fields it explains; edited nowhere. */
   jhg?: JhgBlock;
-  /** When each of the four files was last unpacked, and from which filename (JobHacking → Settings). */
+  /** When each of the six files was last unpacked, and from which filename (JobHacking → Settings). */
   profileFiles?: Partial<Record<JhgFileKey, ProfileFileRecord>>;
 }
 

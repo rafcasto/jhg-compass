@@ -19,7 +19,7 @@ import { sectionsProgress } from "./SectionsPage";
 
 // Compass → Settings — the hub (docs/UX_SETTINGS_HUB.md §2). Everything the
 // agents work from, in one place: who this is, the five areas (each row quotes
-// the member's data, tap to open), and the four Packer files. The left column
+// the member's data, tap to open), and the six Packer files. The left column
 // is the 232px the areas use for their rail, so the hub and its areas share
 // one geometry. Not gated on CareerOps: the setup document is read directly;
 // only Agents · Portal accounts needs the worker, and the registry hides it

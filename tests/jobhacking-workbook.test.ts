@@ -8,7 +8,7 @@ import {
 import { cleanStoryBank, snapshotDetail, storyStar } from "@/lib/jobhacking/story-bank";
 
 // The workbook (profile.yml `jhg`) as the JobHacking pages read it — every
-// helper reads a key the four Packer samples carry; none invents one.
+// helper reads a key the six Packer samples carry; none invents one.
 
 const read = (name: string) => parseProfileFile(readFileSync(path.resolve(__dirname, `../public/${name}.example.yml`), "utf8"), `${name}.yml`).profile;
 
@@ -58,8 +58,9 @@ describe("workbook helpers", () => {
     expect(top3Facts({ name: "Nobody" }, p.jhg)).toEqual([]);
   });
 
-  it("artefacts — STAR lines, snapshot detail, the fact behind a story, CV rules and languages", () => {
-    const p = read("artefacts");
+  it("artefacts — STAR lines, snapshot detail, the fact behind a story (story-bank.yml), CV rules and languages (master-cv.yml)", () => {
+    const p = read("story-bank");
+    const cv = read("master-cv");
     expect(storyStar(p.stories![0]).map((l) => l.label)).toEqual(["Situation", "Task", "Action", "Reflection"]);
     expect(snapshotDetail(p.snapshots![0]).map((d) => d.label)).toEqual(["Context", "Challenge", "Role", "What I did", "Why it matters here", "Key decisions"]);
     expect(snapshotDetail(p.snapshots![1]).map((d) => d.label)).not.toContain("Key decisions");
@@ -70,12 +71,12 @@ describe("workbook helpers", () => {
       "Source: Estimate — Slack thread with the CTO; the 30% is my own count from Jira exports",
     ]);
     expect(storyFactFacts(storyFact(p.jhg, { title: "Weekly reporting automation" }))[3].value).toMatch(/^Can't confirm/);
-    expect(cvRuleLists(p.jhg).map((l) => l.label)).toEqual(["CV house rules", "Locked sections — never rewritten"]);
-    expect(languageLines(p.jhg)).toEqual(["te reo Māori — beginner → conversational by end of 2027 (New Zealand)"]);
+    expect(cvRuleLists(cv.jhg).map((l) => l.label)).toEqual(["CV house rules", "Locked sections — never rewritten"]);
+    expect(languageLines(cv.jhg)).toEqual(["te reo Māori — beginner → conversational by end of 2027 (New Zealand)"]);
   });
 
   it("the story bank editor carries the Packer's fields through a save", () => {
-    const p = read("artefacts");
+    const p = read("story-bank");
     const clean = cleanStoryBank({ proofPoints: p.narrative!.proofPoints!, stories: p.stories!, snapshots: p.snapshots! });
     expect(clean.narrative.proofPoints[0].url).toBe("https://ana-ferreira.example/release-cadence-playbook");
     expect(clean.stories[0].situation).toBe("a 110-engineer logistics SaaS doubling in size");

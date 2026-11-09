@@ -1,6 +1,6 @@
 // The upload lock — docs/UX_JOBHACKING.md §4c (decision 2026-11-07).
 //
-// An admin can lock the four profile-file Upload buttons (JobHacking → Settings
+// An admin can lock the six profile-file Upload buttons (JobHacking → Settings
 // and the Compass Settings hub) behind the feedback survey: `config/feedback.
 // uploadLock`, toggled beside the global modal in Admin → User interactions →
 // Feedback. The lock is PER SLOT — one answer unlocks one file (the response
