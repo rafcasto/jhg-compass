@@ -25,15 +25,17 @@ export interface Coach {
   needs: readonly CoachKey[];
   /** Built — a coach without a prompt is shown but cannot start yet. */
   ready: boolean;
+  /** Web searches per turn: market wording for most; the research coaches (2, 3) do the research in the conversation. */
+  search: number;
 }
 
 export const COACHES: readonly Coach[] = [
-  { key: "narrative", n: 1, label: "Narrative", page: "narrative", group: "compass", outcome: "Your contact details, a headline a recruiter gets in ten seconds, your bridge story and three to five core competencies.", time: "about 1 hour", needs: [], ready: true },
-  { key: "trueNorth", n: 2, label: "True North", page: "true-north", group: "compass", outcome: "Your boundaries, the roles the market really posts for you, target industries, seniority, salary range and company type.", time: "2–3 hours", needs: ["narrative"], ready: false },
-  { key: "targetCompanies", n: 3, label: "Target companies", page: "companies", group: "compass", outcome: "40 companies with their careers pages, scored; your Top 10 and Top 3 with a first move this week.", time: "3–4 hours", needs: ["narrative", "trueNorth"], ready: false },
-  { key: "storyBank", n: 4, label: "Story Bank", page: "story-bank", group: "artefacts", outcome: "Eight to ten proven stories (STAR+R), each number with its source; which stories prove each target role.", time: "1–2 sittings", needs: ["narrative", "trueNorth", "targetCompanies"], ready: false },
-  { key: "masterCv", n: 5, label: "Master CV", page: "master-cv", group: "artefacts", outcome: "Your complete CV, every line a result from your stories.", time: "about 2 hours", needs: ["narrative", "trueNorth", "targetCompanies", "storyBank"], ready: false },
-  { key: "linkedin", n: 6, label: "LinkedIn", page: "linkedin", group: "artefacts", outcome: "Your LinkedIn profile, section by section, ready to paste.", time: "1–2 hours", needs: ["narrative", "storyBank", "masterCv"], ready: false },
+  { key: "narrative", n: 1, label: "Narrative", page: "narrative", group: "compass", outcome: "Your contact details, a headline a recruiter gets in ten seconds, your bridge story and three to five core competencies.", time: "about 1 hour", needs: [], ready: true, search: 3 },
+  { key: "trueNorth", n: 2, label: "True North", page: "true-north", group: "compass", outcome: "Your boundaries, the roles the market really posts for you, target industries, seniority, salary range and company type.", time: "2–3 hours", needs: ["narrative"], ready: true, search: 15 },
+  { key: "targetCompanies", n: 3, label: "Target companies", page: "companies", group: "compass", outcome: "40 companies with their careers pages, scored; your Top 10 and Top 3 with a first move this week.", time: "3–4 hours", needs: ["narrative", "trueNorth"], ready: true, search: 15 },
+  { key: "storyBank", n: 4, label: "Story Bank", page: "story-bank", group: "artefacts", outcome: "Eight to ten proven stories (STAR+R), each number with its source; which stories prove each target role.", time: "1–2 sittings", needs: ["narrative", "trueNorth", "targetCompanies"], ready: true, search: 3 },
+  { key: "masterCv", n: 5, label: "Master CV", page: "master-cv", group: "artefacts", outcome: "Your complete CV, every line a result from your stories.", time: "about 2 hours", needs: ["narrative", "trueNorth", "targetCompanies", "storyBank"], ready: true, search: 3 },
+  { key: "linkedin", n: 6, label: "LinkedIn", page: "linkedin", group: "artefacts", outcome: "Your LinkedIn profile, section by section, ready to paste.", time: "1–2 hours", needs: ["narrative", "storyBank", "masterCv"], ready: true, search: 3 },
 ];
 
 export const COACH_TOTAL = COACHES.length;
@@ -58,8 +60,11 @@ export function pageOfPath(pathname: string): JhPageKey | null {
   return (pages as string[]).includes(seg) ? (seg as JhPageKey) : null;
 }
 
-/** Whether a pathname is somewhere the coach floats: the JobHacking portal or Compass → Settings. */
-export const coachShowsOn = (pathname: string): boolean => /^\/(jobhacking|settings)(\/|$)/.test(pathname);
+/**
+ * Whether a pathname is somewhere the coach floats: a page a coach writes, on either portal
+ * (decision 2026-11-10: not the Settings hub, not JobHacking → Settings, not the Agents area).
+ */
+export const coachShowsOn = (pathname: string): boolean => !!coachForPage(pageOfPath(pathname));
 
 export type CoachState = "complete" | "in_progress" | "not_started";
 

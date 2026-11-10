@@ -29,7 +29,8 @@ export interface EngineConfig {
 
 export const DEFAULT_ENGINE_CONFIG: EngineConfig = {
   agents: {
-    coach:      { model: DEFAULT_MODEL, effort: "low",    maxTokens: 4096,  enabled: true },
+    // A turn is ≤ 250 words, but a save point writes whole lists (Coach 3: forty companies) in one tool call.
+    coach:      { model: DEFAULT_MODEL, effort: "low",    maxTokens: 32000, enabled: true },
     evaluator:  { model: DEFAULT_MODEL, effort: "high",   maxTokens: 16000, enabled: true },
     tailor:     { model: DEFAULT_MODEL, effort: "medium", maxTokens: 16000, enabled: true },
     writer:     { model: DEFAULT_MODEL, effort: "medium", maxTokens: 8000,  enabled: true },
