@@ -6,9 +6,11 @@ import type { CoachKey } from "./keys";
 
 export const UPDATE_PROFILE = "update_profile";
 
-/** JSON Schema fragments, closed. */
-const str = (description: string, maxLength?: number) => ({ type: "string", description, ...(maxLength ? { maxLength } : {}) });
-const list = (description: string, min?: number, max?: number) => ({ type: "array", items: { type: "string" }, description, ...(min ? { minItems: min } : {}), ...(max ? { maxItems: max } : {}) });
+// JSON Schema fragments, closed. The API's strict tools accept a subset of JSON Schema — no
+// minItems / maxItems / maxLength (400 "property 'maxItems' is not supported") — so every limit
+// lives in the description, where the model reads it, and the server checks the rest.
+const str = (description: string) => ({ type: "string", description });
+const list = (description: string) => ({ type: "array", items: { type: "string" }, description });
 const obj = (properties: Record<string, unknown>, description?: string) => ({ type: "object", properties, additionalProperties: false, ...(description ? { description } : {}) });
 
 /** What each coach may write — profile.yml paths, in the schema's own shape (profile-schema.md §1–2). */
@@ -21,11 +23,11 @@ export const COACH_PATCH_SCHEMAS: Partial<Record<CoachKey, Record<string, unknow
       github: str("GitHub profile URL, or leave out"),
     }, "Contact details"),
     personalization: obj({
-      exitNarrative: str("The bridge story: 3–4 sentences from where they come from to where they go next, in their words. ≤ 1,200 characters.", 1200),
+      exitNarrative: str("The bridge story: 3–4 sentences from where they come from to where they go next, in their words. ≤ 1,200 characters."),
     }),
     narrative: obj({
-      headline: str("One sentence a recruiter understands in 10 seconds: 'I help [who] achieve [outcome] through [competency 1], [2] and [3]'. ≤ 220 characters, no final full stop.", 220),
-      superpowers: list("Core competencies: 3–5 short noun phrases in the market's own words, strongest first", 1, 5),
+      headline: str("One sentence a recruiter understands in 10 seconds: 'I help [who] achieve [outcome] through [competency 1], [2] and [3]'. ≤ 220 characters, no final full stop."),
+      superpowers: list("Core competencies: 3–5 short noun phrases in the market's own words, strongest first (3 to 5 items)"),
     }),
     jhg: obj({
       identity: obj({
@@ -42,7 +44,7 @@ export const COACH_PATCH_SCHEMAS: Partial<Record<CoachKey, Record<string, unknow
         contactNote: str("One line recruiters should know before contacting them"),
       }),
       narrative: obj({
-        leadSkills: list("The three skills behind the competencies, in the member's own words, rank order", 1, 3),
+        leadSkills: list("The three skills behind the competencies, in the member's own words, rank order (exactly 3 items)"),
         bridgeStoryOneLine: str("The bridge story in one sentence: 'I was X, I did Y, now I do Z because W'"),
       }),
     }),
