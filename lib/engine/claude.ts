@@ -14,7 +14,12 @@ export const isClaudeConfigured = () => !!(process.env.ANTHROPIC_API_KEY || proc
 
 let client: Anthropic | null = null;
 export function claudeClient(): Anthropic {
-  if (!client) client = new Anthropic({ timeout: 10 * 60 * 1000, maxRetries: 2 });
+  if (!client) {
+    // An organisation-level key in an org that requires a workspace must name it on every
+    // request (anthropic-workspace-id); a workspace-scoped key needs nothing. Either works.
+    const workspace = process.env.ANTHROPIC_WORKSPACE_ID?.trim();
+    client = new Anthropic({ timeout: 10 * 60 * 1000, maxRetries: 2, ...(workspace ? { defaultHeaders: { "anthropic-workspace-id": workspace } } : {}) });
+  }
   return client;
 }
 
