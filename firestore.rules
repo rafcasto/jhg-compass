@@ -10,12 +10,12 @@ service cloud.firestore {
     // ---- per-user data: profile + all CRM/tracker/settings subcollections ----
     match /users/{uid} {
       allow read, write: if isOwner(uid);
-      // The Claude engine's documents (engineJobs, claudeUsage — docs/CAREER_OPS_CLAUDE.md §1) are
+      // The Claude engine's documents (engineJobs, claudeUsage, coachSessions — docs/CAREER_OPS_CLAUDE.md §1) are
       // written by the server only: the meter decides the monthly limit, so the member reads it and
       // never writes it. Everything else under the member stays owner-writable as before.
       match /{sub=**} {
         allow read: if isOwner(uid);
-        allow write: if isOwner(uid) && !(sub[0] in ["engineJobs", "claudeUsage"]);
+        allow write: if isOwner(uid) && !(sub[0] in ["engineJobs", "claudeUsage", "coachSessions"]);
       }
     }
 

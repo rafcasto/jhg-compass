@@ -80,4 +80,26 @@ describe("Sheet", () => {
     unmount();
     expect(document.body.style.overflow).toBe("");
   });
+
+  // The coach panel (docs/UX_COACH.md §3): docked right, the page stays scrollable and interactive beside it.
+  it("docked right, leaves the page scrollable, is not modal, and still closes on Esc", async () => {
+    const onClose = vi.fn();
+    const { container, unmount } = render(<Sheet title="Narrative" eyebrow="Coach 1 of 6" dock="right" onClose={onClose}><p>hello</p></Sheet>);
+    expect(document.body.style.overflow).toBe("");
+    expect(container.querySelector("[data-dock='right']")).not.toBeNull();
+    expect(screen.getByRole("dialog", { name: "Narrative" })).not.toHaveAttribute("aria-modal");
+    await userEvent.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalled();
+    unmount();
+  });
+
+  it("a docked sheet under a modal one does not lock scroll on its own, the modal does", () => {
+    const { unmount: closeDocked } = render(<Sheet title="Coach" dock="right" onClose={() => {}}><p>a</p></Sheet>);
+    expect(document.body.style.overflow).toBe("");
+    const { unmount: closeModal } = render(<Sheet title="Edit" onClose={() => {}}><p>b</p></Sheet>);
+    expect(document.body.style.overflow).toBe("hidden");
+    closeModal();
+    expect(document.body.style.overflow).toBe("");
+    closeDocked();
+  });
 });

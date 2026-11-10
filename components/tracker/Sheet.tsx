@@ -30,7 +30,7 @@ const SIZE: Record<SheetSize, string> = { sm: "sm:max-w-sm", md: "sm:max-w-md", 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // ---- stack registry -----------------------------------------------------------
-interface Entry { el: HTMLElement; close: (reason: SheetCloseReason) => void }
+interface Entry { el: HTMLElement; close: (reason: SheetCloseReason) => void; lock: boolean }
 const stack: Entry[] = [];
 let keyBound = false;
 
@@ -58,18 +58,18 @@ function onDocKey(e: KeyboardEvent) {
   else if (!e.shiftKey && (active === last || !top.el.contains(active))) { e.preventDefault(); first.focus(); }
 }
 
+// A docked sheet (the coach panel) leaves the page scrollable and interactive beside it.
+const syncScrollLock = () => { document.body.style.overflow = stack.some((e) => e.lock) ? "hidden" : ""; };
 function push(entry: Entry) {
   stack.push(entry);
   if (!keyBound) { document.addEventListener("keydown", onDocKey); keyBound = true; }
-  document.body.style.overflow = "hidden";
+  syncScrollLock();
 }
 function pop(entry: Entry) {
   const i = stack.indexOf(entry);
   if (i >= 0) stack.splice(i, 1);
-  if (stack.length === 0) {
-    document.removeEventListener("keydown", onDocKey); keyBound = false;
-    document.body.style.overflow = "";
-  }
+  if (stack.length === 0) { document.removeEventListener("keydown", onDocKey); keyBound = false; }
+  syncScrollLock();
 }
 
 // ---- footer / dirty slot ----------------------------------------------------------
@@ -87,7 +87,7 @@ export function useSheetSlot(footer: ReactNode, dirty: boolean) {
 
 // ---- Sheet ----------------------------------------------------------------------
 export function Sheet({
-  title, onClose, children, size = "md", eyebrow, description, onBack, headerActions, footer, dirty = false, viewKey, bodyClassName = "",
+  title, onClose, children, size = "md", eyebrow, description, onBack, headerActions, footer, dirty = false, viewKey, bodyClassName = "", dock,
 }: {
   title: string;
   onClose: () => void;
@@ -106,8 +106,15 @@ export function Sheet({
   /** Change to re-run focus-in, e.g. when the sheet switches from detail to an edit view. */
   viewKey?: string;
   bodyClassName?: string;
+  /**
+   * "right": docked to the right edge on sm+ — full height, 440 px, no scrim, no scroll
+   * lock, the page stays interactive beside it (the coach panel, docs/UX_COACH.md §3).
+   * Below sm it is the same full-height bottom sheet as every dialog.
+   */
+  dock?: "right";
 }) {
   const { t } = useContent();
+  const docked = dock === "right";
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
@@ -131,13 +138,15 @@ export function Sheet({
     const el = ref.current;
     if (!el) return;
     const opener = document.activeElement as HTMLElement | null;
-    const entry: Entry = { el, close: (r) => closeRef.current(r) };
+    const entry: Entry = { el, close: (r) => closeRef.current(r), lock: !docked };
     push(entry);
     setBottom(isBottom(entry));
     return () => {
       pop(entry);
       opener?.focus?.({ preventScroll: true });
     };
+    // Registered once per mount; `docked` does not change for a mounted sheet.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Focus the first field on open and whenever the view inside the sheet changes.
@@ -151,11 +160,16 @@ export function Sheet({
 
   return (
     <div
-      className={`fixed inset-0 z-50 grid place-items-end sm:place-items-center sm:p-4 ${bottom ? "bg-jh-ink/60" : "bg-transparent"}`}
+      data-dock={docked ? "right" : undefined}
+      className={docked
+        ? `fixed inset-0 z-50 grid place-items-end ${bottom ? "bg-jh-ink/60" : "bg-transparent"} sm:inset-auto sm:inset-y-0 sm:right-0 sm:block sm:w-[440px] sm:bg-transparent`
+        : `fixed inset-0 z-50 grid place-items-end sm:place-items-center sm:p-4 ${bottom ? "bg-jh-ink/60" : "bg-transparent"}`}
       onClick={() => closeRef.current("backdrop")}>
-      <div ref={ref} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true"
+      <div ref={ref} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal={docked ? undefined : "true"}
         aria-labelledby={titleId} aria-describedby={description ? descId : undefined}
-        className={`flex w-full max-h-[92dvh] flex-col rounded-t-lg bg-white shadow-jh-3 motion-safe:animate-sheet-in sm:rounded-lg ${SIZE[size]}`}>
+        className={docked
+          ? "flex w-full max-h-[92dvh] flex-col rounded-t-lg bg-white shadow-jh-3 motion-safe:animate-sheet-in sm:h-full sm:max-h-none sm:rounded-none sm:border-l sm:border-jh-line"
+          : `flex w-full max-h-[92dvh] flex-col rounded-t-lg bg-white shadow-jh-3 motion-safe:animate-sheet-in sm:rounded-lg ${SIZE[size]}`}>
         {/* Drag-handle affordance on the bottom sheet only */}
         <span className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-pill bg-jh-line-2 sm:hidden" aria-hidden />
 

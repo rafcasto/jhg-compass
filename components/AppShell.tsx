@@ -13,6 +13,8 @@ import { PORTAL_SECTIONS } from "@/lib/careerops/portal-nav";
 import { JH_NAV, JH_PAGES, JH_SETTINGS_HREF, SETTINGS_BASE, jhNavActive, jhPageActive } from "@/lib/jobhacking/sections";
 import { JH_PAGE_ICONS } from "@/components/jobhacking/pageIcons";
 import type { TabItem } from "@/components/shell/MobileChrome";
+import CoachLauncher from "@/components/coach/CoachLauncher";
+import CoachPanel from "@/components/coach/CoachPanel";
 
 type NavItem = {
   href: string;
@@ -37,9 +39,11 @@ export interface AppShellAccess {
   jobHackingEnabled?: boolean;
   /** false only for members who signed up to JobHacking alone. */
   compassEnabled?: boolean;
+  /** features.coach — the AI coach floats on JobHacking and Compass → Settings (docs/UX_COACH.md). Admins always. */
+  coachEnabled?: boolean;
 }
 
-export default function AppShell({ children, daysLeft, agentsEnabled = false, jobHackingEnabled = false, compassEnabled = true, portal = "compass" }: { children: React.ReactNode; daysLeft: number | null; portal?: Portal } & AppShellAccess) {
+export default function AppShell({ children, daysLeft, agentsEnabled = false, jobHackingEnabled = false, compassEnabled = true, coachEnabled = false, portal = "compass" }: { children: React.ReactNode; daysLeft: number | null; portal?: Portal } & AppShellAccess) {
   const pathname = usePathname();
   const { signOut, isAdmin } = useAuth();
   const { t } = useContent();
@@ -124,6 +128,14 @@ export default function AppShell({ children, daysLeft, agentsEnabled = false, jo
       <div className="md:hidden">
         <BottomTabBar items={items} />
       </div>
+
+      {/* ---- The coach: a launcher on every JobHacking / Settings page and one panel, mounted once so it stays open across pages ---- */}
+      {(coachEnabled || isAdmin) && portal !== "careerops" && (
+        <>
+          <CoachLauncher portal={portal === "jobhacking" ? "jobhacking" : "compass"} />
+          <CoachPanel portal={portal === "jobhacking" ? "jobhacking" : "compass"} />
+        </>
+      )}
     </div>
   );
 }

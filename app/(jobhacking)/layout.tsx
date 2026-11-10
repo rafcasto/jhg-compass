@@ -17,7 +17,7 @@ import VerifyEmail from "@/components/VerifyEmail";
 // from the sections they fill in here.
 export default function JobHackingLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, emailVerified, isAdmin } = useAuth();
-  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled, jobHackingEnabled, compassEnabled } = useAccess(user?.uid);
+  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled, jobHackingEnabled, compassEnabled, coachEnabled } = useAccess(user?.uid);
   const router = useRouter();
 
   useEffect(() => { if (!loading && !user) router.replace("/login"); }, [loading, user, router]);
@@ -31,7 +31,7 @@ export default function JobHackingLayout({ children }: { children: React.ReactNo
 
   const allowed = jobHackingEnabled || isAdmin;
   return (
-    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled} jobHackingEnabled={jobHackingEnabled} compassEnabled={compassEnabled} portal="jobhacking">
+    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled} jobHackingEnabled={jobHackingEnabled} compassEnabled={compassEnabled} coachEnabled={coachEnabled} portal="jobhacking">
       {allowed ? children : (
         <div className="card p-10 text-center">
           <h1 className="mb-2">JobHacking isn&apos;t switched on for you yet</h1>
