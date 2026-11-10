@@ -1,6 +1,10 @@
 // The one tool a coach has: update_profile (docs/UX_COACH.md §4). Its input schema is
-// the coach's own keys, closed (strict: true), so the API itself refuses a key the coach
-// does not own and the model sees exactly what it may write. Pure — tested.
+// the coach's own keys, closed, so the model sees exactly what it may write. It is NOT
+// strict: strict mode compiles the schema to a grammar and caps the optional fields at 24
+// across the tools (400 "too many optional parameters") — Narrative alone has 27, True
+// North and Target companies far more — and we need none of it: the server enforces the
+// shape (validateProfileFile) and the ownership (foreignPaths) on every write and hands
+// any error back as a tool result the coach fixes with the member. Pure — tested.
 
 import type { CoachKey } from "./keys";
 
@@ -62,7 +66,7 @@ export function updateProfileTool(coach: CoachKey) {
   return {
     name: UPDATE_PROFILE,
     description: "Write what the member has just confirmed into their profile. Call it right after each yes — a confirmed table or an approved draft — with only the keys that changed; the portal merges key by key and never drops a field you leave out. Set progress to 'complete' at hand-over, once your checks pass; 'in_progress' at a save point. The result tells you what the page now shows.",
-    strict: true as const,
+    strict: false as const,
     input_schema: {
       type: "object" as const,
       properties: {
