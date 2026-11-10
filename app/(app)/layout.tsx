@@ -14,7 +14,7 @@ import { JH_HOME } from "@/lib/jobhacking/sections";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, emailVerified, isAdmin } = useAuth();
-  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled, jobHackingEnabled, compassEnabled } = useAccess(user?.uid);
+  const { loading: accessLoading, hasAccess, daysLeft, agentsEnabled, jobHackingEnabled, compassEnabled, coachEnabled } = useAccess(user?.uid);
   const { data: profile, loading: profileLoading } =
     useLiveDoc<Profile>(user ? paths.profile(user.uid) : null);
   const router = useRouter();
@@ -60,7 +60,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled} jobHackingEnabled={jobHackingEnabled} compassEnabled={compassEnabled}>
+    <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled} jobHackingEnabled={jobHackingEnabled} compassEnabled={compassEnabled} coachEnabled={coachEnabled}>
       {children}
       {/* Expired access blocks everything and takes precedence over feedback. */}
       {!hasAccess && <Paywall />}

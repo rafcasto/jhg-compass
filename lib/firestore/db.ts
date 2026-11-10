@@ -35,6 +35,8 @@ export const paths = {
   engineJobs: (uid: string) => collection(db, "users", uid, "engineJobs"),
   engineJob: (uid: string, id: string) => doc(db, "users", uid, "engineJobs", id),
   claudeUsage: (uid: string, month: string) => doc(db, "users", uid, "claudeUsage", month),
+  // A coach conversation (docs/UX_COACH.md §7): the readable turns and the API transcript. Server-written, owner-read.
+  coachSession: (uid: string, coach: string) => doc(db, "users", uid, "coachSessions", coach),
   engineConfig: () => doc(db, "config", "engine"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
