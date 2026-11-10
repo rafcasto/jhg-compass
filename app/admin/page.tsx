@@ -10,12 +10,13 @@ import CmsTab from "@/components/admin/cms/CmsTab";
 import InteractionsTab from "@/components/admin/interactions/InteractionsTab";
 import AnalyticsTab from "@/components/admin/analytics/AnalyticsTab";
 import AgentsTab from "@/components/admin/agents/AgentsTab";
+import EngineTab from "@/components/admin/engine/EngineTab";
 import {
   TABS, adminHash, firstSub, parseAdminHash,
-  type AdminLocation, type TabKey, type TofuSub, type CmsSub, type InteractionsSub, type AnalyticsSub, type AgentsSub,
+  type AdminLocation, type TabKey, type TofuSub, type CmsSub, type InteractionsSub, type AnalyticsSub, type AgentsSub, type EngineSub,
 } from "@/components/admin/nav";
 
-// Five top-level tabs, each with its own sub-tabs (components/admin/nav.ts).
+// Six top-level tabs, each with its own sub-tabs (components/admin/nav.ts).
 // Location is kept in the URL hash (#cms/compass) so a refresh — or a link in
 // Slack — lands on the same screen.
 export default function AdminPage() {
@@ -88,6 +89,7 @@ export default function AdminPage() {
         {loc.tab === "interactions" && <InteractionsTab sub={loc.sub as InteractionsSub} onSub={goSub} />}
         {loc.tab === "analytics" && <AnalyticsTab sub={loc.sub as AnalyticsSub} onSub={goSub} />}
         {loc.tab === "careerops" && <AgentsTab sub={loc.sub as AgentsSub} onSub={goSub} />}
+        {loc.tab === "claude" && <EngineTab sub={loc.sub as EngineSub} onSub={goSub} />}
       </main>
     </div>
   );

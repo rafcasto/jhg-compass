@@ -1,4 +1,4 @@
-// Admin information architecture — five top-level tabs (TOFU · CMS · Interactions · Analytics · CareerOps), each with sub-tabs.
+// Admin information architecture — six top-level tabs (TOFU · CMS · Interactions · Analytics · CareerOps · Claude), each with sub-tabs.
 // Pure module (no React, no Firebase) so the hash ↔ location parsing is
 // unit-testable and every tab component imports its sub-tab list from here.
 
@@ -41,12 +41,20 @@ export const AGENTS_SUBTABS = [
 ] as const;
 export type AgentsSub = (typeof AGENTS_SUBTABS)[number]["key"];
 
+// The Claude engine behind JobHacking and Compass (docs/CAREER_OPS_CLAUDE.md §1) — not the Pi.
+export const ENGINE_SUBTABS = [
+  { key: "usage",    label: "Usage",    hint: "What each member's coaching and agents cost this month" },
+  { key: "settings", label: "Settings", hint: "Model and effort per agent, the monthly limits, the price table" },
+] as const;
+export type EngineSub = (typeof ENGINE_SUBTABS)[number]["key"];
+
 export const TABS = [
   { key: "tofu", label: "TOFU", title: "Top of the funnel", subs: TOFU_SUBTABS },
   { key: "cms", label: "Lead magnet CMS", title: "JHCompass lead magnet CMS", subs: CMS_SUBTABS },
   { key: "interactions", label: "User interactions", title: "User interactions", subs: INTERACTIONS_SUBTABS },
   { key: "analytics", label: "Analytics", title: "Analytics", subs: ANALYTICS_SUBTABS },
   { key: "careerops", label: "CareerOps", title: "CareerOps portal — agents on the Pi", subs: AGENTS_SUBTABS },
+  { key: "claude", label: "Claude", title: "The Claude engine — the coach and the agents inside JobHacking and Compass", subs: ENGINE_SUBTABS },
 ] as const;
 export type TabKey = (typeof TABS)[number]["key"];
 

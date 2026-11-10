@@ -144,6 +144,8 @@ export interface GrantFeatures {
   jobHacking?: boolean;
   /** Compass itself. Absent = on (every member has it); false only for members who signed up to JobHacking alone. */
   compass?: boolean;
+  /** The AI coach and the Claude engine behind JobHacking and Compass (docs/UX_COACH.md §2). Admin switch. */
+  coach?: boolean;
 }
 
 export interface AdminConfig {

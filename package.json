@@ -15,6 +15,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.7.0",
+    "@upstash/qstash": "^2.12.1",
     "@upstash/redis": "^1.38.4",
     "firebase": "^10.13.2",
     "firebase-admin": "^12.7.0",
@@ -27,7 +29,8 @@
     "recharts": "^2.12.7",
     "remark-gfm": "^4.0.1",
     "resend": "^4.0.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.20",

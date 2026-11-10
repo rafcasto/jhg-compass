@@ -1,4 +1,5 @@
 import "server-only";
+import { appBaseUrl } from "./app-url";
 import { Resend } from "resend";
 import { adminAuth } from "@/lib/firebase/admin";
 import { getAdminConfig } from "./grants";
@@ -19,16 +20,6 @@ function addressOf(from: string) {
   return (m ? m[1] : from).trim();
 }
 
-// Base URL of the deployed app, where our /set-password handler lives.
-// APP_URL overrides (custom domains); otherwise Vercel provides the production
-// domain automatically. Returns null when neither is set (e.g. local dev).
-function appBaseUrl(): string | null {
-  const explicit = process.env.APP_URL;
-  if (explicit) return explicit.replace(/\/+$/, "");
-  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  if (vercel) return `https://${vercel}`;
-  return null;
-}
 
 // Firebase mints action links that point at its default handler
 // (…firebaseapp.com/__/auth/action). Rewrite them to our own /set-password page
