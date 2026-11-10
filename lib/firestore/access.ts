@@ -13,6 +13,7 @@ export interface AccessState {
   agentsEnabled: boolean;   // Admin switched features.careerOps on (CareerOps portal)
   jobHackingEnabled: boolean; // features.jobHacking — the JobHacking portal (admin switch or JobHacking sign-up link)
   compassEnabled: boolean;    // features.compass !== false — off only for members who signed up to JobHacking alone
+  coachEnabled: boolean;      // features.coach — the AI coach (admin switch)
 }
 
 function computeHasAccess(g: AccessGrant | null): { ok: boolean; daysLeft: number | null } {
@@ -48,6 +49,7 @@ export function useAccess(uid: string | undefined): AccessState {
     agentsEnabled: ok && grant?.features?.careerOps === true,
     jobHackingEnabled: ok && grant?.features?.jobHacking === true,
     compassEnabled: ok && grant?.features?.compass !== false,
+    coachEnabled: ok && grant?.features?.coach === true,
   };
 }
 

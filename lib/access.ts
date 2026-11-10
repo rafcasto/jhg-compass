@@ -30,6 +30,7 @@ export interface MemberAccessRow {
   careerOps: boolean;         // CareerOps portal enabled for this member
   jobHacking?: boolean;       // JobHacking portal enabled for this member
   compass?: boolean;          // false = JobHacking-only member (no Compass)
+  coach?: boolean;            // the AI coach (Claude engine) enabled for this member
 }
 
 type GrantLike = Pick<AccessGrant, "status" | "startsAt" | "expiresAt" | "redeemBy">;

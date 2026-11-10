@@ -158,6 +158,7 @@ export async function listGrants(now = Date.now()): Promise<MemberAccessRow[]> {
       careerOps: g.features?.careerOps === true,
       jobHacking: g.features?.jobHacking === true,
       compass: g.features?.compass !== false,
+      coach: g.features?.coach === true,
     };
   });
   // newest change first
@@ -198,7 +199,7 @@ export async function renewGrants(uids: string[], days: number, by: string | nul
   return { renewed, missing };
 }
 
-// ---- feature flags (Admin → TOFU → Access renewals → CareerOps / JobHacking columns) ----
+// ---- feature flags (Admin → TOFU → Access renewals → CareerOps / JobHacking / Coach columns) ----
 export interface FeatureResult { uid: string; email: string }
 
 export async function setGrantFeatures(uids: string[], features: Partial<GrantFeatures>, by: string | null): Promise<{ updated: FeatureResult[]; missing: string[] }> {

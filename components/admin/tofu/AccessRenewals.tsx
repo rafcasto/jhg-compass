@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { KeyRound, Search, RefreshCw, Bot, Target } from "lucide-react";
+import { KeyRound, Search, RefreshCw, Bot, Target, MessageSquare } from "lucide-react";
 import { authed, postJson, fmtDateTime, Empty, Loading, NumberField, Section, type Notice } from "@/components/admin/shared";
 import {
   ACCESS_FILTERS, DEFAULT_RENEWAL_DAYS, countByStatus, filterRows, memberName,
@@ -75,12 +75,13 @@ export default function AccessRenewals() {
   }
 
   // Portal switches — CareerOps (career-ops agents on the Pi) and JobHacking — on/off for the selected members.
-  const PORTAL_LABEL = { careerOps: "CareerOps", jobHacking: "JobHacking" } as const;
+  const PORTAL_LABEL = { careerOps: "CareerOps", jobHacking: "JobHacking", coach: "Coach" } as const;
   async function setPortal(flag: keyof typeof PORTAL_LABEL, on: boolean) {
     if (!selectedRows.length) return;
     const label = PORTAL_LABEL[flag];
     const who = selectedRows.length === 1 ? (memberName(selectedRows[0]) || selectedRows[0].email) : `${selectedRows.length} members`;
-    if (!confirm(`${on ? "Enable" : "Disable"} the ${label} portal for ${who}?`)) return;
+    const what = flag === "coach" ? "the AI coach" : `the ${label} portal`;
+    if (!confirm(`${on ? "Enable" : "Disable"} ${what} for ${who}?`)) return;
     setFeatBusy(true); setNotice(null);
     try {
       const r = await postJson("/api/admin/access/features", { uids: selectedRows.map((x) => x.uid), [flag]: on });
@@ -94,6 +95,7 @@ export default function AccessRenewals() {
   }
   const setAgents = (on: boolean) => setPortal("careerOps", on);
   const setJobHacking = (on: boolean) => setPortal("jobHacking", on);
+  const setCoach = (on: boolean) => setPortal("coach", on);
 
   const period = (r: MemberAccessRow) => {
     if (r.status === "pending") return r.redeemBy ? `Redeem by ${fmtDateTime(r.redeemBy)}` : "Awaiting redemption";
@@ -131,6 +133,14 @@ export default function AccessRenewals() {
           </button>
           <button type="button" onClick={() => setJobHacking(false)} disabled={featBusy || selectedRows.length === 0} aria-label="Disable JobHacking" className="btn-ghost text-xs disabled:opacity-40">Disable</button>
         </div>
+        {/* The AI coach — the Claude engine behind JobHacking and Compass (docs/UX_COACH.md §2). Independent of the portals. */}
+        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-jh-line">
+          <span className="inline-flex items-center gap-1.5 text-sm text-jh-mute"><MessageSquare className="h-4 w-4" /> AI coach (writes the profile on JobHacking and Compass → Settings)</span>
+          <button type="button" onClick={() => setCoach(true)} disabled={featBusy || selectedRows.length === 0} aria-label={`Enable Coach for ${selectedRows.length || "selected"}`} className="btn-secondary text-xs px-3 py-2 disabled:opacity-40">
+            {featBusy ? "Saving…" : `Enable for ${selectedRows.length || "selected"}`}
+          </button>
+          <button type="button" onClick={() => setCoach(false)} disabled={featBusy || selectedRows.length === 0} aria-label="Disable Coach" className="btn-ghost text-xs disabled:opacity-40">Disable</button>
+        </div>
         {notice && (
           <p role="status" className={`text-sm ${notice.kind === "ok" ? "text-rb-green-dark" : "text-jh-red"}`}>{notice.text}</p>
         )}
@@ -166,7 +176,7 @@ export default function AccessRenewals() {
                   <th className="px-3 py-2 w-8">
                     <input type="checkbox" aria-label="Select all shown" checked={allVisibleSelected} onChange={toggleAll} className="h-4 w-4 accent-jh-red" />
                   </th>
-                  {["Member", "Status", "CareerOps", "JobHacking", "Access period", "Plan · source", "Last change"].map((h) => (
+                  {["Member", "Status", "CareerOps", "JobHacking", "Coach", "Access period", "Plan · source", "Last change"].map((h) => (
                     <th key={h} className="font-semibold px-3 py-2 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -191,6 +201,7 @@ export default function AccessRenewals() {
                         {r.jobHacking ? <span className="pill bg-rb-green-light/30 text-rb-green-dark">on</span> : <span className="text-xs text-jh-mute-2">off</span>}
                         {r.compass === false && <span className="block text-xs text-jh-mute">JobHacking only</span>}
                       </td>
+                      <td className="px-3 py-2.5">{r.coach ? <span className="pill bg-rb-green-light/30 text-rb-green-dark">on</span> : <span className="text-xs text-jh-mute-2">off</span>}</td>
                       <td className="px-3 py-2.5 text-jh-mute whitespace-nowrap">{period(r)}</td>
                       <td className="px-3 py-2.5 text-jh-mute whitespace-nowrap">{[r.plan, r.source].filter(Boolean).join(" · ") || "—"}</td>
                       <td className="px-3 py-2.5 text-jh-mute whitespace-nowrap">

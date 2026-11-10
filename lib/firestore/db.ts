@@ -31,6 +31,11 @@ export const paths = {
   careerOpsPortalsStatus: (uid: string) => doc(db, "users", uid, "careerOps", "portalsStatus"),
   // A shared JobHacking page: { token, createdAt } while its public link is on (docs/UX_SHARE.md). Server-written, owner-read.
   share: (uid: string, page: string) => doc(db, "users", uid, "shares", page),
+  // The Claude engine (docs/CAREER_OPS_CLAUDE.md): a member's jobs, their monthly meter, the admin's config.
+  engineJobs: (uid: string) => collection(db, "users", uid, "engineJobs"),
+  engineJob: (uid: string, id: string) => doc(db, "users", uid, "engineJobs", id),
+  claudeUsage: (uid: string, month: string) => doc(db, "users", uid, "claudeUsage", month),
+  engineConfig: () => doc(db, "config", "engine"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
   content: () => doc(db, "config", "content"),

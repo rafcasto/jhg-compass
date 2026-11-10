@@ -31,3 +31,18 @@ export async function requireAgentsMember(req: NextRequest): Promise<{ user: Dec
   if (!grant.features?.careerOps && user.admin !== true) return null;
   return { user, grant };
 }
+
+// A member who may use the Claude engine (the coach and, later, the CareerOps modules
+// reused inside JobHacking and Compass): signed in, access active, and the admin has
+// switched features.coach on for them. Admins always may. Not the CareerOps portal's
+// gate (requireAgentsMember, features.careerOps) — a different flag for a different thing.
+export async function requireEngineMember(req: NextRequest): Promise<{ user: DecodedIdToken; grant: AccessGrant | null } | null> {
+  const user = await requireUser(req);
+  if (!user) return null;
+  const snap = await adminDb().doc(`accessGrants/${user.uid}`).get();
+  const grant = snap.exists ? (snap.data() as AccessGrant) : null;
+  if (user.admin === true) return { user, grant };
+  if (!grant || effectiveStatus(grant) !== "active") return null;
+  if (!grant.features?.coach) return null;
+  return { user, grant };
+}
