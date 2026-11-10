@@ -49,9 +49,9 @@ describe("the six coaches", () => {
 });
 
 describe("update_profile", () => {
-  it("is a strict, closed tool over the coach's own keys", () => {
+  it("is a closed tool over the coach's own keys — not strict: the server enforces the shape", () => {
     const t = updateProfileTool("narrative")!;
-    expect(t.strict).toBe(true);
+    expect(t.strict).toBe(false);
     expect(t.input_schema.required).toEqual(["patch"]);
     const patch = t.input_schema.properties.patch as { properties: Record<string, unknown>; additionalProperties: boolean };
     expect(Object.keys(patch.properties)).toEqual(["contact", "personalization", "narrative", "jhg"]);
