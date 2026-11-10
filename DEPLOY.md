@@ -36,7 +36,8 @@ Add these for **Production** (and Preview, if you want PR previews to work).
 | `RESEND_API_KEY` | **server** |
 | `RESEND_FROM` | e.g. `JobHacker Compass <compass@yourdomain.com>` |
 | `KIT_API_KEY` | **server** (optional) |
-| `ANTHROPIC_API_KEY` | **server** — the Claude engine (the AI coach; `docs/CAREER_OPS_CLAUDE.md`) |
+| `ANTHROPIC_API_KEY` | **server** — the Claude engine (the AI coach; `docs/CAREER_OPS_CLAUDE.md`). Prefer a **workspace-scoped** key (Console → Settings → API keys → create inside a workspace) |
+| `ANTHROPIC_WORKSPACE_ID` | **server**, optional — only when the key is organisation-level and the API answers *not scoped to a workspace*; the workspace id from Console → Settings → Workspaces |
 | `QSTASH_TOKEN` · `QSTASH_CURRENT_SIGNING_KEY` · `QSTASH_NEXT_SIGNING_KEY` | **server** — QStash (Upstash console → QStash), the engine's queue; it calls back at `APP_URL/api/engine/run`, so `APP_URL` must be the deployed domain |
 
 > Tip: copy the values from your local `.env.local`. To (re)generate the base64
