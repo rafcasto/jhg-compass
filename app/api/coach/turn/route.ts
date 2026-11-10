@@ -20,8 +20,9 @@ import { parseJhSection, type JhPageKey, type ProfilePortal } from "@/lib/jobhac
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// A coach turn is ≤ 250 words plus a write or two; it streams and ends well inside this.
-export const maxDuration = 60;
+// A turn is ≤ 250 words, but a save point writes whole lists in one tool call (Coach 3: forty
+// companies) and the research coaches run several web searches — Pro's plain limit, no Fluid.
+export const maxDuration = 300;
 
 const MAX_TEXT = 8000;
 const MAX_TOOL_ROUNDS = 6;
@@ -52,7 +53,6 @@ export async function POST(req: NextRequest) {
   const isAdmin = m.user.admin === true;
 
   const prompt = COACH_PROMPTS[coach.key];
-  if (!prompt) return NextResponse.json({ ok: false, error: `${coach.label} isn't built yet.` }, { status: 409 });
   const tool = updateProfileTool(coach.key);
 
   const db = adminDb();
@@ -92,9 +92,10 @@ export async function POST(req: NextRequest) {
         for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
           const s = claudeStream({
             model: cfg.model, effort: cfg.effort, maxTokens: cfg.maxTokens,
-            system: systemFor(resolved.text),
+            system: systemFor(resolved.text, prompt.knowledge),
             messages: messages as Anthropic.Beta.BetaMessageParam[],
-            ...(tool ? { tools: [tool] } : {}),
+            tools: [tool],
+            maxSearches: coach.search,
           });
           let sawTextThisRound = false;
           for await (const ev of s) {

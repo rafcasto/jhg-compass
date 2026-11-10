@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { COACHES, COACH_TOTAL, coachForPage, coachShowsOn, coachStates, findCoach, launcherLabel, missingBefore, nextCoach, pageOfPath } from "@/lib/engine/coach/keys";
-import { COACH_OWNED_PATHS, foreignPaths, updateProfileTool } from "@/lib/engine/coach/tools";
+import { COACH_OWNED_PATHS, COACH_PATCH_SCHEMAS, foreignPaths, schemaPaths, updateProfileTool } from "@/lib/engine/coach/tools";
 import { applyEvent, emptyPending, parseEvent, writeLine } from "@/lib/engine/coach/transcript";
 import { START_CUE, buildMessages, contextNote, userTurn, withoutOperatorNotes } from "@/lib/engine/coach/turn";
 import { COACH_PROMPTS } from "@/lib/engine/coach/prompts";
@@ -21,8 +21,13 @@ describe("the six coaches", () => {
     expect(coachForPage("true-north")?.key).toBe("trueNorth");
     expect(coachForPage("artefacts")?.key).toBe("storyBank");
     expect(coachForPage("agents")).toBeUndefined();
+    // The coach floats only where a coach writes (decision 2026-11-10): not the hub, not JobHacking → Settings, not Agents.
     expect(coachShowsOn("/jobhacking/narrative")).toBe(true);
-    expect(coachShowsOn("/settings/true-north")).toBe(true);
+    expect(coachShowsOn("/settings/true-north?section=salary")).toBe(true);
+    expect(coachShowsOn("/jobhacking/artefacts")).toBe(true);
+    expect(coachShowsOn("/settings")).toBe(false);
+    expect(coachShowsOn("/jobhacking/settings")).toBe(false);
+    expect(coachShowsOn("/settings/agents")).toBe(false);
     expect(coachShowsOn("/compass")).toBe(false);
     expect(coachShowsOn("/careerops/sourcing")).toBe(false);
   });
@@ -41,10 +46,17 @@ describe("the six coaches", () => {
     expect(nextCoach(coachStates(null)).key).toBe("narrative");
   });
 
-  it("has a prompt for every coach marked ready", () => {
-    for (const c of COACHES) expect(!!COACH_PROMPTS[c.key]).toBe(c.ready);
-    expect(COACH_PROMPTS.narrative!.text).toContain("update_profile");
-    expect(COACH_PROMPTS.narrative!.text).toContain("Brief narrative outlining who you are");
+  it("has a prompt for every coach, each with its Gem's opening line, the tool, and its knowledge file where the Gem had one", () => {
+    for (const c of COACHES) { expect(c.ready).toBe(true); expect(COACH_PROMPTS[c.key].text).toContain("update_profile"); }
+    expect(COACH_PROMPTS.narrative.text).toContain("Brief narrative outlining who you are");
+    expect(COACH_PROMPTS.trueNorth.text).toContain("Clear definition of your Professional Target");
+    expect(COACH_PROMPTS.storyBank.text).toContain("Your best work, proven");
+    expect(COACH_PROMPTS.masterCv.text).toContain("Your complete record of proof");
+    expect(COACH_PROMPTS.linkedin.text).toContain("written to be found and pasted");
+    expect(COACH_PROMPTS.trueNorth.knowledge).toContain("Growth Company Source Directory");
+    expect(COACH_PROMPTS.storyBank.knowledge).toContain("Value Proof Reference Library");
+    expect(COACH_PROMPTS.linkedin.knowledge).toBeUndefined();
+    expect(COACHES.find((c) => c.key === "trueNorth")!.search).toBeGreaterThan(COACHES.find((c) => c.key === "linkedin")!.search);
   });
 });
 
@@ -56,7 +68,17 @@ describe("update_profile", () => {
     const patch = t.input_schema.properties.patch as { properties: Record<string, unknown>; additionalProperties: boolean };
     expect(Object.keys(patch.properties)).toEqual(["contact", "personalization", "narrative", "jhg"]);
     expect(patch.additionalProperties).toBe(false);
-    expect(updateProfileTool("trueNorth")).toBeNull();
+    expect(updateProfileTool("trueNorth").input_schema.properties.patch).toBeDefined();
+  });
+
+  it("every coach's schema offers only paths that coach owns — the two never drift apart", () => {
+    const nest = (path: string): Record<string, unknown> => path.split(".").reverse().reduce<Record<string, unknown>>((acc, k) => ({ [k]: acc }), { x: 1 } as Record<string, unknown>);
+    for (const c of COACHES) {
+      for (const path of schemaPaths(COACH_PATCH_SCHEMAS[c.key])) expect({ coach: c.key, path, foreign: foreignPaths(c.key, nest(path)) }).toEqual({ coach: c.key, path, foreign: [] });
+    }
+    expect(foreignPaths("trueNorth", { narrative: { headline: "x" } })).toEqual(["narrative"]);
+    expect(foreignPaths("linkedin", { cv: "x", linkedin: { headline: "y" } })).toEqual(["cv"]);
+    expect(foreignPaths("masterCv", { jhg: { artefacts: { storyFacts: [] , cvHouseRules: [] } } })).toEqual(["jhg.artefacts.storyFacts"]);
   });
 
   it("refuses another coach's keys, path by path", () => {

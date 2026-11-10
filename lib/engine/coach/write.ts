@@ -66,6 +66,7 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
   const schema = validateProfileFile(incoming);
   if (!schema.ok) throw new CoachWriteError("The write did not match the profile schema", schema.errors.map((e) => `${e.path}: ${e.message}`));
 
+  mergeOwnBlocks(incoming, current, coach);
   const parsed = fromMaletaYaml(incoming);
   const shaped = shapeJhFile(coach, parsed, current);
   const merged = mergeProfile(current, shaped);
@@ -98,4 +99,25 @@ function stripToCoach(merged: ProfileFile, shaped: ProfileFile): ProfileFile {
   const out: ProfileFile = { version: merged.version };
   for (const k of Object.keys(shaped) as (keyof ProfileFile)[]) if (k !== "version" && merged[k] !== undefined) (out as unknown as Record<string, unknown>)[k] = merged[k];
   return out;
+}
+
+/** The jhg working block each coach owns; storyBank and masterCv share `artefacts`, which mergeProfile already merges by key. */
+const JHG_BLOCK: Partial<Record<CoachKey, "narrative" | "trueNorth" | "targetCompanies">> = { narrative: "narrative", trueNorth: "trueNorth", targetCompanies: "targetCompanies" };
+
+/**
+ * mergeProfile replaces a coach's jhg working block and the `linkedin` map whole (they belong to one
+ * owner — right for a file, wrong for a conversation that writes them in parts). So before the merge,
+ * what the coach sends is laid over what is stored, one key deep: Part B's postings never wipe Part A's
+ * boundaries; the About section never wipes the Headline. A list or a nested map is still taken whole.
+ */
+function mergeOwnBlocks(incoming: Record<string, unknown>, current: ProfileFile, coach: CoachKey): void {
+  const block = JHG_BLOCK[coach];
+  const jhgIn = incoming.jhg as Record<string, unknown>;
+  if (block && jhgIn[block] && typeof jhgIn[block] === "object") {
+    const stored = (current.jhg as Record<string, unknown> | undefined)?.[block];
+    if (stored && typeof stored === "object") jhgIn[block] = { ...(stored as Record<string, unknown>), ...(jhgIn[block] as Record<string, unknown>) };
+  }
+  if (coach === "linkedin" && incoming.linkedin && typeof incoming.linkedin === "object" && current.linkedin) {
+    incoming.linkedin = { ...(current.linkedin as unknown as Record<string, unknown>), ...(incoming.linkedin as Record<string, unknown>) };
+  }
 }

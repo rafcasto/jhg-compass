@@ -28,7 +28,13 @@ export interface FirstTurnInput {
 /** What the member typed — or, when a conversation starts, the opening cue the member never sees. */
 export const START_CUE = "Hi — I'm ready to start.";
 
-export const systemFor = (promptText: string): SystemPart[] => [{ text: promptText, cache: "1h" }];
+/** The coach's prompt and, when it has one, its knowledge file — two cached blocks, stable across every turn and member. */
+export const systemFor = (promptText: string, knowledge?: string): SystemPart[] => [
+  { text: promptText, cache: knowledge ? undefined : "1h" },
+  ...(knowledge ? [{ text: `# KNOWLEDGE FILE
+
+${knowledge}`, cache: "1h" as const }] : []),
+];
 
 /** The first user turn carries the profile; later turns are the member's words alone. */
 export function userTurn(text: string, first: FirstTurnInput | null): Anthropic.Beta.BetaMessageParam {

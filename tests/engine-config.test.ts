@@ -14,7 +14,7 @@ describe("config/engine", () => {
 
   it("reads what is stored over the defaults — a missing agent or price falls back", () => {
     const c = mergeEngineConfig({ agents: { coach: { model: "claude-sonnet-5-5" } } as never, monthlyBudgetUsd: 25, prices: { "claude-opus-5-5": { input: 8, output: 40, cacheRead: 0.8, cacheWrite: 10 } } });
-    expect(c.agents.coach).toEqual({ model: "claude-sonnet-5-5", effort: "low", maxTokens: 4096, enabled: true });
+    expect(c.agents.coach).toEqual({ model: "claude-sonnet-5-5", effort: "low", maxTokens: 32000, enabled: true });
     expect(c.agents.evaluator).toEqual(DEFAULT_ENGINE_CONFIG.agents.evaluator);
     expect(c.monthlyBudgetUsd).toBe(25);
     expect(c.prices["claude-opus-5-5"].input).toBe(8);
