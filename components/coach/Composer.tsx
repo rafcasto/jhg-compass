@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Send } from "lucide-react";
 
 // The composer (docs/UX_COACH.md §3): a textarea that grows to six lines and the one red
-// button in the panel. Enter sends, Shift+Enter breaks a line. The mic arrives with voice (phase 3).
+// button in the panel. Enter sends, Shift+Enter breaks a line.
 export default function Composer({ onSend, disabled = false, placeholder = "Type your answer…" }: {
   onSend: (text: string) => void;
   disabled?: boolean;

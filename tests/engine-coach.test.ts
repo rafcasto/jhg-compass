@@ -118,11 +118,10 @@ describe("one turn's request", () => {
     expect(first.content).toMatch(/hi$/);
     expect(userTurn("next", null)).toEqual({ role: "user", content: "next" });
 
-    const msgs = buildMessages([{ role: "user", content: "a" }, { role: "assistant", content: "b" }], "c", null, { page: "true-north", section: "salary", voice: true });
+    const msgs = buildMessages([{ role: "user", content: "a" }, { role: "assistant", content: "b" }], "c", null, { page: "true-north", section: "salary" });
     expect(msgs).toHaveLength(4);
     expect(msgs[3].role).toBe("system");
     expect(String(msgs[3].content)).toContain("True North · Salary range");
-    expect(String(msgs[3].content)).toContain("Voice");
     expect(withoutOperatorNotes(msgs)).toHaveLength(3);
     expect(contextNote({ page: null })).toBeNull();
     expect(contextNote({ page: "narrative" })).toBe("The member is looking at Narrative.");

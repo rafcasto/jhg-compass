@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { Sheet } from "@/components/tracker/Sheet";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
@@ -14,8 +13,6 @@ import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { ProfilePortal } from "@/lib/jobhacking/sections";
 import Composer from "./Composer";
 import Transcript from "./Transcript";
-import VoiceStrip from "./VoiceStrip";
-import { useVoice } from "./useVoice";
 import { closeCoach, openCoach, useCoachUi } from "./store";
 
 // The docked panel (docs/UX_COACH.md §3): the tracker's Sheet, docked right on desktop —
@@ -24,7 +21,7 @@ import { closeCoach, openCoach, useCoachUi } from "./store";
 // (decision 2026-11-10): on a page another coach writes, the panel switches to that coach
 // (each has its own conversation, nothing is lost) and says so in one mute line; off the
 // pages a coach writes, it closes. The transcript is the session document, live; the turn
-// being written streams in from /api/coach/turn. Voice (§4) is a switch in the header.
+// being written streams in from /api/coach/turn.
 export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const ui = useCoachUi();
   const { user } = useAuth();
@@ -41,14 +38,12 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const [handoff, setHandoff] = useState<string | null>(null);
   const busy = useRef(false);
   const started = useRef<string | null>(null);
-  const voiceRef = useRef<ReturnType<typeof useVoice> | null>(null);
 
   const send = useCallback(async (text: string | null) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
     setPending(emptyPending());
-    voiceRef.current?.resetSpeech();
     if (text) setLocalTurns((t) => [...t, { role: "member", text, at: Date.now() }]);
     try {
       const token = await auth.currentUser!.getIdToken();
@@ -58,7 +53,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       const res = await fetch("/api/coach/turn", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        body: JSON.stringify({ coach: coach.key, portal, ...(text ? { text } : { start: true }), context: { page, section, voice: voiceRef.current?.on ?? false } }),
+        body: JSON.stringify({ coach: coach.key, portal, ...(text ? { text } : { start: true }), context: { page, section } }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({}));
@@ -69,7 +64,6 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let buf = "";
-      let text_ = "";
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -81,8 +75,8 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
           const ev = line ? parseEvent(line.slice(6)) : null;
           if (!ev) continue;
           if (ev.type === "error") setError(ev.message);
-          else if (ev.type === "done") { setPending(null); setLocalTurns([]); voiceRef.current?.speakStream(ev.turn.text, true); }
-          else { if (ev.type === "text") { text_ += ev.text; voiceRef.current?.speakStream(text_, false); } setPending((p) => applyEvent(p ?? emptyPending(), ev)); }
+          else if (ev.type === "done") { setPending(null); setLocalTurns([]); }
+          else setPending((p) => applyEvent(p ?? emptyPending(), ev));
         }
       }
     } catch {
@@ -92,9 +86,6 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       busy.current = false;
     }
   }, [coach, pathname, portal]);
-
-  const voice = useVoice({ onSend: (t) => void send(t) });
-  voiceRef.current = voice;
 
   // Follow the page: another coach's page → that coach; no coach's page → close. Never mid-turn.
   useEffect(() => {
@@ -124,9 +115,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const complete = states[coach.key] === "complete";
   const canTalk = coach.ready && !missing.length && !quota;
 
-  const footer = !canTalk ? undefined : voice.on
-    ? <VoiceStrip listening={voice.listening} speaking={voice.speaking} thinking={!!pending && !pending.text} interim={voice.interim} error={voice.error} onInterrupt={voice.interrupt} onTypeInstead={voice.toggle} />
-    : <Composer onSend={(t) => void send(t)} disabled={!!pending} placeholder={complete ? "Anything to change?" : "Type your answer…"} />;
+  const footer = canTalk ? <Composer onSend={(t) => void send(t)} disabled={!!pending} placeholder={complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
 
   return (
     <Sheet
@@ -135,12 +124,6 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       title={coach.label}
       onClose={closeCoach}
       bodyClassName="bg-white"
-      headerActions={voice.supported && canTalk ? (
-        <button type="button" onClick={voice.toggle} aria-pressed={voice.on} aria-label={voice.on ? "Stop the voice conversation" : "Talk instead of typing"} title={voice.on ? "Voice on" : "Voice"}
-          className={`icon-btn icon-btn-tight ${voice.on ? "bg-jh-ink text-white hover:bg-jh-ink hover:text-white" : ""}`}>
-          {voice.on ? <Mic className="h-5 w-5" strokeWidth={1.75} aria-hidden /> : <MicOff className="h-5 w-5" strokeWidth={1.5} aria-hidden />}
-        </button>
-      ) : undefined}
       footer={footer}
     >
       {handoff && <p role="status" className="mb-4 text-sm text-jh-mute">{handoff}</p>}
