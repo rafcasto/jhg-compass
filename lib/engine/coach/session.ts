@@ -3,11 +3,14 @@ import { adminDb } from "@/lib/firebase/admin";
 import type { BetaMessageParam } from "../claude";
 import type { CoachKey, CoachState } from "./keys";
 import type { TranscriptTurn } from "./transcript";
+import { transcriptFits } from "./turn";
 
 // users/{uid}/coachSessions/{coach} (docs/UX_COACH.md §7). Two halves of one conversation:
 // `turns` is what the member reads (live, owner-readable); `messagesJson` is what Claude
 // replays (the API transcript, tool blocks and all, appended whole and never edited so
-// the cache and preserved thinking hold). Server-written only.
+// the cache and preserved thinking hold). When it outgrows MAX_TRANSCRIPT_BYTES it is
+// dropped whole and the next turn starts over from the profile plus a recap of `turns`
+// (the document holds 1 MiB). Server-written only.
 
 export interface CoachSession {
   status: CoachState;
@@ -31,7 +34,9 @@ export async function getSession(uid: string, coach: CoachKey): Promise<CoachSes
   return { ...emptySession(d.startedAt), ...d, turns: d.turns ?? [], messagesJson: d.messagesJson ?? "[]" };
 }
 
+/** The API transcript to replay — empty when there is none, or when the stored one is past the budget (a restart). */
 export const messagesOf = (s: CoachSession): BetaMessageParam[] => {
+  if (!transcriptFits(s.messagesJson)) return [];
   try { const m = JSON.parse(s.messagesJson); return Array.isArray(m) ? (m as BetaMessageParam[]) : []; } catch { return []; }
 };
 
