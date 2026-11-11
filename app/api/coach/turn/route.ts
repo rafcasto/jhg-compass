@@ -27,7 +27,7 @@ export const maxDuration = 300;
 const MAX_TEXT = 8000;
 const MAX_TOOL_ROUNDS = 6;
 
-// Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section?, voice? } }
+// Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section? } }
 // Streams SSE: text deltas as they are written, a `write` for each update_profile the coach
 // made, then `done` with the finished turn (docs/UX_COACH.md §3–4). The member's words and
 // the coach's turn land on users/{uid}/coachSessions/{coach}; the writes land on the profile.
@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
   const ctx: TurnContext = {
     page: typeof rawCtx.page === "string" ? (rawCtx.page as JhPageKey) : null,
     section: typeof rawCtx.section === "string" ? parseJhSection(rawCtx.section) : null,
-    voice: rawCtx.voice === true,
   };
   const uid = m.user.uid;
   const isAdmin = m.user.admin === true;

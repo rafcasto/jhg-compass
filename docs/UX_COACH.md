@@ -1,8 +1,8 @@
 # The coach in the portal — proposal
 
-**Status:** phases 1–3 built (2026-11-10, branches `feat/coach-narrative` → `feat/coach-all`): the launcher and the docked panel on the pages a coach writes — not the Settings hub, not JobHacking → Settings (decision 2026-11-10) — all six coaches in conversation with `update_profile` writing the profile through the upload's own path, the panel following the page (another coach's page → that coach, with one mute hand-off line; no coach's page → closed), and the voice conversation (continuous listening, a pause sends, the reply spoken as it streams, tap to interrupt). Not yet: the expanded `/jobhacking/coach` page and its rail, the empty-row link, the live-write highlight.
+**Status:** phases 1–3 built (2026-11-10, branches `feat/coach-narrative` → `feat/coach-all`): the launcher and the docked panel on the pages a coach writes — not the Settings hub, not JobHacking → Settings (decision 2026-11-10) — all six coaches in conversation with `update_profile` writing the profile through the upload's own path, the panel following the page (another coach's page → that coach, with one mute hand-off line; no coach's page → closed), Voice **removed** (decision 2026-11-12, §4): the coach is a written conversation. Not yet: the expanded `/jobhacking/coach` page and its rail, the empty-row link, the live-write highlight.
 
-**Ask (Rafael, 2026-11-10):** embed the AI coach in both portals instead of uploading the six `.yml` files; a voice **conversation** (not push-to-talk) so the coach can interview the member; Claude API; behind a flag the admin switches on per member. **Clarified:** no file — the coach knows the schema and the member's profile is its context; it writes the profile directly. **No upload** for coach members after this. The JobHacking menu keeps its **two levels — JobHacker Compass · Artefacts**.
+**Ask (Rafael, 2026-11-10):** embed the AI coach in both portals instead of uploading the six `.yml` files; a voice conversation (built in phase 3, removed 2026-11-12 — §4); Claude API; behind a flag the admin switches on per member. **Clarified:** no file — the coach knows the schema and the member's profile is its context; it writes the profile directly. **No upload** for coach members after this. The JobHacking menu keeps its **two levels — JobHacker Compass · Artefacts**.
 
 **Decisions (Rafael, same day):** 1 model as recommended · 2 a conversation, not push-to-talk · 3 a floating coach on every section, expandable — evaluated in §3 · 4 web search as recommended · 5 no upload · 6 prompts in the repo + admin override in Firestore · 7 a monthly quota, measured first.
 
@@ -107,7 +107,7 @@ The ask: a bubble floating on each section, with the option to expand. Four cand
 
 ```
 ┌ page (still live) ─────────────────────────────┐┌ panel 440px ─────────────────────────────────┐
-│ JOBHACKING · TRUE NORTH                        ││ COACH 2 OF 6 · TRUE NORTH      ◯ Voice ⤢  × │
+│ JOBHACKING · TRUE NORTH                        ││ COACH 2 OF 6 · TRUE NORTH            ⤢  × │
 │ ┌ rail ─────┐ ┌ Salary range ────────────────┐ ││                                              │
 │ │ Industry  │ │ Range   AUD 200,000–230,000  │ ││ Noted: floor AUD 180,000. And the range      │
 │ │ Roles     │ │ Floor   AUD 180,000          │◀┼┼ you're aiming at?                            │
@@ -120,15 +120,15 @@ The ask: a bubble floating on each section, with the option to expand. Four cand
 │                                                ││ Now where you'll be based — the city, and    │
 │                                                ││ how flexible you are about it?               │
 │                                                ││ ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈ │
-│                                                ││ 🎙  Type your answer…              [ Send ] │
+│                                                ││ Type your answer…                  [ Send ] │
 └────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
 ```
 
 - **It is `Sheet`, docked.** The tracker's `Sheet` already has the three-part anatomy (sticky header · scrolling body · sticky footer), the focus handling, Esc, the stack and `dvh` + safe-area on mobile. It gains one prop, `dock="right"`: on `md+` it renders fixed to the right edge, full height, `bg-white border-l border-jh-line shadow-jh-3`, **no scrim and no scroll lock** — the page beside it stays interactive, so a member can correct a field by hand while talking. Below `md` the prop is ignored: the same full-height bottom sheet every dialog uses. Width 440 (`sm:max-w-[440px]`; `lg` in the size scale is 576 — too wide for a side lane on a 1280 screen; 440 is added to `SIZE` as `side`).
-- **Header**: `.section-label` eyebrow *COACH 2 OF 6 · TRUE NORTH*, the **Voice** switch, `⤢` *Expand* (`.icon-btn`, → `/jobhacking/coach?coach=trueNorth`), ×. No title line — the eyebrow is enough and the body starts 16 px below.
+- **Header**: `.section-label` eyebrow *COACH 2 OF 6 · TRUE NORTH*, `⤢` *Expand* (`.icon-btn`, → `/jobhacking/coach?coach=trueNorth`), ×. No title line — the eyebrow is enough and the body starts 16 px below.
 - **Body — a transcript, not bubbles.** Left-aligned, 15 px / 1.6 in the panel (16 / 1.75 on the expanded page). The coach's turns are plain prose in `jh-ink` (markdown via `react-markdown` + `remark-gfm`, already in the deps — the coach's review tables stay tables). The member's turns under a `.section-label` **You** on a `jh-mist` block, radius 8. No avatars, no timestamps in the flow. 24 px between turns, 8 px inside a turn: groups read as groups.
 - **Writes are the status line.** Each `update_profile` renders as the portal's `role="status"` line — `✓ Updated Salary range` with *View ›* when the section is not the one beside it. On the page, the row that just changed gets a **600 ms `bg-jh-mist` fade** (`prefers-reduced-motion`: none) — the one microinteraction, and the one that connects talk to page.
-- **Footer — the composer.** Textarea (auto-grow to 6 lines) · the mic `.icon-btn` · **Send** `.btn-primary` — the one red in the panel. In voice (§4) the footer becomes the voice strip.
+- **Footer — the composer.** Textarea (auto-grow to 6 lines) · **Send** `.btn-primary` — the one red in the panel.
 - **Page-aware.** The panel opens on the coach for the page (and the section the member has open, if any) and the coach is told so — a mid-conversation `system` message *The member is looking at True North · Salary range* — so "let's do this one" works, and the empty-row link lands exactly there. The message is appended, never edited into history, so the cache holds.
 - **Persistent across pages.** Opened on Narrative, still open on True North — the panel is mounted in `AppShell`, above the routed page; the launcher state and the open coach live in one small store. A coach that is not the page's is fine; the eyebrow says which one it is.
 
@@ -136,31 +136,9 @@ The ask: a bubble floating on each section, with the option to expand. Four cand
 
 `SectionsPage` geometry: 232 px rail + a `max-w-prose` transcript; overview rows → drill-in on mobile. The rail is the six coaches **under the menu's two headings** (`.section-label` *JobHacker Compass* · *Artefacts*, the same `DesktopSidebar` recipe), each row the slot grammar: state glyph (`✓ · ◐ · ○` from `jhg.progress.<coach>`) · name · *about 1 hour* · chevron; a dot on the one in conversation; *N of 6 complete* and the ink progress bar under them. A coach whose inputs are not complete is a mute row with *After True North* under it — tappable, it explains in one line rather than dead. The transcript and composer are the panel's, wider. **Collapse** (`⤡`, `.icon-btn`) returns to the page the member came from with the panel open. On mobile this is where a long session lives; the bottom tab bar hides while the composer is up.
 
-## 4. Voice — a conversation
+## 4. Voice — removed (decision 2026-11-12)
 
-The Claude API has no speech endpoint; the voice is built around it, in the browser first, as a **continuous conversation** rather than push-to-talk.
-
-**The loop.** *Voice* on (the header switch, `jh-ink` when on) →
-
-1. **Listening.** The mic stays open (`SpeechRecognition`, `continuous`, `interimResults`). Interim words appear in `jh-mute` in the voice strip as they are recognised; a final result in `jh-ink`.
-2. **End of turn.** ~1.2 s of silence after a final result sends the turn. No button. (A member who wants to think says nothing final — interim text does not send.)
-3. **Thinking.** The strip reads *Thinking…* with the three-dot pulse the Progress board uses.
-4. **Speaking.** The coach's reply streams in; each sentence is spoken through `speechSynthesis` as it completes, so the first words are heard in ~1 s, not after the whole turn. The mic is muted while the coach speaks — the browser would otherwise hear it — and reopens on the last sentence.
-5. **Interrupting.** A tap on the strip (or Space, when the panel has focus) stops the speech and opens the mic: barge-in. The unspoken rest of the turn stays in the transcript.
-
-```
-┌ voice strip (replaces the composer) ─────────────────────────────┐
-│ ▁▃▅▃▁  Listening…                                                │   bars in jh-ink, 44 px tall, the whole strip is the interrupt target
-│ "two hundred to two thirty"                                      │   interim in jh-mute → final in jh-ink
-│                                       ⌨ Type instead   ◯ Voice  │   .btn-ghost in ink (not red) · the switch
-└──────────────────────────────────────────────────────────────────┘
-```
-
-- **The transcript is still the record.** Every spoken turn is a transcript turn; a wrong word is corrected by saying so ("not 230, 220") — the coach already handles corrections — or by *Type instead*, which drops back to the textarea with the mic paused. Nothing is lost between the two.
-- **The coach talks differently when heard.** While Voice is on, the request carries a mid-conversation `system` message — *Voice: the member is listening. Keep turns under 60 words, one question, no tables; when you need a yes on a table, say its lines in a sentence.* — cache-safe, and off again the written register returns.
-- **Numbers and names.** Recognition is weakest on exactly what the profile needs — figures, company names, URLs. Rule in the prompt: *in voice, read back every number, name and URL before writing it* — the yes the Gems already ask for, made explicit. URLs and emails are typed: the coach asks for them and the strip offers *Type instead* in that moment.
-- **Where it works.** Chrome, Edge, Safari (Safari's `continuous` restarts itself every ~60 s; the hook restarts it silently). Firefox has no `SpeechRecognition`: the switch is absent, not disabled, and the composer is the conversation. `speechSynthesis` voices differ by device; the hook picks the best `en` voice available and the admin can set a preferred voice name.
-- **v2 — a provider, behind the same switch.** When the complaint is recognition (accents, names) or the robotic voice, the loop moves to a streaming STT/TTS provider over a websocket from `/api/coach/voice` (Deepgram / ElevenLabs / OpenAI audio — chosen then, not now): same strip, same states, same transcript, same Claude turn in the middle. Nothing in the panel changes. Not built until measured use asks for it.
+The coach is a **written conversation**. Phase 3 built a browser voice loop (`SpeechRecognition` + `speechSynthesis`: continuous listening, a pause sends, the reply spoken as it streamed, tap to interrupt) and it was removed the same week, before any member used it: the composer is the one way to talk to a coach, the transcript the one record. Nothing of it remains — no header switch, no strip, no `voice` flag on the turn, no voice register in the prompts (each prompt went to version 2 for the cut). If it ever returns it returns as a provider-backed loop (streaming STT/TTS over a websocket) designed on measured demand, not as the browser APIs.
 
 ## 5. No upload — what Settings becomes
 
@@ -177,13 +155,13 @@ The coach runs on Vercel against the Claude API — as the CareerOps engine will
 | Piece | Decision |
 |---|---|
 | Model | `claude-opus-5-5` at `output_config.effort: "low"`; a Coach 1 run on `claude-sonnet-5-5` measured before phase 1 closes (decision 1). Server-side refusal fallback on (`fallbacks: "default"`). The model id lives in `config/coach` so it can be changed without a deploy. |
-| Streaming | `client.messages.stream(...)` → SSE to the browser; the transcript fills as the coach writes, sentence boundaries flagged for the voice. `max_tokens` 4096 — turns are ≤ 250 words by the prompt's rule. |
+| Streaming | `client.messages.stream(...)` → SSE to the browser; the transcript fills as the coach writes. `max_tokens` 4096 — turns are ≤ 250 words by the prompt's rule. |
 | System prompt | Stable, cached (`cache_control: { type: "ephemeral", ttl: "1h" }`): the coach's instructions + `profile-schema.md` (the authority for every key) + its sample, ~20–40K tokens. Today's date after the breakpoint. Verify `usage.cache_read_input_tokens` > 0 on turn two — logged (§8). |
 | The profile as context | The server builds it from Firestore when a conversation opens — `profileFromSetup` → `profileToYaml`, the whole profile so far in the schema the coach knows — into the first user turn. After each `update_profile` the tool result returns the keys as stored; a member's own edit on the page is appended as a short system note on the next turn (*The member changed Salary range by hand: …*). History is never edited, so the cache holds. |
 | Tools | **`update_profile`** (closed schema, **not strict** — strict mode caps optional fields at 24 across the tools, which no coach's keys fit; the server enforces shape and ownership instead): `{ patch: <partial profile in the schema's keys>, progress?: "in_progress" \| "complete" }`. The server validates the patch against the schema, restricts it to **the keys this coach owns** (§1 of the schema; `lib/coach/owns.ts`, tested — a Narrative key from Coach 2 comes back as a tool error the coach reads), merges with `mergeProfile` semantics (lists replace, maps merge key by key, nothing unmentioned is dropped), writes one `setDoc` with merge to `users/{uid}/careerOps/setup` — `jhg.identity.fullName` to `users/{uid}` as `shapeJhFile` does — and stamps `jhg.progress.<coach>`. Coaches 2 and 3 also get `web_search_20260209` (`max_uses` 10 per turn) for market wording, postings and growth signals (decision 4); *nothing found online becomes a claim about the student* stays in the prompt. |
 | Long sessions | Server-side compaction (`compact-2026-01-12`, `client.beta.messages`), the whole `response.content` appended back each turn; since every yes is already in the profile, a compacted summary never holds the only copy of anything. |
 | Thinking | Omitted (adaptive by default on Opus 5.5); `display` stays `omitted`. |
-| Prompts (decision 6) | The six `gem-*.md` + `profile-schema.md` + samples move into the repo as `lib/coach/prompts/` (the source stays in `maleta/`; the pack is a build output already), with the Gemini-isms replaced once: "print the file / offer a download" → "call `update_profile` after each yes, `progress: complete` at hand-over"; "upload your files" → "your profile is in front of me"; Google Search → the tool; the voice and page-context rules added. **Admin override in Firestore** through the pattern `agents-config.ts` already has: `config/coach/{coach}` with `systemPrompt`, `promptVersion`, `updatedBy`, archived versions under `config/coach/promptVersions/{coach}-{n}`, *Reset to default* restoring the repo text — edited in Admin → CareerOps → a new **Coach** tab (§8). |
+| Prompts (decision 6) | The six `gem-*.md` + `profile-schema.md` + samples move into the repo as `lib/coach/prompts/` (the source stays in `maleta/`; the pack is a build output already), with the Gemini-isms replaced once: "print the file / offer a download" → "call `update_profile` after each yes, `progress: complete` at hand-over"; "upload your files" → "your profile is in front of me"; Google Search → the tool; the page-context rule added. **Admin override in Firestore** through the pattern `agents-config.ts` already has: `config/coach/{coach}` with `systemPrompt`, `promptVersion`, `updatedBy`, archived versions under `config/coach/promptVersions/{coach}-{n}`, *Reset to default* restoring the repo text — edited in Admin → CareerOps → a new **Coach** tab (§8). |
 
 ## 7. Storage
 
@@ -197,7 +175,7 @@ users/{uid}/coachUsage/{YYYY-MM}             the month's meter (§8)
   turns, inputTokens, cacheWriteTokens, cacheReadTokens, outputTokens, webSearches, estimatedUsd
   byCoach: { narrative: { turns, estimatedUsd }, … }
 
-config/coach                                 model, monthlyBudgetUsd (0 = no limit), monthlyTurnQuota (0 = no limit), preferredVoice
+config/coach                                 model, monthlyBudgetUsd (0 = no limit), monthlyTurnQuota (0 = no limit)
 config/coach/{coach}                         the prompt override (§6)
 ```
 
@@ -218,16 +196,16 @@ Written by the route (Admin SDK); read live by the panel (`useLiveDoc`; owner ru
 | Component | Status | Role |
 |---|---|---|
 | `components/coach/CoachLauncher.tsx` | new | The disc + tail + dot; mounted in `AppShell` for both portals when the flag is on. |
-| `components/coach/CoachPanel.tsx` | new | `Sheet dock="right"` with the header, `Transcript`, the composer / voice strip; mounted once in `AppShell`. |
+| `components/coach/CoachPanel.tsx` | new | `Sheet dock="right"` with the header, `Transcript`, the composer; mounted once in `AppShell`. |
 | `components/coach/CoachScreen.tsx` | new | The expanded page: `SectionsPage` geometry, rail of six in two groups. |
 | `components/coach/Transcript.tsx` | new | Coach prose (markdown), member blocks, status lines, the streaming turn. |
-| `components/coach/Composer.tsx` · `VoiceStrip.tsx` | new | Textarea · mic · Send; the continuous `SpeechRecognition` + `speechSynthesis` hook (`useVoiceConversation`). |
+| `components/coach/Composer.tsx` | new | Textarea · Send. |
 | `components/tracker/Sheet.tsx` | touched | `dock="right"` (no scrim, no scroll lock on `md+`) and a `side` width. |
 | `components/profile/SectionsPage.tsx` | touched | The empty-row link to the coach; the 600 ms row highlight on a live write. |
 | `JobHackingSettings` · `SettingsHub` | touched | §5 — the coach rows instead of the files card for flagged members. |
 | `AccessRenewals` · `useAccess` · `grants.ts` · `auth.ts` | touched | The flag (§2). |
 | `components/admin/careerops/CoachTab.tsx` | new | §8. |
-| `lib/coach/` | new | `prompts/`, `owns.ts`, `turn.ts` (request builder: cache breakpoints, tools, voice + page-context system messages), `write.ts` (validate · restrict · merge · stamp · `setDoc`), `session.ts`, `usage.ts`, `pricing.ts`. Pure where it can be; tested like `profile-files.ts`. |
+| `lib/coach/` | new | `prompts/`, `owns.ts`, `turn.ts` (request builder: cache breakpoints, tools, the page-context system message), `write.ts` (validate · restrict · merge · stamp · `setDoc`), `session.ts`, `usage.ts`, `pricing.ts`. Pure where it can be; tested like `profile-files.ts`. |
 
 Nothing red that isn't a primary action or the one waiting dot; radii 8/12 (full on the disc); the row grammar everywhere; 44 px targets; `jh-mute` the floor for readable text; `shadow-jh-3` on the disc and the panel only.
 
@@ -237,7 +215,6 @@ Nothing red that isn't a primary action or the one waiting dot; radii 8/12 (full
 |---|---|---|---|
 | Building the profile (JobHacking) | 5 | **9** | One door on every page; the page fills beside the conversation; empty rows point at it; the menu's two levels untouched. Remaining: a four-hour Coach 3 on a phone — the expanded page carries it; a "ten at a time" chapter list in its rail is the v2 if members stall. |
 | The launcher + panel | — | **9** | One floating element with the one floating shadow; ink disc, red only for "your turn"; a `Sheet` the app already has, docked; 55ch; two lanes, each with one job. Remaining: on a 1024–1279 screen the page beside a 440 panel is narrow — the panel overlays there (the page scrolls under it) rather than docking; acceptable, the expanded page is one tap away. |
-| Voice | — | **8.5** | A real loop (listen → send on silence → speak as it streams → barge-in), the transcript as the record, numbers read back. Remaining: browser recognition and voices — the measured v2 trigger. |
 | Compass → Settings hub | 9 | **9** | One section swapped for another in the same row grammar; the primary button moves to the thing that matters. |
 | Admin → Coach tab | — | 8.5 | The Models / Agents grammar reused; cost labelled as an estimate. |
 
@@ -245,7 +222,7 @@ Nothing red that isn't a primary action or the one waiting dot; radii 8/12 (full
 
 1. **Flag + Coach 1 in the panel, text** — on the engine foundation (`docs/CAREER_OPS_CLAUDE.md` phase 0: `claude.ts`, the meter, `config/engine`). The flag end to end; `/api/coach/turn` with caching, metering and `update_profile` restricted to the Narrative keys; `Sheet dock="right"`; launcher + panel in `AppShell`; the Narrative coach; the empty-row link; the live-write highlight. Behind the flag to you and two members. Read the first month's meter.
 2. **All six + the expanded page + Settings.** `owns.ts` for every coach; web search on 2 and 3; compaction; the rail's *After X* state; `/jobhacking/coach` and `/settings/coach`; §5's Settings; the Admin Coach tab with prompts, limits and usage.
-3. **Voice.** The conversation loop, the strip, the voice system message, the mobile composer. Then the provider decision from real use.
+3. ~~**Voice.**~~ Built, then removed (§4).
 
 ## 12. Readiness for CareerOps — confirmed against the code
 
@@ -268,6 +245,4 @@ Consequences for this design:
 
 ## 13. Still open (small)
 
-- The silence that ends a spoken turn: 1.2 s proposed; tuned on the first voice sessions.
 - The panel's width on 1024–1279 screens: overlay (proposed) or a narrower 400 dock.
-- Which `en` voice to prefer per platform — set from the admin tab once heard on real devices.

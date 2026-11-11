@@ -4,8 +4,8 @@
 //   messages  [ first turn: the profile as it stands + the account, then the member's words ]
 //             … the history, appended whole and never edited (cache + preserved thinking) …
 //             the member's new words
-//             a system message last, when there is something to say: the page the member is
-//             looking at, and whether they are listening (voice) — cache-safe, never edited in.
+//             a system message last, when there is something to say: the page and section the
+//             member is looking at — cache-safe, never edited in.
 
 import type Anthropic from "@anthropic-ai/sdk";
 import type { SystemPart } from "../claude";
@@ -16,8 +16,6 @@ export type TurnMessage = Anthropic.Beta.BetaMessageParam | Anthropic.Beta.BetaS
 export interface TurnContext {
   page?: JhPageKey | null;
   section?: JhSectionKey | null;
-  /** The member is listening rather than reading (docs/UX_COACH.md §4). */
-  voice?: boolean;
 }
 
 export interface FirstTurnInput {
@@ -60,7 +58,6 @@ export function contextNote(ctx: TurnContext | null | undefined): string | null 
     const section = ctx.section ? findJhSection(ctx.section) : undefined;
     if (page) parts.push(`The member is looking at ${page.label}${section ? ` · ${section.label}` : ""}.`);
   }
-  if (ctx.voice) parts.push("Voice: the member is listening, not reading. Keep this turn under 60 words, one question, no tables — say a table's lines in a sentence; read back every number, name and URL before you write it.");
   return parts.length ? parts.join(" ") : null;
 }
 
