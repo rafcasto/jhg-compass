@@ -52,6 +52,13 @@ export interface CallInput {
   tools?: BetaToolUnion[];
   /** Server-side web search, capped per call. Omit for no search. */
   maxSearches?: number;
+  /**
+   * Cache the conversation too (top-level automatic caching): the API puts a breakpoint on the
+   * last block and walks it forward each turn, so every prior turn — search results included —
+   * is re-read at the cache-read rate instead of re-billed at the input price. For multi-turn
+   * loops only: a single-shot call would pay the write and never read it.
+   */
+  cacheConversation?: "5m" | "1h";
   signal?: AbortSignal;
 }
 
@@ -80,6 +87,7 @@ function params(i: CallInput): Anthropic.Beta.MessageCreateParamsNonStreaming {
     system: typeof i.system === "string" ? i.system : systemBlocks(i.system),
     messages: i.messages,
     ...(tools.length ? { tools } : {}),
+    ...(i.cacheConversation ? { cache_control: { type: "ephemeral", ttl: i.cacheConversation } } : {}),
   };
 }
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { COACHES, COACH_TOTAL, coachForPage, coachShowsOn, coachStates, findCoach, launcherLabel, missingBefore, nextCoach, pageOfPath } from "@/lib/engine/coach/keys";
 import { COACH_OWNED_PATHS, COACH_PATCH_SCHEMAS, foreignPaths, schemaPaths, updateProfileTool } from "@/lib/engine/coach/tools";
 import { applyEvent, emptyPending, parseEvent, writeLine } from "@/lib/engine/coach/transcript";
-import { MAX_RECAP_BYTES, MAX_TRANSCRIPT_BYTES, START_CUE, buildMessages, contextNote, recapOf, transcriptFits, userTurn, withoutOperatorNotes } from "@/lib/engine/coach/turn";
+import { MAX_ECHO_CHARS, MAX_RECAP_BYTES, MAX_TRANSCRIPT_BYTES, START_CUE, buildMessages, contextNote, recapOf, toolResultOf, transcriptFits, userTurn, withoutOperatorNotes } from "@/lib/engine/coach/turn";
 import { COACH_PROMPTS } from "@/lib/engine/coach/prompts";
 
 describe("the six coaches", () => {
@@ -165,5 +165,17 @@ describe("a transcript that outgrows the document", () => {
     expect(content).toContain("Coach: hi\n\nMember: hello");
     expect(content).toMatch(/what next\?$/);
     expect(String(userTurn("hi", { ...first, recap: null }).content)).not.toContain("restarted");
+  });
+});
+
+describe("what a save answers the coach", () => {
+  it("echoes a short write as stored, and only names the sections of a long one", () => {
+    expect(toolResultOf(["Headline"], "version: 1\nnarrative:\n  headline: Head of Data")).toEqual({ ok: true, updated: ["Headline"], profile: "version: 1\nnarrative:\n  headline: Head of Data" });
+    const long = "version: 1\ncompanyLists:\n" + "  - name: Co\n".repeat(400) + "watchlist:\n  - x\n";
+    expect(long.length).toBeGreaterThan(MAX_ECHO_CHARS);
+    const r = toolResultOf(["Top 40"], long);
+    expect(r.profile).toBeUndefined();
+    expect(String(r.stored)).toMatch(/^companyLists, watchlist — written as sent/);
+    expect(JSON.stringify(r).length).toBeLessThan(200);
   });
 });

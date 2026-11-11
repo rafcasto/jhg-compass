@@ -25,14 +25,19 @@ export interface Coach {
   needs: readonly CoachKey[];
   /** Built — a coach without a prompt is shown but cannot start yet. */
   ready: boolean;
-  /** Web searches per turn: market wording for most; the research coaches (2, 3) do the research in the conversation. */
+  /**
+   * Web searches per call (`max_uses`): market wording for most; the research coaches (2, 3) do the research
+   * in the conversation. A turn runs up to six calls, so a cap of 5 is up to 30 searches a turn — each one
+   * $0.01 plus its results, which sit in the transcript for the rest of the conversation. Fixed for the whole
+   * conversation: changing a tool definition between calls breaks the cache and the preserved-thinking check.
+   */
   search: number;
 }
 
 export const COACHES: readonly Coach[] = [
   { key: "narrative", n: 1, label: "Narrative", page: "narrative", group: "compass", outcome: "Your contact details, a headline a recruiter gets in ten seconds, your bridge story and three to five core competencies.", time: "about 1 hour", needs: [], ready: true, search: 3 },
-  { key: "trueNorth", n: 2, label: "True North", page: "true-north", group: "compass", outcome: "Your boundaries, the roles the market really posts for you, target industries, seniority, salary range and company type.", time: "2–3 hours", needs: ["narrative"], ready: true, search: 15 },
-  { key: "targetCompanies", n: 3, label: "Target companies", page: "companies", group: "compass", outcome: "40 companies with their careers pages, scored; your Top 10 and Top 3 with a first move this week.", time: "3–4 hours", needs: ["narrative", "trueNorth"], ready: true, search: 15 },
+  { key: "trueNorth", n: 2, label: "True North", page: "true-north", group: "compass", outcome: "Your boundaries, the roles the market really posts for you, target industries, seniority, salary range and company type.", time: "2–3 hours", needs: ["narrative"], ready: true, search: 5 },
+  { key: "targetCompanies", n: 3, label: "Target companies", page: "companies", group: "compass", outcome: "40 companies with their careers pages, scored; your Top 10 and Top 3 with a first move this week.", time: "3–4 hours", needs: ["narrative", "trueNorth"], ready: true, search: 5 },
   { key: "storyBank", n: 4, label: "Story Bank", page: "story-bank", group: "artefacts", outcome: "Eight to ten proven stories (STAR+R), each number with its source; which stories prove each target role.", time: "1–2 sittings", needs: ["narrative", "trueNorth", "targetCompanies"], ready: true, search: 3 },
   { key: "masterCv", n: 5, label: "Master CV", page: "master-cv", group: "artefacts", outcome: "Your complete CV, every line a result from your stories.", time: "about 2 hours", needs: ["narrative", "trueNorth", "targetCompanies", "storyBank"], ready: true, search: 3 },
   { key: "linkedin", n: 6, label: "LinkedIn", page: "linkedin", group: "artefacts", outcome: "Your LinkedIn profile, section by section, ready to paste.", time: "1–2 hours", needs: ["narrative", "storyBank", "masterCv"], ready: true, search: 3 },

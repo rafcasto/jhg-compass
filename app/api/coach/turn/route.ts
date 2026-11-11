@@ -11,7 +11,7 @@ import { findCoach, isCoachKey, missingBefore, coachStates } from "@/lib/engine/
 import { UPDATE_PROFILE, updateProfileTool } from "@/lib/engine/coach/tools";
 import { applyCoachPatch, CoachWriteError } from "@/lib/engine/coach/write";
 import { getSession, messagesOf, saveSession, type CoachSession } from "@/lib/engine/coach/session";
-import { START_CUE, buildMessages, recapOf, systemFor, transcriptFits, withoutOperatorNotes, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
+import { START_CUE, buildMessages, recapOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
 import { STREAM_FRAME, applyEvent, emptyPending, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
 import { profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -97,6 +97,8 @@ export async function POST(req: NextRequest) {
             messages: messages as Anthropic.Beta.BetaMessageParam[],
             tools: [tool],
             maxSearches: coach.search,
+            // A person pauses between turns (docs/UX_COACH.md §6, Long sessions): 1h, like the system blocks.
+            cacheConversation: "1h",
           });
           let sawTextThisRound = false;
           for await (const ev of s) {
@@ -119,7 +121,7 @@ export async function POST(req: NextRequest) {
               const r = await applyCoachPatch({ uid, coach: coach.key, patch: input.patch ?? {}, progress: input.progress, portal });
               if (r.note.progress === "complete") completed = true;
               pending = applyEvent(pending, { type: "write", note: r.note }); send({ type: "write", note: r.note });
-              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: true, updated: r.note.labels, profile: r.stored }) });
+              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify(toolResultOf(r.note.labels, r.stored)) });
             } catch (e: unknown) {
               const err = e instanceof CoachWriteError ? { error: e.message, details: e.details } : { error: e instanceof Error ? e.message : "write failed" };
               results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, ...err }), is_error: true });
