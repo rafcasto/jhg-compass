@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { COACHES, COACH_TOTAL, coachForPage, coachShowsOn, coachStates, findCoach, launcherLabel, missingBefore, nextCoach, pageOfPath } from "@/lib/engine/coach/keys";
 import { COACH_OWNED_PATHS, COACH_PATCH_SCHEMAS, foreignPaths, schemaPaths, updateProfileTool } from "@/lib/engine/coach/tools";
 import { applyEvent, emptyPending, parseEvent, writeLine } from "@/lib/engine/coach/transcript";
-import { START_CUE, buildMessages, contextNote, userTurn, withoutOperatorNotes } from "@/lib/engine/coach/turn";
+import { MAX_RECAP_BYTES, MAX_TRANSCRIPT_BYTES, START_CUE, buildMessages, contextNote, recapOf, transcriptFits, userTurn, withoutOperatorNotes } from "@/lib/engine/coach/turn";
 import { COACH_PROMPTS } from "@/lib/engine/coach/prompts";
 
 describe("the six coaches", () => {
@@ -126,5 +126,44 @@ describe("one turn's request", () => {
     expect(contextNote({ page: null })).toBeNull();
     expect(contextNote({ page: "narrative" })).toBe("The member is looking at Narrative.");
     expect(START_CUE).toMatch(/start/);
+  });
+});
+
+describe("a transcript that outgrows the document", () => {
+  it("fits under the budget and not over it — well inside Firestore's 1 MiB", () => {
+    expect(MAX_TRANSCRIPT_BYTES).toBeLessThan(1_048_576 / 2);
+    expect(transcriptFits("[]")).toBe(true);
+    expect(transcriptFits(JSON.stringify([{ role: "user", content: "x".repeat(MAX_TRANSCRIPT_BYTES - 64) }]))).toBe(true);
+    expect(transcriptFits("[" + "é".repeat(MAX_TRANSCRIPT_BYTES) + "]")).toBe(false); // bytes, not characters
+  });
+
+  it("recaps the readable turns oldest first, with what each coach turn wrote", () => {
+    expect(recapOf([])).toBeNull();
+    const recap = recapOf([
+      { role: "coach", text: "Which three companies first?", at: 1 },
+      { role: "member", text: "Stripe, Wise, Monzo", at: 2 },
+      { role: "coach", text: "Saved.", at: 3, writes: [{ labels: ["Top 3", "Top 10"], links: [] }] },
+    ]);
+    expect(recap).toBe("Coach: Which three companies first?\n\nMember: Stripe, Wise, Monzo\n\nCoach: Saved.\n(wrote: Top 3, Top 10)");
+  });
+
+  it("keeps the most recent turns when the recap would not fit, and says so", () => {
+    const turns = Array.from({ length: 10 }, (_, i) => ({ role: (i % 2 ? "coach" : "member") as "coach" | "member", text: `turn ${i} ` + "y".repeat(100), at: i }));
+    const recap = recapOf(turns, 400)!;
+    expect(recap.startsWith("[earlier turns omitted]")).toBe(true);
+    expect(recap).toContain("turn 9");
+    expect(recap).toContain("turn 8");
+    expect(recap).not.toContain("turn 0 ");
+    expect(recapOf(turns)).not.toContain("omitted");
+    expect(MAX_RECAP_BYTES).toBeLessThan(MAX_TRANSCRIPT_BYTES);
+  });
+
+  it("restarts as a first turn: the profile, then the recap, then the member's words", () => {
+    const first = { profileYaml: "version: 1", account: { name: "Ana", email: "ana@x.io" }, recap: "Coach: hi\n\nMember: hello" };
+    const content = String(userTurn("what next?", first).content);
+    expect(content.indexOf("```yaml")).toBeLessThan(content.indexOf("restarted"));
+    expect(content).toContain("Coach: hi\n\nMember: hello");
+    expect(content).toMatch(/what next\?$/);
+    expect(String(userTurn("hi", { ...first, recap: null }).content)).not.toContain("restarted");
   });
 });

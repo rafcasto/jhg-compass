@@ -11,7 +11,7 @@ import { findCoach, isCoachKey, missingBefore, coachStates } from "@/lib/engine/
 import { UPDATE_PROFILE, updateProfileTool } from "@/lib/engine/coach/tools";
 import { applyCoachPatch, CoachWriteError } from "@/lib/engine/coach/write";
 import { getSession, messagesOf, saveSession, type CoachSession } from "@/lib/engine/coach/session";
-import { START_CUE, buildMessages, systemFor, withoutOperatorNotes, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
+import { START_CUE, buildMessages, recapOf, systemFor, transcriptFits, withoutOperatorNotes, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
 import { STREAM_FRAME, applyEvent, emptyPending, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
 import { profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -69,10 +69,12 @@ export async function POST(req: NextRequest) {
   const missing = missingBefore(coach, coachStates(setup?.jhg?.progress));
   if (missing.length) return NextResponse.json({ ok: false, error: `${coach.label} starts after ${missing.map((c) => c.label).join(" and ")}.` }, { status: 409 });
 
+  // No transcript to replay — a new conversation, or one whose transcript outgrew its budget: the
+  // first turn carries the profile and, after a restart, a recap of what the member can read.
   const history = messagesOf(session);
   const isFirst = history.length === 0;
   const first = isFirst
-    ? { profileYaml: profileToYaml(profileFromSetup({ profile, setup })), account: { name: [profile?.firstName, profile?.lastName].filter(Boolean).join(" "), email: profile?.email ?? m.user.email ?? "" } }
+    ? { profileYaml: profileToYaml(profileFromSetup({ profile, setup })), account: { name: [profile?.firstName, profile?.lastName].filter(Boolean).join(" "), email: profile?.email ?? m.user.email ?? "" }, recap: recapOf(session.turns) }
     : null;
   const resolved = resolvePrompt(prompt.text, prompt.version, override);
   const cfg = config.agents.coach;
@@ -128,11 +130,13 @@ export async function POST(req: NextRequest) {
 
         const coachTurn: TranscriptTurn = { role: "coach", text: pending.text.trim() || textOf([]), at: Date.now(), ...(pending.writes.length ? { writes: pending.writes } : {}) };
         const turns: TranscriptTurn[] = [...session.turns, ...(start ? [] : [{ role: "member" as const, text: memberText, at: now }]), coachTurn];
+        // Past the budget (Firestore's 1 MiB document): drop the transcript; the next turn restarts from the profile and a recap of `turns`.
+        const transcript = JSON.stringify(withoutOperatorNotes(messages));
         const next: CoachSession = {
           ...session,
           status: completed || session.status === "complete" ? "complete" : "in_progress",
           turns,
-          messagesJson: JSON.stringify(withoutOperatorNotes(messages)),
+          messagesJson: transcriptFits(transcript) ? transcript : "[]",
           turnCount: session.turnCount + 1,
           startedAt: session.turnCount === 0 ? now : session.startedAt,
           lastTurnAt: Date.now(),
