@@ -60,6 +60,22 @@ export function recapOf(turns: readonly TranscriptTurn[], maxBytes = MAX_RECAP_B
   return lines.length ? lines.reverse().join("\n\n") : null;
 }
 
+/** The stored keys are echoed back only while short: a forty-company list echoed after every save would sit in the transcript for the rest of the conversation. */
+export const MAX_ECHO_CHARS = 2000;
+
+/**
+ * What `update_profile` answers: the labels written; the validator's warnings when it changed something
+ * on the way in (a headline trimmed to its cap, a list cut) — so the coach confirms what the page holds,
+ * not what it sent; and, when it is small enough to be worth the tokens, the stored YAML, otherwise the
+ * section names.
+ */
+export function toolResultOf(labels: string[], stored: string, warnings: readonly string[] = []): Record<string, unknown> {
+  const w = warnings.length ? { warnings: [...warnings] } : {};
+  if (stored.length <= MAX_ECHO_CHARS) return { ok: true, updated: labels, ...w, profile: stored };
+  const sections = stored.split("\n").filter((l) => /^[A-Za-z]/.test(l) && !l.startsWith("version")).map((l) => l.replace(/:.*$/, ""));
+  return { ok: true, updated: labels, ...w, stored: `${sections.join(", ")} — written as sent (${stored.length} chars, not echoed)` };
+}
+
 /** What the member typed — or, when a conversation starts, the opening cue the member never sees. */
 export const START_CUE = "Hi — I'm ready to start.";
 

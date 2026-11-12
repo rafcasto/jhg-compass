@@ -6,8 +6,10 @@
 // shape (validateProfileFile) and the ownership (foreignPaths) on every write and hands
 // any error back as a tool result the coach fixes with the member. Pure — tested.
 //
-// Field names and nesting follow profile-schema.md §2–§5c exactly; the limits live in the
-// descriptions (the API's tool schemas take no minItems / maxItems / maxLength).
+// Field names and nesting follow profile-schema.md §2–§5c exactly. Every parameter carries its
+// meaning and its limit in the description — the schema is the contract the model fills in, and
+// the API's tool schemas take no minItems / maxItems / maxLength. The prompts' key tables say
+// what each key means in the conversation; the rule itself lives here, once.
 
 import type { CoachKey } from "./keys";
 
@@ -22,10 +24,12 @@ const obj = (properties: Record<string, unknown>, description?: string) => ({ ty
 const rows = (item: Record<string, unknown>, description: string) => ({ type: "array", items: item, description });
 
 const YN = ["Y", "N"] as const;
-const SCORES = obj({ growth: int("🚀 Growth signals 1–5"), interest: int("💚 Interest 1–5"), access: int("🔑 Access 1–5"), proof: int("🧾 Proof 1–5"), total: int("the sum") }, "The member's four numbers and their sum");
+const SCORES = obj({ growth: int("🚀 Growth signals 1–5"), interest: int("💚 Interest 1–5"), access: int("🔑 Access 1–5"), proof: int("🧾 Proof 1–5"), total: int("growth + interest + access + proof") }, "The member's four numbers and their sum");
 const RANKED = obj({
-  rank: int("1–40"), name: str("As the company writes it"), industry: str(""), subSector: str(""), companyType: en(["startup", "scaleup", "established", "public_sector"], ""),
-  careersUrl: str("Left out when status is none"), careersUrlStatus: en(["opened_by_coach", "confirmed", "corrected", "none"], ""), scores: SCORES,
+  rank: int("1–40 by total; ties: interest, then proof. The Top 3 keep their Top-10 ranks"), name: str("As the company writes it"),
+  industry: str("The industry it sells into, named as in the member's True North"), subSector: str("Its sub-sector — one from True North, or from extraSubSectors with its own sourced number"),
+  companyType: en(["startup", "scaleup", "established", "public_sector"], "public_sector for government and its agencies"),
+  careersUrl: str("The page that LISTS its jobs; left out when status is none"), careersUrlStatus: en(["opened_by_coach", "confirmed", "corrected", "none"], "Top 10: from top10 (the member opened it); others: from companies"), scores: SCORES,
 }, "One ranked company");
 const SPLIT = obj({ sunrise: rows(RANKED, "growing sub-sector, rank order"), sunset: rows(RANKED, "flat or shrinking, rank order"), unclassified: rows(RANKED, "only when a sub-sector has no sourced number") }, "A list split by outlook");
 
@@ -83,40 +87,41 @@ export const COACH_PATCH_SCHEMAS: Record<CoachKey, Record<string, unknown>> = {
     jhg: obj({
       trueNorth: obj({
         boundaries: obj({
-          currency: en(["NZD", "AUD", "USD", "CAD", "JPY", "GBP", "EUR", "SGD"], ""), salaryLower: str("the member's own formatting"), salaryUpper: str(""), salaryFloor: str("floor ≤ lower"),
-          authorizedIn: list(""), needsSponsorship: en(YN, ""), visaStatus: str(""),
-          willWorkIn: str("≤ 300"), exclude: str("≤ 300"), remote: str("≤ 300"), localHybrid: str("≤ 300"), relocate: str("≤ 300"), remoteTravel: str("≤ 300"),
-          hardNos: list(""), softDislikes: list(""), excludeLevels: list(""), neverApply: list(""),
-          cultureMustHaves: list("empty when 'I don't know yet'"), deprioritizeIfAbsent: en(["Y", "N", ""], ""),
-          noticePeriodDays: int(""), negotiationLines: list("≤ 6, ≤ 300 each; empty when 'I don't know yet'"),
+          currency: en(["NZD", "AUD", "USD", "CAD", "JPY", "GBP", "EUR", "SGD"], "ISO code of the currency the pay is in"),
+          salaryLower: str("Target pay per year, lower end, in the member's own number formatting"), salaryUpper: str("Target pay per year, upper end, same formatting"), salaryFloor: str("The yearly pay below which they say no; floor ≤ lower"),
+          authorizedIn: list("Countries where they can work without sponsorship"), needsSponsorship: en(YN, "Y only when they need sponsorship elsewhere"), visaStatus: str("Their work-rights status in one line"),
+          willWorkIn: str("Cities they will work in, one line ≤ 300"), exclude: str("Places to exclude, one line ≤ 300"), remote: str("Remote: yes/no and any condition, one line ≤ 300"), localHybrid: str("Hybrid days on site and whether that changes the floor, one line ≤ 300"), relocate: str("Relocation: where and on what terms, one line ≤ 300"), remoteTravel: str("On-site travel they'd accept for a remote role based elsewhere, one line ≤ 300"),
+          hardNos: list("Things they will not do — a posting with one is out"), softDislikes: list("Things that lower a posting without ruling it out"), excludeLevels: list("Seniority levels to exclude, as posted"), neverApply: list("Companies they'd never join"),
+          cultureMustHaves: list("Two or three, including anything about the hiring process; empty when 'I don't know yet'"), deprioritizeIfAbsent: en(["Y", "N", ""], "Whether a posting without the must-haves drops down the list; '' when unknown"),
+          noticePeriodDays: int("Notice period in days"), negotiationLines: list("Up to 3 lines they'd actually say in a negotiation (≤ 6, ≤ 300 each); empty when 'I don't know yet'"),
         }, "Part A, as one table the member confirmed"),
-        postings: rows(obj({ title: str(""), company: str(""), location: str(""), url: str("A URL you opened in this conversation"), phrases: list("2–3 phrases quoted from the JD"), verified: str("YYYY-MM-DD") }), "15–20 postings you read"),
+        postings: rows(obj({ title: str("The title as posted"), company: str("The employer as the posting names it"), location: str("As posted"), url: str("The posting's URL — one you opened in this conversation"), phrases: list("2–3 phrases quoted from the job description"), verified: str("The day you read it, YYYY-MM-DD") }), "15–20 postings you read — a posting counts only when you opened it"),
         keepers: list("3–5 recurring employer phrases, each traceable to a posting"),
-        titles: obj({ target: list(""), analog: list("same work, different name"), exclude: list("") }, "Titles as posted, bucketed by the member"),
+        titles: obj({ target: list("Titles they want, as posted (≥ 1)"), analog: list("Same work under a different name"), exclude: list("Titles they rule out (≥ 1)") }, "Every repeating title, bucketed by the member"),
         clusters: rows(obj({ name: str("Named by the business problem, not a title"), titles: list("most-posted first"), axes: list("the keepers that belong"), buys: str("what the employer buys, one sentence"), level: str("as posted: Senior, Lead…"), fit: en(["primary", "secondary", "adjacent"], "exactly one primary") }), "2–3 clusters (1–8)"),
-        industries: rows(obj({ name: str(""), subSectors: rows(obj({ name: str(""), growthSignal: str("a number with its date"), source: str("the URL you opened"), outlook: en(["sunrise", "sunset", ""], "only with a number and a source"), confirmed: en(["Y", ""], "") }), "") }), "2–3 target industries, first = North Star industry"),
+        industries: rows(obj({ name: str("The industry's name"), subSectors: rows(obj({ name: str("The sub-sector's name"), growthSignal: str("A growth number with its date"), source: str("The URL you opened for the number — a growth source, never the company's own site"), outlook: en(["sunrise", "sunset", ""], "sunrise = growing, sunset = flat or shrinking; '' until there is a number and a source"), confirmed: en(["Y", ""], "Y once the member confirmed the sub-sector") }), "Its sub-sectors, each with a sourced number") }), "2–3 target industries in order; the first is the North Star industry"),
         companyType: str("one phrase"),
       }, "The working material behind True North"),
     }),
   }),
 
   targetCompanies: obj({
-    watchlist: obj({ companies: rows(obj({ name: str(""), careersUrl: str("only when confirmed or corrected") }), "The Top 10 in rank order") }, "What the Scout watches"),
+    watchlist: obj({ companies: rows(obj({ name: str("As the company writes it"), careersUrl: str("The careers page — only when the member confirmed or corrected it") }), "The Top 10 in rank order") }, "What the Scout watches"),
     companyLists: obj({ all: SPLIT, top10: SPLIT, top3: SPLIT }, "The 40 / Top 10 / Top 3, each split sunrise · sunset · unclassified, rank order; written at hand-over"),
     notes: str("The §6 notes block, complete, now with 'Top 3 right now: …'"),
     jhg: obj({
       targetCompanies: obj({
         companies: rows(obj({
-          rank: int(""), name: str("as the company writes it"), companyType: en(["startup", "scaleup", "established", "public_sector"], ""),
-          inspiredBy: en(["industry_growth", "competitor", "customer_or_supplier", "network_or_alumni", "press_or_funding", "job_posting", "event_or_community", "other"], ""),
-          industry: str(""), subSector: str(""), outlook: en(["sunrise", "sunset", ""], "from the sub-sector's row"), location: str(""), website: str(""),
-          growthSignal: str("a number or a dated event"), growthSource: str("the URL you opened — never the company's own site"), knownContact: str("from the member's memory, or ''"),
-          careersUrl: str("the page that LISTS its jobs"), careersUrlStatus: en(["opened_by_coach", "none"], ""), scores: SCORES,
+          rank: int("1–40 by total; ties: interest, then proof"), name: str("As the company writes it"), companyType: en(["startup", "scaleup", "established", "public_sector"], "public_sector for government and its agencies"),
+          inspiredBy: en(["industry_growth", "competitor", "customer_or_supplier", "network_or_alumni", "press_or_funding", "job_posting", "event_or_community", "other"], "Where the idea came from"),
+          industry: str("The industry it sells into, named as in True North"), subSector: str("Its sub-sector — from True North, or from extraSubSectors"), outlook: en(["sunrise", "sunset", ""], "Copied from the sub-sector's row; '' when it has no sourced number"), location: str("Where it is, as the member would say it"), website: str("Its own site, absolute URL"),
+          growthSignal: str("A number or a dated event"), growthSource: str("The URL you opened for the signal — never the company's own site"), knownContact: str("Someone the member knows there, from memory only; '' when nobody"),
+          careersUrl: str("The page that LISTS its jobs — its ATS board where one exists; left out when status is none"), careersUrlStatus: en(["opened_by_coach", "none"], "opened_by_coach when you opened it; none after two searches found nothing"), scores: SCORES,
         }), "Exactly 40 at hand-over; the batches as they stand at a save point"),
-        extraSubSectors: rows(obj({ name: str(""), growthSignal: str(""), source: str(""), outlook: en(["sunrise", "sunset", ""], ""), confirmed: en(["Y", ""], "") }), "Sub-sectors True North did not cover"),
-        challenges: rows(obj({ company: str(""), challenge: str(""), resolution: str("") }), "Each score you challenged and what the member decided"),
-        top10: rows(obj({ rank: int(""), name: str(""), careersUrl: str(""), careersUrlStatus: en(["confirmed", "corrected", "none"], "the member opened it"), careersUrlNote: str(""), hiringAuthorityTitle: str("a title, never a person unless known"), knownPerson: str(""), thesis: str("one line in the company's language"), businessProblem: str("or 'needs a signal'"), sayItLoud: en(YN, "") }), "Ranks 1–10"),
-        top3: rows(obj({ name: str(""), whyNow: str("dated signal + its source"), firstMove: str("concrete, not 'research more'"), byDate: str("YYYY-MM-DD within 7 days") }), "Three of the Top 10"),
+        extraSubSectors: rows(obj({ name: str("The sub-sector's name"), growthSignal: str("A growth number with its date"), source: str("The URL you opened for the number"), outlook: en(["sunrise", "sunset", ""], "'' until there is a number and a source"), confirmed: en(["Y", ""], "Y once the member confirmed it") }), "Sub-sectors True North did not cover, sourced the same way"),
+        challenges: rows(obj({ company: str("The company"), challenge: str("The score you challenged and why"), resolution: str("What the member decided") }), "Each score you challenged"),
+        top10: rows(obj({ rank: int("1–10"), name: str("As the company writes it"), careersUrl: str("The careers page as the member confirmed or corrected it"), careersUrlStatus: en(["confirmed", "corrected", "none"], "What the member found when they opened it"), careersUrlNote: str("What they noticed about the page, if anything"), hiringAuthorityTitle: str("The title that would hire them — a title, never a person unless known"), knownPerson: str("A person they know there, or ''"), thesis: str("Why this company, one line in the company's own language"), businessProblem: str("The problem they would solve there, or 'needs a signal'"), sayItLoud: en(YN, "Y when the member would say the thesis out loud to someone there") }), "Ranks 1–10 of the 40"),
+        top3: rows(obj({ name: str("As the company writes it"), whyNow: str("A dated signal and its source"), firstMove: str("A concrete first move, not 'research more'"), byDate: str("YYYY-MM-DD within 7 days") }), "Three of the Top 10"),
       }),
     }),
   }),
@@ -129,11 +134,11 @@ export const COACH_PATCH_SCHEMAS: Record<CoachKey, Record<string, unknown>> = {
       portfolio: obj({ url: str("public"), description: str("its title"), whenToShare: str("≤ 200") }, "The proof asset, once published"),
     }),
     narrative: obj({ proofPoints: rows(obj({ name: str("= story title"), url: str("a public link proving it, else left out"), heroMetric: str("≤ 60, figures only from that story's numbers") }), "Same stories as `stories`, id order") }),
-    stories: rows(obj({ id: str("S1…"), title: str("3–6 words"), situation: str(""), task: str(""), action: str("their own action"), result: str("with the numbers; estimates say 'about'"), reflection: str(""), provenance: en(["verified", "estimate"], "") }), "Every story whose status is verified or estimate — never user_cannot_confirm"),
-    snapshots: rows(obj({ company: str(""), storyId: str(""), title: str(""), context: str(""), challenge: str(""), role: str(""), activities: list(""), results: list("figures from numbers[]"), relevance: str(""), keyDecisions: list("") }), "Optional: one-page proof for up to three Top-3 companies"),
+    stories: rows(obj({ id: str("S1…, same as storyFacts"), title: str("3–6 words"), situation: str("The setting, in their words"), task: str("What they were asked or chose to do"), action: str("Their own action, not the team's"), result: str("The outcome with its numbers; estimates say 'about'"), reflection: str("What they learned or would do again"), provenance: en(["verified", "estimate"], "= the story's sourceStatus") }), "Every story whose status is verified or estimate — never user_cannot_confirm"),
+    snapshots: rows(obj({ company: str("One of the Top 3"), storyId: str("The story it draws on, S1…"), title: str("The snapshot's title"), context: str("The company's situation as it relates to the story"), challenge: str("The problem the story answers"), role: str("The member's role in the story"), activities: list("What they did, one line each"), results: list("Figures from the story's numbers[]"), relevance: str("Why it matters to this company"), keyDecisions: list("The decisions that made the difference") }), "Optional: one-page proof for up to three Top-3 companies"),
     jhg: obj({
       artefacts: obj({
-        storyFacts: rows(obj({ id: str("S1…"), title: str("3–6 words, identical to stories[].title"), role: str("'Company · Title'"), leadSkill: str(""), numbers: list("every figure as written"), sourceStatus: en(["verified", "estimate", "user_cannot_confirm"], ""), sourceNote: str("where the proof lives") }), "Every story, including those never claimed (8–10)"),
+        storyFacts: rows(obj({ id: str("S1…"), title: str("3–6 words, identical to stories[].title"), role: str("'Company · Title' at the time"), leadSkill: str("The Narrative lead skill the story proves"), numbers: list("Every figure as the member wrote it"), sourceStatus: en(["verified", "estimate", "user_cannot_confirm"], "verified = they can show it; estimate = their best figure; user_cannot_confirm = no proof, never claimed"), sourceNote: str("Where the proof lives") }), "Every story, including those never claimed (8–10)"),
       }),
     }),
   }),
@@ -147,7 +152,7 @@ export const COACH_PATCH_SCHEMAS: Record<CoachKey, Record<string, unknown>> = {
         currentDomain: str("The field they work in today, plain English"),
         cvHouseRules: list("Standing rules for tailored CVs"),
         lockedSections: list("CV sections the AI must never cut — each a ## heading of cv"),
-        languageLearning: rows(obj({ language: str(""), currentLevel: str(""), targetLevel: str(""), targetDate: str(""), sentence: str("one sentence they write in it"), countries: list("") }), "Optional"),
+        languageLearning: rows(obj({ language: str("The language"), currentLevel: str("Their level today, e.g. B1"), targetLevel: str("The level they aim for"), targetDate: str("When, YYYY-MM"), sentence: str("One sentence they write in it"), countries: list("Countries it opens for them") }), "Optional: a language they are learning for the move"),
         linkedinPublicUrl: str("Their claimed custom public LinkedIn URL, absolute; left out otherwise"),
       }),
     }),
@@ -155,13 +160,13 @@ export const COACH_PATCH_SCHEMAS: Record<CoachKey, Record<string, unknown>> = {
 
   linkedin: obj({
     linkedin: obj({
-      headline: str("≤ 220"),
-      about: str("≤ 2,600"),
-      experience: rows(obj({ title: str(""), company: str(""), location: str(""), start: str("YYYY-MM"), end: str("YYYY-MM, or '' for Present"), description: str("≤ 2,000"), skills: list("≤ 5, each in the Skills list") }), "One per CV role, same titles, companies, locations and dates"),
-      featured: rows(obj({ kind: en(["link", "post", "article", "document"], ""), title: str(""), url: str("public") }), "2–3; the first is the proof asset when there is one"),
+      headline: str("The LinkedIn headline, ≤ 220 characters"),
+      about: str("The About section, ≤ 2,600 characters"),
+      experience: rows(obj({ title: str("The title as on the Master CV"), company: str("As on the Master CV"), location: str("As on the Master CV"), start: str("YYYY-MM"), end: str("YYYY-MM, or '' for Present"), description: str("The role's description, ≤ 2,000 characters"), skills: list("≤ 5, each one in the Skills list") }), "One per CV role, same titles, companies, locations and dates"),
+      featured: rows(obj({ kind: en(["link", "post", "article", "document"], "LinkedIn's Featured item kinds"), title: str("The item's title"), url: str("A public URL") }), "2–3; the first is the proof asset when there is one"),
       skills: list("20–25 the stories prove, as the profile should show them; the first three are pinned; never more than 50"),
-      education: rows(obj({ school: str(""), degree: str(""), field: str(""), start: str("year"), end: str("year") }), ""),
-      certifications: rows(obj({ name: str(""), issuer: str(""), issued: str("YYYY-MM"), url: str("") }), ""),
+      education: rows(obj({ school: str("The school"), degree: str("The degree"), field: str("The field of study"), start: str("Year"), end: str("Year") }), "As on the Master CV"),
+      certifications: rows(obj({ name: str("The certification"), issuer: str("Who issued it"), issued: str("YYYY-MM"), url: str("The credential's URL, or ''") }), "As on the Master CV"),
     }, "LinkedIn's own sections; every entry keeps all its keys, '' when unanswered"),
   }),
 };
