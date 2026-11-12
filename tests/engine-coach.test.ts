@@ -178,4 +178,9 @@ describe("what a save answers the coach", () => {
     expect(String(r.stored)).toMatch(/^companyLists, watchlist — written as sent/);
     expect(JSON.stringify(r).length).toBeLessThan(200);
   });
+  it("carries the validator's warnings so the coach confirms what the page holds", () => {
+    const w = ["narrative.headline is 260 characters — trimmed to 220"];
+    expect(toolResultOf(["Headline"], "version: 1", w)).toEqual({ ok: true, updated: ["Headline"], warnings: w, profile: "version: 1" });
+    expect(toolResultOf(["Headline"], "version: 1", [])).not.toHaveProperty("warnings");
+  });
 });

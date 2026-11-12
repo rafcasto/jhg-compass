@@ -37,6 +37,8 @@ export interface CoachWriteResult {
   note: WriteNote;
   /** The coach's part of the profile as it now stands — the tool result the coach reads. */
   stored: string;
+  /** What the validator changed on the way in (a trimmed string, a cut list) — the coach sees it and fixes it with the member. */
+  warnings: string[];
 }
 
 const isoDay = (now: number) => new Date(now).toISOString().slice(0, 10);
@@ -91,7 +93,7 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
     links: unique.map((r) => ({ label: r.label, href: r.href.startsWith(BASE_OF[portal]) ? r.href : r.href })),
     ...(input.progress ? { progress: input.progress } : {}),
   };
-  return { note, stored: profileToYaml(stripToCoach(merged, shaped)) };
+  return { note, stored: profileToYaml(stripToCoach(merged, shaped)), warnings: schema.warnings };
 }
 
 /** The merged profile cut down to the top-level sections this write touched — what the coach needs to see back. */

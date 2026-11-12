@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
               const r = await applyCoachPatch({ uid, coach: coach.key, patch: input.patch ?? {}, progress: input.progress, portal });
               if (r.note.progress === "complete") completed = true;
               pending = applyEvent(pending, { type: "write", note: r.note }); send({ type: "write", note: r.note });
-              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify(toolResultOf(r.note.labels, r.stored)) });
+              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify(toolResultOf(r.note.labels, r.stored, r.warnings)) });
             } catch (e: unknown) {
               const err = e instanceof CoachWriteError ? { error: e.message, details: e.details } : { error: e instanceof Error ? e.message : "write failed" };
               results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, ...err }), is_error: true });
