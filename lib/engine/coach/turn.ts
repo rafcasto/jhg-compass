@@ -63,17 +63,33 @@ export function recapOf(turns: readonly TranscriptTurn[], maxBytes = MAX_RECAP_B
 /** The stored keys are echoed back only while short: a forty-company list echoed after every save would sit in the transcript for the rest of the conversation. */
 export const MAX_ECHO_CHARS = 2000;
 
+export interface ToolResultExtras {
+  /** The hand-over checks that failed, computed by code (docs/COACH_ASSESSMENT_2026-11-16.md §1.3). Present at a save point or a hand-over. */
+  failedChecks?: readonly { id: string; label: string; fix?: string }[];
+  /** The progress the portal stored — "in_progress" when a hand-over was asked for but a check failed. */
+  progress?: "in_progress" | "complete";
+  /** One sentence: whether CareerOps can run from the profile as it stands. */
+  readiness?: string;
+}
+
 /**
  * What `update_profile` answers: the labels written; the validator's warnings when it changed something
  * on the way in (a headline trimmed to its cap, a list cut) — so the coach confirms what the page holds,
- * not what it sent; and, when it is small enough to be worth the tokens, the stored YAML, otherwise the
- * section names.
+ * not what it sent; the checks that failed, with what to fix, when progress was asked for; the readiness
+ * line on a hand-over; and, when it is small enough to be worth the tokens, the stored YAML, otherwise
+ * the section names.
  */
-export function toolResultOf(labels: string[], stored: string, warnings: readonly string[] = []): Record<string, unknown> {
+export function toolResultOf(labels: string[], stored: string, warnings: readonly string[] = [], extras: ToolResultExtras = {}): Record<string, unknown> {
   const w = warnings.length ? { warnings: [...warnings] } : {};
-  if (stored.length <= MAX_ECHO_CHARS) return { ok: true, updated: labels, ...w, profile: stored };
+  const x: Record<string, unknown> = {};
+  if (extras.progress) x.progress = extras.progress;
+  if (extras.failedChecks?.length) {
+    x.checks = { failed: extras.failedChecks.map((c) => ({ id: c.id, check: c.label, fix: c.fix })), note: extras.progress === "in_progress" ? "Not marked complete: fix these with the member, then call update_profile with progress \"complete\" again." : "Fix these with the member before the hand-over." };
+  } else if (extras.progress === "complete") x.checks = "all passed";
+  if (extras.readiness) x.readiness = extras.readiness;
+  if (stored.length <= MAX_ECHO_CHARS) return { ok: true, updated: labels, ...w, ...x, profile: stored };
   const sections = stored.split("\n").filter((l) => /^[A-Za-z]/.test(l) && !l.startsWith("version")).map((l) => l.replace(/:.*$/, ""));
-  return { ok: true, updated: labels, ...w, stored: `${sections.join(", ")} — written as sent (${stored.length} chars, not echoed)` };
+  return { ok: true, updated: labels, ...w, ...x, stored: `${sections.join(", ")} — written as sent (${stored.length} chars, not echoed)` };
 }
 
 /** What the member typed — or, when a conversation starts, the opening cue the member never sees. */

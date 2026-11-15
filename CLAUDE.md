@@ -75,6 +75,10 @@
   an empty section offers *Fill this in with your coach ›* (`SectionsPage` `coachLink`) and a write the panel streams lights the rows it
   names for 600 ms (`jh-flash`, `flashSections` in the coach store). Compass → Settings is untouched by this phase. **Admin → Member data**
   (`lib/member-data.ts` is the one list of a member's subcollections — extend it when the tree grows): reset coach · reset all · delete.
+  **Code checks, the model converses** (decision 2026-11-16): the hand-over checks live in `lib/engine/coach/checks.ts` and run in
+  `applyCoachPatch` whenever `progress` is given; Top-40 totals and ranks are computed there (`rankCompanies`), never by the model; a
+  hand-over with a failed check is stored `in_progress`. Add a check to `checks.ts` and name it in the prompt's hand-over line — never
+  ask the model to count, measure or rank what the stored profile can answer.
 
 - **Share links** (decision 2026-11-07, `docs/UX_SHARE.md`): a JobHacking page — Narrative · True North · Target companies · Artefacts,
   one link each, never a section, never the Agents area — can be shared read-only at `/share/<token>` as a **document** (title, author

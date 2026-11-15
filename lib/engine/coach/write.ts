@@ -5,10 +5,11 @@ import { PROFILE_VERSION, mergeProfile, profileFromSetup, profileToSetupPatch, p
 import { validateProfileFile } from "@/lib/careerops/profile-schema";
 import { buildPortalsYaml } from "@/lib/careerops/portals-yaml";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
-import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
+import type { CareerOpsSetupV2, JhgCompany } from "@/lib/careerops/types";
 import { jhFileName, jhFilePreview, jhFileProfile, shapeJhFile } from "@/lib/jobhacking/profile-files";
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import type { Profile } from "@/lib/types";
+import { coachChecks, failedChecks, rankCompanies, readinessLine, type Check } from "./checks";
 import type { CoachKey } from "./keys";
 import { foreignPaths } from "./tools";
 import type { WriteNote } from "./transcript";
@@ -18,6 +19,11 @@ import type { WriteNote } from "./transcript";
 // keys, shape for its page, merge key by key, one setDoc — so the pages read the same
 // whichever way the profile was written. Rebuilds profileYaml (and portalsYaml) because
 // the Pi reads those strings (docs/UX_COACH.md §12).
+//
+// Code checks, the model converses (docs/COACH_ASSESSMENT_2026-11-16.md §1.3): the Top-40 totals and
+// ranks are computed here, never by the model; at a save point or a hand-over the coach's checks run
+// against the merged profile and come back in the result; a hand-over with a failed check is stored
+// as in_progress — the rail's ✓ waits until the checks pass.
 
 export class CoachWriteError extends Error {
   constructor(message: string, public details: string[] = []) { super(message); this.name = "CoachWriteError"; }
@@ -39,6 +45,12 @@ export interface CoachWriteResult {
   stored: string;
   /** What the validator changed on the way in (a trimmed string, a cut list) — the coach sees it and fixes it with the member. */
   warnings: string[];
+  /** The hand-over checks against the merged profile — run when progress was given; empty otherwise. */
+  checks: Check[];
+  /** The progress actually stored: a hand-over with failed checks stays in_progress. */
+  progress?: "in_progress" | "complete";
+  /** One sentence on CareerOps readiness — on a hand-over. */
+  readiness?: string;
 }
 
 const isoDay = (now: number) => new Date(now).toISOString().slice(0, 10);
@@ -50,6 +62,9 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
 
   const foreign = foreignPaths(coach, patch);
   if (foreign.length) throw new CoachWriteError(`These keys belong to another coach and were not written: ${foreign.join(", ")}`, foreign);
+  // Totals and ranks are the portal's (audit #7): the model sends the four scores, code does the arithmetic.
+  const tcIn = coach === "targetCompanies" ? ((patch.jhg as Record<string, unknown> | undefined)?.targetCompanies as Record<string, unknown> | undefined) : undefined;
+  if (tcIn && Array.isArray(tcIn.companies)) tcIn.companies = rankCompanies(tcIn.companies as JhgCompany[]);
 
   const db = adminDb();
   const [profileSnap, setupSnap] = await Promise.all([db.doc(`users/${uid}`).get(), db.doc(`users/${uid}/careerOps/setup`).get()]);
@@ -71,7 +86,18 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
   mergeOwnBlocks(incoming, current, coach);
   const parsed = fromMaletaYaml(incoming);
   const shaped = shapeJhFile(coach, parsed, current);
-  const merged = mergeProfile(current, shaped);
+  let merged = mergeProfile(current, shaped);
+
+  // The checks run on what will be stored. A hand-over that fails one is stored as in_progress.
+  const checks = input.progress ? coachChecks(coach, merged, now) : [];
+  const failed = failedChecks(checks);
+  let progress = input.progress;
+  if (progress === "complete" && failed.length) {
+    progress = "in_progress";
+    const stamp = (shaped.jhg?.progress ?? {}) as Record<string, { status?: string; updated?: string }>;
+    if (stamp[coach]) stamp[coach] = { ...stamp[coach], status: existingStamp?.status === "complete" ? "complete" : "in_progress" };
+    merged = mergeProfile(current, shaped);
+  }
   const step = profileToSetupPatch(merged).setup;
   const after: Partial<CareerOpsSetupV2> = { ...(setup ?? {}), ...step };
   const rows = jhFilePreview(coach, shaped, setup, after, profile, { portal });
@@ -88,12 +114,14 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
   const changed = rows.filter((r) => r.inFile && r.kind !== "keep");
   const seen = new Set<string>();
   const unique = changed.filter((r) => !seen.has(r.key) && seen.add(r.key));
+  const readiness = progress === "complete" ? readinessLine(merged).line : undefined;
   const note: WriteNote = {
     labels: unique.map((r) => r.label),
     links: unique.map((r) => ({ label: r.label, href: r.href.startsWith(BASE_OF[portal]) ? r.href : r.href })),
-    ...(input.progress ? { progress: input.progress } : {}),
+    ...(progress ? { progress } : {}),
+    ...(readiness ? { readiness } : {}),
   };
-  return { note, stored: profileToYaml(stripToCoach(merged, shaped)), warnings: schema.warnings };
+  return { note, stored: profileToYaml(stripToCoach(merged, shaped)), warnings: schema.warnings, checks, progress, readiness };
 }
 
 /** The merged profile cut down to the top-level sections this write touched — what the coach needs to see back. */
