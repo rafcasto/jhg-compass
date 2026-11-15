@@ -211,8 +211,8 @@ export type JhNavGroupKey = "compass" | "artefacts";
 export interface JhNavItem { key: JhPageKey; label: string; href: string; page: JhPageKey }
 export interface JhNavGroup { key: JhNavGroupKey; label: string; items: readonly JhNavItem[] }
 
-/** The menu's shorter word for a page, where it has one. */
-const JH_NAV_LABEL: Partial<Record<JhPageKey, string>> = { linkedin: "LN" };
+/** The menu's word for a page where it differs from the page title (docs/UX_JOBHACKING.md §9): LN for LinkedIn profile. */
+export const JH_NAV_LABEL: Partial<Record<JhPageKey, string>> = { linkedin: "LN" };
 const navPage = (key: JhPageKey): JhNavItem => { const p = findJhPage(key)!; return { key: p.key, label: JH_NAV_LABEL[p.key] ?? p.label, href: p.href, page: p.key }; };
 
 export const JH_NAV: readonly JhNavGroup[] = [

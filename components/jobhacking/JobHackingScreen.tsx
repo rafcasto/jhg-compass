@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { flashKeysFor, openCoach, useCoachUi } from "@/components/coach/store";
+import { coachForPage } from "@/lib/engine/coach/keys";
 import PortalAccounts from "@/components/agents/PortalAccounts";
 import ContactPolicy from "@/components/careerops/ContactPolicy";
 import CvPanel from "@/components/careerops/CvPanel";
@@ -12,6 +14,7 @@ import NotesPanel from "@/components/profile/NotesPanel";
 import SectionsPage from "@/components/profile/SectionsPage";
 import type { SectionItem } from "@/components/profile/SectionList";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
+import { useAccess } from "@/lib/firestore/access";
 import { BASE_OF, JH_LIST_OF, findJhPage, jhGoal, jhPageHref, jhRowsFor, jhSectionHref, jhSectionSummaries, jhSectionsFor, parseJhSection, type JhPageKey, type JhSectionKey, type ProfilePortal } from "@/lib/jobhacking/sections";
 import { isSharePage, shareEmpty } from "@/lib/jobhacking/share";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -59,8 +62,11 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
   /** The worker's RSA public key, for the Portal accounts editor. */
   publicKey?: string | null;
 }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const uid = user?.uid;
+  // The coach beside the page (features.coach, admins always) — on JobHacking only, this phase (docs/UX_COACH_AGENTIC.md §6).
+  const { coachEnabled } = useAccess(uid);
+  const coach = portal === "jobhacking" && (coachEnabled || isAdmin);
   const base = BASE_OF[portal];
   const meta = findJhPage(page)!;
   const sections = useMemo(() => jhSectionsFor(page, { portal, careerOps }), [page, portal, careerOps]);
@@ -82,6 +88,18 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
   const sharePage = !compass && isSharePage(page) ? page : null;
   const { record: share } = useShare(uid, sharePage);
   const nothingToShare = useMemo(() => (sharePage ? shareEmpty(sharePage, { setup, profile }) : true), [sharePage, setup, profile]);
+  // The coach beside the page: an empty section offers it; a write it makes lights the rows it names.
+  const pageCoach = coachForPage(page);
+  const { flash: lastWrite } = useCoachUi();
+  const flash = useMemo(() => flashKeysFor(lastWrite, sections), [lastWrite, sections]);
+  const coachLink = coach && pageCoach ? {
+    label: "Fill this in with your coach",
+    onClick: (section: JhSectionKey) => {
+      // The panel reads ?section= at send time; put it in the URL without a navigation.
+      const url = new URL(window.location.href); url.searchParams.set("section", section); window.history.replaceState(null, "", url);
+      openCoach(pageCoach.key);
+    },
+  } : undefined;
 
   return (
     <SectionsPage
@@ -101,6 +119,8 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
       // Every editor reads its fields once, on mount: remount them when an upload lands (the slot records change).
       panelKey={JSON.stringify(setup?.profileFiles ?? null)}
       loading={!uid || setupLoading || profileLoading}
+      coachLink={coachLink}
+      flash={flash}
       panel={(key) => {
         if (!uid) return null;
         const jhg = setup?.jhg;

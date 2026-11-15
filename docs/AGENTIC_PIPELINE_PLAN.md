@@ -205,7 +205,7 @@ version — a possible competitor, and the reason positioning (not tooling) is t
 
 | Phase | Builds | Depends on |
 |---|---|---|
-| **A · The coach, agentic** | `COACH_ASSESSMENT §5` 1–4: meter accuracy, the rail + Settings §5 + empty-row link + highlight, code checks in the tool result, CV-first start; review mode | nothing new |
+| **A · The coach, agentic** | `COACH_ASSESSMENT §5` 1–4: meter accuracy, the rail + Settings §5 + empty-row link + highlight, code checks in the tool result, CV-first start; review mode. **Started 2026-11-16, JobHacking only** (`feat/agentic-phase-a`): the §1 panel fixes, the rail of six on JobHacking → Settings and in the gated panel, *Start a coach over*, the empty-row link, the write highlight. Still to build: the Part line, code checks, CV-first, research jobs | nothing new |
 | **B · Sourcing and the brief** | `briefs/{v}` + *Approve my brief*; `companies`, `jobPostings`; the planner, Adzuna / Trade Me / Careerjet / SERP adapters, ATS detection; the `postings` and `companies` jobs called from Coaches 2 and 3; `JobStatus` in the panel | A (checks), the country enum |
 | **C · Fit scoring and review** | step 4 (Haiku, batched), `targets/{domain}`, the Target companies page showing pipeline fit beside the member's scores, `targetFeedback` and rescoring | B |
 | **D · Evaluation** | the A–H Evaluator on the engine (structured output, `trainingExamples` as the eval), scan from approved careers pages, `careerOpsPipeline` / `careerOpsReports` written by the engine | C |
@@ -229,6 +229,16 @@ all at once (`CAREER_OPS_CLAUDE.md` decision 6, amended: no cutover *until* the 
 The meter prices cache writes at the 5-minute rate while the coach caches at 1h — fix before reading the month.
 
 ---
+
+## 9b. Admin — a member's data
+
+Admin → TOFU → Access renewals, with one member ticked, shows **Member data** (`components/admin/tofu/MemberData.tsx`): the
+counts per collection (`lib/member-data.ts` is the one list of a member's subcollections — add a collection there when the
+tree grows), *Reset coach* (conversations · jobs · meter), *Reset all data* (every subcollection; `users/{uid}` keeps
+email · name · createdAt; share links revoked; the grant and the sign-in stay) and *Delete member* (the tree, the grant, the
+share links, the Auth user — the member's email typed to confirm). Server: `lib/server/member-data.ts` through
+`/api/admin/members/{uid}` (GET summary · DELETE) and `/api/admin/members/{uid}/reset` (POST `{ scope }`). Every act writes
+one line to `adminAudit/{id}` (server-only). The Supabase lead events are not touched — they are the funnel's, not the member's.
 
 ## 10. Open items
 

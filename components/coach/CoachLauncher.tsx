@@ -13,7 +13,8 @@ import { openCoach, useCoachUi } from "./store";
 // The floating coach (docs/UX_COACH.md §3): a 56 px ink disc, bottom-right of every
 // JobHacking / Settings page, that opens the panel on the coach for the page you are on.
 // Ink, not red — red is the page's primary action; the one red here is a 6 px dot when the
-// coach has asked something and is waiting. shadow-jh-3: the one floating element. Hidden
+// coach has asked something and is waiting. shadow-jh-3: the one floating element; it lifts by
+// shadow and tint only, never by a transform (docs/UX_AUDIT_COMPASS_TABS.md §0.1). Hidden
 // while the panel is open (the panel's × brings it back) and off the pages it has nothing to say on.
 export default function CoachLauncher({ portal }: { portal: ProfilePortal }) {
   const pathname = usePathname();
@@ -38,7 +39,7 @@ export default function CoachLauncher({ portal }: { portal: ProfilePortal }) {
       type="button"
       onClick={() => openCoach(coach.key)}
       aria-label={label}
-      className={`fixed right-4 z-40 flex h-14 items-center gap-3 rounded-pill bg-jh-ink text-white shadow-jh-3 transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jh-ink bottom-[calc(58px+env(safe-area-inset-bottom,0px)+1rem)] md:bottom-6 md:right-6 ${showTail ? "pl-4 pr-5" : "w-14 justify-center"}`}
+      className={`fixed right-4 z-40 flex h-14 items-center gap-3 rounded-pill bg-jh-ink text-white shadow-jh-3 transition-colors duration-200 ease-out hover:bg-jh-ink/95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jh-ink bottom-[calc(58px+env(safe-area-inset-bottom,0px)+1rem)] md:bottom-6 md:right-6 ${showTail ? "pl-4 pr-5" : "w-14 justify-center"}`}
       data-coach={coach.key}
     >
       <span className="relative grid h-6 w-6 place-items-center">

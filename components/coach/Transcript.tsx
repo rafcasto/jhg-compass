@@ -28,7 +28,7 @@ export default function Transcript({ turns, pending, error, quota }: {
           {pending.writes.map((w, i) => <WriteStatus key={i} note={w} />)}
           {pending.text
             ? <div className="text-[15px] leading-relaxed text-jh-ink"><Markdown>{pending.text}</Markdown></div>
-            : <p className="text-sm text-jh-mute animate-pulse">Thinking…</p>}
+            : <Thinking />}
         </div>
       )}
       {error && <p role="alert" className="text-sm text-jh-red">{error}</p>}
@@ -55,9 +55,21 @@ function Turn({ turn }: { turn: TranscriptTurn }) {
   );
 }
 
+// The one moving pixel while the coach writes: a 6 px dot pulses before a static word — text never blinks
+// (docs/UX_COACH_AGENTIC.md §1).
+function Thinking() {
+  return (
+    <p className="flex items-center gap-2 text-sm text-jh-mute" role="status">
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-jh-mute animate-pulse" aria-hidden /> Thinking…
+    </p>
+  );
+}
+
+// A write is a bare status line, not a box — the member's turn is the transcript's one box kind
+// (docs/UX_COACH_AGENTIC.md §1).
 function WriteStatus({ note }: { note: WriteNote }) {
   return (
-    <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-sm border border-jh-line bg-jh-mist/40 px-3 py-2 text-sm text-jh-ink">
+    <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-jh-ink">
       <Check className="h-4 w-4 shrink-0 text-rb-green-dark" aria-hidden /> {writeLine(note)}
       {note.links.length > 0 && <Link href={note.links[0].href} className="link text-sm">View ›</Link>}
     </p>

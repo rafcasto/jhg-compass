@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PageHeader from "@/components/shell/PageHeader";
@@ -31,7 +31,7 @@ export function sectionsProgress(rows: readonly SectionRow[]): SectionsProgress 
 }
 
 export default function SectionsPage<K extends string>({
-  id, backHref, eyebrow, title, intro, actions, identity, lead, items, rows, active, panel, panelKey, loading = false, status, parent,
+  id, backHref, eyebrow, title, intro, actions, identity, lead, items, rows, active, panel, panelKey, loading = false, status, parent, coachLink, flash,
 }: {
   /** Prefix for the section heading's id (one per page). */
   id: string;
@@ -57,12 +57,31 @@ export default function SectionsPage<K extends string>({
   status?: ReactNode;
   /** The hub this page sits under — a back row at the top of the rail and of the mobile overview (mobile only when the sidebar already shows the hub). */
   parent?: { label: string; href: string; mobileOnly?: boolean };
+  /** An empty section offers the coach: one tertiary link under the ask (docs/UX_COACH_AGENTIC.md §6). */
+  coachLink?: { label: string; onClick: (section: K) => void };
+  /** Sections a coach just wrote — their rows and, when open, the card fade through mist for 600 ms. */
+  flash?: { keys: readonly K[]; key: number } | null;
 }) {
   const progress = sectionsProgress(rows);
   const shown: K = active ?? items[0].key;
   const meta = items.find((s) => s.key === shown) ?? items[0];
   const Icon = meta.icon;
-  const count = rows.find((r) => r.key === shown)?.count;
+  const shownRow = rows.find((r) => r.key === shown);
+  const count = shownRow?.count;
+  // The open section's card fades when a write names it. A class toggled for 600 ms, never a remount: the
+  // editor inside may hold what the member is typing. Brought into view only when off-screen — never move
+  // a member who is reading something else.
+  const cardFlash = !!flash && flash.keys.includes(shown) ? flash.key : 0;
+  const [flashOn, setFlashOn] = useState(0);
+  const card = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!cardFlash) return;
+    setFlashOn(cardFlash);
+    const t = setTimeout(() => setFlashOn(0), 600);
+    const el = card.current;
+    if (el) { const r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > window.innerHeight) el.scrollIntoView({ block: "nearest" }); }
+    return () => clearTimeout(t);
+  }, [cardFlash]);
   const i = items.findIndex((s) => s.key === shown);
   const prev = items[i - 1], next = items[i + 1];
   const listLabel = `${title} sections`;
@@ -103,7 +122,7 @@ export default function SectionsPage<K extends string>({
         <aside className="hidden md:block md:sticky md:top-11 space-y-5">
           {parentRow && !parent?.mobileOnly && <div className="-mt-2">{parentRow}</div>}
           {identity}
-          <SectionList items={items} rows={rows} active={shown} variant="rail" label={listLabel} />
+          <SectionList items={items} rows={rows} active={shown} variant="rail" label={listLabel} flash={flash} />
           <div className="border-t border-jh-line pt-4">{progressBar}</div>
         </aside>
 
@@ -114,7 +133,7 @@ export default function SectionsPage<K extends string>({
             {identity && <section className="card p-4">{identity}</section>}
             {actions && <div className="flex flex-wrap gap-2 [&>button]:flex-1">{actions}</div>}
             {progressBar}
-            <SectionList items={items} rows={rows} variant="rows" label={listLabel} />
+            <SectionList items={items} rows={rows} variant="rows" label={listLabel} flash={flash} />
           </div>
 
           {/* ---- Section ---- */}
@@ -127,10 +146,13 @@ export default function SectionsPage<K extends string>({
                 {meta.group && <p className="section-label mb-1">{meta.group.eyebrow} · {meta.group.label}</p>}
                 <h2 id={`${id}-section-title`} className="flex items-center gap-2 text-lg"><Icon className="h-5 w-5 text-jh-mute" strokeWidth={1.5} aria-hidden /> {meta.title}</h2>
                 <p className="mt-1 max-w-prose text-sm text-jh-mute">{meta.ask}</p>
+                {coachLink && !loading && (shownRow?.state ?? "empty") === "empty" && (
+                  <button type="button" onClick={() => coachLink.onClick(shown)} className="link mt-2 inline-flex min-h-[44px] items-center text-sm md:min-h-0">{coachLink.label} ›</button>
+                )}
               </div>
               {count && <span className="shrink-0 font-mono text-xs text-jh-mute pt-1.5">{count}</span>}
             </header>
-            <div className="card p-5">
+            <div ref={card} className={`card p-5 ${flashOn && flashOn === cardFlash ? "jh-flash" : ""}`}>
               {loading ? <p className="text-jh-mute animate-pulse">Loading…</p> : <div key={`${shown}-${panelKey ?? 0}`}>{panel(shown)}</div>}
             </div>
             <nav className="flex items-center justify-between gap-3 md:hidden" aria-label="Neighbouring sections">

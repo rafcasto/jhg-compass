@@ -43,7 +43,7 @@ export default function Composer({ onSend, disabled = false, placeholder = "Type
         disabled={disabled}
         className="field min-h-[44px] flex-1 resize-none py-2.5 text-[15px] leading-6"
       />
-      <button type="submit" disabled={disabled || !text.trim()} className="btn-primary h-11 px-4" aria-label="Send">
+      <button type="submit" disabled={disabled || !text.trim()} className="btn-primary h-11" aria-label="Send">
         <Send className="h-4 w-4" aria-hidden /> Send
       </button>
     </form>

@@ -59,7 +59,7 @@ const STATE_ICON: Record<StepState, ComponentType<LucideProps>> = { done: Check,
 const STATE_TONE: Record<StepState, string> = { done: "text-rb-green-dark", partial: "text-jh-mute", empty: "text-jh-mute-2" };
 const STATE_TEXT: Record<StepState, string> = { done: "done", partial: "started", empty: "not set" };
 
-export default function SectionList<K extends string>({ items, rows, active, variant, label }: {
+export default function SectionList<K extends string>({ items, rows, active, variant, label, flash, onSelect }: {
   /** This page's sections, in order. */
   items: readonly SectionItem<K>[];
   rows: readonly SectionRow<K>[];
@@ -68,10 +68,16 @@ export default function SectionList<K extends string>({ items, rows, active, var
   variant: "rail" | "rows";
   /** Accessible name of the whole list. */
   label: string;
+  /** Rows a write just changed — a 600 ms mist fade (docs/UX_COACH_AGENTIC.md §6). `key` changes to replay. */
+  flash?: { keys: readonly K[]; key: number } | null;
+  /** Called beside the navigation when a row is tapped. */
+  onSelect?: (key: K) => void;
 }) {
   const byKey = new Map(rows.map((r) => [r.key, r]));
   const groups = groupItems(items);
   const rowOf = (key: K): SectionRow<K> => byKey.get(key) ?? { key, state: "empty", summary: "Not set" };
+  const flashing = (key: K) => (flash?.keys.includes(key) ? "jh-flash" : "");
+  const flashKey = (key: K) => (flash?.keys.includes(key) ? flash.key : 0);
 
   if (variant === "rail") {
     return (
@@ -85,10 +91,11 @@ export default function SectionList<K extends string>({ items, rows, active, var
               const isActive = s.key === active;
               return (
                 <Link
-                  key={s.key}
+                  key={`${s.key}-${flashKey(s.key)}`}
                   href={s.href}
+                  onClick={onSelect ? () => onSelect(s.key) : undefined}
                   aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-3 rounded-sm px-3 min-h-[44px] font-display font-semibold text-sm transition-colors duration-200 ease-out ${isActive ? "bg-jh-red-soft text-jh-red" : "text-jh-mute hover:bg-jh-mist hover:text-jh-ink"}`}
+                  className={`flex items-center gap-3 rounded-sm px-3 min-h-[44px] font-display font-semibold text-sm transition-colors duration-200 ease-out ${isActive ? "bg-jh-red-soft text-jh-red" : "text-jh-mute hover:bg-jh-mist hover:text-jh-ink"} ${flashing(s.key)}`}
                 >
                   <StateIcon className={`h-4 w-4 shrink-0 ${isActive ? "" : STATE_TONE[row.state]}`} strokeWidth={2} aria-hidden />
                   <span className="min-w-0 flex-1 truncate">{s.label}</span>
@@ -113,8 +120,8 @@ export default function SectionList<K extends string>({ items, rows, active, var
               const row = rowOf(s.key);
               const StateIcon = STATE_ICON[row.state];
               return (
-                <li key={s.key}>
-                  <Link href={s.href} className="flex items-center gap-3 px-4 py-3 min-h-[44px] transition-colors duration-200 ease-out hover:bg-jh-mist focus-visible:bg-jh-mist">
+                <li key={`${s.key}-${flashKey(s.key)}`} className={flashing(s.key)}>
+                  <Link href={s.href} onClick={onSelect ? () => onSelect(s.key) : undefined} className="flex items-center gap-3 px-4 py-3 min-h-[44px] transition-colors duration-200 ease-out hover:bg-jh-mist focus-visible:bg-jh-mist">
                     <StateIcon className={`h-4 w-4 shrink-0 ${STATE_TONE[row.state]}`} strokeWidth={2} aria-hidden />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline gap-2">
