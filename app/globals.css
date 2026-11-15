@@ -337,3 +337,15 @@ select.field, select.cfield { appearance: none; -webkit-appearance: none; paddin
   .share-doc a { text-decoration: none; color: inherit; }
   .share-doc section { break-inside: avoid-page; }
 }
+
+/* The live-write highlight (docs/UX_COACH_AGENTIC.md §6): the row a coach just wrote fades through mist and back —
+   150 ms in, 450 ms out. One microinteraction; none under prefers-reduced-motion, where the value simply changes. */
+@keyframes jh-flash {
+  0% { background-color: transparent; }
+  25% { background-color: theme('colors.jh.mist'); }
+  100% { background-color: transparent; }
+}
+.jh-flash { animation: jh-flash 600ms ease-out 1; }
+@media (prefers-reduced-motion: reduce) {
+  .jh-flash { animation: none; }
+}

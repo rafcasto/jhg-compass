@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { KeyRound, Search, RefreshCw, Bot, Target, MessageSquare } from "lucide-react";
 import { authed, postJson, fmtDateTime, Empty, Loading, NumberField, Section, type Notice } from "@/components/admin/shared";
+import MemberData from "./MemberData";
 import {
   ACCESS_FILTERS, DEFAULT_RENEWAL_DAYS, countByStatus, filterRows, memberName,
   type AccessFilter, type MemberAccessRow,
@@ -145,6 +146,9 @@ export default function AccessRenewals() {
           <p role="status" className={`text-sm ${notice.kind === "ok" ? "text-rb-green-dark" : "text-jh-red"}`}>{notice.text}</p>
         )}
       </Section>
+
+      {/* One member ticked: reset or delete their data (docs/AGENTIC_PIPELINE_PLAN.md — admin, 2026-11-16). */}
+      {selectedRows.length === 1 && <MemberData member={selectedRows[0]} onDeleted={() => { setSelected(new Set()); load(); }} />}
 
       <Section title="Members" help="Every member with an access grant. Status is what's true right now, even if the member hasn't signed in since it lapsed.">
         <div className="flex flex-wrap items-center gap-3">

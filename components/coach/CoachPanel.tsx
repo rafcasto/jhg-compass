@@ -11,9 +11,10 @@ import { applyEvent, emptyPending, parseEvent, type PendingTurn, type Transcript
 import type { CoachSession } from "@/lib/engine/coach/session";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { ProfilePortal } from "@/lib/jobhacking/sections";
+import CoachRail from "./CoachRail";
 import Composer from "./Composer";
 import Transcript from "./Transcript";
-import { closeCoach, openCoach, useCoachUi } from "./store";
+import { closeCoach, flashSections, openCoach, useCoachUi } from "./store";
 
 // The docked panel (docs/UX_COACH.md §3): the tracker's Sheet, docked right on desktop —
 // no scrim, no scroll lock, the page stays live beside it — a full-height sheet on a
@@ -76,7 +77,10 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
           if (!ev) continue;
           if (ev.type === "error") setError(ev.message);
           else if (ev.type === "done") { setPending(null); setLocalTurns([]); }
-          else setPending((p) => applyEvent(p ?? emptyPending(), ev));
+          else {
+            if (ev.type === "write") flashSections(ev.note.labels); // the page beside lights the rows just written
+            setPending((p) => applyEvent(p ?? emptyPending(), ev));
+          }
         }
       }
     } catch {
@@ -130,7 +134,11 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       {!coach.ready ? (
         <p className="text-sm text-jh-mute">{coach.label} is on its way — Coach {coach.n} is being built. {coach.outcome}</p>
       ) : missing.length ? (
-        <p className="text-sm text-jh-mute">{coach.label} starts after {missing.map((c) => c.label).join(" and ")} — your coach needs what they write first.</p>
+        // Gated: say why in one line, then the rail of six so the way forward is a tap away (docs/UX_COACH_AGENTIC.md §5).
+        <div className="space-y-6">
+          <p className="text-sm text-jh-mute">{coach.label} starts after {missing.map((c) => c.label).join(" and ")} — your coach needs what they write first.</p>
+          <CoachRail states={states} portal={portal} hasCv={!!setup?.cvMarkdown?.trim()} />
+        </div>
       ) : (
         <Transcript turns={turns} pending={pending} error={error} quota={quota} />
       )}

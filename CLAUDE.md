@@ -68,6 +68,13 @@
   research, scores, story facts, CV rules) is stored on `CareerOpsSetupV2.jhg` and shown **read-only beside the field it explains** through
   `components/jobhacking/FileFacts.tsx` — never as a page of its own, never editable. `public/*.example.yml` are the Packer's samples and
   `tests/profile-files-examples.test.ts` is the contract; change the schema and update them together.
+  **With the coach** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §5–6`, phase A of `docs/AGENTIC_PIPELINE_PLAN.md`): for a member
+  with `features.coach` (admins always) JobHacking → Settings renders the **rail of six** (`components/coach/CoachRail.tsx` over
+  `lib/engine/coach/rail.ts` — `SectionList` rows under the two menu headings, the gate in the summary, never a fourth glyph), *Export
+  profile.yml* and *Start a coach over* under *Danger*; the six slots render only for members without the coach. On the JobHacking pages
+  an empty section offers *Fill this in with your coach ›* (`SectionsPage` `coachLink`) and a write the panel streams lights the rows it
+  names for 600 ms (`jh-flash`, `flashSections` in the coach store). Compass → Settings is untouched by this phase. **Admin → Member data**
+  (`lib/member-data.ts` is the one list of a member's subcollections — extend it when the tree grows): reset coach · reset all · delete.
 
 - **Share links** (decision 2026-11-07, `docs/UX_SHARE.md`): a JobHacking page — Narrative · True North · Target companies · Artefacts,
   one link each, never a section, never the Agents area — can be shared read-only at `/share/<token>` as a **document** (title, author

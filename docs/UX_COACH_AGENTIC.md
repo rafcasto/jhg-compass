@@ -213,8 +213,8 @@ leaves open (overlay vs a 400 px dock) and the expanded page, which this note do
 
 ## 8. Build order (matches `COACH_ASSESSMENT_2026-11-16.md §5`)
 
-1. §1 fixes to the built panel (unbox the write line, the dot, no transform, the Part line, one height rule) — one PR, no behaviour change.
-2. §5 rail on Settings + §6 link and highlight — the specified UI, no prompt change.
+1. §1 fixes to the built panel (unbox the write line, the dot, no transform, the Part line, one height rule) — one PR, no behaviour change. **Built 2026-11-16** except the Part line.
+2. §5 rail on Settings + §6 link and highlight — the specified UI, no prompt change. **Built 2026-11-16, JobHacking only**: `CoachRail` on JobHacking → Settings (members with the coach; the six slots stay for the others) and in the panel while a coach is gated; *Start a coach over* under *Danger*; the empty-row link and the 600 ms `jh-flash` on `SectionsPage` / `SectionList`, driven by the panel's `write` events through the coach store (`flashSections` → `flashKeysFor`).
 3. §4 hand-over with `checks` — with the tool-result change.
 4. §3 CV-first — with the document input.
 5. §2 `JobStatus` — with the first research job (`postings`).
