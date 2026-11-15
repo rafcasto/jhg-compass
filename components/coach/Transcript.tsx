@@ -67,11 +67,15 @@ function Thinking() {
 
 // A write is a bare status line, not a box — the member's turn is the transcript's one box kind
 // (docs/UX_COACH_AGENTIC.md §1).
+// On a hand-over the readiness sentence follows, mute, from code (docs/UX_COACH_AGENTIC.md §4) — never a banner.
 function WriteStatus({ note }: { note: WriteNote }) {
   return (
-    <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-jh-ink">
-      <Check className="h-4 w-4 shrink-0 text-rb-green-dark" aria-hidden /> {writeLine(note)}
-      {note.links.length > 0 && <Link href={note.links[0].href} className="link text-sm">View ›</Link>}
-    </p>
+    <div className="space-y-1">
+      <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-jh-ink">
+        <Check className="h-4 w-4 shrink-0 text-rb-green-dark" aria-hidden /> {writeLine(note)}
+        {note.links.length > 0 && <Link href={note.links[0].href} className="link text-sm">View ›</Link>}
+      </p>
+      {note.readiness && <p className="text-sm text-jh-mute">{note.readiness}</p>}
+    </div>
   );
 }

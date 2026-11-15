@@ -9,6 +9,8 @@ export interface WriteNote {
   /** Deep links to those sections on the portal the member is on. */
   links: { label: string; href: string }[];
   progress?: "in_progress" | "complete";
+  /** On a hand-over: whether CareerOps can run, in one mute sentence (docs/UX_COACH_AGENTIC.md §4). */
+  readiness?: string;
 }
 
 export interface TranscriptTurn {
