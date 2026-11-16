@@ -1,6 +1,6 @@
 import "server-only";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
-import { ACCOUNT_FIELDS, MEMBER_COLLECTIONS, collectionsForScope, type MemberDataSummary, type ResetScope } from "@/lib/member-data";
+import { ACCOUNT_FIELDS, MEMBER_COLLECTIONS, collectionsForScope, type MemberAct, type MemberCollectionKey, type MemberDataSummary, type ResetScope } from "@/lib/member-data";
 import type { Profile } from "@/lib/types";
 
 // Reset or delete one member's data (Admin → TOFU → Access renewals → Member data). Admin SDK
@@ -8,23 +8,50 @@ import type { Profile } from "@/lib/types";
 // delete has to reach shareLinks and the Auth user too. Every act leaves one line in
 // adminAudit/{id} (server-only; the rules deny every client).
 
-/** What the member has — counted, so the admin confirms against the real numbers. */
+/** Documents per subcollection, by a one-document read of each (not the aggregation): a collection is non-empty when a read returns anything. */
+async function countCollections(uid: string): Promise<Partial<Record<MemberCollectionKey, number>>> {
+  const db = adminDb();
+  const counts = await Promise.all(MEMBER_COLLECTIONS.map(async (c) => {
+    const ref = db.collection(`users/${uid}/${c.key}`);
+    try {
+      return [c.key, (await ref.count().get()).data().count] as const;
+    } catch {
+      // The aggregation is not available everywhere; a plain read of the ids answers the same question.
+      return [c.key, (await ref.select().limit(500).get()).size] as const;
+    }
+  }));
+  return Object.fromEntries(counts.filter(([, n]) => n > 0));
+}
+
+/** The admin's recent acts on this member, newest first — the evidence a reset leaves. */
+async function recentActs(uid: string): Promise<MemberAct[]> {
+  try {
+    const snap = await adminDb().collection("adminAudit").where("uid", "==", uid).limit(50).get();
+    return snap.docs.map((d) => d.data() as MemberAct & Record<string, unknown>).map((a) => ({ action: a.action, ...(a.scope ? { scope: a.scope } : {}), at: Number(a.at) || 0, by: String(a.by ?? ""), ...(Array.isArray(a.removed) ? { removed: a.removed as string[] } : {}), ...(Array.isArray(a.remaining) ? { remaining: a.remaining as string[] } : {}) })).sort((a, b) => b.at - a.at).slice(0, 5);
+  } catch { return []; }
+}
+
+/** What the member has — counted, so the admin confirms against the real numbers and sees what a reset left. */
 export async function memberDataSummary(uid: string): Promise<MemberDataSummary> {
   const db = adminDb();
-  const [account, grant, counts, authUser] = await Promise.all([
+  const [account, grant, counts, authUser, acts] = await Promise.all([
     db.doc(`users/${uid}`).get(),
     db.doc(`accessGrants/${uid}`).get(),
-    Promise.all(MEMBER_COLLECTIONS.map(async (c) => [c.key, (await db.collection(`users/${uid}/${c.key}`).count().get()).data().count] as const)),
+    countCollections(uid),
     adminAuth().getUser(uid).then((u) => u).catch(() => null),
+    recentActs(uid),
   ]);
   const profile = account.exists ? (account.data() as Partial<Profile>) : null;
+  const accountExtras = profile ? Object.keys(profile).filter((k) => !(ACCOUNT_FIELDS as readonly string[]).includes(k)).sort() : [];
   return {
     uid,
     email: profile?.email ?? (grant.exists ? ((grant.data() as { email?: string }).email ?? null) : null) ?? authUser?.email ?? null,
-    counts: Object.fromEntries(counts.filter(([, n]) => n > 0)),
+    counts,
     hasAccount: account.exists,
     hasGrant: grant.exists,
     hasAuthUser: !!authUser,
+    accountExtras,
+    acts,
   };
 }
 
@@ -43,24 +70,22 @@ async function audit(action: "reset" | "delete", uid: string, by: string, detail
   await adminDb().collection("adminAudit").add({ action, uid, by, at: Date.now(), ...details });
 }
 
-export interface ResetResult { uid: string; scope: ResetScope; removed: string[]; shareLinks: number }
+export interface ResetResult { uid: string; scope: ResetScope; removed: string[]; remaining: string[]; shareLinks: number; accountReset: boolean }
 
 /**
- * Reset: the subcollections of the scope go (recursively — a document's own subcollections with it);
- * on `all` the account document keeps only its identity fields and the share links are revoked.
- * The grant and the Auth user stay — the member signs in to an empty Compass.
+ * Reset: every subcollection of the scope goes (recursively — a document's own subcollections with it),
+ * unconditionally: a delete of an empty collection costs nothing, and trusting a count to skip one is how a
+ * reset does nothing. On `all` the account document keeps only its identity fields and the share links are
+ * revoked. Then the collections are counted again: what still holds documents is reported, and the act fails
+ * loudly rather than claiming a reset it did not make. The grant and the Auth user stay.
  */
 export async function resetMemberData(uid: string, scope: ResetScope, by: string): Promise<ResetResult> {
   const db = adminDb();
   const before = await memberDataSummary(uid);
   const keys = collectionsForScope(scope);
-  const removed: string[] = [];
-  for (const key of keys) {
-    if (!before.counts[key]) continue;
-    await db.recursiveDelete(db.collection(`users/${uid}/${key}`));
-    removed.push(key);
-  }
+  for (const key of keys) await db.recursiveDelete(db.collection(`users/${uid}/${key}`));
   let shareLinks = 0;
+  let accountReset = false;
   if (scope === "all") {
     shareLinks = await deleteShareLinks(uid);
     const snap = await db.doc(`users/${uid}`).get();
@@ -69,10 +94,15 @@ export async function resetMemberData(uid: string, scope: ResetScope, by: string
       const kept: Record<string, unknown> = {};
       for (const f of ACCOUNT_FIELDS) if (d[f] !== undefined) kept[f] = d[f];
       await db.doc(`users/${uid}`).set(kept);
+      accountReset = true;
     }
   }
-  await audit("reset", uid, by, { scope, email: before.email, removed, shareLinks, counts: before.counts });
-  return { uid, scope, removed, shareLinks };
+  const after = await countCollections(uid);
+  const removed = keys.filter((k) => before.counts[k] && !after[k]);
+  const remaining = keys.filter((k) => after[k]);
+  await audit("reset", uid, by, { scope, email: before.email, removed, remaining, shareLinks, accountReset, counts: before.counts });
+  if (remaining.length) throw new Error(`The reset left documents in ${remaining.join(", ")} — try again; if it repeats, the service account may lack delete rights`);
+  return { uid, scope, removed, remaining, shareLinks, accountReset };
 }
 
 export interface DeleteResult { uid: string; email: string | null; shareLinks: number; authUserDeleted: boolean }

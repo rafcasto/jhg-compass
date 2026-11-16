@@ -11,18 +11,21 @@ vi.mock("@/lib/firebase/client", () => ({ auth: { currentUser: { getIdToken: asy
 const ada: MemberAccessRow = { uid: "ada123", email: "ada@x.io", firstName: "Ada", lastName: "Lovelace", status: "active", storedStatus: "active", durationDays: 60, startsAt: 0, expiresAt: 1, redeemBy: null, careerOps: false };
 const fetchMock = vi.fn();
 let counts: Record<string, number>;
+let acts: { action: string; scope?: string; at: number; by: string; removed?: string[]; remaining?: string[] }[] = [];
 
 beforeEach(() => {
   counts = { coachSessions: 2, opportunities: 5 };
+  acts = [];
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
   fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-    const summary = () => ({ uid: "ada123", email: "ada@x.io", counts, hasAccount: true, hasGrant: true, hasAuthUser: true });
+    const summary = () => ({ uid: "ada123", email: "ada@x.io", counts, hasAccount: true, hasGrant: true, hasAuthUser: true, accountExtras: Object.keys(counts).length ? ["goal", "onboardedAt"] : [], acts: acts });
     if (String(url).endsWith("/reset")) {
       const { scope } = JSON.parse(String(init?.body));
       const removed = Object.keys(counts).filter((k) => scope === "all" || k === "coachSessions");
       counts = Object.fromEntries(Object.entries(counts).filter(([k]) => !removed.includes(k)));
-      return { ok: true, json: async () => ({ ok: true, result: { uid: "ada123", scope, removed, shareLinks: 0 }, summary: summary() }) };
+      acts = [{ action: "reset", scope, at: 1_700_000_000_000, by: "admin@x.io", removed, remaining: [] }, ...acts];
+      return { ok: true, json: async () => ({ ok: true, result: { uid: "ada123", scope, removed, remaining: [], shareLinks: 1, accountReset: scope === "all" }, summary: summary() }) };
     }
     if (init?.method === "DELETE") {
       const { email } = JSON.parse(String(init.body));
@@ -33,6 +36,12 @@ beforeEach(() => {
 });
 
 describe("Member data", () => {
+  it("says what the account document still carries beyond the identity, and shows the uid", async () => {
+    render(<MemberData member={ada} onDeleted={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText(/Account document:/)).toHaveTextContent("identity + goal, onboardedAt"));
+    expect(screen.getByText("ada123")).toBeInTheDocument();
+  });
+
   it("counts what the member has, then resets the coach alone — the confirm quotes the counts", async () => {
     vi.stubGlobal("confirm", vi.fn(() => true));
     render(<MemberData member={ada} onDeleted={vi.fn()} />);
@@ -40,9 +49,11 @@ describe("Member data", () => {
     expect(screen.getByText("Opportunities")).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Reset coach" }));
     expect(String((confirm as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0])).toContain("Removes: 2 coach conversations.");
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Coach reset for Ada Lovelace — cleared 1 collection."));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Coach reset for Ada Lovelace — removed coachSessions."));
     expect(screen.queryByText("Coach conversations")).toBeNull();
     expect(screen.getByText("Opportunities")).toBeInTheDocument();
+    // The act is now evidence on the panel.
+    expect(screen.getByRole("list", { name: "Recent admin acts on this member" })).toHaveTextContent("Reset coach · removed coachSessions");
   });
 
   it("does nothing when the admin cancels the confirm", async () => {
@@ -63,7 +74,8 @@ describe("Member data", () => {
     expect(msg).toContain("NEW member — state zero");
     expect(msg).toContain("they see onboarding again");
     expect(msg).toContain("Removes: 2 coach conversations · 5 opportunities.");
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Reset to a new member for Ada Lovelace — cleared 2 collections. They start at onboarding next time they sign in."));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Reset to a new member for Ada Lovelace — removed coachSessions, opportunities; account back to email, name and created date; 1 share link revoked. They start at onboarding next time they sign in."));
+    expect(screen.getByText(/Account document:/)).toHaveTextContent("identity only — a new member");
     const body = JSON.parse(String((fetchMock.mock.calls.find(([u]) => String(u).endsWith("/reset"))![1] as RequestInit).body));
     expect(body).toEqual({ scope: "all" });
   });

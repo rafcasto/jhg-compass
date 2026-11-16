@@ -3,6 +3,9 @@ import { requireAdmin } from "@/lib/server/auth";
 import { deleteMember, memberDataSummary } from "@/lib/server/member-data";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+// A recursive delete of a member's tree can take a while; the plan's plain limit covers it.
+export const maxDuration = 120;
 
 const UID_RE = /^[A-Za-z0-9_-]{6,128}$/;
 

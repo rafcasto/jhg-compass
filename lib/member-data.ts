@@ -44,6 +44,17 @@ export const collectionsForScope = (scope: ResetScope): MemberCollectionKey[] =>
 /** The fields of users/{uid} that survive a full reset — the account's, not the profile's (docs/UX_JOBHACKING.md §4). */
 export const ACCOUNT_FIELDS = ["email", "firstName", "lastName", "createdAt"] as const;
 
+/** One admin act on this member, from adminAudit — the panel shows the recent ones so a reset leaves evidence. */
+export interface MemberAct {
+  action: "reset" | "delete";
+  scope?: ResetScope;
+  at: number;
+  by: string;
+  removed?: string[];
+  /** Subcollections still holding documents after the act — empty when it did what it said. */
+  remaining?: string[];
+}
+
 export interface MemberDataSummary {
   uid: string;
   email: string | null;
@@ -54,6 +65,18 @@ export interface MemberDataSummary {
   hasGrant: boolean;
   /** Whether a Firebase Auth user exists for the uid. */
   hasAuthUser: boolean;
+  /** The account document's fields beyond the identity — onboardedAt, goal… — empty for a new member. */
+  accountExtras: string[];
+  /** The most recent admin acts on this member, newest first. */
+  acts: MemberAct[];
+}
+
+/** "Reset to new member · removed careerOps, coachSessions" — one act in one line. */
+export function actLine(a: MemberAct): string {
+  const what = a.action === "delete" ? "Deleted" : a.scope === "coach" ? "Reset coach" : "Reset to new member";
+  const removed = a.removed?.length ? ` · removed ${a.removed.join(", ")}` : a.action === "reset" ? " · nothing to remove" : "";
+  const left = a.remaining?.length ? ` · STILL HOLDS ${a.remaining.join(", ")}` : "";
+  return `${what}${removed}${left}`;
 }
 
 /** "3 coach conversations · 12 opportunities" — the summary the confirm dialog quotes. */

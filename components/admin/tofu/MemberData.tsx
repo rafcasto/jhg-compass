@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { Eraser, Trash2 } from "lucide-react";
 import { authed, postJson, Section, type Notice } from "@/components/admin/shared";
 import { memberName, type MemberAccessRow } from "@/lib/access";
-import { MEMBER_COLLECTIONS, summaryLine, type MemberDataSummary, type ResetScope } from "@/lib/member-data";
+import { fmtDateTime } from "@/components/admin/shared";
+import { MEMBER_COLLECTIONS, actLine, summaryLine, type MemberDataSummary, type ResetScope } from "@/lib/member-data";
 
 // Admin → TOFU → Access renewals → Member data: with exactly one member ticked, what they have
 // stored and three destructive acts — reset the coach (conversations, jobs, meter); reset to a
@@ -36,8 +37,11 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
     try {
       const r = await postJson(`/api/admin/members/${member.uid}/reset`, { scope });
       const d = await r.json();
-      if (r.ok && d.ok) { setSummary(d.summary); setNotice({ kind: "ok", text: `${scope === "coach" ? "Coach reset" : "Reset to a new member"} for ${who}${d.result.removed.length ? ` — cleared ${d.result.removed.length} collection${d.result.removed.length === 1 ? "" : "s"}` : " — nothing was stored"}.${scope === "all" ? " They start at onboarding next time they sign in." : ""}` }); }
-      else setNotice({ kind: "err", text: d.error ? `Couldn't reset: ${d.error}` : "Couldn't reset." });
+      if (d.summary) setSummary(d.summary);
+      if (r.ok && d.ok) {
+        const removed: string[] = d.result.removed ?? [];
+        setNotice({ kind: "ok", text: `${scope === "coach" ? "Coach reset" : "Reset to a new member"} for ${who} — ${removed.length ? `removed ${removed.join(", ")}` : "no collection held anything"}${scope === "all" ? `; account ${d.result.accountReset ? "back to email, name and created date" : "document was already absent"}; ${d.result.shareLinks} share link${d.result.shareLinks === 1 ? "" : "s"} revoked. They start at onboarding next time they sign in.` : "."}` });
+      } else setNotice({ kind: "err", text: d.error ? `Couldn't reset: ${d.error}` : "Couldn't reset." });
     } catch { setNotice({ kind: "err", text: "Couldn't reset." }); }
     finally { setBusy(null); }
   }
@@ -57,6 +61,7 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
   }
 
   const stored = summary ? MEMBER_COLLECTIONS.filter((c) => (summary.counts[c.key] ?? 0) > 0) : [];
+  const extras = summary?.accountExtras ?? [];
 
   return (
     <Section title={`Member data · ${who}`} help="Reset coach clears the six conversations and the meter. Reset to new member is state zero — everything they ever entered goes, the account keeps only what registration wrote (email, name), and they see onboarding again; their access, its switches and their sign-in stay. Delete removes the member entirely. Every act is written to the admin audit log.">
@@ -64,7 +69,11 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
       : !summary ? <p className="text-jh-mute animate-pulse">Counting…</p>
       : (
         <>
-          {stored.length === 0 ? <p className="text-sm text-jh-mute">Nothing stored yet{summary.hasAccount ? "" : " — no account document"}.</p> : (
+          <p className="text-sm text-jh-mute">
+            Account document: {!summary.hasAccount ? "absent" : extras.length ? <>identity + <span className="text-jh-ink">{extras.join(", ")}</span></> : "identity only — a new member"}
+            {" · "}uid <span className="font-mono text-xs">{summary.uid}</span>
+          </p>
+          {stored.length === 0 ? <p className="text-sm text-jh-mute">No subcollection holds anything.</p> : (
             <ul className="grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3 text-sm" aria-label="What this member has stored">
               {stored.map((c) => (
                 <li key={c.key} className="flex items-baseline justify-between gap-3 border-b border-jh-line py-1.5">
@@ -86,6 +95,14 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
             </button>
           </div>
           {notice && <p role="status" className={`text-sm ${notice.kind === "ok" ? "text-rb-green-dark" : "text-jh-red"}`}>{notice.text}</p>}
+          {summary.acts.length > 0 && (
+            <div className="pt-3 border-t border-jh-line">
+              <p className="section-label mb-1">History</p>
+              <ul className="space-y-0.5 text-sm text-jh-mute" aria-label="Recent admin acts on this member">
+                {summary.acts.map((a, i) => <li key={i}><span className="text-jh-ink">{actLine(a)}</span> · {fmtDateTime(a.at)} · {a.by}</li>)}
+              </ul>
+            </div>
+          )}
         </>
       )}
     </Section>
