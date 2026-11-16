@@ -42,16 +42,18 @@ export const isEngineModel = (v: unknown): v is EngineModelId => ENGINE_MODELS.s
 // A job is one unit of queued work (docs/CAREER_OPS_CLAUDE.md §2) — or a parent
 // of several units. The list grows as CareerOps modules are ported; `ping` is
 // the smoke test that proves queue → run → Firestore end to end.
-export const ENGINE_JOB_TYPES = ["ping"] as const;
+export const ENGINE_JOB_TYPES = ["ping", "postings"] as const;
 export type EngineJobType = (typeof ENGINE_JOB_TYPES)[number];
 export const isEngineJobType = (t: unknown): t is EngineJobType => (ENGINE_JOB_TYPES as readonly string[]).includes(t as string);
 
 export const ENGINE_JOB_LABELS: Record<EngineJobType, string> = {
   ping: "Test job",
+  // True North Part B as a job (docs/AGENTIC_PIPELINE_PLAN.md §4; docs/COACH_ASSESSMENT_2026-11-16.md §1.2): 15–20 live postings, opened and verified by code.
+  postings: "Reading postings",
 };
 
 // Which agent a job runs on (its model, effort and prompt). ping runs no model.
-export const ENGINE_JOB_AGENT: Partial<Record<EngineJobType, EngineAgent>> = {};
+export const ENGINE_JOB_AGENT: Partial<Record<EngineJobType, EngineAgent>> = { postings: "researcher" };
 
 export const ENGINE_JOB_STATUSES = ["queued", "running", "done", "failed", "cancelled"] as const;
 export type EngineJobStatus = (typeof ENGINE_JOB_STATUSES)[number];

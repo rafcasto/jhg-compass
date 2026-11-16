@@ -83,6 +83,12 @@
   through `isCoachDocumentName`) rides on the turn it arrived with and is never stored by itself — the coach proposes, the member confirms,
   `update_profile` writes. Coaches 1 · 4 · 5 (`coachStartsFromCv`) open on `CvStart` while `setup.cvMarkdown` is empty. Never auto-save a
   handed-over CV to `cvMarkdown`; that is the Master CV page's and Coach 5's job.
+  **Research is a job, not a turn** (decision 2026-11-16, `docs/COACH_ASSESSMENT_2026-11-16.md §1.2`): a research step is an engine job
+  (`ENGINE_JOB_TYPES`, a handler in `lib/engine/handlers/`, its pure half in `lib/engine/research/`, its prompt in `lib/engine/prompts/`
+  with override key `job:<type>`) that a coach starts through `run_research` (`COACH_RESEARCH` names which coach may start which), that
+  writes its result to the profile through `applyCoachPatch`, and that the coach hears of on its next turn via `landedSince` on the operator
+  note. A posting or source counts only when code opened it (`urlWasFound` or a GET). Never let a coach do a research step with web search
+  that a job exists for; never put search results in the transcript.
 
 - **Share links** (decision 2026-11-07, `docs/UX_SHARE.md`): a JobHacking page — Narrative · True North · Target companies · Artefacts,
   one link each, never a section, never the Agents area — can be shared read-only at `/share/<token>` as a **document** (title, author

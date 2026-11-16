@@ -35,7 +35,10 @@ const ping: Handler = async ({ log, progress, unit }) => {
   return { pong: true, at: Date.now() };
 };
 
-export const HANDLERS: Record<EngineJobType, Handler> = { ping };
+// The handlers of the ported modules live in ./handlers — one file each, server-only.
+import { postings } from "./handlers/postings";
+
+export const HANDLERS: Record<EngineJobType, Handler> = { ping, postings };
 
 export async function runUnit(msg: RunMessage): Promise<{ ran: boolean; status: string }> {
   const { uid, jobId } = msg;

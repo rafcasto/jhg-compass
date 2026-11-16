@@ -199,6 +199,44 @@ export function updateProfileTool(coach: CoachKey) {
   };
 }
 
+// ---- run_research: a research step as a job, not a turn (docs/COACH_ASSESSMENT_2026-11-16.md §1.2) ----
+
+export const RUN_RESEARCH = "run_research";
+export const RESEARCH_KINDS = ["postings"] as const;
+export type ResearchKind = (typeof RESEARCH_KINDS)[number];
+export const isResearchKind = (v: unknown): v is ResearchKind => (RESEARCH_KINDS as readonly string[]).includes(v as string);
+
+/** Which research jobs each coach may start. Only True North's postings for now; industries and companies follow. */
+export const COACH_RESEARCH: Partial<Record<CoachKey, readonly ResearchKind[]>> = { trueNorth: ["postings"] };
+
+/** The tool definition — the portal runs the research beside the conversation and the result lands on the page and in the coach's next turn. */
+export function runResearchTool(coach: CoachKey) {
+  const kinds = COACH_RESEARCH[coach];
+  if (!kinds?.length) return null;
+  return {
+    name: RUN_RESEARCH,
+    description: "Start a research step as a job the portal runs beside this conversation — it searches, opens and verifies, and writes the result to the member's page; you get the table on your next turn. Call it once when the step begins, tell the member it takes a minute or two, and carry on with a question meanwhile. Never do that research yourself with web search.",
+    strict: false as const,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        kind: { type: "string", enum: [...kinds], description: "postings: 15–20 live postings for the member's competencies and region (True North Part B)" },
+        titles: { type: "array", items: { type: "string" }, description: "Titles the member already named as targets, when any (≤ 6)" },
+        boards: { type: "array", items: { type: "string" }, description: "Job boards the member said they check, in their words (≤ 6)" },
+        region: { type: "string", description: "Where to search, when the member corrected the profile's location in this conversation" },
+      },
+      required: ["kind"],
+      additionalProperties: false,
+    },
+  };
+}
+
+/** Every tool a coach runs with — update_profile first, run_research where the coach has research. Fixed for the conversation (the cache). */
+export function coachTools(coach: CoachKey) {
+  const research = runResearchTool(coach);
+  return research ? [updateProfileTool(coach), research] : [updateProfileTool(coach)];
+}
+
 /** The paths in a patch that this coach does not own — a non-empty list refuses the write. */
 export function foreignPaths(coach: CoachKey, patch: unknown, prefix = ""): string[] {
   const owned = COACH_OWNED_PATHS[coach] ?? [];
