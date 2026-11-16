@@ -218,3 +218,66 @@ leaves open (overlay vs a 400 px dock) and the expanded page, which this note do
 3. §4 hand-over with `checks` — with the tool-result change. **Built 2026-11-16**: `lib/engine/coach/checks.ts` runs the coach's checks against the merged profile at every save point and hand-over; the result carries `checks.failed[] {id, check, fix}` (or `"all passed"`), the stored `progress` and `readiness`; a hand-over with a failure is stored `in_progress` so the rail's ✓ waits; the readiness sentence renders mute under the completed write line (`WriteNote.readiness`). The model keeps only what code cannot decide (M1 figure tracing, banned phrases, keeper traceability, hero-metric figures, framing titles). Prompts v4: the hand-over paragraphs name the checks and defer to the result; the turn-length rule is the audit's #5; Part B of Target companies says the portal totals and ranks (#7).
 4. §3 CV-first — with the document input. **Built 2026-11-16**: `CvStart` (the empty state, `.btn-primary` *Add your CV* · `.link` *Start without one*) shows for Narrative, Story Bank and Master CV (`coachStartsFromCv`) while `setup.cvMarkdown` is empty and no turn exists; the composer's `.icon-btn` Paperclip attaches a file as a `.pill-visible` that goes with the next turn; the route takes `document: { name, text }` (`.md`/`.txt`, ≤ 60,000 chars) and puts it before the member's words on that turn (`documentBlock`), after the profile on a first turn; the member's turn shows the file name. Nothing is stored from the document — the three prompts' *When a CV is in front of you* paragraph has the coach propose a table and write only what is confirmed. **PDF built the same day**: the browser sends the bytes (`CoachPdf`, ≤ 3 MB), the turn route transcribes them once with one `low`-effort call through the SDK's `document` block (metered on the coach), and from there it is a text document like any other — the stored transcript carries words, not base64.
 5. §2 `JobStatus` — with the first research job (`postings`). **Built 2026-11-16**: `components/coach/JobStatus.tsx` reads `users/{uid}/engineJobs/{id}` live — the dot, the verb phrase from `progress`, the mono `n of m`, a `.link` Stop (`DELETE /api/engine/jobs/{id}`); ✓ `Reading postings · 18 found · View ›` when it lands; one `jh-red` line when it fails. A coach turn carries the jobs it started (`TranscriptTurn.jobs`, the `job` stream event). The job's result is written to the page by the handler (`applyCoachPatch`), so the write line is the page's own; the coach gets the 20-row table on its next turn through the operator note (`landedSince`).
+
+---
+
+## 9. The skills matrix — scored once, in code (2026-11-16)
+
+**Why.** Coach 1 §2 asked four 1–5 questions per skill, one at a time — sixty turns for fifteen skills — and the model
+summed and ranked. The rubric lived in prose with one anchor ("prove = 2 if no result in 10 seconds"), so the same prompt
+gave every member a different scale; and the table was never stored — only three `leadSkills` survived, so Story Bank could
+not see which skills were proven. The fix is the move §4 made for companies: **anchors, totals, ranks, tie-break and flags in
+code, the same for every member; the model converses about the result.**
+
+**Where it lives.** `lib/engine/coach/skills.ts` — `SKILL_AXES` (Good at it · Love it · Can prove it · Market pays, five
+anchors each), `scoreSkills` (total = sum; ranked by total, then Prove, then Pays, then Love, then the matrix's order),
+`TOP_CUT = 6`, `skillFlags` (inflated · flat · unproven top-six · loved-not-paid · paid-not-loved · tie at the cut),
+`scoresMessage` (the table the coach reads). Stored on `jhg.narrative.skillScores[] {skill, good, love, proof, pays, total,
+rank}` — in the schema shape, in `narrative.yml`, shown read-only beside Core competencies (`CompetencyFacts`). **N7**: once
+scored, the lead skills are three of the top six, spelled as scored.
+
+**The conversation.** The coach collects the list (rejecting traits is still its job) and calls **`score_skills`** with it
+(`SCORE_SKILLS`, Narrative only — `COACH_MATRIX`). The route cleans the list (`cleanSkills`, 3–20, de-duplicated), streams a
+`matrix` event, stores it on the coach turn (`TranscriptTurn.matrix`) and answers the tool: *end your turn with one line, no
+question*. The member scores everything and sends; the route takes `scores[]`, validates them against the pending matrix
+(`pendingMatrixOf` — the last one shown with no scored member turn after it), computes, **writes the scores itself through
+`applyCoachPatch`** (the write line reads *Updated Core competencies*), and hands the coach `scoresMessage` as the member's
+words. The member's turn in the transcript carries `scores` and renders as the scored table — never the generated prose.
+
+```
+┌ panel ───────────────────────────────────────────────┐
+│ Here are your fifteen. Score them all, then we talk  │
+│ about what stands out.                               │
+│                                                      │
+│ SCORE YOUR SKILLS · 1–5                              │   ← .section-label; one mute line under it
+│ GOOD      LOVE      PROVE     PAYS                   │   ← .section-label header, grid-cols-4
+│ ──────────────────────────────────────────────────── │
+│ Release management                        17 / 20    │   ← 15 px ink · font-mono text-xs mute, live
+│ [ 4 · Oth… ▾][ 5 · Wou… ▾][ 5 · Sev… ▾][ 3 · Ask… ▾]│   ← four native selects, .field h-11, 92 px each
+│ ──────────────────────────────────────────────────── │
+│ Incident management                        — / 20    │
+│ [ Good    ▾][ Love    ▾][ Prove   ▾][ Pays    ▾]    │   ← the axis word is the placeholder option
+│ …                                                    │
+│ ▸ What the numbers mean                              │   ← <details>, text-sm mute; the anchors, once
+│ 9 of 15 scored                     [ Send scores ]   │   ← mono mute · .btn-primary (the panel's one red)
+│ ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈ │
+│ Or tell your coach what to change…        [ Send ]   │   ← .btn-secondary while the matrix waits
+└──────────────────────────────────────────────────────┘
+```
+
+| Principle | Decision |
+|---|---|
+| **Hierarchy** | The skill name is the only ink in a row; the axis words, totals and the legend are `jh-mute`; the four numbers are `font-mono text-xs`. Once sent, the member's block shows ranked rows — rank mute, name ink, the four digits mono mute, the total `font-semibold` ink — and **one `jh-line-2` divider after rank 6: the cut**. No colour carries a judgement; the coach's words do |
+| **The scale** | The anchors ride **inside each `<select>`** (`3 · Solid, unsupervised`) so the number is never read alone, and a `<details>` lists them once. Same words for every member, from code |
+| **Spacing** | 8 between selects, 12 inside a row (`py-3`), 16 between the form's blocks; the form sits in the coach turn's 8 px rhythm with `pt-2` |
+| **Targets** | Native `<select>`, `.field h-11` — 44 px, and the OS picker on a phone. 392 px of body gives 92 px a select; the number is first so truncation costs nothing |
+| **Red budget** | While a matrix waits, *Send scores* is the panel's one red; the composer's Send becomes `.btn-secondary` (`Composer tone`) and its placeholder says what it is for — the member can still say "drop Excel". The matrix locks (`disabled`) while the coach writes |
+| **Depth** | None added: no card, no shadow. `divide-y` and `border-y` on `jh-line` make the rows |
+| **Decided against** | Five-dot ratings (five 44 px targets × four axes = 60 lines for 15 skills); a table with the name as a cell (120 px names truncate to nothing); a Sheet of its own (the matrix is the conversation's turn, not a dialog); a stepper (two taps a number) |
+
+**Files.** `lib/engine/coach/skills.ts` (pure) · `tools.ts` (`SCORE_SKILLS`, `scoreSkillsTool`, `COACH_MATRIX`) ·
+`transcript.ts` (`MatrixNote`, `matrix` event, `TranscriptTurn.matrix` / `.scores`, `pendingMatrixOf`) · `checks.ts` (N7) ·
+`turn.ts` (recap) · `app/api/coach/turn/route.ts` · `components/coach/SkillMatrix.tsx` (`SkillMatrix`, `ScoredSkills`) ·
+`Transcript.tsx` · `Composer.tsx` (`tone`) · `CoachPanel.tsx` · `WorkbookPanels.tsx` (`CompetencyFacts`) · prompt v6 ·
+`tests/engine-coach-skills.test.ts`, `tests/coach-skill-matrix.test.tsx`.
+

@@ -9,6 +9,7 @@ import type { ProfileFile } from "../../careerops/profile-file";
 import { LINKEDIN_LIMITS, TEXT_CAPS } from "../../careerops/profile-schema";
 import type { JhgCompany } from "../../careerops/types";
 import type { CoachKey } from "./keys";
+import { TOP_CUT, topCut } from "./skills";
 
 export interface Check {
   /** The prompt's own id: N2, T3, C1… */
@@ -43,6 +44,10 @@ function narrativeChecks(p: ProfileFile): Check[] {
   const sentences = headline.split(/[.!?](\s|$)/).filter((s) => s.trim()).length;
   const story = p.personalization?.exitNarrative?.trim() ?? "";
   const lead = p.jhg?.narrative?.leadSkills ?? [];
+  // N7 (docs/UX_COACH_AGENTIC.md §9): once the matrix was scored, the lead skills are three of its top six, spelled as scored.
+  const scored = (p.jhg?.narrative?.skillScores ?? []).filter((s) => typeof s.rank === "number" && typeof s.total === "number") as { skill: string; rank: number; total: number; good: number; love: number; proof: number; pays: number }[];
+  const top = scored.length ? topCut(scored).map((s) => lower(s.skill)) : [];
+  const offCut = scored.length ? lead.filter((l) => !top.includes(lower(l))) : [];
   return [
     check("N1", "identity complete", missing.length === 0 && tz, missing.length ? `Missing: ${missing.join(", ")}` : "Timezone must be Area/City (e.g. Pacific/Auckland)"),
     check("N2", "headline one sentence ≤ 220, no final full stop", !!headline && headline.length <= 220 && sentences <= 1 && !/[.]$/.test(headline),
@@ -52,6 +57,7 @@ function narrativeChecks(p: ProfileFile): Check[] {
       !story ? "No bridge story yet" : story.length > TEXT_CAPS.exitNarrative ? `Bridge story is ${story.length} characters` : !p.jhg?.narrative?.bridgeStoryOneLine?.trim() ? "No one-line version" : `${words(lead.length, "lead skill")} — need exactly 3`),
     check("N5", "portfolio absolute or absent", !p.contact?.portfolio || isUrl(p.contact.portfolio), "Portfolio must be an absolute URL or left out"),
     check("N6", "preferred channel set", !!id.preferredChannel?.trim(), "No preferred channel"),
+    check("N7", `lead skills are three of the matrix's top ${TOP_CUT}, spelled as scored`, offCut.length === 0, `Not in the top ${TOP_CUT} as scored: ${offCut.join(", ")} — the lead skills come from the playoff, in the matrix's spelling`),
   ];
 }
 

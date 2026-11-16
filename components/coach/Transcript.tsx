@@ -4,13 +4,17 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Check, Paperclip } from "lucide-react";
 import { Markdown } from "@/components/careerops/shared";
-import { writeLine, type JobNote, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
+import { pendingMatrixOf, writeLine, type JobNote, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
+import type { SkillScoreInput } from "@/lib/engine/coach/skills";
 import JobStatus from "./JobStatus";
+import SkillMatrix, { ScoredSkills } from "./SkillMatrix";
 
 // A transcript, not chat bubbles (docs/UX_COACH.md §3): the coach's turns as prose,
 // the member's under a `You` label on a mist block, each write as the portal's status
-// line. 24 px between turns, 8 px inside one. Scrolls to the newest as it arrives.
-export default function Transcript({ turns, pending, error, quota, uid, jobHref }: {
+// line. 24 px between turns, 8 px inside one. Scrolls to the newest as it arrives. The skills
+// matrix (docs/UX_COACH_AGENTIC.md §9) is the one form in it: shown on the coach turn that asked
+// for it until a member turn carries the scores, which then render as the scored table.
+export default function Transcript({ turns, pending, error, quota, uid, jobHref, onScores }: {
   turns: readonly TranscriptTurn[];
   /** The member — the research jobs a turn started are read live under their account. */
   uid?: string;
@@ -21,13 +25,18 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref 
   error?: string | null;
   /** The one mute line when this month's limit is reached. */
   quota?: string | null;
+  /** The member sent the matrix's scores. */
+  onScores?: (scores: SkillScoreInput[]) => void;
 }) {
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end", behavior: "smooth" }); }, [turns.length, pending?.text.length, pending?.writes.length]);
+  useEffect(() => { end.current?.scrollIntoView({ block: "end", behavior: "smooth" }); }, [turns.length, pending?.text.length, pending?.writes.length, pending?.matrix]);
+  // The matrix still waiting for scores is the last one shown; a stored coach turn renders it only while it is that one.
+  const waiting = pending?.matrix ?? pendingMatrixOf(turns);
+  const matrixTurnAt = waiting && !pending?.matrix ? [...turns].reverse().find((t) => t.role === "coach" && t.matrix === waiting)?.at : undefined;
 
   return (
     <div className="space-y-6" aria-live="polite">
-      {turns.map((t, i) => <Turn key={`${t.at}-${i}`} turn={t} uid={uid} jobHref={jobHref} />)}
+      {turns.map((t, i) => <Turn key={`${t.at}-${i}`} turn={t} uid={uid} jobHref={jobHref} matrix={t.at === matrixTurnAt && onScores ? { onScores, disabled: !!pending } : undefined} />)}
       {pending && (
         <div className="space-y-2">
           {pending.writes.map((w, i) => <WriteStatus key={i} note={w} />)}
@@ -35,6 +44,7 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref 
           {pending.text
             ? <div className="text-[15px] leading-relaxed text-jh-ink"><Markdown>{pending.text}</Markdown></div>
             : <Thinking />}
+          {pending.matrix && <div className="pt-2"><SkillMatrix skills={pending.matrix.skills} onSubmit={() => undefined} disabled /></div>}
         </div>
       )}
       {error && <p role="alert" className="text-sm text-jh-red">{error}</p>}
@@ -44,12 +54,13 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref 
   );
 }
 
-function Turn({ turn, uid, jobHref }: { turn: TranscriptTurn; uid?: string; jobHref?: string }) {
+function Turn({ turn, uid, jobHref, matrix }: { turn: TranscriptTurn; uid?: string; jobHref?: string; matrix?: { onScores: (scores: SkillScoreInput[]) => void; disabled: boolean } }) {
   if (turn.role === "member") {
     return (
       <div className="rounded-md bg-jh-mist px-4 py-3">
         <p className="section-label mb-1">You</p>
         {turn.attachment && <p className="mb-1 inline-flex items-center gap-1.5 text-sm text-jh-ink"><Paperclip className="h-3.5 w-3.5 text-jh-mute" aria-hidden /> {turn.attachment}</p>}
+        {turn.scores && <ScoredSkills scores={turn.scores} />}
         {turn.text && <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-jh-ink">{turn.text}</p>}
       </div>
     );
@@ -59,6 +70,7 @@ function Turn({ turn, uid, jobHref }: { turn: TranscriptTurn; uid?: string; jobH
       {turn.writes?.map((w, i) => <WriteStatus key={i} note={w} />)}
       {turn.text && <div className="text-[15px] leading-relaxed text-jh-ink"><Markdown>{turn.text}</Markdown></div>}
       {uid && turn.jobs?.map((j: JobNote) => <JobStatus key={j.id} uid={uid} job={j} href={jobHref} />)}
+      {turn.matrix && matrix && <div className="pt-2"><SkillMatrix skills={turn.matrix.skills} onSubmit={matrix.onScores} disabled={matrix.disabled} /></div>}
     </div>
   );
 }

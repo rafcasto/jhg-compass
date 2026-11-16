@@ -3,6 +3,8 @@
 // transcript (the messages replayed to Claude) is stored beside it as JSON; this is the
 // readable half. Pure — tested.
 
+import type { SkillScore } from "./skills";
+
 export interface WriteNote {
   /** Section labels as the page shows them: "Contact details", "Headline". */
   labels: string[];
@@ -16,6 +18,9 @@ export interface WriteNote {
 /** A research job a coach turn started — the panel reads users/{uid}/engineJobs/{id} live (docs/UX_COACH_AGENTIC.md §2). */
 export interface JobNote { id: string; type: string; label: string }
 
+/** The skills matrix a coach turn showed (docs/UX_COACH_AGENTIC.md §9): the member scores every skill at once in the panel. */
+export interface MatrixNote { skills: string[] }
+
 export interface TranscriptTurn {
   role: "coach" | "member";
   text: string;
@@ -24,8 +29,12 @@ export interface TranscriptTurn {
   writes?: WriteNote[];
   /** The research jobs this coach turn started. */
   jobs?: JobNote[];
+  /** The skills matrix this coach turn put in front of the member — pending until a member turn carries `scores`. */
+  matrix?: MatrixNote;
   /** The file the member handed over with this turn — its name; the text lives in the API transcript. */
   attachment?: string;
+  /** The member's scores from the matrix, with the portal's totals and ranks — this member turn IS the scored table. */
+  scores?: SkillScore[];
 }
 
 /** One event on the turn route's stream (SSE `data:` lines). */
@@ -33,11 +42,12 @@ export type TurnEvent =
   | { type: "text"; text: string }
   | { type: "write"; note: WriteNote }
   | { type: "job"; job: JobNote }
+  | { type: "matrix"; matrix: MatrixNote }
   | { type: "done"; turn: TranscriptTurn; usdThisTurn: number }
   | { type: "error"; message: string };
 
 /** A coach turn as it is being streamed: text so far and the writes so far. */
-export interface PendingTurn { text: string; writes: WriteNote[]; jobs: JobNote[] }
+export interface PendingTurn { text: string; writes: WriteNote[]; jobs: JobNote[]; matrix?: MatrixNote }
 
 export const emptyPending = (): PendingTurn => ({ text: "", writes: [], jobs: [] });
 
@@ -46,7 +56,18 @@ export function applyEvent(p: PendingTurn, e: TurnEvent): PendingTurn {
   if (e.type === "text") return { ...p, text: p.text + e.text };
   if (e.type === "write") return { ...p, writes: [...p.writes, e.note] };
   if (e.type === "job") return { ...p, jobs: [...p.jobs, e.job] };
+  if (e.type === "matrix") return { ...p, matrix: e.matrix };
   return p;
+}
+
+/** The matrix still waiting for the member's scores: the last coach turn's, unless a member turn with scores came after it. */
+export function pendingMatrixOf(turns: readonly TranscriptTurn[]): MatrixNote | null {
+  for (let i = turns.length - 1; i >= 0; i--) {
+    const t = turns[i];
+    if (t.role === "member" && t.scores) return null;
+    if (t.role === "coach" && t.matrix) return t.matrix;
+  }
+  return null;
 }
 
 /** Parse one SSE frame's data line; null for a keep-alive or malformed frame. */

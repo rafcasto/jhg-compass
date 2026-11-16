@@ -79,6 +79,12 @@
   `applyCoachPatch` whenever `progress` is given; Top-40 totals and ranks are computed there (`rankCompanies`), never by the model; a
   hand-over with a failed check is stored `in_progress`. Add a check to `checks.ts` and name it in the prompt's hand-over line — never
   ask the model to count, measure or rank what the stored profile can answer.
+  **The skills matrix** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §9`): Coach 1 never asks the four 1–5 questions skill by skill
+  and never sums — it calls `score_skills` with the clean list, the panel renders `SkillMatrix` (one native select per axis, the
+  anchors inside), the member scores everything once, and `lib/engine/coach/skills.ts` is the rubric: `SKILL_AXES` anchors, totals,
+  ranks (total · Prove · Pays · Love · order), `TOP_CUT`, `skillFlags`. The route writes `jhg.narrative.skillScores` itself through
+  `applyCoachPatch`; the member's turn carries `scores` and renders as the scored table; `CompetencyFacts` shows it read-only. Change
+  an anchor or a flag in `skills.ts`, never in the prompt. While a matrix waits the composer's Send is `tone="secondary"` — one red.
   **CV-first** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §3`): a document the member hands the coach (`CoachDocument`, `.md`/`.txt`
   through `isCoachDocumentName`) rides on the turn it arrived with and is never stored by itself — the coach proposes, the member confirms,
   `update_profile` writes. Coaches 1 · 4 · 5 (`coachStartsFromCv`) open on `CvStart` while `setup.cvMarkdown` is empty. Never auto-save a

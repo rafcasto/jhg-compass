@@ -8,7 +8,8 @@ import { quotaCheck, quotaLine, resolvePrompt } from "@/lib/engine/config";
 import { getUsageMonth, recordUsage } from "@/lib/engine/usage-server";
 import { COACH_PROMPTS, coachPromptKey } from "@/lib/engine/coach/prompts";
 import { findCoach, isCoachKey, missingBefore, coachStates } from "@/lib/engine/coach/keys";
-import { RUN_RESEARCH, UPDATE_PROFILE, coachTools, isResearchKind } from "@/lib/engine/coach/tools";
+import { RUN_RESEARCH, SCORE_SKILLS, UPDATE_PROFILE, coachTools, isResearchKind } from "@/lib/engine/coach/tools";
+import { cleanSkills, parseScores, scoreSkills, scoresMessage, skillFlags, type SkillScore } from "@/lib/engine/coach/skills";
 import { createJob, listUserJobs, patchJob } from "@/lib/engine/jobs-server";
 import { ENGINE_JOB_LABELS, type EngineJobType } from "@/lib/engine/keys";
 import { isQueueConfigured, publishRun } from "@/lib/engine/queue";
@@ -16,11 +17,11 @@ import { runUnit } from "@/lib/engine/run";
 import { applyCoachPatch, CoachWriteError } from "@/lib/engine/coach/write";
 import { getSession, messagesOf, saveSession, type CoachSession } from "@/lib/engine/coach/session";
 import { MAX_DOCUMENT_CHARS, MAX_PDF_BYTES, PDF_TRANSCRIBE_PROMPT, START_CUE, START_WITH_CV_CUE, buildMessages, isCoachDocumentName, isPdfName, landedSince, recapOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type CoachDocument, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
-import { STREAM_FRAME, applyEvent, emptyPending, type JobNote, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
+import { STREAM_FRAME, applyEvent, emptyPending, pendingMatrixOf, type JobNote, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
 import { profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
-import { parseJhSection, type JhPageKey, type ProfilePortal } from "@/lib/jobhacking/sections";
+import { BASE_OF, jhSectionHref, parseJhSection, type JhPageKey, type ProfilePortal } from "@/lib/jobhacking/sections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +33,8 @@ const MAX_TEXT = 8000;
 const MAX_TOOL_ROUNDS = 6;
 
 // Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section? },
+//         scores?: [{ skill, good, love, proof, pays }] — the member's answers to the pending skills matrix (docs/UX_COACH_AGENTIC.md §9);
+//                 the portal totals, ranks, flags and stores them, and the coach reads the table as the member's words
 //         document?: { name, text } — the member's CV as .md / .txt, read in the browser (docs/UX_COACH_AGENTIC.md §3)
 //                 or { name, pdfBase64 } — a PDF, transcribed here once through the SDK's document block }
 // Streams SSE: text deltas as they are written, a `write` for each update_profile the coach
@@ -64,7 +67,8 @@ export async function POST(req: NextRequest) {
     document = { name, text: docText };
     }
   }
-  if (!start && !text && !document && !pdf) return NextResponse.json({ ok: false, error: "say something" }, { status: 400 });
+  const scoresIn: unknown = body?.scores;
+  if (!start && !text && !document && !pdf && !scoresIn) return NextResponse.json({ ok: false, error: "say something" }, { status: 400 });
   const portal: ProfilePortal = body?.portal === "compass" ? "compass" : "jobhacking";
   const rawCtx = body?.context && typeof body.context === "object" ? body.context : {};
   const ctx: TurnContext = {
@@ -118,7 +122,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: e instanceof ClaudeRefusal ? e.message : "Couldn't read that PDF — try a .md or .txt export." }, { status: 400 });
     }
   }
-  const memberText = start ? (document ? START_WITH_CV_CUE : START_CUE) : text || `Here is ${document!.name}.`;
+  // The matrix, answered: scored against the skills the coach showed — totals, ranks and flags are the portal's.
+  let scored: SkillScore[] | null = null;
+  if (scoresIn) {
+    const matrix = pendingMatrixOf(session.turns);
+    if (!matrix) return NextResponse.json({ ok: false, error: "There is no skills matrix waiting for your scores." }, { status: 409 });
+    const parsed = parseScores(scoresIn, matrix.skills);
+    if (!parsed.ok) return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
+    scored = scoreSkills(parsed.scores);
+  }
+  const memberText = scored ? scoresMessage(scored, skillFlags(scored)) : start ? (document ? START_WITH_CV_CUE : START_CUE) : text || `Here is ${document!.name}.`;
   // Research that finished since the coach last spoke rides on this turn's operator note (docs/COACH_ASSESSMENT_2026-11-16.md §1.2).
   if (!isFirst || session.turns.length) Object.assign(ctx, landedSince(await listUserJobs(uid, 10), session.lastTurnAt, (t) => ENGINE_JOB_LABELS[t as EngineJobType] ?? t));
   let messages: TurnMessage[] = buildMessages(history, memberText, first, ctx, document);
@@ -132,6 +145,12 @@ export async function POST(req: NextRequest) {
       let usd = pdfUsd;
       let completed = false;
       try {
+        if (scored) {
+          // Code writes the scores (decision 2026-11-16: code checks, the model converses) — before the coach speaks, as the page's own write line.
+          const r = await applyCoachPatch({ uid, coach: coach.key, patch: { jhg: { narrative: { skillScores: scored } } }, portal });
+          const note: WriteNote = r.note.labels.length ? r.note : { ...r.note, labels: ["Core competencies"], links: [{ label: "Core competencies", href: jhSectionHref("competencies", BASE_OF[portal]) }] };
+          pending = applyEvent(pending, { type: "write", note }); send({ type: "write", note });
+        }
         for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
           const s = claudeStream({
             model: cfg.model, effort: cfg.effort, maxTokens: cfg.maxTokens,
@@ -175,6 +194,15 @@ export async function POST(req: NextRequest) {
               }
               continue;
             }
+            if (b.name === SCORE_SKILLS) {
+              // The matrix: the portal shows it, the member scores all at once, the turn ends (docs/UX_COACH_AGENTIC.md §9).
+              const cleaned = cleanSkills((b.input as { skills?: unknown } | undefined)?.skills);
+              if (!cleaned.ok) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: cleaned.error }), is_error: true }); continue; }
+              const matrix = { skills: cleaned.skills };
+              pending = applyEvent(pending, { type: "matrix", matrix }); send({ type: "matrix", matrix });
+              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: true, shown: cleaned.skills.length, note: "The matrix is in front of the member; they are scoring every skill now. End your turn with one short line and no question — their next message is the ranked table with the portal's totals, ranks and flags." }) });
+              continue;
+            }
             if (b.name !== UPDATE_PROFILE) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: `unknown tool ${b.name}` }), is_error: true }); continue; }
             const input = (b.input ?? {}) as { patch?: Record<string, unknown>; progress?: "in_progress" | "complete" };
             try {
@@ -190,9 +218,10 @@ export async function POST(req: NextRequest) {
           messages = [...messages, { role: "user", content: results }];
         }
 
-        const coachTurn: TranscriptTurn = { role: "coach", text: pending.text.trim() || textOf([]), at: Date.now(), ...(pending.writes.length ? { writes: pending.writes } : {}), ...(pending.jobs.length ? { jobs: pending.jobs } : {}) };
+        const coachTurn: TranscriptTurn = { role: "coach", text: pending.text.trim() || textOf([]), at: Date.now(), ...(pending.writes.length ? { writes: pending.writes } : {}), ...(pending.jobs.length ? { jobs: pending.jobs } : {}), ...(pending.matrix ? { matrix: pending.matrix } : {}) };
         // A start from a CV shows as the member's turn — the file they handed over — so the transcript says where the drafts came from.
-        const memberTurn: TranscriptTurn | null = start && !document ? null : { role: "member", text: start ? "" : text, at: now, ...(document ? { attachment: document.name } : {}) };
+        // Scores from the matrix show as the member's turn too: the scored table, not the generated prose the coach read.
+        const memberTurn: TranscriptTurn | null = start && !document ? null : scored ? { role: "member", text: "", at: now, scores: scored } : { role: "member", text: start ? "" : text, at: now, ...(document ? { attachment: document.name } : {}) };
         const turns: TranscriptTurn[] = [...session.turns, ...(memberTurn ? [memberTurn] : []), coachTurn];
         // Past the budget (Firestore's 1 MiB document): drop the transcript; the next turn restarts from the profile and a recap of `turns`.
         const transcript = JSON.stringify(withoutOperatorNotes(messages));

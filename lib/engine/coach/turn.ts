@@ -11,6 +11,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { SystemPart } from "../claude";
 import { isTextCvFile } from "../../careerops/intake";
 import { findJhPage, findJhSection, type JhPageKey, type JhSectionKey } from "../../jobhacking/sections";
+import { scoresRecap } from "./skills";
 import type { TranscriptTurn } from "./transcript";
 
 /**
@@ -75,7 +76,8 @@ export function recapOf(turns: readonly TranscriptTurn[], maxBytes = MAX_RECAP_B
   for (let i = turns.length - 1; i >= 0; i--) {
     const t = turns[i];
     const wrote = t.writes?.flatMap((w) => w.labels) ?? [];
-    const line = `${t.role === "coach" ? "Coach" : "Member"}: ${t.text.trim()}${t.attachment ? ` (attached ${t.attachment})` : ""}${wrote.length ? `\n(wrote: ${wrote.join(", ")})` : ""}`;
+    const said = t.scores ? scoresRecap(t.scores) : t.text.trim();
+    const line = `${t.role === "coach" ? "Coach" : "Member"}: ${said}${t.attachment ? ` (attached ${t.attachment})` : ""}${t.matrix ? ` (showed the skills matrix: ${t.matrix.skills.join(", ")})` : ""}${wrote.length ? `\n(wrote: ${wrote.join(", ")})` : ""}`;
     const n = byteLength(line) + 2;
     if (used + n > maxBytes) {
       if (!lines.length) lines.push(line.slice(0, maxBytes)); // one turn alone past the budget: keep its head

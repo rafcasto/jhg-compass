@@ -10,7 +10,8 @@ import { COACH_TOTAL, coachForPage, coachStartsFromCv, coachStates, findCoach, m
 import { coachPart } from "@/lib/engine/coach/parts";
 import { profileFromSetup } from "@/lib/careerops/profile-file";
 import type { Profile } from "@/lib/types";
-import { applyEvent, emptyPending, parseEvent, type PendingTurn, type TranscriptTurn } from "@/lib/engine/coach/transcript";
+import { applyEvent, emptyPending, parseEvent, pendingMatrixOf, type PendingTurn, type TranscriptTurn } from "@/lib/engine/coach/transcript";
+import type { SkillScoreInput } from "@/lib/engine/coach/skills";
 import type { CoachSession } from "@/lib/engine/coach/session";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
@@ -46,11 +47,12 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const busy = useRef(false);
   const started = useRef<string | null>(null);
 
-  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null) => {
+  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: SkillScoreInput[] | null = null) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
     setPending(emptyPending());
+    // Scores show as the member's turn once the server has ranked them — until then the matrix simply locks.
     if (text || document) setLocalTurns((t) => [...t, { role: "member", text: text ?? "", at: Date.now(), ...(document ? { attachment: document.name } : {}) }]);
     try {
       const token = await auth.currentUser!.getIdToken();
@@ -60,7 +62,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       const res = await fetch("/api/coach/turn", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        body: JSON.stringify({ coach: coach.key, portal, ...(text ? { text } : { start: true }), ...(document ? { document } : {}), context: { page, section } }),
+        body: JSON.stringify({ coach: coach.key, portal, ...(scores ? { scores } : text ? { text } : { start: true }), ...(document ? { document } : {}), context: { page, section } }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({}));
@@ -129,8 +131,10 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   // Where the conversation is — from the stored keys, zero tokens (docs/UX_COACH_AGENTIC.md §1). Only once it has started.
   const part = turns.length && !missing.length ? coachPart(coach.key, profileFromSetup({ profile, setup }), complete) : null;
   const canTalk = coach.ready && !missing.length && !quota;
+  // The matrix waits: its Send scores is the one red; the composer's Send steps down (docs/UX_COACH_AGENTIC.md §9).
+  const matrixWaiting = !pending && !!pendingMatrixOf(turns);
 
-  const footer = canTalk && !cvFirst ? <Composer onSend={(t, d) => void send(t || null, d)} disabled={!!pending} placeholder={complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
+  const footer = canTalk && !cvFirst ? <Composer onSend={(t, d) => void send(t || null, d)} disabled={!!pending} tone={matrixWaiting ? "secondary" : "primary"} placeholder={matrixWaiting ? "Or tell your coach what to change…" : complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
 
   return (
     <Sheet
@@ -154,7 +158,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       ) : cvFirst && canTalk ? (
         <CvStart coachLabel={coach.label} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
       ) : (
-        <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} />
+        <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} />
       )}
     </Sheet>
   );
