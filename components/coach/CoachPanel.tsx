@@ -7,6 +7,9 @@ import { Sheet } from "@/components/tracker/Sheet";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { auth } from "@/lib/firebase/client";
 import { COACH_TOTAL, coachForPage, coachStartsFromCv, coachStates, findCoach, missingBefore, pageOfPath } from "@/lib/engine/coach/keys";
+import { coachPart } from "@/lib/engine/coach/parts";
+import { profileFromSetup } from "@/lib/careerops/profile-file";
+import type { Profile } from "@/lib/types";
 import { applyEvent, emptyPending, parseEvent, type PendingTurn, type TranscriptTurn } from "@/lib/engine/coach/transcript";
 import type { CoachSession } from "@/lib/engine/coach/session";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -14,7 +17,7 @@ import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import CoachRail from "./CoachRail";
 import Composer from "./Composer";
 import CvStart from "./CvStart";
-import type { CoachDocument } from "./document";
+import type { CoachAttachment } from "./document";
 import Transcript from "./Transcript";
 import { closeCoach, flashSections, openCoach, useCoachUi } from "./store";
 
@@ -32,6 +35,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const uid = user?.uid;
   const coach = findCoach(ui.coach);
   const { data: setup } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
+  const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
   const { data: session, loading: sessionLoading } = useLiveDoc<CoachSession>(uid && coach ? paths.coachSession(uid, coach.key) : null);
 
   const [pending, setPending] = useState<PendingTurn | null>(null);
@@ -42,7 +46,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const busy = useRef(false);
   const started = useRef<string | null>(null);
 
-  const send = useCallback(async (text: string | null, document: CoachDocument | null = null) => {
+  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
@@ -122,6 +126,8 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   if (!ui.open || !coach) return null;
   const turns: TranscriptTurn[] = [...(session?.turns ?? []), ...localTurns];
   const complete = states[coach.key] === "complete";
+  // Where the conversation is — from the stored keys, zero tokens (docs/UX_COACH_AGENTIC.md §1). Only once it has started.
+  const part = turns.length && !missing.length ? coachPart(coach.key, profileFromSetup({ profile, setup }), complete) : null;
   const canTalk = coach.ready && !missing.length && !quota;
 
   const footer = canTalk && !cvFirst ? <Composer onSend={(t, d) => void send(t || null, d)} disabled={!!pending} placeholder={complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
@@ -135,6 +141,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       bodyClassName="bg-white"
       footer={footer}
     >
+      {part && <p className="section-label mb-4">{part}</p>}
       {handoff && <p role="status" className="mb-4 text-sm text-jh-mute">{handoff}</p>}
       {!coach.ready ? (
         <p className="text-sm text-jh-mute">{coach.label} is on its way — Coach {coach.n} is being built. {coach.outcome}</p>

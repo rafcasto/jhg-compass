@@ -19,9 +19,17 @@ import type { TranscriptTurn } from "./transcript";
  * from it without a yes. A PDF arrives later through the SDK's document block.
  */
 export interface CoachDocument { name: string; text: string }
+/** A PDF as the browser read it — base64; the route transcribes it to text once (the SDK's document block) so the transcript carries words, not bytes. */
+export interface CoachPdf { name: string; pdfBase64: string }
 /** Enough for any CV several times over; a transcript carries it for the rest of the conversation. */
 export const MAX_DOCUMENT_CHARS = 60_000;
-export const isCoachDocumentName = (name: string): boolean => isTextCvFile(name);
+/** A CV as a PDF: a few pages. Base64 grows a file by a third; this is the file's own size. */
+export const MAX_PDF_BYTES = 3 * 1024 * 1024;
+export const isPdfName = (name: string): boolean => /\.pdf$/i.test(name);
+export const isCoachDocumentName = (name: string): boolean => isTextCvFile(name) || isPdfName(name);
+
+/** The one-shot that turns a PDF into the text the conversation carries — verbatim, as Markdown. */
+export const PDF_TRANSCRIBE_PROMPT = "Transcribe this document to Markdown, verbatim: every heading, line, bullet, date and figure as written, in reading order; headings as ## lines; no commentary, no summary, nothing added or corrected. Output the Markdown only.";
 
 /** The document as the model reads it — before the member's words on the turn it arrived with. */
 export function documentBlock(doc: CoachDocument): string {

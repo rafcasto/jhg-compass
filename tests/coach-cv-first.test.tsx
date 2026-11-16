@@ -23,11 +23,19 @@ describe("Start from your CV", () => {
     expect(onStart).toHaveBeenLastCalledWith(null);
   });
 
-  it("refuses a file that is not Markdown or text, in one red line", async () => {
+  it("reads a PDF as bytes for the route to transcribe", async () => {
     const onStart = vi.fn();
     render(<CvStart coachLabel="Narrative" onStart={onStart} />);
-    await userEvent.setup({ applyAccept: false }).upload(document.querySelector('input[type="file"]') as HTMLInputElement, new File(["%PDF"], "cv.pdf", { type: "application/pdf" }));
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Markdown or plain text"));
+    await userEvent.setup().upload(document.querySelector('input[type="file"]') as HTMLInputElement, new File(["%PDF-1.4 hello"], "cv.pdf", { type: "application/pdf" }));
+    await waitFor(() => expect(onStart).toHaveBeenCalled());
+    expect(onStart.mock.calls[0][0]).toEqual({ name: "cv.pdf", pdfBase64: btoa("%PDF-1.4 hello") });
+  });
+
+  it("refuses a file that is not a PDF, Markdown or text, in one red line", async () => {
+    const onStart = vi.fn();
+    render(<CvStart coachLabel="Narrative" onStart={onStart} />);
+    await userEvent.setup({ applyAccept: false }).upload(document.querySelector('input[type="file"]') as HTMLInputElement, new File(["PK"], "cv.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("PDF, Markdown or plain text"));
     expect(onStart).not.toHaveBeenCalled();
   });
 });
