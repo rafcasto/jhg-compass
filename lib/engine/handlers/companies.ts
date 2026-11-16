@@ -1,0 +1,119 @@
+import "server-only";
+import { adminDb } from "@/lib/firebase/admin";
+import { profileFromSetup } from "@/lib/careerops/profile-file";
+import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
+import type { Profile } from "@/lib/types";
+import { ClaudeRefusal, call, callJson, sourcesOf, usageLine } from "../claude";
+import { resolvePrompt } from "../config";
+import { getPromptOverride } from "../config-server";
+import { applyCoachPatch } from "../coach/write";
+import { COMPANIES_PROMPT, COMPANIES_PROMPT_VERSION } from "../prompts/companies";
+import { COMPANIES_MAX_SEARCHES, COMPANIES_MAX_URL_CHECKS, CompaniesSchema, companiesPayload, companiesPayloadEmpty, companiesSummary, companiesTask, fromPostings, mergeCandidates, toProfileCompanies, type Candidate, type CompaniesAnswer, type CompaniesResult, type VerifiedCandidate } from "../research/companies";
+import { urlWasFound } from "../research/postings";
+import { companyKey, countryOf, domainOf } from "../sourcing/keys";
+import { confirmCareersUrl, mapLimit, opens, sourcePostings, sourcingConfigured } from "../sourcing/fetch";
+import type { Handler } from "../run";
+
+// Target companies Part A as a job (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §2 row 5, §4 PR 3). Two passes, one
+// rule: the job boards' APIs grouped by employer (code, zero tokens) and the model's industry-led proposal (one call
+// with search, its results never in a transcript) — then code opens every growth source and careers page, drops what
+// doesn't open, leaves out the never-join list, caps at forty, writes jhg.targetCompanies.companies through the
+// coach's own path and hands the coach the table.
+
+export const COMPANIES_PROMPT_KEY = "job:companies";
+
+function parseLoose(text: string): CompaniesAnswer | null {
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { const r = CompaniesSchema.safeParse(JSON.parse(m[0])); return r.success ? r.data : null; } catch { return null; }
+}
+
+export const companies: Handler = async ({ uid, job, config, agent, log, progress, meter, cancelled }) => {
+  const db = adminDb();
+  const [profileSnap, setupSnap, override] = await Promise.all([db.doc(`users/${uid}`).get(), db.doc(`users/${uid}/careerOps/setup`).get(), getPromptOverride(COMPANIES_PROMPT_KEY)]);
+  const current = profileFromSetup({ profile: profileSnap.exists ? (profileSnap.data() as Profile) : null, setup: setupSnap.exists ? (setupSnap.data() as CareerOpsSetupV2) : null });
+  const payload = companiesPayload(current, job.payload, countryOf);
+  if (companiesPayloadEmpty(payload)) throw new Error("Nothing to source from — True North has no industries and no titles, and no company was named.");
+  const cfg = config.agents[agent ?? "researcher"];
+  const today = new Date().toISOString().slice(0, 10);
+  await log(`sourcing from: ${payload.industries.map((i) => i.name).join(" · ") || "no industries"} · titles ${payload.titles.join(" · ") || "none"} · ${payload.region || "no region"} · ${payload.stored.length} stored`);
+
+  // Pass 1 — the job boards, grouped by employer (an API; zero tokens).
+  let posted: Candidate[] = [];
+  if (sourcingConfigured() && payload.country && payload.titles.length) {
+    await progress("Reading the job boards");
+    const run = await sourcePostings({ titles: payload.titles, competencies: [], region: payload.region, country: payload.country }, log);
+    posted = fromPostings(run.rows, payload.titles);
+    await log(`${run.note} → ${posted.length} employers`);
+  } else await log(`job boards skipped — ${!sourcingConfigured() ? "no adapter key" : !payload.country ? "no source covers the region" : "no titles"}`);
+  if (await cancelled()) return null;
+
+  // Pass 2 — the industry-led proposal: one call with search; the pages never enter a transcript.
+  await progress("Researching the industries");
+  const prompt = resolvePrompt(COMPANIES_PROMPT, COMPANIES_PROMPT_VERSION, override);
+  const base = { model: cfg.model, effort: cfg.effort, maxTokens: cfg.maxTokens, system: prompt.text, messages: [{ role: "user" as const, content: companiesTask(payload, today) }], maxSearches: COMPANIES_MAX_SEARCHES };
+  let answer: CompaniesAnswer = { companies: [], note: "" };
+  let sources: { url: string }[] = [];
+  if (payload.industries.length || payload.names.length) {
+    try {
+      const r = await callJson({ ...base, schema: CompaniesSchema });
+      await meter(r.model, r.usage); await log(usageLine(r));
+      answer = r.data; sources = sourcesOf(r.message.content);
+    } catch (e) {
+      if (e instanceof ClaudeRefusal) throw e;
+      await log(`structured call failed (${e instanceof Error ? e.message : String(e)}) — retrying as text`);
+      const r = await call({ ...base, system: `${prompt.text}\n\nAnswer with one JSON object only: { "companies": [{ "name", "companyType", "inspiredBy", "industry", "subSector", "location", "website", "growthSignal", "growthSource", "careersUrl" }], "note": "" }.` });
+      await meter(r.model, r.usage); await log(usageLine(r));
+      const parsed = parseLoose(r.text);
+      if (!parsed) throw new Error("The model's answer was not a list of companies");
+      answer = parsed; sources = r.sources;
+    }
+    await log(`${answer.companies.length} proposed, ${sources.length} sources`);
+  }
+  if (await cancelled()) return null;
+
+  // Merge: stored first, then the member's names, the boards, the proposal — never the never-join list, at most forty.
+  const named = answer.companies.filter((c) => payload.names.some((n) => n.toLowerCase() === c.name.toLowerCase()));
+  const rest = answer.companies.filter((c) => !named.includes(c));
+  const { kept, excluded } = mergeCandidates(payload.stored, [named, posted, rest], payload.neverApply);
+  if (excluded.length) await log(`left out as never-join: ${excluded.join(", ")}`);
+
+  // Verify by code: the growth source must open; the careers page is confirmed by its ATS board, else by opening, else "none".
+  await progress(`Opening links · 0 of ${kept.length}`);
+  let checked = 0;
+  const verified = await mapLimit(kept.slice(0, COMPANIES_MAX_URL_CHECKS), 5, async (c): Promise<VerifiedCandidate> => {
+    const sourceOpened = /^https?:\/\//i.test(c.growthSource) && (urlWasFound(c.growthSource, sources) || (await opens(c.growthSource)));
+    let careersUrl = c.careersUrl.trim();
+    let status: VerifiedCandidate["careersUrlStatus"] = "none";
+    if (careersUrl) {
+      const board = await confirmCareersUrl(careersUrl);
+      if (board) { status = "opened_by_coach"; await log(`${c.name}: careers page confirmed — ${board.board.provider} board, ${board.jobs} jobs`); }
+      else if (await opens(careersUrl)) status = "opened_by_coach";
+    }
+    if (status === "none") {
+      const d = domainOf(c.website);
+      if (d) for (const path of ["/careers", "/jobs"]) { const u = `https://${d}${path}`; if (await opens(u)) { careersUrl = u; status = "opened_by_coach"; break; } }
+    }
+    checked++;
+    if (checked % 5 === 0 || checked === kept.length) await progress(`Opening links · ${checked} of ${kept.length}`);
+    if (!sourceOpened) await log(`dropped (source did not open): ${c.name} — ${c.growthSource || "no source"}`);
+    return { ...c, careersUrl, sourceOpened, careersUrlStatus: status };
+  });
+  if (await cancelled()) return null;
+
+  const rows = toProfileCompanies(payload.stored, verified, payload);
+  const added = rows.length - payload.stored.length;
+  if (!added && !payload.stored.length) throw new Error("No company's growth source could be opened — try again, or the coach can source by hand.");
+  await applyCoachPatch({ uid, coach: "targetCompanies", patch: { jhg: { targetCompanies: { companies: rows } } }, portal: payload.portal });
+
+  // The shared half (plan §6): what every member can reuse about a company — never the member's scores.
+  const batch = db.batch();
+  for (const r of verified.filter((v) => v.sourceOpened)) {
+    batch.set(db.doc(`companies/${companyKey(r.name, r.website)}`), { key: companyKey(r.name, r.website), name: r.name, ...(payload.country ? { country: payload.country } : {}), location: r.location, ...(r.industry ? { industry: r.industry } : {}), ...(r.subSector ? { subSector: r.subSector } : {}), ...(r.website ? { website: r.website } : {}), ...(r.careersUrlStatus === "opened_by_coach" ? { careersUrl: r.careersUrl, careersUrlStatus: "opened" } : {}), growthSignal: r.growthSignal, growthSource: r.growthSource, lastSeenAt: Date.now() }, { merge: true });
+  }
+  await batch.commit();
+
+  const result: CompaniesResult = { count: rows.length, added, excluded: excluded.length, summary: companiesSummary(rows, added, excluded, answer.note?.trim() ?? ""), searches: 0 };
+  await progress(`${rows.length} companies on your Target companies page`);
+  return result;
+};

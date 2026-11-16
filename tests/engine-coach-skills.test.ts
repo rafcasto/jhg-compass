@@ -172,7 +172,7 @@ describe("the companies rubric", () => {
 describe("the matrix in the conversation", () => {
   it("is one tool, offered to the coaches with a rubric, and the prompts tell them so", () => {
     expect(coachTools("narrative").map((t) => t.name)).toEqual(["update_profile", SCORE_MATRIX]);
-    expect(coachTools("targetCompanies").map((t) => t.name)).toEqual(["update_profile", SCORE_MATRIX]);
+    expect(coachTools("targetCompanies").map((t) => t.name)).toEqual(["update_profile", "run_research", SCORE_MATRIX]);
     expect(coachTools("trueNorth").map((t) => t.name)).toEqual(["update_profile", "run_research"]);
     expect(scoreMatrixTool("linkedin")).toBeNull();
     expect((scoreMatrixTool("narrative")!.input_schema.properties.kind as { enum: string[] }).enum).toEqual(["skills"]);

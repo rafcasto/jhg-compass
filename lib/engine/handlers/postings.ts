@@ -11,7 +11,7 @@ import { POSTINGS_PROMPT, POSTINGS_PROMPT_VERSION } from "../prompts/postings";
 import { PHRASES_PROMPT, POSTINGS_MAX_SEARCHES, POSTINGS_MAX_URL_CHECKS, POSTINGS_TARGET, PhrasesSchema, PostingsSchema, dedupePostings, phrasesTask, postingsPayload, postingsPayloadEmpty, postingsSummary, postingsTask, toProfilePostings, urlWasFound, withPhrases, type PostingsAnswer, type PostingsPayload, type PostingsResult, type RawPosting } from "../research/postings";
 import { countryOf } from "../sourcing/keys";
 import { toRawPosting } from "../sourcing/plan";
-import { sourcePostings, sourcingConfigured, upsertSourced } from "../sourcing/fetch";
+import { mapLimit, opens, sourcePostings, sourcingConfigured, upsertSourced } from "../sourcing/fetch";
 import type { Handler, RunContext } from "../run";
 
 // True North Part B as a job (docs/COACH_ASSESSMENT_2026-11-16.md §1.2). Two ways to the list, one way to count:
@@ -23,27 +23,7 @@ import type { Handler, RunContext } from "../run";
 // the coach a 20-row table. The search results never enter the conversation.
 
 export const POSTINGS_PROMPT_KEY = "job:postings";
-const URL_TIMEOUT_MS = 8000;
 const CONCURRENCY = 5;
-
-/** Whether a posting URL opens — a GET that answers under 400 within the timeout. */
-async function opens(url: string): Promise<boolean> {
-  const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), URL_TIMEOUT_MS);
-  try {
-    const r = await fetch(url, { method: "GET", redirect: "follow", signal: ctl.signal, headers: { "user-agent": "Mozilla/5.0 (compatible; JobHackerCompass/1.0)", accept: "text/html,*/*" } });
-    return r.status < 400;
-  } catch { return false; }
-  finally { clearTimeout(t); }
-}
-
-async function mapLimit<T, R>(items: readonly T[], limit: number, f: (x: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
-  let i = 0;
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => { for (;;) { const n = i++; if (n >= items.length) return; out[n] = await f(items[n]); } }));
-  return out;
-}
-
 /** The first JSON object in a text answer — the fallback when structured output is not available with search. */
 function parseLoose(text: string): PostingsAnswer | null {
   const m = text.match(/\{[\s\S]*\}/);

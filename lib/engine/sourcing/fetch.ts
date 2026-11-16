@@ -12,6 +12,25 @@ import { mergePostings, newestFirst, queriesFor, sourcingNote, type SourcingBrie
 // others still count.
 
 const TIMEOUT_MS = 10_000;
+const URL_TIMEOUT_MS = 8000;
+
+/** Whether a URL opens — a GET that answers under 400 within the timeout. The one verification every job uses. */
+export async function opens(url: string): Promise<boolean> {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), URL_TIMEOUT_MS);
+  try {
+    const r = await fetch(url, { method: "GET", redirect: "follow", signal: ctl.signal, headers: { "user-agent": "Mozilla/5.0 (compatible; JobHackerCompass/1.0)", accept: "text/html,*/*" } });
+    return r.status < 400;
+  } catch { return false; }
+  finally { clearTimeout(t); }
+}
+
+export async function mapLimit<T, R>(items: readonly T[], limit: number, f: (x: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => { for (;;) { const n = i++; if (n >= items.length) return; out[n] = await f(items[n]); } }));
+  return out;
+}
 
 /** Any adapter has a key — the postings job sources by API; otherwise it falls back to the model's search. */
 export const sourcingConfigured = (env: Record<string, string | undefined> = process.env): boolean => adzunaConfigured(env) || careerjetConfigured(env);
