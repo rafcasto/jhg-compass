@@ -13,7 +13,9 @@ describe("a member's data", () => {
   it("resets the coach alone, or everything; the account's identity survives a full reset", () => {
     expect(collectionsForScope("coach")).toEqual(["coachSessions", "engineJobs", "claudeUsage"]);
     expect(collectionsForScope("all")).toEqual(MEMBER_COLLECTIONS.map((c) => c.key));
+    // Exactly what registration writes (lib/server/registration.ts) — nothing onboarding adds survives, so onboarding shows again.
     expect(ACCOUNT_FIELDS).toEqual(["email", "firstName", "lastName", "createdAt"]);
+    for (const f of ["onboardedAt", "goal", "country", "archetype", "compass", "goalUpdatedAt"]) expect(ACCOUNT_FIELDS as readonly string[]).not.toContain(f);
     expect(isResetScope("coach")).toBe(true);
     expect(isResetScope("profile")).toBe(false);
   });
