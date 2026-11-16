@@ -5,7 +5,7 @@ import { Eraser, Trash2 } from "lucide-react";
 import { authed, postJson, Section, type Notice } from "@/components/admin/shared";
 import { memberName, type MemberAccessRow } from "@/lib/access";
 import { fmtDateTime } from "@/components/admin/shared";
-import { MEMBER_COLLECTIONS, actLine, summaryLine, type MemberDataSummary, type ResetScope } from "@/lib/member-data";
+import { MEMBER_COLLECTIONS, actLine, summaryLine, unknownCollections, type MemberDataSummary, type ResetScope } from "@/lib/member-data";
 
 // Admin → TOFU → Access renewals → Member data: with exactly one member ticked, what they have
 // stored and three destructive acts — reset the coach (conversations, jobs, meter); reset to a
@@ -62,6 +62,8 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
 
   const stored = summary ? MEMBER_COLLECTIONS.filter((c) => (summary.counts[c.key] ?? 0) > 0) : [];
   const extras = summary?.accountExtras ?? [];
+  const present = summary?.present ?? [];
+  const unknown = unknownCollections(present);
 
   return (
     <Section title={`Member data · ${who}`} help="Reset coach clears the six conversations and the meter. Reset to new member is state zero — everything they ever entered goes, the account keeps only what registration wrote (email, name), and they see onboarding again; their access, its switches and their sign-in stay. Delete removes the member entirely. Every act is written to the admin audit log.">
@@ -72,6 +74,11 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
           <p className="text-sm text-jh-mute">
             Account document: {!summary.hasAccount ? "absent" : extras.length ? <>identity + <span className="text-jh-ink">{extras.join(", ")}</span></> : "identity only — a new member"}
             {" · "}uid <span className="font-mono text-xs">{summary.uid}</span>
+            {summary.email && <>{" · "}<span className="font-mono text-xs">{summary.email}</span></>}
+          </p>
+          <p className="text-sm text-jh-mute">
+            Subcollections under it: {present.length === 0 ? <span className="text-jh-ink">none — this uid holds no data at all</span> : <span className="font-mono text-xs text-jh-ink">{present.join(" · ")}</span>}
+            {unknown.length > 0 && <>{" · "}<span className="text-jh-red">a reset does not know {unknown.join(", ")}</span></>}
           </p>
           {stored.length === 0 ? <p className="text-sm text-jh-mute">No subcollection holds anything.</p> : (
             <ul className="grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3 text-sm" aria-label="What this member has stored">

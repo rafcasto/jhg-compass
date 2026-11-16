@@ -69,7 +69,17 @@ export interface MemberDataSummary {
   accountExtras: string[];
   /** The most recent admin acts on this member, newest first. */
   acts: MemberAct[];
+  /**
+   * Every subcollection the account document actually has, by name (Firestore's listCollections) — whatever
+   * MEMBER_COLLECTIONS knows. One the reset's list lacks is data the reset would leave; none at all means the
+   * uid holds nothing, and a member who still sees data is signed in as another account.
+   */
+  present: string[];
 }
+
+/** The subcollections a member has that the reset's list does not know — shown so the admin sees what a reset would leave. */
+export const unknownCollections = (present: string[]): string[] =>
+  present.filter((id) => !MEMBER_COLLECTIONS.some((c) => c.key === id));
 
 /** "Reset to new member · removed careerOps, coachSessions" — one act in one line. */
 export function actLine(a: MemberAct): string {

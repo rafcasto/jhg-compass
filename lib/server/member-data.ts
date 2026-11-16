@@ -34,12 +34,14 @@ async function recentActs(uid: string): Promise<MemberAct[]> {
 /** What the member has — counted, so the admin confirms against the real numbers and sees what a reset left. */
 export async function memberDataSummary(uid: string): Promise<MemberDataSummary> {
   const db = adminDb();
-  const [account, grant, counts, authUser, acts] = await Promise.all([
+  const [account, grant, counts, authUser, acts, present] = await Promise.all([
     db.doc(`users/${uid}`).get(),
     db.doc(`accessGrants/${uid}`).get(),
     countCollections(uid),
     adminAuth().getUser(uid).then((u) => u).catch(() => null),
     recentActs(uid),
+    // What is really under the document, by name — independent of the count and of MEMBER_COLLECTIONS.
+    db.doc(`users/${uid}`).listCollections().then((cols) => cols.map((c) => c.id).sort()).catch(() => [] as string[]),
   ]);
   const profile = account.exists ? (account.data() as Partial<Profile>) : null;
   const accountExtras = profile ? Object.keys(profile).filter((k) => !(ACCOUNT_FIELDS as readonly string[]).includes(k)).sort() : [];
@@ -52,6 +54,7 @@ export async function memberDataSummary(uid: string): Promise<MemberDataSummary>
     hasAuthUser: !!authUser,
     accountExtras,
     acts,
+    present,
   };
 }
 
@@ -97,10 +100,16 @@ export async function resetMemberData(uid: string, scope: ResetScope, by: string
       accountReset = true;
     }
   }
-  const after = await countCollections(uid);
-  const removed = keys.filter((k) => before.counts[k] && !after[k]);
-  const remaining = keys.filter((k) => after[k]);
-  await audit("reset", uid, by, { scope, email: before.email, removed, remaining, shareLinks, accountReset, counts: before.counts });
+  const [after, afterPresent] = await Promise.all([
+    countCollections(uid),
+    db.doc(`users/${uid}`).listCollections().then((cols) => cols.map((c) => c.id)).catch(() => [] as string[]),
+  ]);
+  // "Removed" is what was there by either measure — the count or the listing — and is gone now; "remaining" what either still sees.
+  const was = (k: MemberCollectionKey) => !!before.counts[k] || before.present.includes(k);
+  const still = (k: MemberCollectionKey) => !!after[k] || afterPresent.includes(k);
+  const removed = keys.filter((k) => was(k) && !still(k));
+  const remaining = keys.filter((k) => still(k));
+  await audit("reset", uid, by, { scope, email: before.email, removed, remaining, shareLinks, accountReset, counts: before.counts, present: before.present });
   if (remaining.length) throw new Error(`The reset left documents in ${remaining.join(", ")} — try again; if it repeats, the service account may lack delete rights`);
   return { uid, scope, removed, remaining, shareLinks, accountReset };
 }

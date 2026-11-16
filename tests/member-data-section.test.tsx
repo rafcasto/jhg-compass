@@ -19,7 +19,7 @@ beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
   fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-    const summary = () => ({ uid: "ada123", email: "ada@x.io", counts, hasAccount: true, hasGrant: true, hasAuthUser: true, accountExtras: Object.keys(counts).length ? ["goal", "onboardedAt"] : [], acts: acts });
+    const summary = () => ({ uid: "ada123", email: "ada@x.io", counts, hasAccount: true, hasGrant: true, hasAuthUser: true, accountExtras: Object.keys(counts).length ? ["goal", "onboardedAt"] : [], acts: acts, present: Object.keys(counts) });
     if (String(url).endsWith("/reset")) {
       const { scope } = JSON.parse(String(init?.body));
       const removed = Object.keys(counts).filter((k) => scope === "all" || k === "coachSessions");

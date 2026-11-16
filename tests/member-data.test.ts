@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ACCOUNT_FIELDS, MEMBER_COLLECTIONS, actLine, collectionsForScope, isResetScope, summaryLine, type MemberDataSummary } from "@/lib/member-data";
+import { ACCOUNT_FIELDS, MEMBER_COLLECTIONS, actLine, collectionsForScope, isResetScope, summaryLine, unknownCollections, type MemberDataSummary } from "@/lib/member-data";
 
 // Admin → Member data: the one list of a member's collections, the two reset scopes, the line the confirm quotes.
 
@@ -21,7 +21,7 @@ describe("a member's data", () => {
   });
 
   it("quotes the real counts in the confirm line, scoped", () => {
-    const s: MemberDataSummary = { uid: "u1", email: "m@x.io", counts: { coachSessions: 3, opportunities: 12 }, hasAccount: true, hasGrant: true, hasAuthUser: true, accountExtras: [], acts: [] };
+    const s: MemberDataSummary = { uid: "u1", email: "m@x.io", counts: { coachSessions: 3, opportunities: 12 }, hasAccount: true, hasGrant: true, hasAuthUser: true, accountExtras: [], acts: [], present: ["coachSessions", "opportunities"] };
     expect(summaryLine(s)).toBe("3 coach conversations · 12 opportunities");
     expect(summaryLine(s, "coach")).toBe("3 coach conversations");
     expect(summaryLine({ ...s, counts: {} })).toBe("nothing stored");
@@ -32,5 +32,12 @@ describe("a member's data", () => {
     expect(actLine({ action: "reset", scope: "coach", at: 1, by: "a@x.io", removed: [] })).toBe("Reset coach · nothing to remove");
     expect(actLine({ action: "reset", scope: "all", at: 1, by: "a@x.io", removed: [], remaining: ["careerOps"] })).toBe("Reset to new member · nothing to remove · STILL HOLDS careerOps");
     expect(actLine({ action: "delete", at: 1, by: "a@x.io" })).toBe("Deleted");
+  });
+});
+
+describe("unknownCollections", () => {
+  it("names only the subcollections the reset's list lacks", () => {
+    expect(unknownCollections(["careerOps", "profileFiles", "contacts", "scratch"])).toEqual(["profileFiles", "scratch"]);
+    expect(unknownCollections([])).toEqual([]);
   });
 });
