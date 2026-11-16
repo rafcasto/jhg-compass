@@ -90,7 +90,8 @@ export function Sheet({
   title, onClose, children, size = "md", eyebrow, description, onBack, headerActions, footer, dirty = false, viewKey, bodyClassName = "", dock,
 }: {
   title: string;
-  onClose: () => void;
+  /** Called with why — Esc, a backdrop click, or the × — so a caller can step back instead of closing (the coach panel collapses from wide on Esc). */
+  onClose: (reason: SheetCloseReason) => void;
   children: ReactNode;
   /** sm 24rem (confirm) · md 28rem (forms) · lg 36rem (detail, import). One size per flow. */
   size?: SheetSize;
@@ -109,12 +110,16 @@ export function Sheet({
   /**
    * "right": docked to the right edge on sm+ — full height, 440 px, no scrim, no scroll
    * lock, the page stays interactive beside it (the coach panel, docs/UX_COACH.md §3).
-   * Below sm it is the same full-height bottom sheet as every dialog.
+   * "wide": the same sheet expanded to the whole viewport on sm+ (docs/UX_COACH_AGENTIC.md §11) —
+   * the page is covered, so the body stops scrolling while it is wide; switching between the two
+   * on a mounted sheet keeps everything inside it (a streaming turn included).
+   * Below sm both are the same full-height bottom sheet as every dialog.
    */
-  dock?: "right";
+  dock?: "right" | "wide";
 }) {
   const { t } = useContent();
-  const docked = dock === "right";
+  const docked = dock === "right" || dock === "wide";
+  const wide = dock === "wide";
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
@@ -131,7 +136,7 @@ export function Sheet({
   const closeRef = useRef<(r: SheetCloseReason) => void>(() => {});
   closeRef.current = (reason) => {
     if (reason === "backdrop" && isDirty) return;
-    onClose();
+    onClose(reason);
   };
 
   useEffect(() => {
@@ -149,6 +154,13 @@ export function Sheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A wide sheet covers the page: lock the body while it is wide, and hand back to the stack's rule after.
+  useEffect(() => {
+    if (!wide) return;
+    document.body.style.overflow = "hidden";
+    return () => syncScrollLock();
+  }, [wide]);
+
   // Focus the first field on open and whenever the view inside the sheet changes.
   useEffect(() => {
     const el = ref.current;
@@ -160,14 +172,18 @@ export function Sheet({
 
   return (
     <div
-      data-dock={docked ? "right" : undefined}
-      className={docked
+      data-dock={dock}
+      className={wide
+        ? `fixed inset-0 z-50 grid place-items-end ${bottom ? "bg-jh-ink/60" : "bg-transparent"} sm:block sm:bg-white`
+        : docked
         ? `fixed inset-0 z-50 grid place-items-end ${bottom ? "bg-jh-ink/60" : "bg-transparent"} sm:inset-auto sm:inset-y-0 sm:right-0 sm:block sm:w-[440px] sm:bg-transparent`
         : `fixed inset-0 z-50 grid place-items-end sm:place-items-center sm:p-4 ${bottom ? "bg-jh-ink/60" : "bg-transparent"}`}
       onClick={() => closeRef.current("backdrop")}>
-      <div ref={ref} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal={docked ? undefined : "true"}
+      <div ref={ref} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal={docked && !wide ? undefined : "true"}
         aria-labelledby={titleId} aria-describedby={description ? descId : undefined}
-        className={docked
+        className={wide
+          ? "flex w-full max-h-[92dvh] flex-col rounded-t-lg bg-white shadow-jh-3 motion-safe:animate-sheet-in sm:h-full sm:max-h-none sm:rounded-none sm:shadow-none"
+          : docked
           ? "flex w-full max-h-[92dvh] flex-col rounded-t-lg bg-white shadow-jh-3 motion-safe:animate-sheet-in sm:h-full sm:max-h-none sm:rounded-none sm:border-l sm:border-jh-line"
           : `flex w-full max-h-[92dvh] flex-col rounded-t-lg bg-white shadow-jh-3 motion-safe:animate-sheet-in sm:rounded-lg ${SIZE[size]}`}>
         {/* Drag-handle affordance on the bottom sheet only */}

@@ -132,9 +132,15 @@ The ask: a bubble floating on each section, with the option to expand. Four cand
 - **Page-aware.** The panel opens on the coach for the page (and the section the member has open, if any) and the coach is told so — a mid-conversation `system` message *The member is looking at True North · Salary range* — so "let's do this one" works, and the empty-row link lands exactly there. The message is appended, never edited into history, so the cache holds.
 - **Persistent across pages.** Opened on Narrative, still open on True North — the panel is mounted in `AppShell`, above the routed page; the launcher state and the open coach live in one small store. A coach that is not the page's is fine; the eyebrow says which one it is.
 
-### The expanded page — `/jobhacking/coach` · `/settings/coach`
+### The expanded panel — built 2026-11-16, not a page
 
-`SectionsPage` geometry: 232 px rail + a `max-w-prose` transcript; overview rows → drill-in on mobile. The rail is the six coaches **under the menu's two headings** (`.section-label` *JobHacker Compass* · *Artefacts*, the same `DesktopSidebar` recipe), each row the slot grammar: state glyph (`✓ · ◐ · ○` from `jhg.progress.<coach>`) · name · *about 1 hour* · chevron; a dot on the one in conversation; *N of 6 complete* and the ink progress bar under them. A coach whose inputs are not complete is a mute row with *After True North* under it — tappable, it explains in one line rather than dead. The transcript and composer are the panel's, wider. **Collapse** (`⤡`, `.icon-btn`) returns to the page the member came from with the panel open. On mobile this is where a long session lives; the bottom tab bar hides while the composer is up.
+Designed here as a route (`/jobhacking/coach`); built as a **state of the same panel** — `docs/UX_COACH_AGENTIC.md §11`. The
+reasons a route lost: a turn streaming into the panel must survive the switch (a route change re-mounts nothing only by
+luck); the "follow the page" rule would have to special-case a page no coach writes; and the member never asked to *leave*
+the page, only for more room. So ⤢ in the header widens the docked `Sheet` to the viewport (`dock="wide"`): the rail of six
+on the left on `lg+`, the transcript in one `max-w-2xl` column at 16 / 1.75, the composer under it in the same column; ⤡ or
+Esc docks it back beside the live page with nothing lost; the choice is remembered on the device. On a phone the sheet is
+already the screen, so the control hides below `sm`.
 
 ## 4. Voice — removed (decision 2026-11-12)
 
@@ -245,4 +251,5 @@ Consequences for this design:
 
 ## 13. Still open (small)
 
-- The panel's width on 1024–1279 screens: overlay (proposed) or a narrower 400 dock.
+- ~~The panel's width on 1024–1279 screens: overlay (proposed) or a narrower 400 dock.~~ Resolved 2026-11-16: the 440 dock stays;
+  the expanded state (`docs/UX_COACH_AGENTIC.md §11`) is one tap away for the narrow-screen and the long-session cases alike.

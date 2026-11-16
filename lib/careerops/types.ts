@@ -292,7 +292,9 @@ export interface JhgIdentity {
   fullName?: string; email?: string; city?: string; country?: string; location?: string; timezone?: string; outputLanguage?: string;
   alternateEmails?: string[]; preferredChannel?: string; contactNote?: string;
 }
-export interface JhgNarrative { leadSkills?: string[]; bridgeStoryOneLine?: string }
+/** One row of the skills matrix (docs/UX_COACH_AGENTIC.md §9): the member's four 1–5 numbers, the portal's total and rank. */
+export interface JhgSkillScore { skill: string; good?: number; love?: number; proof?: number; pays?: number; total?: number; rank?: number }
+export interface JhgNarrative { leadSkills?: string[]; bridgeStoryOneLine?: string; skillScores?: JhgSkillScore[] }
 export interface JhgBoundaries {
   currency?: string; salaryLower?: string; salaryUpper?: string; salaryFloor?: string;
   authorizedIn?: string[]; needsSponsorship?: string; visaStatus?: string;

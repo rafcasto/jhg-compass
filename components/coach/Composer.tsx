@@ -8,10 +8,13 @@ import { readCoachDocument, type CoachAttachment } from "./document";
 // button in the panel. Enter sends, Shift+Enter breaks a line. One `.icon-btn` (Paperclip)
 // left of the textarea lets a CV arrive mid-conversation (docs/UX_COACH_AGENTIC.md §3): the
 // attached file shows as a pill above the textarea and goes with the next turn.
-export default function Composer({ onSend, disabled = false, placeholder = "Type your answer…" }: {
+// While a scoring matrix waits for scores (docs/UX_COACH_AGENTIC.md §9–§10) Send steps down to
+// `.btn-secondary`: the matrix's `Send scores` is the panel's one red until it is answered.
+export default function Composer({ onSend, disabled = false, placeholder = "Type your answer…", tone = "primary" }: {
   onSend: (text: string, document: CoachAttachment | null) => void;
   disabled?: boolean;
   placeholder?: string;
+  tone?: "primary" | "secondary";
 }) {
   const [text, setText] = useState("");
   const [doc, setDoc] = useState<CoachAttachment | null>(null);
@@ -67,7 +70,7 @@ export default function Composer({ onSend, disabled = false, placeholder = "Type
           disabled={disabled}
           className="field min-h-[44px] flex-1 resize-none py-2.5 text-[15px] leading-6"
         />
-        <button type="submit" disabled={disabled || (!text.trim() && !doc)} className="btn-primary h-11" aria-label="Send">
+        <button type="submit" disabled={disabled || (!text.trim() && !doc)} className={`${tone === "secondary" ? "btn-secondary" : "btn-primary"} h-11`} aria-label="Send">
           <Send className="h-4 w-4" aria-hidden /> Send
         </button>
       </div>

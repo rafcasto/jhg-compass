@@ -79,6 +79,20 @@
   `applyCoachPatch` whenever `progress` is given; Top-40 totals and ranks are computed there (`rankCompanies`), never by the model; a
   hand-over with a failed check is stored `in_progress`. Add a check to `checks.ts` and name it in the prompt's hand-over line — never
   ask the model to count, measure or rank what the stored profile can answer.
+  **The scoring matrix** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §9–§10`): wherever a coach asks the member for 1–5 numbers — Coach 1's
+  skills, Coach 3's company fit — it never asks row by row and never sums: it calls `score_matrix` with a `kind` from the registry
+  (`lib/engine/coach/rubrics.ts`: four axes with five anchors each, tie-break, cut), the panel renders `ScoreMatrix` (one native select per
+  axis, the anchors inside, a mute context line per row where there is one), the member scores everything once, and code ranks
+  (`rankRows`) and flags (`commonFlags` + the rubric's own in `skills.ts` / `companies.ts`). The route writes the result itself through
+  `applyCoachPatch` in the rubric's stored shape (`jhg.narrative.skillScores`; `companies[].scores`, ranked by `rankCompanies`); the
+  member's turn carries `scored {kind, rows}` and renders as the scored table. Add a rubric to the registry, never a second form or a
+  prompt-only scale; change an anchor or a flag in code, never in the prompt. While a matrix waits the composer's Send is
+  `tone="secondary"` — one red.
+  **The expanded panel** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §11`): the coach panel has two sizes of one conversation — `Sheet
+  dock="right"` (440, beside the live page) and `dock="wide"` (the viewport: `CoachRail` on the left at `lg+`, the transcript in one
+  `max-w-2xl` column at 16 / 1.75, the composer in the same grid) — toggled by the header's `.icon-btn` and remembered on the device
+  (`jh.coach.wide`, `setWide` / `restoreWide`). It is a state, never a route: nothing re-mounts, a streaming turn survives, Esc steps
+  back wide → docked → closed. `ScoreMatrix wide` is one line a row. Never add a third size or a coach page.
   **CV-first** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §3`): a document the member hands the coach (`CoachDocument`, `.md`/`.txt`
   through `isCoachDocumentName`) rides on the turn it arrived with and is never stored by itself — the coach proposes, the member confirms,
   `update_profile` writes. Coaches 1 · 4 · 5 (`coachStartsFromCv`) open on `CvStart` while `setup.cvMarkdown` is empty. Never auto-save a

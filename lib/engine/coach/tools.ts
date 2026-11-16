@@ -12,6 +12,7 @@
 // what each key means in the conversation; the rule itself lives here, once.
 
 import type { CoachKey } from "./keys";
+import { coachRubrics } from "./rubrics";
 
 export const UPDATE_PROFILE = "update_profile";
 
@@ -231,10 +232,35 @@ export function runResearchTool(coach: CoachKey) {
   };
 }
 
-/** Every tool a coach runs with — update_profile first, run_research where the coach has research. Fixed for the conversation (the cache). */
+// ---- score_matrix: a scoring matrix in the panel, scored once (docs/UX_COACH_AGENTIC.md §9–§10) ----
+
+export const SCORE_MATRIX = "score_matrix";
+
+/** The tool definition — one per coach, offering the rubrics that coach has; the portal shows the matrix, the member scores every row at once, code totals and ranks, the coach reads the table on its next turn. */
+export function scoreMatrixTool(coach: CoachKey) {
+  const rubrics = coachRubrics(coach);
+  if (!rubrics.length) return null;
+  const kinds = rubrics.map((r) => r.kind);
+  const what = rubrics.map((r) => `${r.kind}: the member's ${r.items} on ${r.axes.map((a) => a.label).join(" · ")}, ${r.min}–${r.max} of them${r.kind === "companies" ? " — leave items out to score every stored company" : ""}`).join("; ");
+  return {
+    name: SCORE_MATRIX,
+    description: `Put a list in front of the member as a scoring matrix in the panel — four 1–5 numbers a row with the portal's anchors, scored all at once. ${what}. The portal stores the scores, computes totals and ranks, and your next turn opens with the ranked table and its flags. Never ask the numbers one row at a time in the conversation, never sum or rank yourself.`,
+    strict: false as const,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        kind: { type: "string", enum: kinds, description: "Which rubric" },
+        items: { type: "array", items: { type: "string" }, description: "The rows in the member's own words (skills) or as the company writes it (companies), one each, no duplicates" },
+      },
+      required: ["kind"],
+      additionalProperties: false,
+    },
+  };
+}
+
+/** Every tool a coach runs with — update_profile first, then run_research and score_matrix where the coach has them. Fixed for the conversation (the cache). */
 export function coachTools(coach: CoachKey) {
-  const research = runResearchTool(coach);
-  return research ? [updateProfileTool(coach), research] : [updateProfileTool(coach)];
+  return [updateProfileTool(coach), runResearchTool(coach), scoreMatrixTool(coach)].filter((t): t is NonNullable<typeof t> => t !== null);
 }
 
 /** The paths in a patch that this coach does not own — a non-empty list refuses the write. */

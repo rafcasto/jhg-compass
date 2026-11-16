@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { Sheet } from "@/components/tracker/Sheet";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
@@ -10,7 +11,8 @@ import { COACH_TOTAL, coachForPage, coachStartsFromCv, coachStates, findCoach, m
 import { coachPart } from "@/lib/engine/coach/parts";
 import { profileFromSetup } from "@/lib/careerops/profile-file";
 import type { Profile } from "@/lib/types";
-import { applyEvent, emptyPending, parseEvent, type PendingTurn, type TranscriptTurn } from "@/lib/engine/coach/transcript";
+import { applyEvent, emptyPending, parseEvent, pendingMatrixOf, type PendingTurn, type TranscriptTurn } from "@/lib/engine/coach/transcript";
+import type { MatrixRow } from "@/lib/engine/coach/rubrics";
 import type { CoachSession } from "@/lib/engine/coach/session";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
@@ -19,7 +21,7 @@ import Composer from "./Composer";
 import CvStart from "./CvStart";
 import type { CoachAttachment } from "./document";
 import Transcript from "./Transcript";
-import { closeCoach, flashSections, openCoach, useCoachUi } from "./store";
+import { closeCoach, flashSections, openCoach, restoreWide, setWide, useCoachUi } from "./store";
 
 // The docked panel (docs/UX_COACH.md §3): the tracker's Sheet, docked right on desktop —
 // no scrim, no scroll lock, the page stays live beside it — a full-height sheet on a
@@ -28,6 +30,12 @@ import { closeCoach, flashSections, openCoach, useCoachUi } from "./store";
 // (each has its own conversation, nothing is lost) and says so in one mute line; off the
 // pages a coach writes, it closes. The transcript is the session document, live; the turn
 // being written streams in from /api/coach/turn.
+//
+// Two sizes of the same panel (docs/UX_COACH_AGENTIC.md §11): docked at 440 beside the live page,
+// or EXPANDED to the viewport — the rail of six on the left (lg+), the transcript in one readable
+// column at 16 / 1.75, the composer under it in the same column. Same component, same state: a
+// turn streaming while the member expands keeps streaming. ⤢ / ⤡ in the header; Esc steps back
+// from wide to docked before it closes; the choice is remembered on the device.
 export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const ui = useCoachUi();
   const { user } = useAuth();
@@ -45,12 +53,14 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const [handoff, setHandoff] = useState<string | null>(null);
   const busy = useRef(false);
   const started = useRef<string | null>(null);
+  useEffect(() => { restoreWide(); }, []);
 
-  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null) => {
+  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: MatrixRow[] | null = null) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
     setPending(emptyPending());
+    // Scores show as the member's turn once the server has ranked them — until then the matrix simply locks.
     if (text || document) setLocalTurns((t) => [...t, { role: "member", text: text ?? "", at: Date.now(), ...(document ? { attachment: document.name } : {}) }]);
     try {
       const token = await auth.currentUser!.getIdToken();
@@ -60,7 +70,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       const res = await fetch("/api/coach/turn", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        body: JSON.stringify({ coach: coach.key, portal, ...(text ? { text } : { start: true }), ...(document ? { document } : {}), context: { page, section } }),
+        body: JSON.stringify({ coach: coach.key, portal, ...(scores ? { scores } : text ? { text } : { start: true }), ...(document ? { document } : {}), context: { page, section } }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({}));
@@ -129,32 +139,58 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   // Where the conversation is — from the stored keys, zero tokens (docs/UX_COACH_AGENTIC.md §1). Only once it has started.
   const part = turns.length && !missing.length ? coachPart(coach.key, profileFromSetup({ profile, setup }), complete) : null;
   const canTalk = coach.ready && !missing.length && !quota;
+  // A matrix waits: its Send scores is the one red; the composer's Send steps down (docs/UX_COACH_AGENTIC.md §9–§10).
+  const matrixWaiting = !pending && !!pendingMatrixOf(turns);
 
-  const footer = canTalk && !cvFirst ? <Composer onSend={(t, d) => void send(t || null, d)} disabled={!!pending} placeholder={complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
+  const wide = ui.wide;
+  const composer = canTalk && !cvFirst ? <Composer onSend={(t, d) => void send(t || null, d)} disabled={!!pending} tone={matrixWaiting ? "secondary" : "primary"} placeholder={matrixWaiting ? "Or tell your coach what to change…" : complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
+  // Wide: the rail's column on the left (lg+), the conversation in one readable column — body and footer share the grid so the composer sits under the transcript.
+  const column = (node: ReactNode, rail?: ReactNode) => !wide ? node : (
+    <div className="lg:grid lg:grid-cols-[232px_minmax(0,1fr)] lg:gap-8">
+      <div className="hidden lg:block">{rail}</div>
+      <div className="mx-auto w-full max-w-2xl">{node}</div>
+    </div>
+  );
+  const footer = composer ? column(composer) : undefined;
+  const hasCv = !!setup?.cvMarkdown?.trim();
+  const rail = <aside className="lg:sticky lg:top-0"><CoachRail states={states} portal={portal} hasCv={hasCv} /></aside>;
+
+  const body = !coach.ready ? (
+    <p className="text-sm text-jh-mute">{coach.label} is on its way — Coach {coach.n} is being built. {coach.outcome}</p>
+  ) : missing.length ? (
+    // Gated: say why in one line, then the rail of six so the way forward is a tap away (docs/UX_COACH_AGENTIC.md §5) — wide already has the rail beside.
+    <div className="space-y-6">
+      <p className="text-sm text-jh-mute">{coach.label} starts after {missing.map((c) => c.label).join(" and ")} — your coach needs what they write first.</p>
+      {!wide && <CoachRail states={states} portal={portal} hasCv={hasCv} />}
+      {wide && <div className="lg:hidden"><CoachRail states={states} portal={portal} hasCv={hasCv} /></div>}
+    </div>
+  ) : cvFirst && canTalk ? (
+    <CvStart coachLabel={coach.label} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
+  ) : (
+    <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} wide={wide} onExpand={() => setWide(true)} />
+  );
 
   return (
     <Sheet
-      dock="right"
+      dock={wide ? "wide" : "right"}
       eyebrow={`Coach ${coach.n} of ${COACH_TOTAL}`}
       title={coach.label}
-      onClose={closeCoach}
+      onClose={(reason) => { if (reason === "esc" && wide) setWide(false); else closeCoach(); }}
       bodyClassName="bg-white"
+      headerActions={
+        <button type="button" onClick={() => setWide(!wide)} className="icon-btn icon-btn-tight hidden sm:inline-grid" aria-label={wide ? "Collapse to the side" : "Expand"} aria-pressed={wide}>
+          {wide ? <Minimize2 className="h-5 w-5" strokeWidth={1.5} aria-hidden /> : <Maximize2 className="h-5 w-5" strokeWidth={1.5} aria-hidden />}
+        </button>
+      }
       footer={footer}
     >
-      {part && <p className="section-label mb-4">{part}</p>}
-      {handoff && <p role="status" className="mb-4 text-sm text-jh-mute">{handoff}</p>}
-      {!coach.ready ? (
-        <p className="text-sm text-jh-mute">{coach.label} is on its way — Coach {coach.n} is being built. {coach.outcome}</p>
-      ) : missing.length ? (
-        // Gated: say why in one line, then the rail of six so the way forward is a tap away (docs/UX_COACH_AGENTIC.md §5).
-        <div className="space-y-6">
-          <p className="text-sm text-jh-mute">{coach.label} starts after {missing.map((c) => c.label).join(" and ")} — your coach needs what they write first.</p>
-          <CoachRail states={states} portal={portal} hasCv={!!setup?.cvMarkdown?.trim()} />
-        </div>
-      ) : cvFirst && canTalk ? (
-        <CvStart coachLabel={coach.label} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
-      ) : (
-        <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} />
+      {column(
+        <>
+          {part && <p className="section-label mb-4">{part}</p>}
+          {handoff && <p role="status" className="mb-4 text-sm text-jh-mute">{handoff}</p>}
+          {body}
+        </>,
+        rail,
       )}
     </Sheet>
   );

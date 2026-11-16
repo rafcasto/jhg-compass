@@ -93,6 +93,22 @@ describe("Sheet", () => {
     unmount();
   });
 
+  // The expanded panel (docs/UX_COACH_AGENTIC.md §11): the same sheet covering the viewport — it locks the page, and hands back when it docks again.
+  it("wide covers the page and locks it, docks back without a remount, and reports why it closed", async () => {
+    const onClose = vi.fn();
+    const { container, rerender, unmount } = render(<Sheet title="Narrative" dock="wide" onClose={onClose}><input aria-label="Your answer" /></Sheet>);
+    expect(container.querySelector("[data-dock='wide']")).not.toBeNull();
+    expect(document.body.style.overflow).toBe("hidden");
+    const field = screen.getByLabelText("Your answer");
+    rerender(<Sheet title="Narrative" dock="right" onClose={onClose}><input aria-label="Your answer" /></Sheet>);
+    expect(container.querySelector("[data-dock='right']")).not.toBeNull();
+    expect(document.body.style.overflow).toBe("");
+    expect(screen.getByLabelText("Your answer")).toBe(field); // the same node — nothing inside was lost
+    await userEvent.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalledWith("esc");
+    unmount();
+  });
+
   it("a docked sheet under a modal one does not lock scroll on its own, the modal does", () => {
     const { unmount: closeDocked } = render(<Sheet title="Coach" dock="right" onClose={() => {}}><p>a</p></Sheet>);
     expect(document.body.style.overflow).toBe("");

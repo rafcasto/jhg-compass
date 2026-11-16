@@ -91,8 +91,8 @@ export function CopyButton({ text, label = "Copy" }: { text: string; label?: str
   );
 }
 
-export function Markdown({ children }: { children: string }) {
-  return <div className="prose prose-sm max-w-none prose-table:text-xs prose-headings:font-display"><ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown></div>;
+export function Markdown({ children, size = "sm" }: { children: string; size?: "sm" | "base" }) {
+  return <div className={`prose ${size === "sm" ? "prose-sm prose-table:text-xs" : "prose-table:text-sm"} max-w-none prose-headings:font-display`}><ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown></div>;
 }
 
 // A note the worker produced: header, sources, markdown, copy.

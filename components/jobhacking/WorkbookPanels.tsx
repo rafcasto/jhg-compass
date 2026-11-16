@@ -40,11 +40,30 @@ export function StoryFacts({ jhg }: { jhg: Jhg }) {
 export function CompetencyFacts({ setup, jhg }: { setup: CareerOpsSetupV2 | null | undefined; jhg: Jhg }) {
   const superpowers = setup?.narrative?.superpowers ?? [];
   const lead = jhg?.narrative?.leadSkills ?? [];
-  if (!superpowers.length && !lead.length) return null;
+  // The skills matrix as scored with the coach (docs/UX_COACH_AGENTIC.md §9): ranked rows, read-only, the portal's totals.
+  const scored = (jhg?.narrative?.skillScores ?? []).filter((s) => s.skill?.trim() && typeof s.total === "number").sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
+  if (!superpowers.length && !lead.length && !scored.length) return null;
   return (
     <FileFacts id="wb-competencies" title="From your Narrative file" from="narrative.yml"
       lists={[{ label: "Superpowers", items: superpowers }, { label: "Lead skills", items: lead }].filter((l) => l.items.length)}
-      note="Superpowers are what you're hired for; lead skills are the three your stories prove." />
+      note="Superpowers are what you're hired for; lead skills are the three your stories prove.">
+      {scored.length > 0 && (
+        <div>
+          <p className="label">Skills you scored <span className="font-mono text-xs">{scored.length}</span></p>
+          <ol className="divide-y divide-jh-line text-sm">
+            {scored.map((s) => (
+              <li key={s.skill} className="flex items-baseline gap-3 py-1.5">
+                <span className="w-5 shrink-0 text-right font-mono text-xs text-jh-mute">{s.rank}</span>
+                <span className="min-w-0 flex-1 truncate text-jh-body">{s.skill}</span>
+                <span className="shrink-0 font-mono text-xs text-jh-mute">{[s.good, s.love, s.proof, s.pays].join(" · ")}</span>
+                <span className="w-6 shrink-0 text-right font-mono text-sm font-semibold text-jh-ink">{s.total}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-1 text-xs text-jh-mute">Good · Love · Prove · Pays, each 1–5; the total is the portal&apos;s.</p>
+        </div>
+      )}
+    </FileFacts>
   );
 }
 

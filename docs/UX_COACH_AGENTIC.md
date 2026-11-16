@@ -218,3 +218,167 @@ leaves open (overlay vs a 400 px dock) and the expanded page, which this note do
 3. §4 hand-over with `checks` — with the tool-result change. **Built 2026-11-16**: `lib/engine/coach/checks.ts` runs the coach's checks against the merged profile at every save point and hand-over; the result carries `checks.failed[] {id, check, fix}` (or `"all passed"`), the stored `progress` and `readiness`; a hand-over with a failure is stored `in_progress` so the rail's ✓ waits; the readiness sentence renders mute under the completed write line (`WriteNote.readiness`). The model keeps only what code cannot decide (M1 figure tracing, banned phrases, keeper traceability, hero-metric figures, framing titles). Prompts v4: the hand-over paragraphs name the checks and defer to the result; the turn-length rule is the audit's #5; Part B of Target companies says the portal totals and ranks (#7).
 4. §3 CV-first — with the document input. **Built 2026-11-16**: `CvStart` (the empty state, `.btn-primary` *Add your CV* · `.link` *Start without one*) shows for Narrative, Story Bank and Master CV (`coachStartsFromCv`) while `setup.cvMarkdown` is empty and no turn exists; the composer's `.icon-btn` Paperclip attaches a file as a `.pill-visible` that goes with the next turn; the route takes `document: { name, text }` (`.md`/`.txt`, ≤ 60,000 chars) and puts it before the member's words on that turn (`documentBlock`), after the profile on a first turn; the member's turn shows the file name. Nothing is stored from the document — the three prompts' *When a CV is in front of you* paragraph has the coach propose a table and write only what is confirmed. **PDF built the same day**: the browser sends the bytes (`CoachPdf`, ≤ 3 MB), the turn route transcribes them once with one `low`-effort call through the SDK's `document` block (metered on the coach), and from there it is a text document like any other — the stored transcript carries words, not base64.
 5. §2 `JobStatus` — with the first research job (`postings`). **Built 2026-11-16**: `components/coach/JobStatus.tsx` reads `users/{uid}/engineJobs/{id}` live — the dot, the verb phrase from `progress`, the mono `n of m`, a `.link` Stop (`DELETE /api/engine/jobs/{id}`); ✓ `Reading postings · 18 found · View ›` when it lands; one `jh-red` line when it fails. A coach turn carries the jobs it started (`TranscriptTurn.jobs`, the `job` stream event). The job's result is written to the page by the handler (`applyCoachPatch`), so the write line is the page's own; the coach gets the 20-row table on its next turn through the operator note (`landedSince`).
+
+---
+
+## 9. The scoring matrix — scored once, in code (2026-11-16)
+
+**Why.** Coach 1 §2 asked four 1–5 questions per skill, one at a time — sixty turns for fifteen skills — and the model
+summed and ranked. The rubric lived in prose with one anchor ("prove = 2 if no result in 10 seconds"), so the same prompt
+gave every member a different scale; and the table was never stored — only three `leadSkills` survived, so Story Bank could
+not see which skills were proven. The fix is the move §4 made for companies: **anchors, totals, ranks, tie-break and flags in
+code, the same for every member; the model converses about the result.**
+
+**Where it lives.** `lib/engine/coach/rubrics.ts` is the registry — a `Rubric` is four axes with five anchors each, a
+tie-break order, a cut, and bounds; `rankRows` (total = sum; ranked by total, the tie-break axes, then the matrix's order),
+`parseRows`, `cleanItems`, `commonFlags` (inflated · flat · tie at the cut), `scoredTable`. Each rubric's own flags and stored
+shape sit beside it: `skills.ts` — `SKILL_AXES` (Good at it · Love it · Can prove it · Market pays), ties Prove → Pays → Love,
+`TOP_CUT = 6`, `skillFlags` (unproven top-six · loved-not-paid · paid-not-loved), `scoresMessage`; `companies.ts` — §10. Stored on `jhg.narrative.skillScores[] {skill, good, love, proof, pays, total,
+rank}` — in the schema shape, in `narrative.yml`, shown read-only beside Core competencies (`CompetencyFacts`). **N7**: once
+scored, the lead skills are three of the top six, spelled as scored.
+
+**The conversation.** The coach collects the list (rejecting traits is still its job) and calls **`score_matrix`** with
+`kind: "skills"` and the items (`SCORE_MATRIX`; a coach's tool offers only its own rubrics — `coachRubrics`). The route cleans
+the list (`cleanItems`, 3–20, de-duplicated), streams a
+`matrix` event, stores it on the coach turn (`TranscriptTurn.matrix`) and answers the tool: *end your turn with one line, no
+question*. The member scores everything and sends; the route takes `scores[]`, validates them against the pending matrix
+(`pendingMatrixOf` — the last one shown with no scored member turn after it), computes, **writes the scores itself through
+`applyCoachPatch`** in the rubric's stored shape (the write line reads *Updated Core competencies*), and hands the coach
+`scoresMessage` as the member's words. The member's turn in the transcript carries `scored {kind, rows}` and renders as the
+scored table (`ScoredRows`) — never the generated prose.
+
+```
+┌ panel ───────────────────────────────────────────────┐
+│ Here are your fifteen. Score them all, then we talk  │
+│ about what stands out.                               │
+│                                                      │
+│ SCORE YOUR SKILLS · 1–5                              │   ← .section-label; one mute line under it
+│ GOOD      LOVE      PROVE     PAYS                   │   ← .section-label header, grid-cols-4
+│ ──────────────────────────────────────────────────── │
+│ Release management                        17 / 20    │   ← 15 px ink · font-mono text-xs mute, live
+│ [ 4 · Oth… ▾][ 5 · Wou… ▾][ 5 · Sev… ▾][ 3 · Ask… ▾]│   ← four native selects, .field h-11, 92 px each
+│ ──────────────────────────────────────────────────── │
+│ Incident management                        — / 20    │
+│ [ Good    ▾][ Love    ▾][ Prove   ▾][ Pays    ▾]    │   ← the axis word is the placeholder option
+│ …                                                    │
+│ ▸ What the numbers mean                              │   ← <details>, text-sm mute; the anchors, once
+│ 9 of 15 scored                     [ Send scores ]   │   ← mono mute · .btn-primary (the panel's one red)
+│ ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈ │
+│ Or tell your coach what to change…        [ Send ]   │   ← .btn-secondary while the matrix waits
+└──────────────────────────────────────────────────────┘
+```
+
+| Principle | Decision |
+|---|---|
+| **Hierarchy** | The skill name is the only ink in a row; the axis words, totals and the legend are `jh-mute`; the four numbers are `font-mono text-xs`. Once sent, the member's block shows ranked rows — rank mute, name ink, the four digits mono mute, the total `font-semibold` ink — and **one `jh-line-2` divider after rank 6: the cut**. No colour carries a judgement; the coach's words do |
+| **The scale** | The anchors ride **inside each `<select>`** (`3 · Solid, unsupervised`) so the number is never read alone, and a `<details>` lists them once. Same words for every member, from code |
+| **Spacing** | 8 between selects, 12 inside a row (`py-3`), 16 between the form's blocks; the form sits in the coach turn's 8 px rhythm with `pt-2` |
+| **Targets** | Native `<select>`, `.field h-11` — 44 px, and the OS picker on a phone. 392 px of body gives 92 px a select; the number is first so truncation costs nothing |
+| **Red budget** | While a matrix waits, *Send scores* is the panel's one red; the composer's Send becomes `.btn-secondary` (`Composer tone`) and its placeholder says what it is for — the member can still say "drop Excel". The matrix locks (`disabled`) while the coach writes |
+| **Depth** | None added: no card, no shadow. `divide-y` and `border-y` on `jh-line` make the rows |
+| **Decided against** | Five-dot ratings (five 44 px targets × four axes = 60 lines for 15 skills); a table with the name as a cell (120 px names truncate to nothing); a Sheet of its own (the matrix is the conversation's turn, not a dialog); a stepper (two taps a number) |
+
+**Files.** `lib/engine/coach/rubrics.ts` · `skills.ts` · `companies.ts` (pure) · `tools.ts` (`SCORE_MATRIX`, `scoreMatrixTool`) ·
+`transcript.ts` (`MatrixNote {kind, items, meta}`, `ScoredNote {kind, rows}`, `matrix` event, `pendingMatrixOf`) · `checks.ts` (N7) ·
+`turn.ts` (recap) · `app/api/coach/turn/route.ts` · `components/coach/ScoreMatrix.tsx` (`ScoreMatrix`, `ScoredRows`) ·
+`Transcript.tsx` · `Composer.tsx` (`tone`) · `CoachPanel.tsx` · `WorkbookPanels.tsx` (`CompetencyFacts`) · Narrative prompt v7,
+Target companies v5 · `tests/engine-coach-skills.test.ts`, `tests/coach-score-matrix.test.tsx`.
+
+---
+
+## 10. The companies matrix — Part B of Target companies on the same form (2026-11-16)
+
+**Why.** Part B asked for 160 numbers in the chat — forty companies × four scores, "in batches of five", each batch a
+write and a turn. `rankCompanies` already did the arithmetic (§4); the member still typed every number. The scoring
+moments across the six coaches are exactly two — Coach 1's skills and Coach 3's fit scores — so the matrix is one
+component over a registry, not a second one.
+
+**The rubric** (`RUBRICS.companies`, `lib/engine/coach/companies.ts`): 🚀 Growth signals · 💚 Interest · 🔑 Access · 🧾 Proof,
+five anchors each (Access: *nobody, no route* → *someone I can message today*); ties Interest → Proof, as the prompt and
+`rankCompanies` already say; **cut = 10** — the Top 10. The rows are **the stored 40**: `score_matrix` with `kind:
+"companies"` and no items puts every company on `jhg.targetCompanies.companies` in the matrix (`matrixCompanies`), with a
+mute line under each name — *sub-sector · growth signal · knows Sam* (`companyMeta`) — because a company needs more context
+than a skill to score honestly; items, when given, must each be a stored company (a rescore of the ones challenged). The
+answer is laid onto the stored list (`applyCompanyScores`) and written through `applyCoachPatch`, where `rankCompanies`
+ranks it — so the Top 40 on the page **is** the result and no new read-only surface is needed; the write line reads
+*Updated Top 40*.
+
+**The flags** (`companyFlags`): the prompt's four challenges where the numbers can tell — *dream* (Interest 5, Access and
+Proof ≤ 2), *access with no route* (Access 5 and no `knownContact`), *growth with no source* (Growth 5 and no `growthSource`),
+*Proof 5 in the top ten* (the coach asks which competency solves which problem — the one judgement that stays the model's) —
+plus the shared inflated · flat · tie-at-the-cut. The coach challenges one company at a time and records each in
+`challenges[]`, exactly as before, minus the typing.
+
+**The form at forty rows.** Same `ScoreMatrix`: the axis header is `sticky top-0` inside the panel's scroll container so the
+columns stay named through the scroll; **one Send at the end** — batching was what the chat forced, the matrix does not
+need it; the member can rescore a handful later through a second, shorter matrix.
+
+**Not scoring, same shell later.** Part C's *Say-It-Loud* (Y/N × 10) and *careers page status* (✓ / corrected / none × 10) are
+one-choice-per-row forms the same skeleton could render; left until a member has used the companies matrix.
+
+---
+
+## 11. The expanded panel — two sizes of one conversation (2026-11-16)
+
+**Ask (Rafael):** the chat should expand to full screen for usability — with the best experience possible.
+
+**What the 440 dock cannot do well.** A 392 px column holds 55ch of prose — right for talk — but not Coach 3's ten-column
+review tables, not forty matrix rows at 92 px a select with the anchors cut to *3 · Solid, uns…*, and on a 1024–1279 screen
+the page beside it is a sliver (`UX_COACH.md §13`). A one-to-four-hour session wants a room, not a lane.
+
+**Three ways to get the room, scored.**
+
+| Candidate | What it is | Verdict |
+|---|---|---|
+| A route (`/jobhacking/coach`, as `UX_COACH.md §3` drew it) | A page with the rail and a wide transcript; *Collapse* returns to the page | Loses: a turn streaming into the panel would depend on the layout keeping the component alive across the route; the "follow the page" rule would need a page no coach writes as an exception; a second surface to keep in step with the panel |
+| A wider dock (640 px) | The same lane, wider | Loses: still a lane — the page beside it becomes the sliver; forty rows still two lines each |
+| **The same `Sheet`, expanded in place** (`dock="wide"`) | The docked panel widens to the viewport; the member toggles ⤢ / ⤡; **nothing re-mounts** | **Wins** — one component, one state, one transcript; the stream, the pending matrix, the composer's draft all survive the switch |
+
+**The expanded layout (`lg+`).**
+
+```
+┌────────────────────────────────────────────────────────────────────────────────┐
+│ COACH 3 OF 6                                                           ⤡   ×   │  the same header; ⤡ Collapse to the side
+│ Target companies                                                               │
+├──────────────┬─────────────────────────────────────────────────────────────────┤
+│ YOUR COACH   │                                                                 │
+│ 2 of 6 compl.│   PART B · FIT SCORES                                           │  .section-label — the Part line, from code
+│              │                                                                 │
+│ JOBHACKER C. │   Here are your forty. Score them all, then we argue about      │  16 / 1.75, max-w-2xl (~70ch), centred
+│ ✓ Narrative  │   the fives.                                                    │
+│ ✓ True North │                                                                 │
+│ ● Target co. │   SCORE YOUR COMPANIES · 1–5                                    │
+│ ARTEFACTS    │                 GROWTH   INTEREST   ACCESS   PROOF     TOTAL    │  sticky header, same grid as the rows
+│ ○ Story Bank │   Xero          [ 4 ▾ ]  [ 5 ▾ ]    [ 3 ▾ ]  [ 4 ▾ ]   16 / 20  │  one line a company; anchors read in full
+│ ○ Master CV  │   SaaS · +18%                                                   │  the mute meta line under the name
+│ ○ LN         │   Sharesies     [   ▾ ]  [   ▾ ]    [   ▾ ]  [   ▾ ]   — / 20   │
+│              │   …                                                             │
+│              ├─────────────────────────────────────────────────────────────────┤
+│              │   Or tell your coach what to change…                 [ Send ]   │  the composer, in the same column
+└──────────────┴─────────────────────────────────────────────────────────────────┘
+```
+
+| Principle | Decision |
+|---|---|
+| **Hierarchy** | Nothing new competes: the header is the dock's header, the rail is `CoachRail` as Settings draws it, the transcript is the same transcript one size up (`text-base leading-[1.75]`, `prose` instead of `prose-sm`). The one new control is an `.icon-btn` — `Maximize2` / `Minimize2`, `aria-label` *Expand* / *Collapse to the side*, `aria-pressed` — beside × in `headerActions` |
+| **Measure** | `max-w-2xl` (672 px) at 16 px ≈ 70ch — inside 45–75, at the wide end on purpose: the coach's review tables and the matrix are the reason to expand. Centred in the column to the right of the rail; the composer lives in the **same grid** (`lg:grid-cols-[232px_minmax(0,1fr)]`, an empty first cell in the footer) so Send sits under the last line, never under the rail |
+| **The matrix, wide** | One line a row — `grid-cols-[minmax(0,1fr)_repeat(4,minmax(0,7rem))_3.5rem]`: the name (with its mute meta line under it), four 7-rem selects, the mono total; a sticky header on the same grid with *Total* over the last column. Forty companies are ~56 px a row — half the docked scroll — and every anchor shows whole in the closed select |
+| **Spacing** | The Sheet's own 24 px body padding; the rail column 232 px with a 32 px gutter — the `SectionsPage` geometry every JobHacking page uses, so the expanded coach reads as a page of the portal, not a modal |
+| **Depth** | None added: `sm:shadow-none` when wide — a surface that fills the viewport has nothing to float above. The dock keeps `shadow-jh-3` + `border-l` |
+| **Colour** | Red budget unchanged: Send (or *Send scores* while a matrix waits), an error line. The ⤢ is `jh-mute` → ink on hover like every `.icon-btn` |
+| **Motion** | None on the switch: the width changes, the content stays where it is. `motion-safe:animate-sheet-in` only on mount, as before |
+| **Keyboard** | Esc **steps back**: wide → docked, then docked → closed. One key, one step, always reversible. Tab order unchanged (the Sheet's own trap) |
+| **Memory** | `jh.coach.wide` on the device (`setWide` / `restoreWide` in the coach store); the server snapshot is always docked, the preference restores once the panel mounts — no hydration flicker, no account write for a layout choice |
+| **Discoverability** | The icon is enough most of the time; on the one turn it matters most — a docked matrix — the intro line ends with a mute *Expand for more room ›* (a text button, `underline` on hover, never red). Shown once, inline, `sm+` only |
+| **Mobile** | Below `sm` the sheet is already the screen; the control hides, nothing else changes. The bottom tab bar is already under the `z-50` sheet |
+| **Scroll** | Wide locks the body (`document.body.style.overflow`) for as long as it is wide and hands back to the stack's rule when it docks — the page beside a dock stays scrollable, as §1 of `UX_COACH.md` requires |
+
+**Why not auto-expand on a matrix.** A layout that changes itself is the one thing a member cannot predict; the hint and the
+icon make the choice theirs, and the memory makes it a one-time choice.
+
+**Files.** `components/tracker/Sheet.tsx` (`dock: "right" | "wide"`, `onClose(reason)`, the wide scroll lock) ·
+`components/coach/store.ts` (`wide`, `setWide`, `restoreWide`) · `CoachPanel.tsx` (the toggle, the two-column grid for body
+and footer, Esc steps back) · `Transcript.tsx` (`wide`, `onExpand`) · `ScoreMatrix.tsx` (`wide` rows, the hint) ·
+`components/careerops/shared.tsx` (`Markdown size`) · `tests/sheet.test.tsx`, `tests/coach-wide.test.ts`,
+`tests/coach-score-matrix.test.tsx`. `docs/UX_COACH.md §3` and `§13` updated.
+

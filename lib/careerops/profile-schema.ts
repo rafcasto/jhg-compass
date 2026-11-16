@@ -168,7 +168,7 @@ const SUB_SECTOR_ROW: Shape = { name: "string", growthSignal: "string", source: 
 export const JHG_SHAPE: Shape = {
   progress: { record: { map: { status: "string", updated: "string" } }, keys: JHG_FILE_KEYS },
   identity: { map: { fullName: "string", email: "string", city: "string", country: "string", location: "string", timezone: "string", outputLanguage: "string", alternateEmails: "string[]", preferredChannel: "string", contactNote: "string" } },
-  narrative: { map: { leadSkills: "string[]", bridgeStoryOneLine: "string" } },
+  narrative: { map: { leadSkills: "string[]", bridgeStoryOneLine: "string", skillScores: { rows: { skill: "string", good: "number", love: "number", proof: "number", pays: "number", total: "number", rank: "number" }, required: ["skill"] } } },
   trueNorth: { map: {
     boundaries: { map: {
       currency: "string", salaryLower: "string", salaryUpper: "string", salaryFloor: "string",
