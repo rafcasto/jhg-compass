@@ -11,7 +11,7 @@ import { coachPart } from "@/lib/engine/coach/parts";
 import { profileFromSetup } from "@/lib/careerops/profile-file";
 import type { Profile } from "@/lib/types";
 import { applyEvent, emptyPending, parseEvent, pendingMatrixOf, type PendingTurn, type TranscriptTurn } from "@/lib/engine/coach/transcript";
-import type { SkillScoreInput } from "@/lib/engine/coach/skills";
+import type { MatrixRow } from "@/lib/engine/coach/rubrics";
 import type { CoachSession } from "@/lib/engine/coach/session";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
@@ -47,7 +47,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const busy = useRef(false);
   const started = useRef<string | null>(null);
 
-  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: SkillScoreInput[] | null = null) => {
+  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: MatrixRow[] | null = null) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
@@ -131,7 +131,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   // Where the conversation is — from the stored keys, zero tokens (docs/UX_COACH_AGENTIC.md §1). Only once it has started.
   const part = turns.length && !missing.length ? coachPart(coach.key, profileFromSetup({ profile, setup }), complete) : null;
   const canTalk = coach.ready && !missing.length && !quota;
-  // The matrix waits: its Send scores is the one red; the composer's Send steps down (docs/UX_COACH_AGENTIC.md §9).
+  // A matrix waits: its Send scores is the one red; the composer's Send steps down (docs/UX_COACH_AGENTIC.md §9–§10).
   const matrixWaiting = !pending && !!pendingMatrixOf(turns);
 
   const footer = canTalk && !cvFirst ? <Composer onSend={(t, d) => void send(t || null, d)} disabled={!!pending} tone={matrixWaiting ? "secondary" : "primary"} placeholder={matrixWaiting ? "Or tell your coach what to change…" : complete ? "Anything to change?" : "Type your answer…"} /> : undefined;

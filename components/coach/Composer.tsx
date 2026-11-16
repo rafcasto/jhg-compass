@@ -8,7 +8,7 @@ import { readCoachDocument, type CoachAttachment } from "./document";
 // button in the panel. Enter sends, Shift+Enter breaks a line. One `.icon-btn` (Paperclip)
 // left of the textarea lets a CV arrive mid-conversation (docs/UX_COACH_AGENTIC.md §3): the
 // attached file shows as a pill above the textarea and goes with the next turn.
-// While the skills matrix waits for scores (docs/UX_COACH_AGENTIC.md §9) Send steps down to
+// While a scoring matrix waits for scores (docs/UX_COACH_AGENTIC.md §9–§10) Send steps down to
 // `.btn-secondary`: the matrix's `Send scores` is the panel's one red until it is answered.
 export default function Composer({ onSend, disabled = false, placeholder = "Type your answer…", tone = "primary" }: {
   onSend: (text: string, document: CoachAttachment | null) => void;

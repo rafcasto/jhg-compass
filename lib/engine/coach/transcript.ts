@@ -3,7 +3,7 @@
 // transcript (the messages replayed to Claude) is stored beside it as JSON; this is the
 // readable half. Pure — tested.
 
-import type { SkillScore } from "./skills";
+import type { RubricKind, ScoredRow } from "./rubrics";
 
 export interface WriteNote {
   /** Section labels as the page shows them: "Contact details", "Headline". */
@@ -18,8 +18,10 @@ export interface WriteNote {
 /** A research job a coach turn started — the panel reads users/{uid}/engineJobs/{id} live (docs/UX_COACH_AGENTIC.md §2). */
 export interface JobNote { id: string; type: string; label: string }
 
-/** The skills matrix a coach turn showed (docs/UX_COACH_AGENTIC.md §9): the member scores every skill at once in the panel. */
-export interface MatrixNote { skills: string[] }
+/** A scoring matrix a coach turn showed (docs/UX_COACH_AGENTIC.md §9–§10): the rubric, the rows, and a mute line under each where the row needs context. */
+export interface MatrixNote { kind: RubricKind; items: string[]; meta?: string[] }
+/** The member's answer to a matrix, with the portal's totals and ranks — the member turn IS the scored table. */
+export interface ScoredNote { kind: RubricKind; rows: ScoredRow[] }
 
 export interface TranscriptTurn {
   role: "coach" | "member";
@@ -29,12 +31,12 @@ export interface TranscriptTurn {
   writes?: WriteNote[];
   /** The research jobs this coach turn started. */
   jobs?: JobNote[];
-  /** The skills matrix this coach turn put in front of the member — pending until a member turn carries `scores`. */
+  /** The matrix this coach turn put in front of the member — pending until a member turn carries `scored`. */
   matrix?: MatrixNote;
   /** The file the member handed over with this turn — its name; the text lives in the API transcript. */
   attachment?: string;
-  /** The member's scores from the matrix, with the portal's totals and ranks — this member turn IS the scored table. */
-  scores?: SkillScore[];
+  /** The member's answer to the matrix, ranked by the portal. */
+  scored?: ScoredNote;
 }
 
 /** One event on the turn route's stream (SSE `data:` lines). */
@@ -64,7 +66,7 @@ export function applyEvent(p: PendingTurn, e: TurnEvent): PendingTurn {
 export function pendingMatrixOf(turns: readonly TranscriptTurn[]): MatrixNote | null {
   for (let i = turns.length - 1; i >= 0; i--) {
     const t = turns[i];
-    if (t.role === "member" && t.scores) return null;
+    if (t.role === "member" && t.scored) return null;
     if (t.role === "coach" && t.matrix) return t.matrix;
   }
   return null;

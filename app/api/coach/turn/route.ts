@@ -8,8 +8,10 @@ import { quotaCheck, quotaLine, resolvePrompt } from "@/lib/engine/config";
 import { getUsageMonth, recordUsage } from "@/lib/engine/usage-server";
 import { COACH_PROMPTS, coachPromptKey } from "@/lib/engine/coach/prompts";
 import { findCoach, isCoachKey, missingBefore, coachStates } from "@/lib/engine/coach/keys";
-import { RUN_RESEARCH, SCORE_SKILLS, UPDATE_PROFILE, coachTools, isResearchKind } from "@/lib/engine/coach/tools";
-import { cleanSkills, parseScores, scoreSkills, scoresMessage, skillFlags, type SkillScore } from "@/lib/engine/coach/skills";
+import { RUN_RESEARCH, SCORE_MATRIX, UPDATE_PROFILE, coachTools, isResearchKind } from "@/lib/engine/coach/tools";
+import { cleanItems, coachRubrics, isRubricKind, parseRows, rubricOf } from "@/lib/engine/coach/rubrics";
+import { scoreSkills, scoresMessage, skillRow } from "@/lib/engine/coach/skills";
+import { applyCompanyScores, companyMeta, companyRows, companyScoresMessage, matrixCompanies } from "@/lib/engine/coach/companies";
 import { createJob, listUserJobs, patchJob } from "@/lib/engine/jobs-server";
 import { ENGINE_JOB_LABELS, type EngineJobType } from "@/lib/engine/keys";
 import { isQueueConfigured, publishRun } from "@/lib/engine/queue";
@@ -17,7 +19,7 @@ import { runUnit } from "@/lib/engine/run";
 import { applyCoachPatch, CoachWriteError } from "@/lib/engine/coach/write";
 import { getSession, messagesOf, saveSession, type CoachSession } from "@/lib/engine/coach/session";
 import { MAX_DOCUMENT_CHARS, MAX_PDF_BYTES, PDF_TRANSCRIBE_PROMPT, START_CUE, START_WITH_CV_CUE, buildMessages, isCoachDocumentName, isPdfName, landedSince, recapOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type CoachDocument, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
-import { STREAM_FRAME, applyEvent, emptyPending, pendingMatrixOf, type JobNote, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
+import { STREAM_FRAME, applyEvent, emptyPending, pendingMatrixOf, type JobNote, type ScoredNote, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
 import { profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
@@ -33,7 +35,7 @@ const MAX_TEXT = 8000;
 const MAX_TOOL_ROUNDS = 6;
 
 // Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section? },
-//         scores?: [{ skill, good, love, proof, pays }] — the member's answers to the pending skills matrix (docs/UX_COACH_AGENTIC.md §9);
+//         scores?: [{ item, values: [n, n, n, n] }] — the member's answers to the pending scoring matrix (docs/UX_COACH_AGENTIC.md §9–§10);
 //                 the portal totals, ranks, flags and stores them, and the coach reads the table as the member's words
 //         document?: { name, text } — the member's CV as .md / .txt, read in the browser (docs/UX_COACH_AGENTIC.md §3)
 //                 or { name, pdfBase64 } — a PDF, transcribed here once through the SDK's document block }
@@ -122,16 +124,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: e instanceof ClaudeRefusal ? e.message : "Couldn't read that PDF — try a .md or .txt export." }, { status: 400 });
     }
   }
-  // The matrix, answered: scored against the skills the coach showed — totals, ranks and flags are the portal's.
-  let scored: SkillScore[] | null = null;
+  // The matrix, answered: scored against the rows the coach showed — totals, ranks and flags are the portal's; each
+  // rubric stores its own shape (skills: jhg.narrative.skillScores; companies: companies[].scores, ranked by rankCompanies).
+  let scored: { note: ScoredNote; patch: Record<string, unknown>; label: string; message: string } | null = null;
   if (scoresIn) {
     const matrix = pendingMatrixOf(session.turns);
-    if (!matrix) return NextResponse.json({ ok: false, error: "There is no skills matrix waiting for your scores." }, { status: 409 });
-    const parsed = parseScores(scoresIn, matrix.skills);
+    if (!matrix) return NextResponse.json({ ok: false, error: "There is no matrix waiting for your scores." }, { status: 409 });
+    const rubric = rubricOf(matrix.kind);
+    const parsed = parseRows(scoresIn, matrix.items, rubric);
     if (!parsed.ok) return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
-    scored = scoreSkills(parsed.scores);
+    if (matrix.kind === "skills") {
+      const rows = scoreSkills(parsed.rows);
+      scored = { note: { kind: "skills", rows: rows.map(skillRow) }, patch: { jhg: { narrative: { skillScores: rows } } }, label: "competencies", message: scoresMessage(rows) };
+    } else {
+      const companies = applyCompanyScores(setup?.jhg?.targetCompanies?.companies ?? [], parsed.rows);
+      scored = { note: { kind: "companies", rows: companyRows(companies) }, patch: { jhg: { targetCompanies: { companies } } }, label: "top40", message: companyScoresMessage(companies) };
+    }
   }
-  const memberText = scored ? scoresMessage(scored, skillFlags(scored)) : start ? (document ? START_WITH_CV_CUE : START_CUE) : text || `Here is ${document!.name}.`;
+  const memberText = scored ? scored.message : start ? (document ? START_WITH_CV_CUE : START_CUE) : text || `Here is ${document!.name}.`;
   // Research that finished since the coach last spoke rides on this turn's operator note (docs/COACH_ASSESSMENT_2026-11-16.md §1.2).
   if (!isFirst || session.turns.length) Object.assign(ctx, landedSince(await listUserJobs(uid, 10), session.lastTurnAt, (t) => ENGINE_JOB_LABELS[t as EngineJobType] ?? t));
   let messages: TurnMessage[] = buildMessages(history, memberText, first, ctx, document);
@@ -147,8 +157,9 @@ export async function POST(req: NextRequest) {
       try {
         if (scored) {
           // Code writes the scores (decision 2026-11-16: code checks, the model converses) — before the coach speaks, as the page's own write line.
-          const r = await applyCoachPatch({ uid, coach: coach.key, patch: { jhg: { narrative: { skillScores: scored } } }, portal });
-          const note: WriteNote = r.note.labels.length ? r.note : { ...r.note, labels: ["Core competencies"], links: [{ label: "Core competencies", href: jhSectionHref("competencies", BASE_OF[portal]) }] };
+          const r = await applyCoachPatch({ uid, coach: coach.key, patch: scored.patch, portal });
+          const label = scored.label === "top40" ? "Top 40" : "Core competencies";
+          const note: WriteNote = r.note.labels.length ? r.note : { ...r.note, labels: [label], links: [{ label, href: jhSectionHref(scored.label as "top40" | "competencies", BASE_OF[portal]) }] };
           pending = applyEvent(pending, { type: "write", note }); send({ type: "write", note });
         }
         for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -194,13 +205,26 @@ export async function POST(req: NextRequest) {
               }
               continue;
             }
-            if (b.name === SCORE_SKILLS) {
-              // The matrix: the portal shows it, the member scores all at once, the turn ends (docs/UX_COACH_AGENTIC.md §9).
-              const cleaned = cleanSkills((b.input as { skills?: unknown } | undefined)?.skills);
-              if (!cleaned.ok) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: cleaned.error }), is_error: true }); continue; }
-              const matrix = { skills: cleaned.skills };
+            if (b.name === SCORE_MATRIX) {
+              // The matrix: the portal shows it, the member scores all at once, the turn ends (docs/UX_COACH_AGENTIC.md §9–§10).
+              const input = (b.input ?? {}) as { kind?: unknown; items?: unknown };
+              const rubric = isRubricKind(input.kind) ? coachRubrics(coach.key).find((r) => r.kind === input.kind) : undefined;
+              if (!rubric) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: `unknown kind — this coach has ${coachRubrics(coach.key).map((r) => r.kind).join(", ")}` }), is_error: true }); continue; }
+              let matrix: { kind: typeof rubric.kind; items: string[]; meta?: string[] };
+              if (rubric.kind === "companies") {
+                // The rows are the stored 40: the member cannot score a company that is not on the page.
+                const found = matrixCompanies(setup?.jhg?.targetCompanies?.companies ?? [], Array.isArray(input.items) ? (input.items as unknown[]).filter((x): x is string => typeof x === "string") : null);
+                if (!found.ok) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: found.error }), is_error: true }); continue; }
+                const cleaned = cleanItems(found.companies.map((c) => c.name), rubric);
+                if (!cleaned.ok) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: cleaned.error }), is_error: true }); continue; }
+                matrix = { kind: "companies", items: cleaned.items, meta: found.companies.map(companyMeta) };
+              } else {
+                const cleaned = cleanItems(input.items, rubric);
+                if (!cleaned.ok) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: cleaned.error }), is_error: true }); continue; }
+                matrix = { kind: rubric.kind, items: cleaned.items };
+              }
               pending = applyEvent(pending, { type: "matrix", matrix }); send({ type: "matrix", matrix });
-              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: true, shown: cleaned.skills.length, note: "The matrix is in front of the member; they are scoring every skill now. End your turn with one short line and no question — their next message is the ranked table with the portal's totals, ranks and flags." }) });
+              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: true, shown: matrix.items.length, note: `The matrix is in front of the member; they are scoring every ${rubric.item} now. End your turn with one short line and no question — their next message is the ranked table with the portal's totals, ranks and flags.` }) });
               continue;
             }
             if (b.name !== UPDATE_PROFILE) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: `unknown tool ${b.name}` }), is_error: true }); continue; }
@@ -221,7 +245,7 @@ export async function POST(req: NextRequest) {
         const coachTurn: TranscriptTurn = { role: "coach", text: pending.text.trim() || textOf([]), at: Date.now(), ...(pending.writes.length ? { writes: pending.writes } : {}), ...(pending.jobs.length ? { jobs: pending.jobs } : {}), ...(pending.matrix ? { matrix: pending.matrix } : {}) };
         // A start from a CV shows as the member's turn — the file they handed over — so the transcript says where the drafts came from.
         // Scores from the matrix show as the member's turn too: the scored table, not the generated prose the coach read.
-        const memberTurn: TranscriptTurn | null = start && !document ? null : scored ? { role: "member", text: "", at: now, scores: scored } : { role: "member", text: start ? "" : text, at: now, ...(document ? { attachment: document.name } : {}) };
+        const memberTurn: TranscriptTurn | null = start && !document ? null : scored ? { role: "member", text: "", at: now, scored: scored.note } : { role: "member", text: start ? "" : text, at: now, ...(document ? { attachment: document.name } : {}) };
         const turns: TranscriptTurn[] = [...session.turns, ...(memberTurn ? [memberTurn] : []), coachTurn];
         // Past the budget (Firestore's 1 MiB document): drop the transcript; the next turn restarts from the profile and a recap of `turns`.
         const transcript = JSON.stringify(withoutOperatorNotes(messages));

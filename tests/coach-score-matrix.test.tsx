@@ -1,18 +1,20 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import SkillMatrix, { ScoredSkills } from "@/components/coach/SkillMatrix";
+import ScoreMatrix, { ScoredRows } from "@/components/coach/ScoreMatrix";
 import Composer from "@/components/coach/Composer";
-import { scoreSkills } from "@/lib/engine/coach/skills";
+import { RUBRICS, rankRows } from "@/lib/engine/coach/rubrics";
 
-// The skills matrix in the transcript (docs/UX_COACH_AGENTIC.md §9): one select per axis per skill with the
-// anchors inside, a live total, Send scores locked until every skill is scored; the scored table as the member's turn.
+// The scoring matrix in the transcript (docs/UX_COACH_AGENTIC.md §9–§10): one select per axis per row with the
+// rubric's anchors inside, a mute context line where the row has one, a live total, Send scores locked until
+// every row is scored; the scored table as the member's turn with the rubric's cut.
 
-describe("SkillMatrix", () => {
-  it("renders four selects a skill with the five anchors, totals live, and sends once everything is scored", async () => {
+describe("ScoreMatrix", () => {
+  it("renders four selects a row with the five anchors, totals live, and sends once everything is scored", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    render(<SkillMatrix skills={["Python", "SQL", "Negotiation"]} onSubmit={onSubmit} />);
+    render(<ScoreMatrix kind="skills" items={["Python", "SQL", "Negotiation"]} onSubmit={onSubmit} />);
+    expect(screen.getByText("Score your skills · 1–5")).toBeInTheDocument();
     expect(screen.getAllByRole("combobox")).toHaveLength(12);
     const good = screen.getByRole("combobox", { name: "Good at it — Python" });
     expect(within(good).getAllByRole("option").map((o) => o.textContent)).toEqual(["Good", "1 · Beginner", "2 · Can do it with help", "3 · Solid, unsupervised", "4 · Others ask me for it", "5 · Among the best I know"]);
@@ -32,21 +34,30 @@ describe("SkillMatrix", () => {
     expect(send).toBeEnabled();
     await user.click(send);
     expect(onSubmit).toHaveBeenCalledWith([
-      { skill: "Python", good: 4, love: 5, proof: 5, pays: 3 },
-      { skill: "SQL", good: 4, love: 5, proof: 5, pays: 3 },
-      { skill: "Negotiation", good: 4, love: 5, proof: 2, pays: 3 },
+      { item: "Python", values: [4, 5, 5, 3] },
+      { item: "SQL", values: [4, 5, 5, 3] },
+      { item: "Negotiation", values: [4, 5, 2, 3] },
     ]);
   });
 
+  it("renders the companies rubric with its own anchors and a mute line under each company", () => {
+    render(<ScoreMatrix kind="companies" items={["Xero", "Halter"]} meta={["Accounting SaaS · +18% FY25", ""]} onSubmit={() => undefined} />);
+    expect(screen.getByText("Score your companies · 1–5")).toBeInTheDocument();
+    const access = screen.getByRole("combobox", { name: "Access — Xero" });
+    expect(within(access).getAllByRole("option")[5]).toHaveTextContent("5 · Someone I can message today");
+    expect(screen.getByText("Accounting SaaS · +18% FY25")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  });
+
   it("locks while the coach is writing", () => {
-    render(<SkillMatrix skills={["a", "b", "c"]} onSubmit={() => undefined} disabled />);
+    render(<ScoreMatrix kind="skills" items={["a", "b", "c"]} onSubmit={() => undefined} disabled />);
     for (const s of screen.getAllByRole("combobox")) expect(s).toBeDisabled();
     expect(screen.getByRole("button", { name: "Send scores" })).toBeDisabled();
   });
 
-  it("shows the scored table ranked, with the four numbers and the total, and marks the cut after six", () => {
-    const scored = scoreSkills(Array.from({ length: 8 }, (_, i) => ({ skill: `s${i}`, good: 5 - (i % 5), love: 3, proof: 4, pays: 2 })));
-    render(<ScoredSkills scores={scored} />);
+  it("shows the scored table ranked, with the four numbers and the total, and marks the rubric's cut", () => {
+    const rows = rankRows(Array.from({ length: 8 }, (_, i) => ({ item: `s${i}`, values: [5 - (i % 5), 3, 4, 2] })), RUBRICS.skills);
+    render(<ScoredRows kind="skills" rows={rows} />);
     const items = screen.getAllByRole("listitem");
     expect(items).toHaveLength(8);
     expect(items[0]).toHaveTextContent("1");
@@ -57,7 +68,16 @@ describe("SkillMatrix", () => {
     expect(screen.getByText(/the top 6 go to the playoff/)).toBeInTheDocument();
   });
 
-  it("the composer's Send steps down to secondary while the matrix waits", () => {
+  it("marks the cut at ten for companies", () => {
+    const rows = rankRows(Array.from({ length: 12 }, (_, i) => ({ item: `c${i}`, values: [5 - (i % 5), 3, 4, 2] })), RUBRICS.companies);
+    render(<ScoredRows kind="companies" rows={rows} />);
+    const items = screen.getAllByRole("listitem");
+    expect(items[10].className).toContain("border-t");
+    expect(items[6].className).not.toContain("border-t");
+    expect(screen.getByText(/ranks 1–10 become your Top 10/)).toBeInTheDocument();
+  });
+
+  it("the composer's Send steps down to secondary while a matrix waits", () => {
     const { rerender } = render(<Composer onSend={() => undefined} tone="secondary" />);
     expect(screen.getByRole("button", { name: "Send" })).toHaveClass("btn-secondary");
     rerender(<Composer onSend={() => undefined} />);

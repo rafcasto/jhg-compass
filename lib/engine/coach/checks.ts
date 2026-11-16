@@ -9,7 +9,8 @@ import type { ProfileFile } from "../../careerops/profile-file";
 import { LINKEDIN_LIMITS, TEXT_CAPS } from "../../careerops/profile-schema";
 import type { JhgCompany } from "../../careerops/types";
 import type { CoachKey } from "./keys";
-import { TOP_CUT, topCut } from "./skills";
+import { TOP_CUT, skillRow } from "./skills";
+import { topCut } from "./rubrics";
 
 export interface Check {
   /** The prompt's own id: N2, T3, C1… */
@@ -45,8 +46,8 @@ function narrativeChecks(p: ProfileFile): Check[] {
   const story = p.personalization?.exitNarrative?.trim() ?? "";
   const lead = p.jhg?.narrative?.leadSkills ?? [];
   // N7 (docs/UX_COACH_AGENTIC.md §9): once the matrix was scored, the lead skills are three of its top six, spelled as scored.
-  const scored = (p.jhg?.narrative?.skillScores ?? []).filter((s) => typeof s.rank === "number" && typeof s.total === "number") as { skill: string; rank: number; total: number; good: number; love: number; proof: number; pays: number }[];
-  const top = scored.length ? topCut(scored).map((s) => lower(s.skill)) : [];
+  const scored = (p.jhg?.narrative?.skillScores ?? []).filter((s) => typeof s.rank === "number" && typeof s.total === "number") as Parameters<typeof skillRow>[0][];
+  const top = scored.length ? topCut(scored.map(skillRow), TOP_CUT).map((s) => lower(s.item)) : [];
   const offCut = scored.length ? lead.filter((l) => !top.includes(lower(l))) : [];
   return [
     check("N1", "identity complete", missing.length === 0 && tz, missing.length ? `Missing: ${missing.join(", ")}` : "Timezone must be Area/City (e.g. Pacific/Auckland)"),

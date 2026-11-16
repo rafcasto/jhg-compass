@@ -221,7 +221,7 @@ leaves open (overlay vs a 400 px dock) and the expanded page, which this note do
 
 ---
 
-## 9. The skills matrix — scored once, in code (2026-11-16)
+## 9. The scoring matrix — scored once, in code (2026-11-16)
 
 **Why.** Coach 1 §2 asked four 1–5 questions per skill, one at a time — sixty turns for fifteen skills — and the model
 summed and ranked. The rubric lived in prose with one anchor ("prove = 2 if no result in 10 seconds"), so the same prompt
@@ -229,20 +229,23 @@ gave every member a different scale; and the table was never stored — only thr
 not see which skills were proven. The fix is the move §4 made for companies: **anchors, totals, ranks, tie-break and flags in
 code, the same for every member; the model converses about the result.**
 
-**Where it lives.** `lib/engine/coach/skills.ts` — `SKILL_AXES` (Good at it · Love it · Can prove it · Market pays, five
-anchors each), `scoreSkills` (total = sum; ranked by total, then Prove, then Pays, then Love, then the matrix's order),
-`TOP_CUT = 6`, `skillFlags` (inflated · flat · unproven top-six · loved-not-paid · paid-not-loved · tie at the cut),
-`scoresMessage` (the table the coach reads). Stored on `jhg.narrative.skillScores[] {skill, good, love, proof, pays, total,
+**Where it lives.** `lib/engine/coach/rubrics.ts` is the registry — a `Rubric` is four axes with five anchors each, a
+tie-break order, a cut, and bounds; `rankRows` (total = sum; ranked by total, the tie-break axes, then the matrix's order),
+`parseRows`, `cleanItems`, `commonFlags` (inflated · flat · tie at the cut), `scoredTable`. Each rubric's own flags and stored
+shape sit beside it: `skills.ts` — `SKILL_AXES` (Good at it · Love it · Can prove it · Market pays), ties Prove → Pays → Love,
+`TOP_CUT = 6`, `skillFlags` (unproven top-six · loved-not-paid · paid-not-loved), `scoresMessage`; `companies.ts` — §10. Stored on `jhg.narrative.skillScores[] {skill, good, love, proof, pays, total,
 rank}` — in the schema shape, in `narrative.yml`, shown read-only beside Core competencies (`CompetencyFacts`). **N7**: once
 scored, the lead skills are three of the top six, spelled as scored.
 
-**The conversation.** The coach collects the list (rejecting traits is still its job) and calls **`score_skills`** with it
-(`SCORE_SKILLS`, Narrative only — `COACH_MATRIX`). The route cleans the list (`cleanSkills`, 3–20, de-duplicated), streams a
+**The conversation.** The coach collects the list (rejecting traits is still its job) and calls **`score_matrix`** with
+`kind: "skills"` and the items (`SCORE_MATRIX`; a coach's tool offers only its own rubrics — `coachRubrics`). The route cleans
+the list (`cleanItems`, 3–20, de-duplicated), streams a
 `matrix` event, stores it on the coach turn (`TranscriptTurn.matrix`) and answers the tool: *end your turn with one line, no
 question*. The member scores everything and sends; the route takes `scores[]`, validates them against the pending matrix
 (`pendingMatrixOf` — the last one shown with no scored member turn after it), computes, **writes the scores itself through
-`applyCoachPatch`** (the write line reads *Updated Core competencies*), and hands the coach `scoresMessage` as the member's
-words. The member's turn in the transcript carries `scores` and renders as the scored table — never the generated prose.
+`applyCoachPatch`** in the rubric's stored shape (the write line reads *Updated Core competencies*), and hands the coach
+`scoresMessage` as the member's words. The member's turn in the transcript carries `scored {kind, rows}` and renders as the
+scored table (`ScoredRows`) — never the generated prose.
 
 ```
 ┌ panel ───────────────────────────────────────────────┐
@@ -275,9 +278,42 @@ words. The member's turn in the transcript carries `scores` and renders as the s
 | **Depth** | None added: no card, no shadow. `divide-y` and `border-y` on `jh-line` make the rows |
 | **Decided against** | Five-dot ratings (five 44 px targets × four axes = 60 lines for 15 skills); a table with the name as a cell (120 px names truncate to nothing); a Sheet of its own (the matrix is the conversation's turn, not a dialog); a stepper (two taps a number) |
 
-**Files.** `lib/engine/coach/skills.ts` (pure) · `tools.ts` (`SCORE_SKILLS`, `scoreSkillsTool`, `COACH_MATRIX`) ·
-`transcript.ts` (`MatrixNote`, `matrix` event, `TranscriptTurn.matrix` / `.scores`, `pendingMatrixOf`) · `checks.ts` (N7) ·
-`turn.ts` (recap) · `app/api/coach/turn/route.ts` · `components/coach/SkillMatrix.tsx` (`SkillMatrix`, `ScoredSkills`) ·
-`Transcript.tsx` · `Composer.tsx` (`tone`) · `CoachPanel.tsx` · `WorkbookPanels.tsx` (`CompetencyFacts`) · prompt v6 ·
-`tests/engine-coach-skills.test.ts`, `tests/coach-skill-matrix.test.tsx`.
+**Files.** `lib/engine/coach/rubrics.ts` · `skills.ts` · `companies.ts` (pure) · `tools.ts` (`SCORE_MATRIX`, `scoreMatrixTool`) ·
+`transcript.ts` (`MatrixNote {kind, items, meta}`, `ScoredNote {kind, rows}`, `matrix` event, `pendingMatrixOf`) · `checks.ts` (N7) ·
+`turn.ts` (recap) · `app/api/coach/turn/route.ts` · `components/coach/ScoreMatrix.tsx` (`ScoreMatrix`, `ScoredRows`) ·
+`Transcript.tsx` · `Composer.tsx` (`tone`) · `CoachPanel.tsx` · `WorkbookPanels.tsx` (`CompetencyFacts`) · Narrative prompt v7,
+Target companies v5 · `tests/engine-coach-skills.test.ts`, `tests/coach-score-matrix.test.tsx`.
+
+---
+
+## 10. The companies matrix — Part B of Target companies on the same form (2026-11-16)
+
+**Why.** Part B asked for 160 numbers in the chat — forty companies × four scores, "in batches of five", each batch a
+write and a turn. `rankCompanies` already did the arithmetic (§4); the member still typed every number. The scoring
+moments across the six coaches are exactly two — Coach 1's skills and Coach 3's fit scores — so the matrix is one
+component over a registry, not a second one.
+
+**The rubric** (`RUBRICS.companies`, `lib/engine/coach/companies.ts`): 🚀 Growth signals · 💚 Interest · 🔑 Access · 🧾 Proof,
+five anchors each (Access: *nobody, no route* → *someone I can message today*); ties Interest → Proof, as the prompt and
+`rankCompanies` already say; **cut = 10** — the Top 10. The rows are **the stored 40**: `score_matrix` with `kind:
+"companies"` and no items puts every company on `jhg.targetCompanies.companies` in the matrix (`matrixCompanies`), with a
+mute line under each name — *sub-sector · growth signal · knows Sam* (`companyMeta`) — because a company needs more context
+than a skill to score honestly; items, when given, must each be a stored company (a rescore of the ones challenged). The
+answer is laid onto the stored list (`applyCompanyScores`) and written through `applyCoachPatch`, where `rankCompanies`
+ranks it — so the Top 40 on the page **is** the result and no new read-only surface is needed; the write line reads
+*Updated Top 40*.
+
+**The flags** (`companyFlags`): the prompt's four challenges where the numbers can tell — *dream* (Interest 5, Access and
+Proof ≤ 2), *access with no route* (Access 5 and no `knownContact`), *growth with no source* (Growth 5 and no `growthSource`),
+*Proof 5 in the top ten* (the coach asks which competency solves which problem — the one judgement that stays the model's) —
+plus the shared inflated · flat · tie-at-the-cut. The coach challenges one company at a time and records each in
+`challenges[]`, exactly as before, minus the typing.
+
+**The form at forty rows.** Same `ScoreMatrix`: the axis header is `sticky top-0` inside the panel's scroll container so the
+columns stay named through the scroll; **one Send at the end** — batching was what the chat forced, the matrix does not
+need it; the member can rescore a handful later through a second, shorter matrix.
+
+**Not scoring, same shell later.** Part C's *Say-It-Loud* (Y/N × 10) and *careers page status* (✓ / corrected / none × 10) are
+one-choice-per-row forms the same skeleton could render; left until a member has used the companies matrix.
+
 

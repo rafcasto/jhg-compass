@@ -5,14 +5,14 @@ import Link from "next/link";
 import { Check, Paperclip } from "lucide-react";
 import { Markdown } from "@/components/careerops/shared";
 import { pendingMatrixOf, writeLine, type JobNote, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
-import type { SkillScoreInput } from "@/lib/engine/coach/skills";
+import type { MatrixRow } from "@/lib/engine/coach/rubrics";
 import JobStatus from "./JobStatus";
-import SkillMatrix, { ScoredSkills } from "./SkillMatrix";
+import ScoreMatrix, { ScoredRows } from "./ScoreMatrix";
 
 // A transcript, not chat bubbles (docs/UX_COACH.md §3): the coach's turns as prose,
 // the member's under a `You` label on a mist block, each write as the portal's status
-// line. 24 px between turns, 8 px inside one. Scrolls to the newest as it arrives. The skills
-// matrix (docs/UX_COACH_AGENTIC.md §9) is the one form in it: shown on the coach turn that asked
+// line. 24 px between turns, 8 px inside one. Scrolls to the newest as it arrives. The scoring
+// matrix (docs/UX_COACH_AGENTIC.md §9–§10) is the one form in it: shown on the coach turn that asked
 // for it until a member turn carries the scores, which then render as the scored table.
 export default function Transcript({ turns, pending, error, quota, uid, jobHref, onScores }: {
   turns: readonly TranscriptTurn[];
@@ -26,7 +26,7 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
   /** The one mute line when this month's limit is reached. */
   quota?: string | null;
   /** The member sent the matrix's scores. */
-  onScores?: (scores: SkillScoreInput[]) => void;
+  onScores?: (rows: MatrixRow[]) => void;
 }) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { end.current?.scrollIntoView({ block: "end", behavior: "smooth" }); }, [turns.length, pending?.text.length, pending?.writes.length, pending?.matrix]);
@@ -44,7 +44,7 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
           {pending.text
             ? <div className="text-[15px] leading-relaxed text-jh-ink"><Markdown>{pending.text}</Markdown></div>
             : <Thinking />}
-          {pending.matrix && <div className="pt-2"><SkillMatrix skills={pending.matrix.skills} onSubmit={() => undefined} disabled /></div>}
+          {pending.matrix && <div className="pt-2"><ScoreMatrix kind={pending.matrix.kind} items={pending.matrix.items} meta={pending.matrix.meta} onSubmit={() => undefined} disabled /></div>}
         </div>
       )}
       {error && <p role="alert" className="text-sm text-jh-red">{error}</p>}
@@ -54,13 +54,13 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
   );
 }
 
-function Turn({ turn, uid, jobHref, matrix }: { turn: TranscriptTurn; uid?: string; jobHref?: string; matrix?: { onScores: (scores: SkillScoreInput[]) => void; disabled: boolean } }) {
+function Turn({ turn, uid, jobHref, matrix }: { turn: TranscriptTurn; uid?: string; jobHref?: string; matrix?: { onScores: (rows: MatrixRow[]) => void; disabled: boolean } }) {
   if (turn.role === "member") {
     return (
       <div className="rounded-md bg-jh-mist px-4 py-3">
         <p className="section-label mb-1">You</p>
         {turn.attachment && <p className="mb-1 inline-flex items-center gap-1.5 text-sm text-jh-ink"><Paperclip className="h-3.5 w-3.5 text-jh-mute" aria-hidden /> {turn.attachment}</p>}
-        {turn.scores && <ScoredSkills scores={turn.scores} />}
+        {turn.scored && <ScoredRows kind={turn.scored.kind} rows={turn.scored.rows} />}
         {turn.text && <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-jh-ink">{turn.text}</p>}
       </div>
     );
@@ -70,7 +70,7 @@ function Turn({ turn, uid, jobHref, matrix }: { turn: TranscriptTurn; uid?: stri
       {turn.writes?.map((w, i) => <WriteStatus key={i} note={w} />)}
       {turn.text && <div className="text-[15px] leading-relaxed text-jh-ink"><Markdown>{turn.text}</Markdown></div>}
       {uid && turn.jobs?.map((j: JobNote) => <JobStatus key={j.id} uid={uid} job={j} href={jobHref} />)}
-      {turn.matrix && matrix && <div className="pt-2"><SkillMatrix skills={turn.matrix.skills} onSubmit={matrix.onScores} disabled={matrix.disabled} /></div>}
+      {turn.matrix && matrix && <div className="pt-2"><ScoreMatrix kind={turn.matrix.kind} items={turn.matrix.items} meta={turn.matrix.meta} onSubmit={matrix.onScores} disabled={matrix.disabled} /></div>}
     </div>
   );
 }
