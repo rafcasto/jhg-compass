@@ -13,12 +13,17 @@ export interface WriteNote {
   readiness?: string;
 }
 
+/** A research job a coach turn started — the panel reads users/{uid}/engineJobs/{id} live (docs/UX_COACH_AGENTIC.md §2). */
+export interface JobNote { id: string; type: string; label: string }
+
 export interface TranscriptTurn {
   role: "coach" | "member";
   text: string;
   at: number;
   /** What this coach turn wrote into the profile, in order. */
   writes?: WriteNote[];
+  /** The research jobs this coach turn started. */
+  jobs?: JobNote[];
   /** The file the member handed over with this turn — its name; the text lives in the API transcript. */
   attachment?: string;
 }
@@ -27,18 +32,20 @@ export interface TranscriptTurn {
 export type TurnEvent =
   | { type: "text"; text: string }
   | { type: "write"; note: WriteNote }
+  | { type: "job"; job: JobNote }
   | { type: "done"; turn: TranscriptTurn; usdThisTurn: number }
   | { type: "error"; message: string };
 
 /** A coach turn as it is being streamed: text so far and the writes so far. */
-export interface PendingTurn { text: string; writes: WriteNote[] }
+export interface PendingTurn { text: string; writes: WriteNote[]; jobs: JobNote[] }
 
-export const emptyPending = (): PendingTurn => ({ text: "", writes: [] });
+export const emptyPending = (): PendingTurn => ({ text: "", writes: [], jobs: [] });
 
 /** The pending turn after one more event. */
 export function applyEvent(p: PendingTurn, e: TurnEvent): PendingTurn {
   if (e.type === "text") return { ...p, text: p.text + e.text };
   if (e.type === "write") return { ...p, writes: [...p.writes, e.note] };
+  if (e.type === "job") return { ...p, jobs: [...p.jobs, e.job] };
   return p;
 }
 

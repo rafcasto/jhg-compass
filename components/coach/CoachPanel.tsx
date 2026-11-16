@@ -10,7 +10,7 @@ import { COACH_TOTAL, coachForPage, coachStartsFromCv, coachStates, findCoach, m
 import { applyEvent, emptyPending, parseEvent, type PendingTurn, type TranscriptTurn } from "@/lib/engine/coach/transcript";
 import type { CoachSession } from "@/lib/engine/coach/session";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
-import type { ProfilePortal } from "@/lib/jobhacking/sections";
+import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import CoachRail from "./CoachRail";
 import Composer from "./Composer";
 import CvStart from "./CvStart";
@@ -147,7 +147,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       ) : cvFirst && canTalk ? (
         <CvStart coachLabel={coach.label} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
       ) : (
-        <Transcript turns={turns} pending={pending} error={error} quota={quota} />
+        <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} />
       )}
     </Sheet>
   );

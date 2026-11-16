@@ -307,7 +307,9 @@ nightly volume.
    2026-11-16** (`lib/engine/coach/checks.ts`; #5 and #7 applied, #6 left for the per-coach pass).
 4. **Start from the CV** (1.1) on coaches 1, 4, 5. **Built 2026-11-16** for `.md`/`.txt`; PDF through the SDK's document block is the one addition left.
 5. **Research as jobs** (1.2) — Coach 2 Part B first (`postings`), measured against the meter, then Part C and Coach 3.
-   These are the engine's first CareerOps modules; `ENGINE_JOB_TYPES` grows from `ping`.
+   These are the engine's first CareerOps modules; `ENGINE_JOB_TYPES` grows from `ping`. **`postings` built 2026-11-16**
+   (`run_research` on Coach 2; the handler verifies every URL by code; the result reaches the coach on its next turn);
+   `industries` and `companies` next, the same shape.
 6. **Fields** (2.1, 2.3, 2.4) with the `.example.yml` files and their contract test, in one schema PR. 2.2 only if the Pi stays.
 7. **Model** — after the eval of 3.3, per coach, between cohorts.
 8. **Managed Agents** — evaluated with the Scout port (§4), as a handler behind `engineJobs`.

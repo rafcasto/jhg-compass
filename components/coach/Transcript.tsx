@@ -4,13 +4,18 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Check, Paperclip } from "lucide-react";
 import { Markdown } from "@/components/careerops/shared";
-import { writeLine, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
+import { writeLine, type JobNote, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
+import JobStatus from "./JobStatus";
 
 // A transcript, not chat bubbles (docs/UX_COACH.md §3): the coach's turns as prose,
 // the member's under a `You` label on a mist block, each write as the portal's status
 // line. 24 px between turns, 8 px inside one. Scrolls to the newest as it arrives.
-export default function Transcript({ turns, pending, error, quota }: {
+export default function Transcript({ turns, pending, error, quota, uid, jobHref }: {
   turns: readonly TranscriptTurn[];
+  /** The member — the research jobs a turn started are read live under their account. */
+  uid?: string;
+  /** Where a finished research job's View › goes (the page it wrote). */
+  jobHref?: string;
   /** The coach's turn being written right now. */
   pending: PendingTurn | null;
   error?: string | null;
@@ -22,10 +27,11 @@ export default function Transcript({ turns, pending, error, quota }: {
 
   return (
     <div className="space-y-6" aria-live="polite">
-      {turns.map((t, i) => <Turn key={`${t.at}-${i}`} turn={t} />)}
+      {turns.map((t, i) => <Turn key={`${t.at}-${i}`} turn={t} uid={uid} jobHref={jobHref} />)}
       {pending && (
         <div className="space-y-2">
           {pending.writes.map((w, i) => <WriteStatus key={i} note={w} />)}
+          {uid && pending.jobs.map((j) => <JobStatus key={j.id} uid={uid} job={j} href={jobHref} />)}
           {pending.text
             ? <div className="text-[15px] leading-relaxed text-jh-ink"><Markdown>{pending.text}</Markdown></div>
             : <Thinking />}
@@ -38,7 +44,7 @@ export default function Transcript({ turns, pending, error, quota }: {
   );
 }
 
-function Turn({ turn }: { turn: TranscriptTurn }) {
+function Turn({ turn, uid, jobHref }: { turn: TranscriptTurn; uid?: string; jobHref?: string }) {
   if (turn.role === "member") {
     return (
       <div className="rounded-md bg-jh-mist px-4 py-3">
@@ -52,6 +58,7 @@ function Turn({ turn }: { turn: TranscriptTurn }) {
     <div className="space-y-2">
       {turn.writes?.map((w, i) => <WriteStatus key={i} note={w} />)}
       {turn.text && <div className="text-[15px] leading-relaxed text-jh-ink"><Markdown>{turn.text}</Markdown></div>}
+      {uid && turn.jobs?.map((j: JobNote) => <JobStatus key={j.id} uid={uid} job={j} href={jobHref} />)}
     </div>
   );
 }

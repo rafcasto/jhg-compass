@@ -33,6 +33,10 @@ export type TurnMessage = Anthropic.Beta.BetaMessageParam | Anthropic.Beta.BetaS
 export interface TurnContext {
   page?: JhPageKey | null;
   section?: JhSectionKey | null;
+  /** Research jobs that finished since the coach's last turn — each a label and the table the handler wrote (docs/COACH_ASSESSMENT_2026-11-16.md §1.2). */
+  landed?: readonly { label: string; summary: string }[];
+  /** Research jobs that failed since the last turn — label and the error, so the coach can say so and decide. */
+  failed?: readonly { label: string; error: string }[];
 }
 
 export interface FirstTurnInput {
@@ -147,7 +151,17 @@ export function contextNote(ctx: TurnContext | null | undefined): string | null 
     const section = ctx.section ? findJhSection(ctx.section) : undefined;
     if (page) parts.push(`The member is looking at ${page.label}${section ? ` · ${section.label}` : ""}.`);
   }
-  return parts.length ? parts.join(" ") : null;
+  for (const j of ctx.landed ?? []) parts.push(`Research landed since your last turn — ${j.label}. It is already on the member's page; review it with them, do not write it again:\n${j.summary}`);
+  for (const j of ctx.failed ?? []) parts.push(`Research failed since your last turn — ${j.label}: ${j.error}. Tell the member in one line and either start it again or carry on by hand.`);
+  return parts.length ? parts.join("\n\n") : null;
+}
+
+/** The jobs to tell the coach about: finished after its last turn, with a summary (done) or an error (failed). */
+export function landedSince<T extends { type: string; status: string; endedAt?: number; result?: unknown; error?: string }>(jobs: readonly T[], lastTurnAt: number, labelOf: (type: string) => string): Pick<TurnContext, "landed" | "failed"> {
+  const since = jobs.filter((j) => (j.endedAt ?? 0) > lastTurnAt);
+  const landed = since.filter((j) => j.status === "done" && j.result && typeof (j.result as { summary?: unknown }).summary === "string").map((j) => ({ label: labelOf(j.type), summary: (j.result as { summary: string }).summary }));
+  const failed = since.filter((j) => j.status === "failed").map((j) => ({ label: labelOf(j.type), error: j.error ?? "no reason recorded" }));
+  return { ...(landed.length ? { landed } : {}), ...(failed.length ? { failed } : {}) };
 }
 
 /** The messages for one turn: history, the member's words (with their document when one came), the operator note last. */
