@@ -90,6 +90,9 @@ export const nextCoach = (states: Record<CoachKey, CoachState>): Coach => COACHE
 export const missingBefore = (coach: Coach, states: Record<CoachKey, CoachState>): Coach[] =>
   coach.needs.filter((k) => states[k] !== "complete").map((k) => findCoach(k)!);
 
+/** The coaches that start from the member's CV when none is stored (docs/COACH_ASSESSMENT_2026-11-16.md §1.1): Narrative, Story Bank, Master CV. */
+export const coachStartsFromCv = (key: CoachKey): boolean => key === "narrative" || key === "storyBank" || key === "masterCv";
+
 /** The launcher's tail: what tapping it does for this coach right now. */
 export function launcherLabel(coach: Coach, states: Record<CoachKey, CoachState>): string {
   const s = states[coach.key];

@@ -11,7 +11,7 @@ import { findCoach, isCoachKey, missingBefore, coachStates } from "@/lib/engine/
 import { UPDATE_PROFILE, updateProfileTool } from "@/lib/engine/coach/tools";
 import { applyCoachPatch, CoachWriteError } from "@/lib/engine/coach/write";
 import { getSession, messagesOf, saveSession, type CoachSession } from "@/lib/engine/coach/session";
-import { START_CUE, buildMessages, recapOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
+import { MAX_DOCUMENT_CHARS, START_CUE, START_WITH_CV_CUE, buildMessages, isCoachDocumentName, recapOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type CoachDocument, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
 import { STREAM_FRAME, applyEvent, emptyPending, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
 import { profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -27,7 +27,8 @@ export const maxDuration = 300;
 const MAX_TEXT = 8000;
 const MAX_TOOL_ROUNDS = 6;
 
-// Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section? } }
+// Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section? },
+//         document?: { name, text } — the member's CV as .md / .txt, read in the browser (docs/UX_COACH_AGENTIC.md §3) }
 // Streams SSE: text deltas as they are written, a `write` for each update_profile the coach
 // made, then `done` with the finished turn (docs/UX_COACH.md §3–4). The member's words and
 // the coach's turn land on users/{uid}/coachSessions/{coach}; the writes land on the profile.
@@ -41,7 +42,16 @@ export async function POST(req: NextRequest) {
   const coach = findCoach(coachKey)!;
   const start = body?.start === true;
   const text = typeof body?.text === "string" ? body.text.trim().slice(0, MAX_TEXT) : "";
-  if (!start && !text) return NextResponse.json({ ok: false, error: "say something" }, { status: 400 });
+  let document: CoachDocument | null = null;
+  if (body?.document && typeof body.document === "object") {
+    const name = typeof body.document.name === "string" ? body.document.name.trim().slice(0, 200) : "";
+    const docText = typeof body.document.text === "string" ? body.document.text.trim() : "";
+    if (!isCoachDocumentName(name)) return NextResponse.json({ ok: false, error: "A document comes in as Markdown or plain text — a .md or .txt file." }, { status: 400 });
+    if (!docText) return NextResponse.json({ ok: false, error: "That file looks empty." }, { status: 400 });
+    if (docText.length > MAX_DOCUMENT_CHARS) return NextResponse.json({ ok: false, error: `That file is too long — ${MAX_DOCUMENT_CHARS.toLocaleString()} characters at most.` }, { status: 400 });
+    document = { name, text: docText };
+  }
+  if (!start && !text && !document) return NextResponse.json({ ok: false, error: "say something" }, { status: 400 });
   const portal: ProfilePortal = body?.portal === "compass" ? "compass" : "jobhacking";
   const rawCtx = body?.context && typeof body.context === "object" ? body.context : {};
   const ctx: TurnContext = {
@@ -78,8 +88,8 @@ export async function POST(req: NextRequest) {
     : null;
   const resolved = resolvePrompt(prompt.text, prompt.version, override);
   const cfg = config.agents.coach;
-  const memberText = start ? START_CUE : text;
-  let messages: TurnMessage[] = buildMessages(history, memberText, first, ctx);
+  const memberText = start ? (document ? START_WITH_CV_CUE : START_CUE) : text || `Here is ${document!.name}.`;
+  let messages: TurnMessage[] = buildMessages(history, memberText, first, ctx, document);
   const now = Date.now();
 
   const enc = new TextEncoder();
@@ -131,7 +141,9 @@ export async function POST(req: NextRequest) {
         }
 
         const coachTurn: TranscriptTurn = { role: "coach", text: pending.text.trim() || textOf([]), at: Date.now(), ...(pending.writes.length ? { writes: pending.writes } : {}) };
-        const turns: TranscriptTurn[] = [...session.turns, ...(start ? [] : [{ role: "member" as const, text: memberText, at: now }]), coachTurn];
+        // A start from a CV shows as the member's turn — the file they handed over — so the transcript says where the drafts came from.
+        const memberTurn: TranscriptTurn | null = start && !document ? null : { role: "member", text: start ? "" : text, at: now, ...(document ? { attachment: document.name } : {}) };
+        const turns: TranscriptTurn[] = [...session.turns, ...(memberTurn ? [memberTurn] : []), coachTurn];
         // Past the budget (Firestore's 1 MiB document): drop the transcript; the next turn restarts from the profile and a recap of `turns`.
         const transcript = JSON.stringify(withoutOperatorNotes(messages));
         const next: CoachSession = {

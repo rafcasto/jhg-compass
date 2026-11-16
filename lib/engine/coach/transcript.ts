@@ -19,6 +19,8 @@ export interface TranscriptTurn {
   at: number;
   /** What this coach turn wrote into the profile, in order. */
   writes?: WriteNote[];
+  /** The file the member handed over with this turn — its name; the text lives in the API transcript. */
+  attachment?: string;
 }
 
 /** One event on the turn route's stream (SSE `data:` lines). */
