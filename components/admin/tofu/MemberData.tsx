@@ -7,10 +7,11 @@ import { memberName, type MemberAccessRow } from "@/lib/access";
 import { MEMBER_COLLECTIONS, summaryLine, type MemberDataSummary, type ResetScope } from "@/lib/member-data";
 
 // Admin → TOFU → Access renewals → Member data: with exactly one member ticked, what they have
-// stored and three destructive acts — reset the coach (conversations, jobs, meter), reset all
-// data (every collection; the account keeps its identity and its grant), delete the member
-// (everything, the grant and the sign-in). Each confirms against the real counts; delete asks
-// for the member's email typed out.
+// stored and three destructive acts — reset the coach (conversations, jobs, meter); reset to a
+// new member (state zero: every collection goes and the account keeps only what registration
+// wrote — email, name, createdAt — so onboarding shows again; the grant, its feature switches
+// and the sign-in stay); delete the member (everything, the grant and the sign-in). Each
+// confirms against the real counts; delete asks for the member's email typed out.
 export default function MemberData({ member, onDeleted }: { member: MemberAccessRow; onDeleted: () => void }) {
   const [summary, setSummary] = useState<MemberDataSummary | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -29,13 +30,13 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
 
   async function reset(scope: ResetScope) {
     if (!summary) return;
-    const what = scope === "coach" ? "the coach's conversations, jobs and meter" : "ALL their data — profile, coach, tracker, agents output and share links";
-    if (!confirm(`Reset ${what} for ${who}?\n\nRemoves: ${summaryLine(summary, scope)}.\n\nTheir access and sign-in stay. This cannot be undone.`)) return;
+    const what = scope === "coach" ? "the coach's conversations, jobs and meter" : "them to a NEW member — state zero: profile, goal, onboarding, coach, tracker, agents output and share links all go; they see onboarding again";
+    if (!confirm(`Reset ${what} for ${who}?\n\nRemoves: ${summaryLine(summary, scope)}.\n\nTheir access, its switches and their sign-in stay. This cannot be undone.`)) return;
     setBusy(scope); setNotice(null);
     try {
       const r = await postJson(`/api/admin/members/${member.uid}/reset`, { scope });
       const d = await r.json();
-      if (r.ok && d.ok) { setSummary(d.summary); setNotice({ kind: "ok", text: `${scope === "coach" ? "Coach" : "All data"} reset for ${who}${d.result.removed.length ? ` — cleared ${d.result.removed.length} collection${d.result.removed.length === 1 ? "" : "s"}` : " — nothing was stored"}.` }); }
+      if (r.ok && d.ok) { setSummary(d.summary); setNotice({ kind: "ok", text: `${scope === "coach" ? "Coach reset" : "Reset to a new member"} for ${who}${d.result.removed.length ? ` — cleared ${d.result.removed.length} collection${d.result.removed.length === 1 ? "" : "s"}` : " — nothing was stored"}.${scope === "all" ? " They start at onboarding next time they sign in." : ""}` }); }
       else setNotice({ kind: "err", text: d.error ? `Couldn't reset: ${d.error}` : "Couldn't reset." });
     } catch { setNotice({ kind: "err", text: "Couldn't reset." }); }
     finally { setBusy(null); }
@@ -58,7 +59,7 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
   const stored = summary ? MEMBER_COLLECTIONS.filter((c) => (summary.counts[c.key] ?? 0) > 0) : [];
 
   return (
-    <Section title={`Member data · ${who}`} help="Reset clears what's stored and keeps the account and its access; delete removes the member entirely. Every act is written to the admin audit log.">
+    <Section title={`Member data · ${who}`} help="Reset coach clears the six conversations and the meter. Reset to new member is state zero — everything they ever entered goes, the account keeps only what registration wrote (email, name), and they see onboarding again; their access, its switches and their sign-in stay. Delete removes the member entirely. Every act is written to the admin audit log.">
       {loadError ? <p className="text-jh-red">Couldn&apos;t load this member&apos;s data.</p>
       : !summary ? <p className="text-jh-mute animate-pulse">Counting…</p>
       : (
@@ -78,7 +79,7 @@ export default function MemberData({ member, onDeleted }: { member: MemberAccess
               <Eraser className="h-4 w-4" aria-hidden /> {busy === "coach" ? "Resetting…" : "Reset coach"}
             </button>
             <button type="button" onClick={() => reset("all")} disabled={!!busy} className="btn-secondary text-xs px-3 py-2 disabled:opacity-40">
-              <Eraser className="h-4 w-4" aria-hidden /> {busy === "all" ? "Resetting…" : "Reset all data"}
+              <Eraser className="h-4 w-4" aria-hidden /> {busy === "all" ? "Resetting…" : "Reset to new member"}
             </button>
             <button type="button" onClick={remove} disabled={!!busy} className="btn-ghost text-xs disabled:opacity-40">
               <Trash2 className="h-4 w-4" aria-hidden /> {busy === "delete" ? "Deleting…" : "Delete member"}

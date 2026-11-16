@@ -28,8 +28,10 @@ export type MemberCollectionKey = (typeof MEMBER_COLLECTIONS)[number]["key"];
 
 /**
  * What a reset removes. `coach` — the six conversations, the jobs and the meter; the profile stays.
- * `all` — every subcollection, and the account document goes back to its identity (email, name, created).
- * The grant and the sign-in stay on both; only a delete removes those.
+ * `all` — state zero, a new member: every subcollection, and the account document goes back to exactly what
+ * registration wrote (ACCOUNT_FIELDS: email, name, createdAt — lib/server/registration.ts), so `onboardedAt`,
+ * the goal and the country go and onboarding shows again. The grant (with its feature switches) and the
+ * sign-in stay on both; only a delete removes those.
  */
 export type ResetScope = "coach" | "all";
 export const RESET_SCOPES: readonly ResetScope[] = ["coach", "all"];

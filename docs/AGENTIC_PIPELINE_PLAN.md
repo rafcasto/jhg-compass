@@ -234,8 +234,9 @@ The meter prices cache writes at the 5-minute rate while the coach caches at 1h 
 
 Admin → TOFU → Access renewals, with one member ticked, shows **Member data** (`components/admin/tofu/MemberData.tsx`): the
 counts per collection (`lib/member-data.ts` is the one list of a member's subcollections — add a collection there when the
-tree grows), *Reset coach* (conversations · jobs · meter), *Reset all data* (every subcollection; `users/{uid}` keeps
-email · name · createdAt; share links revoked; the grant and the sign-in stay) and *Delete member* (the tree, the grant, the
+tree grows), *Reset coach* (conversations · jobs · meter), *Reset to new member* (state zero: every subcollection; `users/{uid}`
+keeps exactly what registration wrote — email · name · createdAt — so onboarding shows again; share links revoked; the grant, its
+feature switches and the sign-in stay) and *Delete member* (the tree, the grant, the
 share links, the Auth user — the member's email typed to confirm). Server: `lib/server/member-data.ts` through
 `/api/admin/members/{uid}` (GET summary · DELETE) and `/api/admin/members/{uid}/reset` (POST `{ scope }`). Every act writes
 one line to `adminAudit/{id}` (server-only). The Supabase lead events are not touched — they are the funnel's, not the member's.

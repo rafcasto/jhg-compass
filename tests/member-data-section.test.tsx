@@ -49,8 +49,23 @@ describe("Member data", () => {
     vi.stubGlobal("confirm", vi.fn(() => false));
     render(<MemberData member={ada} onDeleted={vi.fn()} />);
     await waitFor(() => expect(screen.getByText("Coach conversations")).toBeInTheDocument());
-    await userEvent.setup().click(screen.getByRole("button", { name: "Reset all data" }));
+    await userEvent.setup().click(screen.getByRole("button", { name: "Reset to new member" }));
     expect(fetchMock.mock.calls.filter(([, i]) => (i as RequestInit)?.method === "POST")).toHaveLength(0);
+  });
+
+  it("resets to a new member — the confirm says state zero and onboarding, the notice says they start at onboarding", async () => {
+    const confirmMock = vi.fn((_msg?: string) => true);
+    vi.stubGlobal("confirm", confirmMock);
+    render(<MemberData member={ada} onDeleted={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText("Coach conversations")).toBeInTheDocument());
+    await userEvent.setup().click(screen.getByRole("button", { name: "Reset to new member" }));
+    const msg = String(confirmMock.mock.calls[0][0]);
+    expect(msg).toContain("NEW member — state zero");
+    expect(msg).toContain("they see onboarding again");
+    expect(msg).toContain("Removes: 2 coach conversations · 5 opportunities.");
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Reset to a new member for Ada Lovelace — cleared 2 collections. They start at onboarding next time they sign in."));
+    const body = JSON.parse(String((fetchMock.mock.calls.find(([u]) => String(u).endsWith("/reset"))![1] as RequestInit).body));
+    expect(body).toEqual({ scope: "all" });
   });
 
   it("deletes only when the member's email is typed, and tells the list", async () => {
