@@ -305,7 +305,7 @@ nightly volume.
 3. **Code checks + readiness in the tool result** (1.3) and the prompt shortening the audit proposed (#5–#7). Prompt
    versions bump; sessions in flight take one cold cache miss, which the restart boundary already absorbs. **Built
    2026-11-16** (`lib/engine/coach/checks.ts`; #5 and #7 applied, #6 left for the per-coach pass).
-4. **Start from the CV** (1.1) on coaches 1, 4, 5. **Built 2026-11-16** for `.md`/`.txt`; PDF through the SDK's document block is the one addition left.
+4. **Start from the CV** (1.1) on coaches 1, 4, 5. **Built 2026-11-16** for `.md`/`.txt`, and PDF the same day (transcribed once through the SDK's document block on the turn route).
 5. **Research as jobs** (1.2) — Coach 2 Part B first (`postings`), measured against the meter, then Part C and Coach 3.
    These are the engine's first CareerOps modules; `ENGINE_JOB_TYPES` grows from `ping`. **`postings` built 2026-11-16**
    (`run_research` on Coach 2; the handler verifies every URL by code; the result reaches the coach on its next turn);

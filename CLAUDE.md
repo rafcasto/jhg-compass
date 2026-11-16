@@ -82,7 +82,9 @@
   **CV-first** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §3`): a document the member hands the coach (`CoachDocument`, `.md`/`.txt`
   through `isCoachDocumentName`) rides on the turn it arrived with and is never stored by itself — the coach proposes, the member confirms,
   `update_profile` writes. Coaches 1 · 4 · 5 (`coachStartsFromCv`) open on `CvStart` while `setup.cvMarkdown` is empty. Never auto-save a
-  handed-over CV to `cvMarkdown`; that is the Master CV page's and Coach 5's job.
+  handed-over CV to `cvMarkdown`; that is the Master CV page's and Coach 5's job. A PDF (`CoachPdf`) is transcribed to text once on the
+  turn route and never stored as bytes — the transcript budget (`MAX_TRANSCRIPT_BYTES`) is the reason. The panel's Part line comes from
+  `lib/engine/coach/parts.ts` (the stored keys), never from the model.
   **Research is a job, not a turn** (decision 2026-11-16, `docs/COACH_ASSESSMENT_2026-11-16.md §1.2`): a research step is an engine job
   (`ENGINE_JOB_TYPES`, a handler in `lib/engine/handlers/`, its pure half in `lib/engine/research/`, its prompt in `lib/engine/prompts/`
   with override key `job:<type>`) that a coach starts through `run_research` (`COACH_RESEARCH` names which coach may start which), that

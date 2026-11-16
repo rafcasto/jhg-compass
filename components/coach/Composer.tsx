@@ -2,19 +2,19 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Paperclip, Send, X } from "lucide-react";
-import { readCoachDocument, type CoachDocument } from "./document";
+import { readCoachDocument, type CoachAttachment } from "./document";
 
 // The composer (docs/UX_COACH.md §3): a textarea that grows to six lines and the one red
 // button in the panel. Enter sends, Shift+Enter breaks a line. One `.icon-btn` (Paperclip)
 // left of the textarea lets a CV arrive mid-conversation (docs/UX_COACH_AGENTIC.md §3): the
 // attached file shows as a pill above the textarea and goes with the next turn.
 export default function Composer({ onSend, disabled = false, placeholder = "Type your answer…" }: {
-  onSend: (text: string, document: CoachDocument | null) => void;
+  onSend: (text: string, document: CoachAttachment | null) => void;
   disabled?: boolean;
   placeholder?: string;
 }) {
   const [text, setText] = useState("");
-  const [doc, setDoc] = useState<CoachDocument | null>(null);
+  const [doc, setDoc] = useState<CoachAttachment | null>(null);
   const [docError, setDocError] = useState<string | null>(null);
   const ref = useRef<HTMLTextAreaElement>(null);
   const file = useRef<HTMLInputElement>(null);
@@ -54,7 +54,7 @@ export default function Composer({ onSend, disabled = false, placeholder = "Type
       )}
       {docError && <p role="alert" className="text-sm text-jh-red">{docError}</p>}
       <div className="flex items-end gap-2">
-        <input ref={file} type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => void take(e.target.files?.[0])} />
+        <input ref={file} type="file" accept=".pdf,.md,.markdown,.txt,application/pdf,text/markdown,text/plain" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => void take(e.target.files?.[0])} />
         <button type="button" onClick={() => file.current?.click()} disabled={disabled} className="icon-btn mb-0.5" aria-label="Add a document"><Paperclip className="h-5 w-5" strokeWidth={1.75} aria-hidden /></button>
         <textarea
           ref={ref}

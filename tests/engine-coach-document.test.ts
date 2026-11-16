@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MAX_DOCUMENT_CHARS, START_CUE, START_WITH_CV_CUE, buildMessages, documentBlock, isCoachDocumentName, recapOf, userTurn } from "@/lib/engine/coach/turn";
+import { MAX_DOCUMENT_CHARS, MAX_PDF_BYTES, PDF_TRANSCRIBE_PROMPT, START_CUE, START_WITH_CV_CUE, buildMessages, documentBlock, isCoachDocumentName, isPdfName, recapOf, userTurn } from "@/lib/engine/coach/turn";
 import { coachStartsFromCv } from "@/lib/engine/coach/keys";
 import { COACH_PROMPTS } from "@/lib/engine/coach/prompts";
 
@@ -8,12 +8,17 @@ import { COACH_PROMPTS } from "@/lib/engine/coach/prompts";
 
 describe("a document on a turn", () => {
   const doc = { name: "ana-cv.md", text: "# CV -- Ana\n\n## Work Experience" };
-  it("takes Markdown and plain text only, within a budget", () => {
+  it("takes Markdown, plain text and a PDF (transcribed once, server-side), within a budget", () => {
     expect(isCoachDocumentName("cv.md")).toBe(true);
     expect(isCoachDocumentName("CV.TXT")).toBe(true);
-    expect(isCoachDocumentName("cv.pdf")).toBe(false);
+    expect(isCoachDocumentName("cv.pdf")).toBe(true);
+    expect(isPdfName("CV.PDF")).toBe(true);
+    expect(isPdfName("cv.md")).toBe(false);
     expect(isCoachDocumentName("cv.docx")).toBe(false);
     expect(MAX_DOCUMENT_CHARS).toBeGreaterThanOrEqual(30_000);
+    expect(MAX_PDF_BYTES).toBe(3 * 1024 * 1024);
+    expect(PDF_TRANSCRIBE_PROMPT).toContain("verbatim");
+    expect(PDF_TRANSCRIBE_PROMPT).toContain("nothing added or corrected");
   });
   it("precedes the member's words, fenced and named, and says the rule", () => {
     const block = documentBlock(doc);

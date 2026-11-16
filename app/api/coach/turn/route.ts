@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Anthropic from "@anthropic-ai/sdk";
 import { requireEngineMember } from "@/lib/server/auth";
 import { adminDb } from "@/lib/firebase/admin";
-import { ClaudeRefusal, isClaudeConfigured, stream as claudeStream, textOf } from "@/lib/engine/claude";
+import { ClaudeRefusal, call as claudeCall, isClaudeConfigured, stream as claudeStream, textOf } from "@/lib/engine/claude";
 import { getEngineConfig, getPromptOverride } from "@/lib/engine/config-server";
 import { quotaCheck, quotaLine, resolvePrompt } from "@/lib/engine/config";
 import { getUsageMonth, recordUsage } from "@/lib/engine/usage-server";
@@ -15,7 +15,7 @@ import { isQueueConfigured, publishRun } from "@/lib/engine/queue";
 import { runUnit } from "@/lib/engine/run";
 import { applyCoachPatch, CoachWriteError } from "@/lib/engine/coach/write";
 import { getSession, messagesOf, saveSession, type CoachSession } from "@/lib/engine/coach/session";
-import { MAX_DOCUMENT_CHARS, START_CUE, START_WITH_CV_CUE, buildMessages, isCoachDocumentName, landedSince, recapOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type CoachDocument, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
+import { MAX_DOCUMENT_CHARS, MAX_PDF_BYTES, PDF_TRANSCRIBE_PROMPT, START_CUE, START_WITH_CV_CUE, buildMessages, isCoachDocumentName, isPdfName, landedSince, recapOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type CoachDocument, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
 import { STREAM_FRAME, applyEvent, emptyPending, type JobNote, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
 import { profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -32,7 +32,8 @@ const MAX_TEXT = 8000;
 const MAX_TOOL_ROUNDS = 6;
 
 // Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section? },
-//         document?: { name, text } — the member's CV as .md / .txt, read in the browser (docs/UX_COACH_AGENTIC.md §3) }
+//         document?: { name, text } — the member's CV as .md / .txt, read in the browser (docs/UX_COACH_AGENTIC.md §3)
+//                 or { name, pdfBase64 } — a PDF, transcribed here once through the SDK's document block }
 // Streams SSE: text deltas as they are written, a `write` for each update_profile the coach
 // made, then `done` with the finished turn (docs/UX_COACH.md §3–4). The member's words and
 // the coach's turn land on users/{uid}/coachSessions/{coach}; the writes land on the profile.
@@ -47,15 +48,23 @@ export async function POST(req: NextRequest) {
   const start = body?.start === true;
   const text = typeof body?.text === "string" ? body.text.trim().slice(0, MAX_TEXT) : "";
   let document: CoachDocument | null = null;
+  let pdf: { name: string; data: string } | null = null;
   if (body?.document && typeof body.document === "object") {
     const name = typeof body.document.name === "string" ? body.document.name.trim().slice(0, 200) : "";
     const docText = typeof body.document.text === "string" ? body.document.text.trim() : "";
-    if (!isCoachDocumentName(name)) return NextResponse.json({ ok: false, error: "A document comes in as Markdown or plain text — a .md or .txt file." }, { status: 400 });
+    if (!isCoachDocumentName(name)) return NextResponse.json({ ok: false, error: "A document comes in as a PDF, Markdown or plain text — a .pdf, .md or .txt file." }, { status: 400 });
+    if (isPdfName(name)) {
+      const data = typeof body.document.pdfBase64 === "string" ? body.document.pdfBase64.replace(/\s+/g, "") : "";
+      if (!data || !/^[A-Za-z0-9+/=]+$/.test(data)) return NextResponse.json({ ok: false, error: "That PDF could not be read." }, { status: 400 });
+      if (data.length * 0.75 > MAX_PDF_BYTES) return NextResponse.json({ ok: false, error: `That PDF is too large — ${Math.round(MAX_PDF_BYTES / 1024 / 1024)} MB at most.` }, { status: 400 });
+      pdf = { name, data };
+    } else {
     if (!docText) return NextResponse.json({ ok: false, error: "That file looks empty." }, { status: 400 });
     if (docText.length > MAX_DOCUMENT_CHARS) return NextResponse.json({ ok: false, error: `That file is too long — ${MAX_DOCUMENT_CHARS.toLocaleString()} characters at most.` }, { status: 400 });
     document = { name, text: docText };
+    }
   }
-  if (!start && !text && !document) return NextResponse.json({ ok: false, error: "say something" }, { status: 400 });
+  if (!start && !text && !document && !pdf) return NextResponse.json({ ok: false, error: "say something" }, { status: 400 });
   const portal: ProfilePortal = body?.portal === "compass" ? "compass" : "jobhacking";
   const rawCtx = body?.context && typeof body.context === "object" ? body.context : {};
   const ctx: TurnContext = {
@@ -92,6 +101,23 @@ export async function POST(req: NextRequest) {
     : null;
   const resolved = resolvePrompt(prompt.text, prompt.version, override);
   const cfg = config.agents.coach;
+  // A PDF becomes text once, here, through the SDK's document block — so the stored transcript carries words, not
+  // a megabyte of base64 replayed every turn. Metered on this coach like any other call.
+  let pdfUsd = 0;
+  if (pdf) {
+    try {
+      const r = await claudeCall({
+        model: cfg.model, effort: "low", maxTokens: Math.min(cfg.maxTokens, 16000), system: PDF_TRANSCRIBE_PROMPT,
+        messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: pdf.data }, title: pdf.name }, { type: "text", text: "Transcribe it." }] }],
+      });
+      pdfUsd = (await recordUsage(uid, { kind: "coach", key: coach.key, model: r.model, usage: r.usage }, config)).estimatedUsd;
+      const transcribed = r.text.trim().slice(0, MAX_DOCUMENT_CHARS);
+      if (!transcribed) return NextResponse.json({ ok: false, error: "That PDF had no readable text — a scanned image? Export it as text, or paste your CV." }, { status: 400 });
+      document = { name: pdf.name, text: transcribed };
+    } catch (e: unknown) {
+      return NextResponse.json({ ok: false, error: e instanceof ClaudeRefusal ? e.message : "Couldn't read that PDF — try a .md or .txt export." }, { status: 400 });
+    }
+  }
   const memberText = start ? (document ? START_WITH_CV_CUE : START_CUE) : text || `Here is ${document!.name}.`;
   // Research that finished since the coach last spoke rides on this turn's operator note (docs/COACH_ASSESSMENT_2026-11-16.md §1.2).
   if (!isFirst || session.turns.length) Object.assign(ctx, landedSince(await listUserJobs(uid, 10), session.lastTurnAt, (t) => ENGINE_JOB_LABELS[t as EngineJobType] ?? t));
@@ -103,7 +129,7 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       const send = (e: TurnEvent) => controller.enqueue(enc.encode(STREAM_FRAME(e)));
       let pending = emptyPending();
-      let usd = 0;
+      let usd = pdfUsd;
       let completed = false;
       try {
         for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
