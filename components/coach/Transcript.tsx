@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Check, Paperclip } from "lucide-react";
 import { Markdown } from "@/components/careerops/shared";
-import { pendingMatrixOf, writeLine, type JobNote, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
+import { pendingMatrixOf, searchErrorWords, writeLine, type JobNote, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
 import type { MatrixRow } from "@/lib/engine/coach/rubrics";
 import JobStatus from "./JobStatus";
 import ScoreMatrix, { ScoredRows } from "./ScoreMatrix";
@@ -76,6 +76,7 @@ function Turn({ turn, uid, jobHref, body, md, matrix }: { turn: TranscriptTurn; 
       {turn.writes?.map((w, i) => <WriteStatus key={i} note={w} />)}
       {turn.text && <div className={body}><Markdown size={md}>{turn.text}</Markdown></div>}
       {uid && turn.jobs?.map((j: JobNote) => <JobStatus key={j.id} uid={uid} job={j} href={jobHref} />)}
+      {turn.searchErrors?.length ? <p role="status" className="text-sm text-jh-mute">Search didn&apos;t run — {[...new Set(turn.searchErrors)].map(searchErrorWords).join("; ")}.</p> : null}
       {turn.matrix && matrix && <div className="pt-2"><ScoreMatrix kind={turn.matrix.kind} items={turn.matrix.items} meta={turn.matrix.meta} onSubmit={matrix.onScores} disabled={matrix.disabled} wide={matrix.wide} onExpand={matrix.onExpand} /></div>}
     </div>
   );

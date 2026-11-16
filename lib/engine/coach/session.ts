@@ -21,6 +21,10 @@ export interface CoachSession {
   lastTurnAt: number;
   /** The page the launcher was on when this session started — the tail label's memory. */
   openedOn?: string | null;
+  /** The web search's error codes on the coach's last turn — the next turn's operator note carries them; cleared by a clean turn. */
+  lastSearchErrors?: string[];
+  /** Search errors over the conversation, by code — the admin's count. */
+  searchErrors?: Record<string, number>;
 }
 
 const ref = (uid: string, coach: CoachKey) => adminDb().doc(`users/${uid}/coachSessions/${coach}`);

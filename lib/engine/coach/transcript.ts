@@ -23,6 +23,18 @@ export interface MatrixNote { kind: RubricKind; items: string[]; meta?: string[]
 /** The member's answer to a matrix, with the portal's totals and ranks — the member turn IS the scored table. */
 export interface ScoredNote { kind: RubricKind; rows: ScoredRow[] }
 
+/** A web search error code in plain words — the member's transcript line and the operator's note (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §4 PR 0). */
+export const SEARCH_ERROR_WORDS: Record<string, string> = {
+  max_uses_exceeded: "this turn's search allowance was used up",
+  too_many_requests: "the search service was rate-limited",
+  unavailable: "the search service was unavailable",
+  invalid_tool_input: "the search query was rejected",
+  query_too_long: "the search query was too long",
+  request_too_large: "the request was too large",
+  unknown: "the search failed",
+};
+export const searchErrorWords = (code: string): string => SEARCH_ERROR_WORDS[code] ?? SEARCH_ERROR_WORDS.unknown;
+
 export interface TranscriptTurn {
   role: "coach" | "member";
   text: string;
@@ -37,6 +49,8 @@ export interface TranscriptTurn {
   attachment?: string;
   /** The member's answer to the matrix, ranked by the portal. */
   scored?: ScoredNote;
+  /** The web search's error codes on this coach turn — shown as one mute line, so a "while the tool is unavailable" has a reason beside it. */
+  searchErrors?: string[];
 }
 
 /** One event on the turn route's stream (SSE `data:` lines). */

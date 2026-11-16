@@ -104,7 +104,10 @@
   with override key `job:<type>`) that a coach starts through `run_research` (`COACH_RESEARCH` names which coach may start which), that
   writes its result to the profile through `applyCoachPatch`, and that the coach hears of on its next turn via `landedSince` on the operator
   note. A posting or source counts only when code opened it (`urlWasFound` or a GET). Never let a coach do a research step with web search
-  that a job exists for; never put search results in the transcript.
+  that a job exists for; never put search results in the transcript. **A failed search is said, never improvised around** (2026-11-17,
+  `docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md`): the turn route reads `web_search_tool_result` error blocks (`searchErrorsOf`), records the
+  codes on the coach turn and the session, and the operator note (`searchErrorNote`) tells the model to say so — a "while the tool is
+  unavailable" with a list from memory is the defect. Every remaining coach search has a verdict in that assessment; build its PRs in order.
 
 - **Share links** (decision 2026-11-07, `docs/UX_SHARE.md`): a JobHacking page — Narrative · True North · Target companies · Artefacts,
   one link each, never a section, never the Agents area — can be shared read-only at `/share/<token>` as a **document** (title, author
