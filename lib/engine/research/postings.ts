@@ -104,4 +104,33 @@ export function postingsSummary(postings: readonly JhgPosting[], dropped: number
   ].join("\n");
 }
 
-export interface PostingsResult { count: number; dropped: number; summary: string; searches: number }
+export interface PostingsResult { count: number; dropped: number; summary: string; searches: number; /** How the list was found: the aggregators' APIs, or the model's search. */ via?: "sources" | "search" }
+
+// ---- phrases from sourced descriptions (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §2 row 2) ----
+//
+// When the list comes from an API the model's one job is to quote the employer's words from each description —
+// no search, one structured call, every phrase verbatim from the snippet it was given.
+
+export const PHRASES_PROMPT = `You quote job postings for a coach. For each numbered posting you are given a title, an employer and the description as the job board carries it (often a snippet). Return, per number, 2–3 short phrases quoted verbatim from that description — the employer's own words for what they want (skills, outcomes, scope). Never paraphrase, never invent, never quote the title. A description too short to quote gets an empty list.`;
+
+export const PhrasesSchema = z.object({
+  rows: z.array(z.object({ n: z.number().int().describe("The posting's number as given"), phrases: z.array(z.string()).describe("2–3 phrases quoted verbatim; [] when nothing to quote") })),
+});
+export type PhrasesAnswer = z.infer<typeof PhrasesSchema>;
+
+export const PHRASE_SNIPPET_CHARS = 1200;
+
+/** The numbered snippets the model quotes from. */
+export function phrasesTask(rows: readonly { title: string; company: string; description: string }[]): string {
+  return rows.map((r, i) => `#${i + 1} · ${r.title} · ${r.company}\n${r.description.replace(/\s+/g, " ").trim().slice(0, PHRASE_SNIPPET_CHARS) || "(no description)"}`).join("\n\n");
+}
+
+/** The phrases back on the rows by number — a phrase counts only when the snippet really contains it. */
+export function withPhrases(rows: readonly RawPosting[], descriptions: readonly string[], answer: PhrasesAnswer): RawPosting[] {
+  const by = new Map(answer.rows.map((r) => [r.n, r.phrases] as const));
+  return rows.map((r, i) => {
+    const hay = (descriptions[i] ?? "").toLowerCase().replace(/\s+/g, " ");
+    const phrases = (by.get(i + 1) ?? []).map((p) => p.trim()).filter((p) => p && hay.includes(p.toLowerCase().replace(/\s+/g, " "))).slice(0, 3);
+    return { ...r, phrases };
+  });
+}

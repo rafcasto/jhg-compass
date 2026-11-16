@@ -107,7 +107,12 @@
   that a job exists for; never put search results in the transcript. **A failed search is said, never improvised around** (2026-11-17,
   `docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md`): the turn route reads `web_search_tool_result` error blocks (`searchErrorsOf`), records the
   codes on the coach turn and the session, and the operator note (`searchErrorNote`) tells the model to say so — a "while the tool is
-  unavailable" with a list from memory is the defect. Every remaining coach search has a verdict in that assessment; build its PRs in order.
+  unavailable" with a list from memory is the defect. Every remaining coach search has a verdict in that assessment; build its PRs in order. **Sourcing is an API call
+  first** (2026-11-17, `lib/engine/sourcing/`): the `postings` job reads Adzuna / Careerjet when a key is set and the region is a pipeline
+  country (`countryOf`), writes the shared `jobPostings` / `companies` collections, and the model only quotes the descriptions (`withPhrases`
+  keeps a phrase only when the snippet contains it); it falls back to the model's search otherwise. Add a source as an adapter in that
+  folder (pure URL + parse, tested; the fetch in `fetch.ts`), never as a search in a prompt; a careers URL is `confirmed` by the ATS
+  registry's board answering (`confirmCareersUrl`), never by the model.
 
 - **Share links** (decision 2026-11-07, `docs/UX_SHARE.md`): a JobHacking page — Narrative · True North · Target companies · Artefacts,
   one link each, never a section, never the Agents area — can be shared read-only at `/share/<token>` as a **document** (title, author
