@@ -316,4 +316,69 @@ need it; the member can rescore a handful later through a second, shorter matrix
 **Not scoring, same shell later.** Part C's *Say-It-Loud* (Y/N × 10) and *careers page status* (✓ / corrected / none × 10) are
 one-choice-per-row forms the same skeleton could render; left until a member has used the companies matrix.
 
+---
+
+## 11. The expanded panel — two sizes of one conversation (2026-11-16)
+
+**Ask (Rafael):** the chat should expand to full screen for usability — with the best experience possible.
+
+**What the 440 dock cannot do well.** A 392 px column holds 55ch of prose — right for talk — but not Coach 3's ten-column
+review tables, not forty matrix rows at 92 px a select with the anchors cut to *3 · Solid, uns…*, and on a 1024–1279 screen
+the page beside it is a sliver (`UX_COACH.md §13`). A one-to-four-hour session wants a room, not a lane.
+
+**Three ways to get the room, scored.**
+
+| Candidate | What it is | Verdict |
+|---|---|---|
+| A route (`/jobhacking/coach`, as `UX_COACH.md §3` drew it) | A page with the rail and a wide transcript; *Collapse* returns to the page | Loses: a turn streaming into the panel would depend on the layout keeping the component alive across the route; the "follow the page" rule would need a page no coach writes as an exception; a second surface to keep in step with the panel |
+| A wider dock (640 px) | The same lane, wider | Loses: still a lane — the page beside it becomes the sliver; forty rows still two lines each |
+| **The same `Sheet`, expanded in place** (`dock="wide"`) | The docked panel widens to the viewport; the member toggles ⤢ / ⤡; **nothing re-mounts** | **Wins** — one component, one state, one transcript; the stream, the pending matrix, the composer's draft all survive the switch |
+
+**The expanded layout (`lg+`).**
+
+```
+┌────────────────────────────────────────────────────────────────────────────────┐
+│ COACH 3 OF 6                                                           ⤡   ×   │  the same header; ⤡ Collapse to the side
+│ Target companies                                                               │
+├──────────────┬─────────────────────────────────────────────────────────────────┤
+│ YOUR COACH   │                                                                 │
+│ 2 of 6 compl.│   PART B · FIT SCORES                                           │  .section-label — the Part line, from code
+│              │                                                                 │
+│ JOBHACKER C. │   Here are your forty. Score them all, then we argue about      │  16 / 1.75, max-w-2xl (~70ch), centred
+│ ✓ Narrative  │   the fives.                                                    │
+│ ✓ True North │                                                                 │
+│ ● Target co. │   SCORE YOUR COMPANIES · 1–5                                    │
+│ ARTEFACTS    │                 GROWTH   INTEREST   ACCESS   PROOF     TOTAL    │  sticky header, same grid as the rows
+│ ○ Story Bank │   Xero          [ 4 ▾ ]  [ 5 ▾ ]    [ 3 ▾ ]  [ 4 ▾ ]   16 / 20  │  one line a company; anchors read in full
+│ ○ Master CV  │   SaaS · +18%                                                   │  the mute meta line under the name
+│ ○ LN         │   Sharesies     [   ▾ ]  [   ▾ ]    [   ▾ ]  [   ▾ ]   — / 20   │
+│              │   …                                                             │
+│              ├─────────────────────────────────────────────────────────────────┤
+│              │   Or tell your coach what to change…                 [ Send ]   │  the composer, in the same column
+└──────────────┴─────────────────────────────────────────────────────────────────┘
+```
+
+| Principle | Decision |
+|---|---|
+| **Hierarchy** | Nothing new competes: the header is the dock's header, the rail is `CoachRail` as Settings draws it, the transcript is the same transcript one size up (`text-base leading-[1.75]`, `prose` instead of `prose-sm`). The one new control is an `.icon-btn` — `Maximize2` / `Minimize2`, `aria-label` *Expand* / *Collapse to the side*, `aria-pressed` — beside × in `headerActions` |
+| **Measure** | `max-w-2xl` (672 px) at 16 px ≈ 70ch — inside 45–75, at the wide end on purpose: the coach's review tables and the matrix are the reason to expand. Centred in the column to the right of the rail; the composer lives in the **same grid** (`lg:grid-cols-[232px_minmax(0,1fr)]`, an empty first cell in the footer) so Send sits under the last line, never under the rail |
+| **The matrix, wide** | One line a row — `grid-cols-[minmax(0,1fr)_repeat(4,minmax(0,7rem))_3.5rem]`: the name (with its mute meta line under it), four 7-rem selects, the mono total; a sticky header on the same grid with *Total* over the last column. Forty companies are ~56 px a row — half the docked scroll — and every anchor shows whole in the closed select |
+| **Spacing** | The Sheet's own 24 px body padding; the rail column 232 px with a 32 px gutter — the `SectionsPage` geometry every JobHacking page uses, so the expanded coach reads as a page of the portal, not a modal |
+| **Depth** | None added: `sm:shadow-none` when wide — a surface that fills the viewport has nothing to float above. The dock keeps `shadow-jh-3` + `border-l` |
+| **Colour** | Red budget unchanged: Send (or *Send scores* while a matrix waits), an error line. The ⤢ is `jh-mute` → ink on hover like every `.icon-btn` |
+| **Motion** | None on the switch: the width changes, the content stays where it is. `motion-safe:animate-sheet-in` only on mount, as before |
+| **Keyboard** | Esc **steps back**: wide → docked, then docked → closed. One key, one step, always reversible. Tab order unchanged (the Sheet's own trap) |
+| **Memory** | `jh.coach.wide` on the device (`setWide` / `restoreWide` in the coach store); the server snapshot is always docked, the preference restores once the panel mounts — no hydration flicker, no account write for a layout choice |
+| **Discoverability** | The icon is enough most of the time; on the one turn it matters most — a docked matrix — the intro line ends with a mute *Expand for more room ›* (a text button, `underline` on hover, never red). Shown once, inline, `sm+` only |
+| **Mobile** | Below `sm` the sheet is already the screen; the control hides, nothing else changes. The bottom tab bar is already under the `z-50` sheet |
+| **Scroll** | Wide locks the body (`document.body.style.overflow`) for as long as it is wide and hands back to the stack's rule when it docks — the page beside a dock stays scrollable, as §1 of `UX_COACH.md` requires |
+
+**Why not auto-expand on a matrix.** A layout that changes itself is the one thing a member cannot predict; the hint and the
+icon make the choice theirs, and the memory makes it a one-time choice.
+
+**Files.** `components/tracker/Sheet.tsx` (`dock: "right" | "wide"`, `onClose(reason)`, the wide scroll lock) ·
+`components/coach/store.ts` (`wide`, `setWide`, `restoreWide`) · `CoachPanel.tsx` (the toggle, the two-column grid for body
+and footer, Esc steps back) · `Transcript.tsx` (`wide`, `onExpand`) · `ScoreMatrix.tsx` (`wide` rows, the hint) ·
+`components/careerops/shared.tsx` (`Markdown size`) · `tests/sheet.test.tsx`, `tests/coach-wide.test.ts`,
+`tests/coach-score-matrix.test.tsx`. `docs/UX_COACH.md §3` and `§13` updated.
 

@@ -88,6 +88,11 @@
   member's turn carries `scored {kind, rows}` and renders as the scored table. Add a rubric to the registry, never a second form or a
   prompt-only scale; change an anchor or a flag in code, never in the prompt. While a matrix waits the composer's Send is
   `tone="secondary"` — one red.
+  **The expanded panel** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §11`): the coach panel has two sizes of one conversation — `Sheet
+  dock="right"` (440, beside the live page) and `dock="wide"` (the viewport: `CoachRail` on the left at `lg+`, the transcript in one
+  `max-w-2xl` column at 16 / 1.75, the composer in the same grid) — toggled by the header's `.icon-btn` and remembered on the device
+  (`jh.coach.wide`, `setWide` / `restoreWide`). It is a state, never a route: nothing re-mounts, a streaming turn survives, Esc steps
+  back wide → docked → closed. `ScoreMatrix wide` is one line a row. Never add a third size or a coach page.
   **CV-first** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §3`): a document the member hands the coach (`CoachDocument`, `.md`/`.txt`
   through `isCoachDocumentName`) rides on the turn it arrived with and is never stored by itself — the coach proposes, the member confirms,
   `update_profile` writes. Coaches 1 · 4 · 5 (`coachStartsFromCv`) open on `CvStart` while `setup.cvMarkdown` is empty. Never auto-save a

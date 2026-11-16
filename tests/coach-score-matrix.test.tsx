@@ -49,6 +49,28 @@ describe("ScoreMatrix", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
 
+  it("expanded, a row is one line — name, four selects, total — and the header names the total column", () => {
+    render(<ScoreMatrix kind="companies" items={["Xero", "Halter"]} meta={["Accounting SaaS", ""]} onSubmit={() => undefined} wide />);
+    const rows = screen.getAllByRole("listitem");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveAttribute("data-wide-row");
+    expect(within(rows[0]).getAllByRole("combobox")).toHaveLength(4);
+    expect(rows[0]).toHaveTextContent("Xero");
+    expect(rows[0]).toHaveTextContent("Accounting SaaS");
+    expect(rows[0]).toHaveTextContent("— / 20");
+    expect(screen.getByText("Total")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Expand for more room ›" })).toBeNull();
+  });
+
+  it("docked, offers to expand — once, in the intro line, mute — and not when nothing can expand", async () => {
+    const onExpand = vi.fn();
+    const { rerender } = render(<ScoreMatrix kind="skills" items={["a", "b", "c"]} onSubmit={() => undefined} onExpand={onExpand} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Expand for more room ›" }));
+    expect(onExpand).toHaveBeenCalledTimes(1);
+    rerender(<ScoreMatrix kind="skills" items={["a", "b", "c"]} onSubmit={() => undefined} />);
+    expect(screen.queryByRole("button", { name: "Expand for more room ›" })).toBeNull();
+  });
+
   it("locks while the coach is writing", () => {
     render(<ScoreMatrix kind="skills" items={["a", "b", "c"]} onSubmit={() => undefined} disabled />);
     for (const s of screen.getAllByRole("combobox")) expect(s).toBeDisabled();
