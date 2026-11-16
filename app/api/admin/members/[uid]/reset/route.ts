@@ -4,6 +4,9 @@ import { isResetScope } from "@/lib/member-data";
 import { memberDataSummary, resetMemberData } from "@/lib/server/member-data";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+// A recursive delete of a member's tree can take a while; the plan's plain limit covers it.
+export const maxDuration = 120;
 
 const UID_RE = /^[A-Za-z0-9_-]{6,128}$/;
 
@@ -14,6 +17,10 @@ export async function POST(req: NextRequest, { params }: { params: { uid: string
   if (!UID_RE.test(params.uid)) return NextResponse.json({ ok: false, error: "bad uid" }, { status: 400 });
   const body = await req.json().catch(() => ({}));
   if (!isResetScope(body?.scope)) return NextResponse.json({ ok: false, error: "scope must be coach or all" }, { status: 400 });
-  const result = await resetMemberData(params.uid, body.scope, admin.email ?? admin.uid);
-  return NextResponse.json({ ok: true, result, summary: await memberDataSummary(params.uid) });
+  try {
+    const result = await resetMemberData(params.uid, body.scope, admin.email ?? admin.uid);
+    return NextResponse.json({ ok: true, result, summary: await memberDataSummary(params.uid) });
+  } catch (e: unknown) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "reset failed", summary: await memberDataSummary(params.uid).catch(() => null) }, { status: 500 });
+  }
 }
