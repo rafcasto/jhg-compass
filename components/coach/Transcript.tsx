@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Paperclip } from "lucide-react";
 import { Markdown } from "@/components/careerops/shared";
 import { writeLine, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
 
@@ -43,7 +43,8 @@ function Turn({ turn }: { turn: TranscriptTurn }) {
     return (
       <div className="rounded-md bg-jh-mist px-4 py-3">
         <p className="section-label mb-1">You</p>
-        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-jh-ink">{turn.text}</p>
+        {turn.attachment && <p className="mb-1 inline-flex items-center gap-1.5 text-sm text-jh-ink"><Paperclip className="h-3.5 w-3.5 text-jh-mute" aria-hidden /> {turn.attachment}</p>}
+        {turn.text && <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-jh-ink">{turn.text}</p>}
       </div>
     );
   }

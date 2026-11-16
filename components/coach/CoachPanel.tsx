@@ -6,13 +6,15 @@ import { useAuth } from "@/components/AuthProvider";
 import { Sheet } from "@/components/tracker/Sheet";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { auth } from "@/lib/firebase/client";
-import { COACH_TOTAL, coachForPage, coachStates, findCoach, missingBefore, pageOfPath } from "@/lib/engine/coach/keys";
+import { COACH_TOTAL, coachForPage, coachStartsFromCv, coachStates, findCoach, missingBefore, pageOfPath } from "@/lib/engine/coach/keys";
 import { applyEvent, emptyPending, parseEvent, type PendingTurn, type TranscriptTurn } from "@/lib/engine/coach/transcript";
 import type { CoachSession } from "@/lib/engine/coach/session";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { ProfilePortal } from "@/lib/jobhacking/sections";
 import CoachRail from "./CoachRail";
 import Composer from "./Composer";
+import CvStart from "./CvStart";
+import type { CoachDocument } from "./document";
 import Transcript from "./Transcript";
 import { closeCoach, flashSections, openCoach, useCoachUi } from "./store";
 
@@ -40,12 +42,12 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const busy = useRef(false);
   const started = useRef<string | null>(null);
 
-  const send = useCallback(async (text: string | null) => {
+  const send = useCallback(async (text: string | null, document: CoachDocument | null = null) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
     setPending(emptyPending());
-    if (text) setLocalTurns((t) => [...t, { role: "member", text, at: Date.now() }]);
+    if (text || document) setLocalTurns((t) => [...t, { role: "member", text: text ?? "", at: Date.now(), ...(document ? { attachment: document.name } : {}) }]);
     try {
       const token = await auth.currentUser!.getIdToken();
       const page = pageOfPath(pathname);
@@ -54,7 +56,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       const res = await fetch("/api/coach/turn", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        body: JSON.stringify({ coach: coach.key, portal, ...(text ? { text } : { start: true }), context: { page, section } }),
+        body: JSON.stringify({ coach: coach.key, portal, ...(text ? { text } : { start: true }), ...(document ? { document } : {}), context: { page, section } }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({}));
@@ -104,22 +106,25 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
     }
   }, [pathname, ui.open, coach]);
 
-  // A conversation that has not started yet starts itself: the coach opens (docs/UX_COACH.md §3).
+  // A conversation that has not started yet starts itself: the coach opens (docs/UX_COACH.md §3) — unless
+  // this coach starts from a CV and none is stored (docs/UX_COACH_AGENTIC.md §3): then the panel offers one first.
   const states = coachStates(setup?.jhg?.progress);
   const missing = coach ? missingBefore(coach, states) : [];
+  const notStarted = (session?.turns?.length ?? 0) === 0 && !pending && !localTurns.length;
+  const cvFirst = !!coach && coachStartsFromCv(coach.key) && !setup?.cvMarkdown?.trim() && notStarted && !sessionLoading;
   useEffect(() => {
-    if (!ui.open || !coach || !coach.ready || sessionLoading || missing.length) return;
+    if (!ui.open || !coach || !coach.ready || sessionLoading || missing.length || cvFirst) return;
     if ((session?.turns?.length ?? 0) > 0 || started.current === coach.key) return;
     started.current = coach.key;
     void send(null);
-  }, [ui.open, coach, sessionLoading, session?.turns?.length, missing.length, send]);
+  }, [ui.open, coach, sessionLoading, session?.turns?.length, missing.length, cvFirst, send]);
 
   if (!ui.open || !coach) return null;
   const turns: TranscriptTurn[] = [...(session?.turns ?? []), ...localTurns];
   const complete = states[coach.key] === "complete";
   const canTalk = coach.ready && !missing.length && !quota;
 
-  const footer = canTalk ? <Composer onSend={(t) => void send(t)} disabled={!!pending} placeholder={complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
+  const footer = canTalk && !cvFirst ? <Composer onSend={(t, d) => void send(t || null, d)} disabled={!!pending} placeholder={complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
 
   return (
     <Sheet
@@ -139,6 +144,8 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
           <p className="text-sm text-jh-mute">{coach.label} starts after {missing.map((c) => c.label).join(" and ")} — your coach needs what they write first.</p>
           <CoachRail states={states} portal={portal} hasCv={!!setup?.cvMarkdown?.trim()} />
         </div>
+      ) : cvFirst && canTalk ? (
+        <CvStart coachLabel={coach.label} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
       ) : (
         <Transcript turns={turns} pending={pending} error={error} quota={quota} />
       )}

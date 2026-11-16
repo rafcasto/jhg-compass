@@ -9,8 +9,24 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 import type { SystemPart } from "../claude";
+import { isTextCvFile } from "../../careerops/intake";
 import { findJhPage, findJhSection, type JhPageKey, type JhSectionKey } from "../../jobhacking/sections";
 import type { TranscriptTurn } from "./transcript";
+
+/**
+ * A document the member hands the coach with a turn (docs/UX_COACH_AGENTIC.md §3): their CV as Markdown or
+ * plain text today — the one document they already own. Not the retired six-file upload: nothing is written
+ * from it without a yes. A PDF arrives later through the SDK's document block.
+ */
+export interface CoachDocument { name: string; text: string }
+/** Enough for any CV several times over; a transcript carries it for the rest of the conversation. */
+export const MAX_DOCUMENT_CHARS = 60_000;
+export const isCoachDocumentName = (name: string): boolean => isTextCvFile(name);
+
+/** The document as the model reads it — before the member's words on the turn it arrived with. */
+export function documentBlock(doc: CoachDocument): string {
+  return [`The member's document (${doc.name}) — their own CV; draft from it and confirm, never write from it without a yes:`, "```", doc.text.trim(), "```"].join("\n");
+}
 
 export type TurnMessage = Anthropic.Beta.BetaMessageParam | Anthropic.Beta.BetaSystemMessageParam;
 
@@ -47,7 +63,7 @@ export function recapOf(turns: readonly TranscriptTurn[], maxBytes = MAX_RECAP_B
   for (let i = turns.length - 1; i >= 0; i--) {
     const t = turns[i];
     const wrote = t.writes?.flatMap((w) => w.labels) ?? [];
-    const line = `${t.role === "coach" ? "Coach" : "Member"}: ${t.text.trim()}${wrote.length ? `\n(wrote: ${wrote.join(", ")})` : ""}`;
+    const line = `${t.role === "coach" ? "Coach" : "Member"}: ${t.text.trim()}${t.attachment ? ` (attached ${t.attachment})` : ""}${wrote.length ? `\n(wrote: ${wrote.join(", ")})` : ""}`;
     const n = byteLength(line) + 2;
     if (used + n > maxBytes) {
       if (!lines.length) lines.push(line.slice(0, maxBytes)); // one turn alone past the budget: keep its head
@@ -94,6 +110,8 @@ export function toolResultOf(labels: string[], stored: string, warnings: readonl
 
 /** What the member typed — or, when a conversation starts, the opening cue the member never sees. */
 export const START_CUE = "Hi — I'm ready to start.";
+/** The cue when the conversation starts from a CV the member handed over (docs/UX_COACH_AGENTIC.md §3). */
+export const START_WITH_CV_CUE = "Hi — here is my CV. Draft what you can from it and I'll confirm each one.";
 
 /** The coach's prompt and, when it has one, its knowledge file — two cached blocks, stable across every turn and member. */
 export const systemFor = (promptText: string, knowledge?: string): SystemPart[] => [
@@ -103,9 +121,10 @@ export const systemFor = (promptText: string, knowledge?: string): SystemPart[] 
 ${knowledge}`, cache: "1h" as const }] : []),
 ];
 
-/** The first user turn carries the profile (and, after a restart, the recap); later turns are the member's words alone. */
-export function userTurn(text: string, first: FirstTurnInput | null): Anthropic.Beta.BetaMessageParam {
-  if (!first) return { role: "user", content: text };
+/** The first user turn carries the profile (and, after a restart, the recap); later turns are the member's words alone — plus the document, on the turn it arrived with. */
+export function userTurn(text: string, first: FirstTurnInput | null, document: CoachDocument | null = null): Anthropic.Beta.BetaMessageParam {
+  const body = document ? `${documentBlock(document)}\n\n${text}` : text;
+  if (!first) return { role: "user", content: body };
   const header = [
     "The member's profile as it stands (profile.yml):",
     "```yaml",
@@ -114,7 +133,7 @@ export function userTurn(text: string, first: FirstTurnInput | null): Anthropic.
     `Account: ${first.account.name || "(no name yet)"} <${first.account.email}>`,
     ...(first.recap ? ["", "This conversation was restarted to fit. What was said so far, most recent turns, oldest first:", "```", first.recap, "```"] : []),
     "",
-    text,
+    body,
   ].join("\n");
   return { role: "user", content: header };
 }
@@ -131,9 +150,9 @@ export function contextNote(ctx: TurnContext | null | undefined): string | null 
   return parts.length ? parts.join(" ") : null;
 }
 
-/** The messages for one turn: history, the member's words, the operator note last. */
-export function buildMessages(history: TurnMessage[], text: string, first: FirstTurnInput | null, ctx: TurnContext | null | undefined): TurnMessage[] {
-  const out: TurnMessage[] = [...history, userTurn(text, first)];
+/** The messages for one turn: history, the member's words (with their document when one came), the operator note last. */
+export function buildMessages(history: TurnMessage[], text: string, first: FirstTurnInput | null, ctx: TurnContext | null | undefined, document: CoachDocument | null = null): TurnMessage[] {
+  const out: TurnMessage[] = [...history, userTurn(text, first, document)];
   const note = contextNote(ctx);
   if (note) out.push({ role: "system", content: note });
   return out;
