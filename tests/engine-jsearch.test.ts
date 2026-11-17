@@ -74,7 +74,8 @@ describe("a refused key", () => {
     expect(isSourceOut("HTTP 429 — Too many requests")).toBe(true);
     expect(isSourceOut("HTTP 403 — forbidden")).toBe(true);
     expect(isSourceOut("HTTP 502")).toBe(false);
-    expect(authWords("jsearch")).toContain("subscribe to the free Basic plan");
+    expect(authWords("jsearch")).toContain("free Basic plan");
+    expect(authWords("jsearch")).toContain("JSEARCH_PROVIDER=openwebninja");
   });
 });
 
