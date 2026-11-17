@@ -1,7 +1,7 @@
 import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
-import { configuredAdapters, isQuotaError, quotaWords, type SourceAdapter } from "./adapters";
+import { authWords, configuredAdapters, isAuthError, isQuotaError, isSourceOut, quotaWords, type SourceAdapter } from "./adapters";
 import { cacheFresh, cacheKey, meteredMaxFrom } from "./cache";
 import { serpTopUpNeeded } from "./serp";
 import { atsBoardApi, atsJobCount, atsOf, type AtsBoard } from "./ats";
@@ -102,8 +102,8 @@ export async function sourcePostings(brief: SourcingBrief, log: (line: string) =
         error = e instanceof Error ? e.message : String(e);
         if (a.metered) metered++;
         await log(`${SOURCE_LABELS[a.source]} · "${q.what}" failed: ${error}`);
-        // Out for the month: every further query would fail the same way — stop spending and let the next metered source take over.
-        if (a.metered && isQuotaError(error)) { quotaOut = true; error = `${error} — ${quotaWords(a.source)}`; break; }
+        // Out for this run — the plan spent, or the key refused: every further query would fail the same way. Stop and let the next metered source take over.
+        if (a.metered && isSourceOut(error)) { quotaOut = true; error = `${error} — ${isAuthError(error) ? authWords(a.source) : quotaWords(a.source)}`; break; }
       }
     }
     if (!a.metered) freeRan = true;
