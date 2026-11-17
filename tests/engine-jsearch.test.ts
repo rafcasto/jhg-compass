@@ -39,8 +39,26 @@ describe("JSearch", () => {
     expect(fromPostings(rows, ["Product Manager"])[0].website).toBe("https://halter.co.nz");
   });
   it("runs one metered source at most — JSearch when both Google routes have a key", () => {
-    expect(configuredAdapters({ JSEARCH_API_KEY: "k", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch"]);
+    expect(configuredAdapters({ JSEARCH_API_KEY: "k", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch", "serp"]);
     expect(configuredAdapters({ SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["serp"]);
-    expect(configuredAdapters({ ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k", JSEARCH_API_KEY: "j", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["adzuna", "jsearch"]);
+    expect(configuredAdapters({ ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k", JSEARCH_API_KEY: "j", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["adzuna", "jsearch", "serp"]);
+  });
+});
+
+// A 429 is the source saying "out" — quota or burst; the run names it and falls back to the next Google route.
+import { isQuotaError, quotaWords } from "@/lib/engine/sourcing/adapters";
+
+describe("quota errors", () => {
+  it("recognises RapidAPI's and SerpApi's 429s and says what they mean", () => {
+    expect(isQuotaError('HTTP 429 — {"message":"Too many requests"}')).toBe(true);
+    expect(isQuotaError("HTTP 429")).toBe(true);
+    expect(isQuotaError("Your account has run out of searches (quota)")).toBe(true);
+    expect(isQuotaError("HTTP 403 — You are not subscribed to this API")).toBe(false);
+    expect(isQuotaError("HTTP 500")).toBe(false);
+    expect(quotaWords("jsearch")).toContain("RapidAPI → My Apps → JSearch → usage");
+    expect(quotaWords("serp")).toContain("serpapi.com");
+  });
+  it("lists every metered source so the run can fall back, JSearch first", () => {
+    expect(configuredAdapters({ JSEARCH_API_KEY: "k", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch", "serp"]);
   });
 });
