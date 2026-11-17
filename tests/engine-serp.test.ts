@@ -9,7 +9,7 @@ import { SOURCES, SOURCE_LABELS } from "@/lib/engine/sourcing/keys";
 describe("SerpApi google_jobs", () => {
   const env = { SERPAPI_KEY: "k1" };
   it("is a source, configured by its key, asking google_jobs in the country with the city as location", () => {
-    expect(SOURCES).toEqual(["adzuna", "careerjet", "jsearch", "serp"]);
+    expect(SOURCES).toEqual(["careerjet", "jsearch", "serp", "adzuna"]);
     expect(SOURCE_LABELS.serp).toBe("Google for Jobs (SerpApi)");
     expect(serpConfigured({})).toBe(false);
     expect(serpConfigured(env)).toBe(true);
@@ -58,9 +58,10 @@ describe("the adapter registry", () => {
   it("runs the free sources first and the metered one last, each by its own key", () => {
     expect(configuredAdapters({}).map((a) => a.source)).toEqual([]);
     expect(configuredAdapters({ SERPAPI_KEY: "k" }).map((a) => a.source)).toEqual(["serp"]);
-    expect(configuredAdapters({ SERPAPI_KEY: "k", ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k", CAREERJET_AFFID: "a" }).map((a) => a.source)).toEqual(["adzuna", "careerjet", "serp"]);
+    expect(configuredAdapters({ SERPAPI_KEY: "k", ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k", CAREERJET_AFFID: "a" }).map((a) => a.source)).toEqual(["careerjet", "serp", "adzuna"]);
     expect(ADAPTERS.serp.metered).toBe(true);
-    expect(ADAPTERS.adzuna.metered).toBe(false);
+    expect(ADAPTERS.adzuna.metered).toBe(true); // 25 hits a month on its free plan (2026-11-18)
+    expect(ADAPTERS.careerjet.metered).toBe(false);
     expect(ADAPTERS.serp.maxQueries).toBe(SERP_MAX_QUERIES);
     const u = new URL(ADAPTERS.adzuna.url({ what: "PM", where: "Auckland", from: "title" }, "nz", { ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k" }));
     expect(u.pathname).toBe("/v1/api/jobs/nz/search/1");

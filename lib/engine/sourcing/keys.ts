@@ -31,7 +31,8 @@ export function countryOf(region: string | null | undefined): PipelineCountry | 
 /** The city half of a region — "Auckland, New Zealand" → "Auckland"; the whole string when there is no comma. */
 export const cityOf = (region: string): string => region.split(",")[0].trim();
 
-export const SOURCES = ["adzuna", "careerjet", "jsearch", "serp"] as const;
+/** Registry order is run order: free first (Careerjet), then the metered Google routes (JSearch, the cheaper, then SerpApi), Adzuna's 25-a-month last. */
+export const SOURCES = ["careerjet", "jsearch", "serp", "adzuna"] as const;
 export type Source = (typeof SOURCES)[number];
 export const SOURCE_LABELS: Record<Source, string> = { adzuna: "Adzuna", careerjet: "Careerjet", jsearch: "Google for Jobs (JSearch)", serp: "Google for Jobs (SerpApi)" };
 

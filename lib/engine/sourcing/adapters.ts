@@ -24,7 +24,8 @@ export interface SourceAdapter {
 }
 
 export const ADAPTERS: Record<Source, SourceAdapter> = {
-  adzuna: { source: "adzuna", metered: false, maxQueries: 8, configured: adzunaConfigured, url: (q, country, env) => adzunaUrl({ country, what: q.what, where: q.where }, env), parse: (json, country) => parseAdzuna(json, country) },
+  // Adzuna's free plan is 25 hits a month (read 2026-11-18, UK products listed) — metered, and last in line so it is never the one spent.
+  adzuna: { source: "adzuna", metered: true, maxQueries: 4, configured: adzunaConfigured, url: (q, country, env) => adzunaUrl({ country, what: q.what, where: q.where }, env), parse: (json, country) => parseAdzuna(json, country) },
   careerjet: { source: "careerjet", metered: false, maxQueries: 8, configured: careerjetConfigured, url: (q, country, env) => careerjetUrl({ country, keywords: q.what, location: q.where }, env), parse: (json, country) => parseCareerjet(json, country) },
   jsearch: { source: "jsearch", metered: true, maxQueries: JSEARCH_MAX_QUERIES, configured: jsearchConfigured, url: (q, country) => jsearchUrl({ country, q: q.what, location: q.where }), headers: jsearchHeaders, parse: (json, country) => parseJsearch(json, country) },
   serp: { source: "serp", metered: true, maxQueries: SERP_MAX_QUERIES, configured: serpConfigured, url: (q, country, env) => serpJobsUrl({ country, q: q.what, location: q.where }, env), parse: parseSerpJobs },
