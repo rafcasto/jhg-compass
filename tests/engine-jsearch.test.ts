@@ -10,7 +10,7 @@ import { fromPostings } from "@/lib/engine/research/companies";
 describe("JSearch", () => {
   const env = { JSEARCH_API_KEY: "rk1" };
   it("is a source, configured by its RapidAPI key, asking with the place in the query and the key in the headers", () => {
-    expect(SOURCES).toEqual(["adzuna", "careerjet", "jsearch", "serp"]);
+    expect(SOURCES).toEqual(["careerjet", "jsearch", "serp", "adzuna"]);
     expect(SOURCE_LABELS.jsearch).toBe("Google for Jobs (JSearch)");
     expect(jsearchConfigured({})).toBe(false);
     expect(jsearchConfigured(env)).toBe(true);
@@ -41,7 +41,7 @@ describe("JSearch", () => {
   it("runs one metered source at most — JSearch when both Google routes have a key", () => {
     expect(configuredAdapters({ JSEARCH_API_KEY: "k", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch", "serp"]);
     expect(configuredAdapters({ SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["serp"]);
-    expect(configuredAdapters({ ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k", JSEARCH_API_KEY: "j", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["adzuna", "jsearch", "serp"]);
+    expect(configuredAdapters({ ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k", JSEARCH_API_KEY: "j", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch", "serp", "adzuna"]);
   });
 });
 
