@@ -245,6 +245,6 @@ one line to `adminAudit/{id}` (server-only). The Supabase lead events are not to
 
 - Decisions 8, 9, 10 above (human coaches edit or comment; one CV or several; the status enum).
 - Trade Me API terms for this use; Adzuna NZ coverage of Seek NZ for three real target roles (a ten-minute test with a dev key).
-- SERP provider and plan (SerpApi vs JSearch) — the only metered sourcing line.
+- ~~SERP provider and plan (SerpApi vs JSearch)~~ — **SerpApi `google_jobs`, 2026-11-17**, as the top-up after the free aggregators (`lib/engine/sourcing/serp.ts`); the plan size follows the first cohort's read of `metered` per run.
 - Whether `scoringWeights` is exposed to the member as a control or kept as the program's defaults nudged by feedback.
 - The first cohort for phase B.

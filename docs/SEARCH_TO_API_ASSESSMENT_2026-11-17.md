@@ -114,7 +114,7 @@ PR 0 is a fix and goes first. PRs 1–3 are the phase B the plan already names; 
 
 | # | Question | Proposed default |
 |---|---|---|
-| 1 | SERP provider — SerpApi `google_jobs` vs JSearch (RapidAPI) — the only metered sourcing line (plan §10) | SerpApi, behind a switch, off by default; Adzuna + Careerjet + ATS cover the first cohort |
+| 1 | SERP provider — SerpApi `google_jobs` vs JSearch (RapidAPI) — the only metered sourcing line (plan §10) | **Decided 2026-11-17: SerpApi `google_jobs`, as the top-up** (`lib/engine/sourcing/serp.ts`, `SERPAPI_KEY`). It is how Seek postings come in for NZ and AU — Google indexes them and the result carries the Seek apply link, which the job opens. Runs after the free sources, only when they returned fewer than 30 unique rows, at most 4 queries a run (`serpTopUpNeeded`, `SERP_MAX_QUERIES`); the run reports `metered` searches spent. The adapters sit behind one registry (`adapters.ts`) |
 | 2 | Trade Me Jobs API terms for this use (plan §10) | ask first; ship NZ on Adzuna + SERP until answered |
 | 3 | Crunchbase for the competitor / customer / funding passes, or model proposal + code verification only | model + verification for v1 (cents); Crunchbase when a cohort pays for it |
 | 4 | Official statistics APIs (Stats NZ, ABS, BLS, StatCan) in the `industries` job, or the directory's pages fetched and cached | pages, cached; the stats APIs are a later source of the same row |

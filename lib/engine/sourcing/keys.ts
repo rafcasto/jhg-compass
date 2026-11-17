@@ -31,9 +31,9 @@ export function countryOf(region: string | null | undefined): PipelineCountry | 
 /** The city half of a region — "Auckland, New Zealand" → "Auckland"; the whole string when there is no comma. */
 export const cityOf = (region: string): string => region.split(",")[0].trim();
 
-export const SOURCES = ["adzuna", "careerjet"] as const;
+export const SOURCES = ["adzuna", "careerjet", "serp"] as const;
 export type Source = (typeof SOURCES)[number];
-export const SOURCE_LABELS: Record<Source, string> = { adzuna: "Adzuna", careerjet: "Careerjet" };
+export const SOURCE_LABELS: Record<Source, string> = { adzuna: "Adzuna", careerjet: "Careerjet", serp: "Google for Jobs" };
 
 /** One posting as a source returned it — what jobPostings/{source}_{externalId} stores (plan §6). */
 export interface SourcedPosting {

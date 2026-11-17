@@ -1,8 +1,8 @@
 import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
-import { adzunaConfigured, adzunaUrl, parseAdzuna } from "./adzuna";
-import { careerjetConfigured, careerjetUrl, parseCareerjet } from "./careerjet";
+import { configuredAdapters } from "./adapters";
+import { serpTopUpNeeded } from "./serp";
 import { atsBoardApi, atsJobCount, atsOf, type AtsBoard } from "./ats";
 import { companyKey, postingDocId, SOURCE_LABELS, type PipelineCountry, type Source, type SourcedPosting } from "./keys";
 import { mergePostings, newestFirst, queriesFor, sourcingNote, type SourcingBrief } from "./plan";
@@ -33,9 +33,9 @@ export async function mapLimit<T, R>(items: readonly T[], limit: number, f: (x: 
 }
 
 /** Any adapter has a key — the postings job sources by API; otherwise it falls back to the model's search. */
-export const sourcingConfigured = (env: Record<string, string | undefined> = process.env): boolean => adzunaConfigured(env) || careerjetConfigured(env);
+export const sourcingConfigured = (env: Record<string, string | undefined> = process.env): boolean => configuredAdapters(env).length > 0;
 
-export const configuredSources = (env: Record<string, string | undefined> = process.env): Source[] => [...(adzunaConfigured(env) ? (["adzuna"] as const) : []), ...(careerjetConfigured(env) ? (["careerjet"] as const) : [])];
+export const configuredSources = (env: Record<string, string | undefined> = process.env): Source[] => configuredAdapters(env).map((a) => a.source);
 
 async function getJson(url: string): Promise<unknown> {
   const ctl = new AbortController();
@@ -47,33 +47,42 @@ async function getJson(url: string): Promise<unknown> {
   } finally { clearTimeout(t); }
 }
 
-export interface SourcingRun { rows: SourcedPosting[]; note: string; queries: number }
+export interface SourcingRun { rows: SourcedPosting[]; note: string; queries: number; /** Paid searches spent on the top-up. */ metered: number }
 
-/** Every configured source for the brief's country, each query once; merged newest first. */
-export async function sourcePostings(brief: SourcingBrief, log: (line: string) => Promise<void> = async () => {}): Promise<SourcingRun> {
+/** Enough unique rows from the free sources that the metered top-up is not needed — the target with room for the links that won't open. */
+export const ENOUGH_FOR_NO_TOP_UP = 30;
+
+/** Every configured source for the brief's country — free ones for every query, the metered one only to fill a gap, within its cap; merged newest first. */
+export async function sourcePostings(brief: SourcingBrief, log: (line: string) => Promise<void> = async () => {}, today = new Date().toISOString().slice(0, 10)): Promise<SourcingRun> {
   const queries = queriesFor(brief);
   const parts: { source: string; country: PipelineCountry; queries: number; rows: number; error?: string }[] = [];
   const lists: SourcedPosting[][] = [];
-  for (const source of configuredSources()) {
+  let metered = 0;
+  let freeRan = false;
+  for (const a of configuredAdapters()) {
+    if (a.metered && !serpTopUpNeeded(mergePostings(lists).length, freeRan, ENOUGH_FOR_NO_TOP_UP)) { await log(`${SOURCE_LABELS[a.source]} skipped — the free sources were enough`); continue; }
     const got: SourcedPosting[] = [];
     let error: string | undefined;
-    for (const q of queries) {
+    const mine = queries.slice(0, a.maxQueries);
+    for (const q of mine) {
       try {
-        const url = source === "adzuna" ? adzunaUrl({ country: brief.country, what: q.what, where: q.where }) : careerjetUrl({ country: brief.country, keywords: q.what, location: q.where });
-        const json = await getJson(url);
-        const rows = source === "adzuna" ? parseAdzuna(json, brief.country) : parseCareerjet(json, brief.country);
+        const json = await getJson(a.url(q, brief.country, process.env));
+        const rows = a.parse(json, brief.country, today);
         got.push(...rows);
-        await log(`${SOURCE_LABELS[source]} · "${q.what}" in ${q.where || brief.country} · ${rows.length} rows`);
+        if (a.metered) metered++;
+        await log(`${SOURCE_LABELS[a.source]} · "${q.what}" in ${q.where || brief.country} · ${rows.length} rows`);
       } catch (e) {
         error = e instanceof Error ? e.message : String(e);
-        await log(`${SOURCE_LABELS[source]} · "${q.what}" failed: ${error}`);
+        if (a.metered) metered++;
+        await log(`${SOURCE_LABELS[a.source]} · "${q.what}" failed: ${error}`);
       }
     }
-    parts.push({ source: SOURCE_LABELS[source], country: brief.country, queries: queries.length, rows: got.length, ...(error && !got.length ? { error } : {}) });
+    if (!a.metered) freeRan = true;
+    parts.push({ source: SOURCE_LABELS[a.source], country: brief.country, queries: mine.length, rows: got.length, ...(error && !got.length ? { error } : {}) });
     lists.push(got);
   }
   const rows = newestFirst(mergePostings(lists));
-  return { rows, note: sourcingNote(parts, rows.length), queries: queries.length };
+  return { rows, note: sourcingNote(parts, rows.length), queries: queries.length, metered };
 }
 
 /** jobPostings/{source}_{externalId} and companies/{key} upserts (plan §6) — shared, server-written; a company never accumulates its postings. */
