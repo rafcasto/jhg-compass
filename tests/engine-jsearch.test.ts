@@ -10,12 +10,12 @@ import { fromPostings } from "@/lib/engine/research/companies";
 describe("JSearch", () => {
   const env = { JSEARCH_API_KEY: "rk1" };
   it("is a source, configured by its RapidAPI key, asking with the place in the query and the key in the headers", () => {
-    expect(SOURCES).toEqual(["adzuna", "careerjet", "jsearch", "serp"]);
+    expect(SOURCES).toEqual(["careerjet", "jsearch", "serp", "adzuna"]);
     expect(SOURCE_LABELS.jsearch).toBe("Google for Jobs (JSearch)");
     expect(jsearchConfigured({})).toBe(false);
     expect(jsearchConfigured(env)).toBe(true);
     const u = new URL(jsearchUrl({ country: "nz", q: "Product Manager", location: "Auckland" }));
-    expect(u.origin + u.pathname).toBe("https://jsearch.p.rapidapi.com/search");
+    expect(u.origin + u.pathname).toBe("https://jsearch.p.rapidapi.com/search-v2");
     expect(u.searchParams.get("query")).toBe("Product Manager in Auckland");
     expect(u.searchParams.get("country")).toBe("nz");
     expect(u.searchParams.get("date_posted")).toBe("month");
@@ -41,7 +41,7 @@ describe("JSearch", () => {
   it("runs one metered source at most — JSearch when both Google routes have a key", () => {
     expect(configuredAdapters({ JSEARCH_API_KEY: "k", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch", "serp"]);
     expect(configuredAdapters({ SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["serp"]);
-    expect(configuredAdapters({ ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k", JSEARCH_API_KEY: "j", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["adzuna", "jsearch", "serp"]);
+    expect(configuredAdapters({ ADZUNA_APP_ID: "i", ADZUNA_APP_KEY: "k", JSEARCH_API_KEY: "j", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch", "serp", "adzuna"]);
   });
 });
 
@@ -60,5 +60,62 @@ describe("quota errors", () => {
   });
   it("lists every metered source so the run can fall back, JSearch first", () => {
     expect(configuredAdapters({ JSEARCH_API_KEY: "k", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch", "serp"]);
+  });
+});
+
+// A refused key is out for the run like a spent quota — the next Google route takes over, and the words say where to fix it.
+import { authWords, isAuthError, isSourceOut } from "@/lib/engine/sourcing/adapters";
+
+describe("a refused key", () => {
+  it("is recognised and explained — subscribe on RapidAPI, the key alone does nothing", () => {
+    expect(isAuthError('HTTP 403 — {"message":"You are not subscribed to this API."}')).toBe(true);
+    expect(isAuthError("HTTP 401 — Invalid API key")).toBe(true);
+    expect(isAuthError("HTTP 500")).toBe(false);
+    expect(isSourceOut("HTTP 429 — Too many requests")).toBe(true);
+    expect(isSourceOut("HTTP 403 — forbidden")).toBe(true);
+    expect(isSourceOut("HTTP 502")).toBe(false);
+    expect(authWords("jsearch")).toContain("free Basic plan");
+    expect(authWords("jsearch")).toContain("JSEARCH_PROVIDER=openwebninja");
+  });
+});
+
+// Two doors to the same API: RapidAPI's gateway, or OpenWeb Ninja's own platform — the key goes to the right host with the right header.
+import { OPENWEBNINJA_BASE, jsearchProvider } from "@/lib/engine/sourcing/jsearch";
+
+describe("JSearch providers", () => {
+  it("sends an OpenWeb Ninja key to api.openwebninja.com in x-api-key, a RapidAPI key to the gateway", () => {
+    const own = { JSEARCH_API_KEY: "own1", JSEARCH_PROVIDER: "openwebninja" };
+    expect(jsearchProvider(own)).toBe("openwebninja");
+    expect(jsearchProvider({ JSEARCH_API_KEY: "r" })).toBe("rapidapi");
+    const u = new URL(jsearchUrl({ country: "nz", q: "Product Manager", location: "Auckland" }, own));
+    expect(u.origin + u.pathname).toBe(OPENWEBNINJA_BASE);
+    expect(u.searchParams.get("query")).toBe("Product Manager in Auckland");
+    expect(jsearchHeaders(own)).toEqual({ "x-api-key": "own1" });
+    expect(jsearchHeaders({ JSEARCH_API_KEY: "r" })).toEqual({ "x-rapidapi-key": "r", "x-rapidapi-host": JSEARCH_HOST });
+  });
+});
+
+// Listings move: the Search endpoint can be set from the environment, and the RapidAPI host header follows it.
+import { jsearchBase } from "@/lib/engine/sourcing/jsearch";
+
+describe("JSearch endpoint override", () => {
+  it("uses JSEARCH_BASE_URL when set and derives the host header from it; ignores junk", () => {
+    const env = { JSEARCH_API_KEY: "r", JSEARCH_BASE_URL: "https://jsearch6.p.rapidapi.com/v2/search?x=1" };
+    expect(jsearchBase(env)).toBe("https://jsearch6.p.rapidapi.com/v2/search");
+    expect(new URL(jsearchUrl({ country: "nz", q: "PM", location: "Auckland" }, env)).pathname).toBe("/v2/search");
+    expect(jsearchHeaders(env)["x-rapidapi-host"]).toBe("jsearch6.p.rapidapi.com");
+    expect(jsearchBase({ JSEARCH_API_KEY: "r", JSEARCH_BASE_URL: "not a url" })).toBe("https://jsearch.p.rapidapi.com/search-v2");
+    expect(jsearchBase({ JSEARCH_API_KEY: "r" })).toBe("https://jsearch.p.rapidapi.com/search-v2");
+  });
+});
+
+// /search-v2 (live 2026-11-18): the jobs sit under data.jobs with a cursor; job_location is the place as written.
+describe("JSearch /search-v2 shape", () => {
+  it("parses data.jobs[] as it parses data[], and prefers job_location", () => {
+    const v2 = { status: "OK", data: { jobs: [{ job_id: "aW5kZWVk", job_title: "Data Quality Technical Lead", employer_name: "Fonterra", employer_website: "http://www.fonterra.com", job_publisher: "fonterra.com", job_apply_link: "https://careers.fonterra.com/careers/JobDetail/Data-Quality", job_description: "Lead the data quality…", job_location: "Auckland City, Auckland", job_city: "Auckland City", job_state: "N", job_country: "NZ", job_posted_at_datetime_utc: "2026-11-16T19:49:33.000Z" }], cursor: "abc" } };
+    const rows = parseJsearch(v2, "nz");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ source: "jsearch", externalId: "aW5kZWVk", company: "Fonterra", location: "Auckland City, Auckland", url: "https://careers.fonterra.com/careers/JobDetail/Data-Quality", postedAt: "2026-11-16", companyWebsite: "http://www.fonterra.com" });
+    expect(parseJsearch({ status: "OK", data: { cursor: "x" } }, "nz")).toEqual([]);
   });
 });

@@ -1,4 +1,5 @@
-// Adzuna — the primary structured aggregator (docs/AGENTIC_PIPELINE_PLAN.md §5: NZ · AU · US · CA on one key).
+// Adzuna — a structured aggregator (docs/AGENTIC_PIPELINE_PLAN.md §5: NZ · AU · US · CA on one key). Its free plan turned out to be
+// 25 hits a month (2026-11-18), so it is metered and last in line; a paid Adzuna plan would make it the primary again.
 // Pure: the request URL and the parse of one page. The fetch is in ./fetch.ts. Tested.
 // API: https://developer.adzuna.com/ — GET /v1/api/jobs/{country}/search/{page}?app_id&app_key&what&where&results_per_page&max_days_old
 
