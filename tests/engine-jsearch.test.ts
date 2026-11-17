@@ -94,3 +94,17 @@ describe("JSearch providers", () => {
     expect(jsearchHeaders({ JSEARCH_API_KEY: "r" })).toEqual({ "x-rapidapi-key": "r", "x-rapidapi-host": JSEARCH_HOST });
   });
 });
+
+// Listings move: the Search endpoint can be set from the environment, and the RapidAPI host header follows it.
+import { jsearchBase } from "@/lib/engine/sourcing/jsearch";
+
+describe("JSearch endpoint override", () => {
+  it("uses JSEARCH_BASE_URL when set and derives the host header from it; ignores junk", () => {
+    const env = { JSEARCH_API_KEY: "r", JSEARCH_BASE_URL: "https://jsearch6.p.rapidapi.com/v2/search?x=1" };
+    expect(jsearchBase(env)).toBe("https://jsearch6.p.rapidapi.com/v2/search");
+    expect(new URL(jsearchUrl({ country: "nz", q: "PM", location: "Auckland" }, env)).pathname).toBe("/v2/search");
+    expect(jsearchHeaders(env)["x-rapidapi-host"]).toBe("jsearch6.p.rapidapi.com");
+    expect(jsearchBase({ JSEARCH_API_KEY: "r", JSEARCH_BASE_URL: "not a url" })).toBe("https://jsearch.p.rapidapi.com/search");
+    expect(jsearchBase({ JSEARCH_API_KEY: "r" })).toBe("https://jsearch.p.rapidapi.com/search");
+  });
+});
