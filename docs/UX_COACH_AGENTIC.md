@@ -223,6 +223,10 @@ leaves open (overlay vs a 400 px dock) and the expanded page, which this note do
 
 ## 9. The scoring matrix — scored once, in code (2026-11-16)
 
+> **Companies, with evidence (2026-11-17):** Coach 3's matrix arrives with Growth and Access pre-filled from stored facts and the
+> portal's reasons under each name; the member sets Interest and Proof and may change any suggestion (recorded as an override).
+> `docs/UX_COACH_COMPANY_SCORING.md` is the spec; nothing below changes for Coach 1's skills.
+
 **Why.** Coach 1 §2 asked four 1–5 questions per skill, one at a time — sixty turns for fifteen skills — and the model
 summed and ranked. The rubric lived in prose with one anchor ("prove = 2 if no result in 10 seconds"), so the same prompt
 gave every member a different scale; and the table was never stored — only three `leadSkills` survived, so Story Bank could

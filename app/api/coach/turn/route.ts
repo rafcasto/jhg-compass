@@ -11,7 +11,9 @@ import { findCoach, isCoachKey, missingBefore, coachStates } from "@/lib/engine/
 import { RUN_RESEARCH, SCORE_MATRIX, UPDATE_PROFILE, coachTools, isResearchKind } from "@/lib/engine/coach/tools";
 import { cleanItems, coachRubrics, isRubricKind, parseRows, rubricOf } from "@/lib/engine/coach/rubrics";
 import { scoreSkills, scoresMessage, skillRow } from "@/lib/engine/coach/skills";
-import { applyCompanyScores, companyMeta, companyRows, companyScoresMessage, matrixCompanies } from "@/lib/engine/coach/companies";
+import { applyCompanyScores, companyFlags, companyMeta, companyRows, companyScoresMessage, matrixCompanies, overrideFlags, withOverrides } from "@/lib/engine/coach/companies";
+import { isConnectionsCsv, isConnectionsFileName, matchConnections, parseConnections } from "@/lib/engine/coach/connections";
+import { buildCompaniesEvidence, saveConnections, saveFinalScores } from "@/lib/engine/coach/evidence-server";
 import { createJob, listUserJobs, patchJob } from "@/lib/engine/jobs-server";
 import { ENGINE_JOB_LABELS, type EngineJobType } from "@/lib/engine/keys";
 import { isQueueConfigured, publishRun } from "@/lib/engine/queue";
@@ -19,7 +21,7 @@ import { runUnit } from "@/lib/engine/run";
 import { applyCoachPatch, CoachWriteError } from "@/lib/engine/coach/write";
 import { getSession, messagesOf, saveSession, type CoachSession } from "@/lib/engine/coach/session";
 import { MAX_DOCUMENT_CHARS, MAX_PDF_BYTES, PDF_TRANSCRIBE_PROMPT, START_CUE, START_WITH_CV_CUE, buildMessages, isCoachDocumentName, isPdfName, landedSince, recapOf, searchErrorNote, searchErrorsOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type CoachDocument, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
-import { STREAM_FRAME, applyEvent, emptyPending, pendingMatrixOf, type JobNote, type ScoredNote, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
+import { STREAM_FRAME, applyEvent, emptyPending, pendingMatrixOf, type JobNote, type MatrixNote, type ScoredNote, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
 import { profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
@@ -38,7 +40,9 @@ const MAX_TOOL_ROUNDS = 6;
 //         scores?: [{ item, values: [n, n, n, n] }] — the member's answers to the pending scoring matrix (docs/UX_COACH_AGENTIC.md §9–§10);
 //                 the portal totals, ranks, flags and stores them, and the coach reads the table as the member's words
 //         document?: { name, text } — the member's CV as .md / .txt, read in the browser (docs/UX_COACH_AGENTIC.md §3)
-//                 or { name, pdfBase64 } — a PDF, transcribed here once through the SDK's document block }
+//                 or { name, pdfBase64 } — a PDF, transcribed here once through the SDK's document block
+//         connections?: { name, text } — LinkedIn's Connections.csv (docs/UX_COACH_COMPANY_SCORING.md §3): parsed and matched here,
+//                 stored under the account, never shown to the model — the coach hears counts }
 // Streams SSE: text deltas as they are written, a `write` for each update_profile the coach
 // made, then `done` with the finished turn (docs/UX_COACH.md §3–4). The member's words and
 // the coach's turn land on users/{uid}/coachSessions/{coach}; the writes land on the profile.
@@ -69,8 +73,15 @@ export async function POST(req: NextRequest) {
     document = { name, text: docText };
     }
   }
+  let connectionsIn: { name: string; text: string } | null = null;
+  if (body?.connections && typeof body.connections === "object") {
+    const name = typeof body.connections.name === "string" ? body.connections.name.trim().slice(0, 200) : "";
+    const csv = typeof body.connections.text === "string" ? body.connections.text : "";
+    if (!isConnectionsFileName(name) || !isConnectionsCsv(csv)) return NextResponse.json({ ok: false, error: "That isn't LinkedIn's Connections.csv — export it from LinkedIn → Settings → Data privacy → Get a copy of your data → Connections." }, { status: 400 });
+    connectionsIn = { name, text: csv };
+  }
   const scoresIn: unknown = body?.scores;
-  if (!start && !text && !document && !pdf && !scoresIn) return NextResponse.json({ ok: false, error: "say something" }, { status: 400 });
+  if (!start && !text && !document && !pdf && !scoresIn && !connectionsIn) return NextResponse.json({ ok: false, error: "say something" }, { status: 400 });
   const portal: ProfilePortal = body?.portal === "compass" ? "compass" : "jobhacking";
   const rawCtx = body?.context && typeof body.context === "object" ? body.context : {};
   const ctx: TurnContext = {
@@ -107,6 +118,16 @@ export async function POST(req: NextRequest) {
     : null;
   const resolved = resolvePrompt(prompt.text, prompt.version, override);
   const cfg = config.agents.coach;
+  const today = new Date().toISOString().slice(0, 10);
+  // The connections export: parsed by code, stored under the account, matched to the stored companies — the coach hears the counts only.
+  let connectionsLine: string | null = null;
+  if (connectionsIn) {
+    const rows = parseConnections(connectionsIn.text);
+    await saveConnections(uid, rows, connectionsIn.name);
+    const stored = (setup?.jhg?.targetCompanies?.companies ?? []).filter((c) => c?.name?.trim());
+    const matched = matchConnections(rows, stored.map((c) => c.name));
+    connectionsLine = `I uploaded my LinkedIn connections — ${rows.length} connections; ${matched.size} of my ${stored.length} companies have at least one. The portal matched them by company name and keeps the names in my account; you see counts. Suggest Access from them in the matrix.`;
+  }
   // A PDF becomes text once, here, through the SDK's document block — so the stored transcript carries words, not
   // a megabyte of base64 replayed every turn. Metered on this coach like any other call.
   let pdfUsd = 0;
@@ -138,10 +159,13 @@ export async function POST(req: NextRequest) {
       scored = { note: { kind: "skills", rows: rows.map(skillRow) }, patch: { jhg: { narrative: { skillScores: rows } } }, label: "competencies", message: scoresMessage(rows) };
     } else {
       const companies = applyCompanyScores(setup?.jhg?.targetCompanies?.companies ?? [], parsed.rows);
-      scored = { note: { kind: "companies", rows: companyRows(companies) }, patch: { jhg: { targetCompanies: { companies } } }, label: "top40", message: companyScoresMessage(companies) };
+      // The overrides — a suggested number the member changed — ride the rows and the flags (docs/UX_COACH_COMPANY_SCORING.md §4).
+      const flags = [...companyFlags(companies), ...overrideFlags(parsed.rows)];
+      await saveFinalScores(uid, parsed.rows);
+      scored = { note: { kind: "companies", rows: withOverrides(companyRows(companies), parsed.rows) }, patch: { jhg: { targetCompanies: { companies } } }, label: "top40", message: companyScoresMessage(companies, flags) };
     }
   }
-  const memberText = scored ? scored.message : start ? (document ? START_WITH_CV_CUE : START_CUE) : text || `Here is ${document!.name}.`;
+  const memberText = scored ? scored.message : start ? (document ? START_WITH_CV_CUE : START_CUE) : connectionsLine ? [text, connectionsLine].filter(Boolean).join("\n\n") : text || `Here is ${document!.name}.`;
   // Research that finished since the coach last spoke rides on this turn's operator note (docs/COACH_ASSESSMENT_2026-11-16.md §1.2).
   if (!isFirst || session.turns.length) Object.assign(ctx, landedSince(await listUserJobs(uid, 10), session.lastTurnAt, (t) => ENGINE_JOB_LABELS[t as EngineJobType] ?? t));
   // A search that failed on the last turn is said, not improvised around (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §4 PR 0).
@@ -216,21 +240,25 @@ export async function POST(req: NextRequest) {
               const input = (b.input ?? {}) as { kind?: unknown; items?: unknown };
               const rubric = isRubricKind(input.kind) ? coachRubrics(coach.key).find((r) => r.kind === input.kind) : undefined;
               if (!rubric) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: `unknown kind — this coach has ${coachRubrics(coach.key).map((r) => r.kind).join(", ")}` }), is_error: true }); continue; }
-              let matrix: { kind: typeof rubric.kind; items: string[]; meta?: string[] };
+              let matrix: MatrixNote;
+              let evidenceNote = "";
               if (rubric.kind === "companies") {
                 // The rows are the stored 40: the member cannot score a company that is not on the page.
                 const found = matrixCompanies(setup?.jhg?.targetCompanies?.companies ?? [], Array.isArray(input.items) ? (input.items as unknown[]).filter((x): x is string => typeof x === "string") : null);
                 if (!found.ok) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: found.error }), is_error: true }); continue; }
                 const cleaned = cleanItems(found.companies.map((c) => c.name), rubric);
                 if (!cleaned.ok) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: cleaned.error }), is_error: true }); continue; }
-                matrix = { kind: "companies", items: cleaned.items, meta: found.companies.map(companyMeta) };
+                // The portal's evidence under each row — Growth and Access suggested, Interest and Proof given context (docs/UX_COACH_COMPANY_SCORING.md §2).
+                const ev = await buildCompaniesEvidence(uid, found.companies, profileFromSetup({ profile, setup }), today);
+                matrix = { kind: "companies", items: cleaned.items, meta: found.companies.map(companyMeta), evidence: cleaned.items.map((n) => ev.byName[n]), suggested: cleaned.items.map((n) => ev.suggested[n]), connections: ev.connections };
+                evidenceNote = ev.connections ? `Growth and Access are pre-filled from the postings, the growth sources and ${ev.connections.total} connections (${ev.connections.matched} companies have one); the member sets Interest and Proof and may change any suggestion.` : "Growth is pre-filled from the postings and growth sources; Access from postings only — no Connections.csv on file, so ask for it if they have not sent it. The member sets Interest and Proof and may change any suggestion.";
               } else {
                 const cleaned = cleanItems(input.items, rubric);
                 if (!cleaned.ok) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: cleaned.error }), is_error: true }); continue; }
                 matrix = { kind: rubric.kind, items: cleaned.items };
               }
               pending = applyEvent(pending, { type: "matrix", matrix }); send({ type: "matrix", matrix });
-              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: true, shown: matrix.items.length, note: `The matrix is in front of the member; they are scoring every ${rubric.item} now. End your turn with one short line and no question — their next message is the ranked table with the portal's totals, ranks and flags.` }) });
+              results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: true, shown: matrix.items.length, note: `The matrix is in front of the member; they are scoring every ${rubric.item} now. ${evidenceNote}End your turn with one short line and no question — their next message is the ranked table with the portal's totals, ranks and flags.`.replace("  ", " ") }) });
               continue;
             }
             if (b.name !== UPDATE_PROFILE) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: `unknown tool ${b.name}` }), is_error: true }); continue; }
@@ -251,7 +279,8 @@ export async function POST(req: NextRequest) {
         const coachTurn: TranscriptTurn = { role: "coach", text: pending.text.trim() || textOf([]), at: Date.now(), ...(pending.writes.length ? { writes: pending.writes } : {}), ...(pending.jobs.length ? { jobs: pending.jobs } : {}), ...(pending.matrix ? { matrix: pending.matrix } : {}), ...(searchErrors.length ? { searchErrors } : {}) };
         // A start from a CV shows as the member's turn — the file they handed over — so the transcript says where the drafts came from.
         // Scores from the matrix show as the member's turn too: the scored table, not the generated prose the coach read.
-        const memberTurn: TranscriptTurn | null = start && !document ? null : scored ? { role: "member", text: "", at: now, scored: scored.note } : { role: "member", text: start ? "" : text, at: now, ...(document ? { attachment: document.name } : {}) };
+        const attachment = document?.name ?? connectionsIn?.name;
+        const memberTurn: TranscriptTurn | null = start && !document ? null : scored ? { role: "member", text: "", at: now, scored: scored.note } : { role: "member", text: start ? "" : text, at: now, ...(attachment ? { attachment } : {}) };
         const turns: TranscriptTurn[] = [...session.turns, ...(memberTurn ? [memberTurn] : []), coachTurn];
         // Past the budget (Firestore's 1 MiB document): drop the transcript; the next turn restarts from the profile and a recap of `turns`.
         const transcript = JSON.stringify(withoutOperatorNotes(messages));

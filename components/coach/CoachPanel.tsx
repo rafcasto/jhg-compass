@@ -19,7 +19,7 @@ import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import CoachRail from "./CoachRail";
 import Composer from "./Composer";
 import CvStart from "./CvStart";
-import type { CoachAttachment } from "./document";
+import type { CoachAttachment, ConnectionsAttachment } from "./document";
 import Transcript from "./Transcript";
 import { closeCoach, flashSections, openCoach, restoreWide, setWide, useCoachUi } from "./store";
 
@@ -55,13 +55,14 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const started = useRef<string | null>(null);
   useEffect(() => { restoreWide(); }, []);
 
-  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: MatrixRow[] | null = null) => {
+  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: MatrixRow[] | null = null, connections: ConnectionsAttachment | null = null) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
     setPending(emptyPending());
     // Scores show as the member's turn once the server has ranked them — until then the matrix simply locks.
-    if (text || document) setLocalTurns((t) => [...t, { role: "member", text: text ?? "", at: Date.now(), ...(document ? { attachment: document.name } : {}) }]);
+    const attachment = document?.name ?? connections?.name;
+    if (text || attachment) setLocalTurns((t) => [...t, { role: "member", text: text ?? "", at: Date.now(), ...(attachment ? { attachment } : {}) }]);
     try {
       const token = await auth.currentUser!.getIdToken();
       const page = pageOfPath(pathname);
@@ -70,7 +71,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       const res = await fetch("/api/coach/turn", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        body: JSON.stringify({ coach: coach.key, portal, ...(scores ? { scores } : text ? { text } : { start: true }), ...(document ? { document } : {}), context: { page, section } }),
+        body: JSON.stringify({ coach: coach.key, portal, ...(scores ? { scores } : text ? { text } : connections ? {} : { start: true }), ...(document ? { document } : {}), ...(connections ? { connections: { name: connections.name, text: connections.text } } : {}), context: { page, section } }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({}));
@@ -143,7 +144,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const matrixWaiting = !pending && !!pendingMatrixOf(turns);
 
   const wide = ui.wide;
-  const composer = canTalk && !cvFirst ? <Composer onSend={(t, d) => void send(t || null, d)} disabled={!!pending} tone={matrixWaiting ? "secondary" : "primary"} placeholder={matrixWaiting ? "Or tell your coach what to change…" : complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
+  const composer = canTalk && !cvFirst ? <Composer onSend={(t, d, c) => void send(t || null, d, null, c ?? null)} disabled={!!pending} tone={matrixWaiting ? "secondary" : "primary"} placeholder={matrixWaiting ? "Or tell your coach what to change…" : complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
   // Wide: the rail's column on the left (lg+), the conversation in one readable column — body and footer share the grid so the composer sits under the transcript.
   const column = (node: ReactNode, rail?: ReactNode) => !wide ? node : (
     <div className="lg:grid lg:grid-cols-[232px_minmax(0,1fr)] lg:gap-8">
@@ -167,7 +168,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   ) : cvFirst && canTalk ? (
     <CvStart coachLabel={coach.label} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
   ) : (
-    <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} wide={wide} onExpand={() => setWide(true)} />
+    <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} onConnections={(c) => void send(null, null, null, c)} wide={wide} onExpand={() => setWide(true)} />
   );
 
   return (

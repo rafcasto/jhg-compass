@@ -8,6 +8,8 @@ export const MEMBER_COLLECTIONS = [
   { key: "coachSessions",      label: "Coach conversations",       group: "coach" },
   { key: "engineJobs",         label: "Engine jobs",               group: "coach" },
   { key: "claudeUsage",        label: "Claude usage meter",        group: "coach" },
+  { key: "connections",        label: "LinkedIn connections",      group: "coach" },
+  { key: "coachEvidence",      label: "Coach evidence",            group: "coach" },
   { key: "shares",             label: "Share links",               group: "profile" },
   { key: "settings",           label: "Settings",                  group: "profile" },
   { key: "careerOpsReports",   label: "CareerOps reports",         group: "agents" },

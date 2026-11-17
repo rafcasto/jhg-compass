@@ -87,7 +87,12 @@
   `applyCoachPatch` in the rubric's stored shape (`jhg.narrative.skillScores`; `companies[].scores`, ranked by `rankCompanies`); the
   member's turn carries `scored {kind, rows}` and renders as the scored table. Add a rubric to the registry, never a second form or a
   prompt-only scale; change an anchor or a flag in code, never in the prompt. While a matrix waits the composer's Send is
-  `tone="secondary"` — one red.
+  `tone="secondary"` — one red. **Coach 3's matrix carries evidence** (2026-11-17, `docs/UX_COACH_COMPANY_SCORING.md`): Growth and
+  Access are suggested by code (`lib/engine/coach/evidence.ts` — the rubric's anchors over the shared postings, the growth source and the
+  member's LinkedIn `Connections.csv`, parsed and matched in `connections.ts`, never shown to the model), Interest and Proof get context,
+  the member may change any suggestion and the change rides the row as an `override` the coach is asked to challenge. The evidence is
+  derived data on `users/{uid}/coachEvidence/companies`, never a profile field; the connections live under `users/{uid}/connections`,
+  email dropped at parse. Never let the model write an evidence line or a suggested number.
   **The expanded panel** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §11`): the coach panel has two sizes of one conversation — `Sheet
   dock="right"` (440, beside the live page) and `dock="wide"` (the viewport: `CoachRail` on the left at `lg+`, the transcript in one
   `max-w-2xl` column at 16 / 1.75, the composer in the same grid) — toggled by the header's `.icon-btn` and remembered on the device

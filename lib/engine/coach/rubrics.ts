@@ -63,8 +63,10 @@ export const coachRubrics = (coach: CoachKey): Rubric[] => Object.values(RUBRICS
 export const MAX_ITEM_CHARS = 80;
 export const maxTotal = (r: Rubric): number => 5 * r.axes.length;
 
-/** One row as the member sends it: the item and its numbers in axis order. */
-export interface MatrixRow { item: string; values: number[] }
+/** A suggested number the member changed (docs/UX_COACH_COMPANY_SCORING.md §4): which axis, from what. */
+export interface MatrixOverride { axis: string; from: number }
+/** One row as the member sends it: the item and its numbers in axis order — and the portal's suggestions they changed. */
+export interface MatrixRow { item: string; values: number[]; overrides?: MatrixOverride[] }
 /** One row as the portal returns it. */
 export interface ScoredRow extends MatrixRow { total: number; rank: number }
 
@@ -100,7 +102,9 @@ export function parseRows(raw: unknown, items: readonly string[], r: Rubric): { 
     if (!item) return { ok: false, error: `"${row.item}" is not one of the ${r.items} in the matrix` };
     const values = Array.isArray(row.values) ? row.values : [];
     if (values.length !== r.axes.length || !values.every(inRange)) return { ok: false, error: `"${item}" needs ${r.axes.length} whole numbers from 1 to 5` };
-    byName.set(lower(item), { item, values: values as number[] });
+    const rawOverrides = Array.isArray((v as { overrides?: unknown }).overrides) ? ((v as { overrides: unknown[] }).overrides) : [];
+    const overrides = rawOverrides.filter((o): o is MatrixOverride => !!o && typeof o === "object" && r.axes.some((a) => a.key === (o as MatrixOverride).axis) && inRange((o as MatrixOverride).from)).map((o) => ({ axis: o.axis, from: o.from }));
+    byName.set(lower(item), { item, values: values as number[], ...(overrides.length ? { overrides } : {}) });
   }
   const missing = items.filter((s) => !byName.has(lower(s)));
   if (missing.length) return { ok: false, error: `Not scored yet: ${missing.join(", ")}` };

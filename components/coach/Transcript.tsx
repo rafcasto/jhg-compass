@@ -6,6 +6,7 @@ import { Check, Paperclip } from "lucide-react";
 import { Markdown } from "@/components/careerops/shared";
 import { pendingMatrixOf, searchErrorWords, writeLine, type JobNote, type PendingTurn, type TranscriptTurn, type WriteNote } from "@/lib/engine/coach/transcript";
 import type { MatrixRow } from "@/lib/engine/coach/rubrics";
+import type { ConnectionsAttachment } from "./document";
 import JobStatus from "./JobStatus";
 import ScoreMatrix, { ScoredRows } from "./ScoreMatrix";
 
@@ -14,7 +15,7 @@ import ScoreMatrix, { ScoredRows } from "./ScoreMatrix";
 // line. 24 px between turns, 8 px inside one. Scrolls to the newest as it arrives. The scoring
 // matrix (docs/UX_COACH_AGENTIC.md §9–§10) is the one form in it: shown on the coach turn that asked
 // for it until a member turn carries the scores, which then render as the scored table.
-export default function Transcript({ turns, pending, error, quota, uid, jobHref, onScores, wide = false, onExpand }: {
+export default function Transcript({ turns, pending, error, quota, uid, jobHref, onScores, wide = false, onExpand, onConnections }: {
   turns: readonly TranscriptTurn[];
   /** The member — the research jobs a turn started are read live under their account. */
   uid?: string;
@@ -29,6 +30,8 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
   onScores?: (rows: MatrixRow[]) => void;
   /** The panel is expanded (docs/UX_COACH_AGENTIC.md §11): 16 / 1.75 and the one-line matrix rows. */
   wide?: boolean;
+  /** The member added Connections.csv from the matrix header (docs/UX_COACH_COMPANY_SCORING.md §4). */
+  onConnections?: (c: ConnectionsAttachment) => void;
   /** Expand the panel — offered on a docked matrix. */
   onExpand?: () => void;
 }) {
@@ -42,7 +45,7 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
 
   return (
     <div className="space-y-6" aria-live="polite">
-      {turns.map((t, i) => <Turn key={`${t.at}-${i}`} turn={t} uid={uid} jobHref={jobHref} body={body} md={md} matrix={t.at === matrixTurnAt && onScores ? { onScores, disabled: !!pending, wide, onExpand } : undefined} />)}
+      {turns.map((t, i) => <Turn key={`${t.at}-${i}`} turn={t} uid={uid} jobHref={jobHref} body={body} md={md} matrix={t.at === matrixTurnAt && onScores ? { onScores, disabled: !!pending, wide, onExpand, onConnections } : undefined} />)}
       {pending && (
         <div className="space-y-2">
           {pending.writes.map((w, i) => <WriteStatus key={i} note={w} />)}
@@ -50,7 +53,7 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
           {pending.text
             ? <div className={body}><Markdown size={md}>{pending.text}</Markdown></div>
             : <Thinking />}
-          {pending.matrix && <div className="pt-2"><ScoreMatrix kind={pending.matrix.kind} items={pending.matrix.items} meta={pending.matrix.meta} onSubmit={() => undefined} disabled wide={wide} /></div>}
+          {pending.matrix && <div className="pt-2"><ScoreMatrix kind={pending.matrix.kind} items={pending.matrix.items} meta={pending.matrix.meta} evidence={pending.matrix.evidence} suggested={pending.matrix.suggested} connections={pending.matrix.connections} onSubmit={() => undefined} disabled wide={wide} /></div>}
         </div>
       )}
       {error && <p role="alert" className="text-sm text-jh-red">{error}</p>}
@@ -60,7 +63,7 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
   );
 }
 
-function Turn({ turn, uid, jobHref, body, md, matrix }: { turn: TranscriptTurn; uid?: string; jobHref?: string; body: string; md: "sm" | "base"; matrix?: { onScores: (rows: MatrixRow[]) => void; disabled: boolean; wide: boolean; onExpand?: () => void } }) {
+function Turn({ turn, uid, jobHref, body, md, matrix }: { turn: TranscriptTurn; uid?: string; jobHref?: string; body: string; md: "sm" | "base"; matrix?: { onScores: (rows: MatrixRow[]) => void; disabled: boolean; wide: boolean; onExpand?: () => void; onConnections?: (c: ConnectionsAttachment) => void } }) {
   if (turn.role === "member") {
     return (
       <div className="rounded-md bg-jh-mist px-4 py-3">
@@ -77,7 +80,7 @@ function Turn({ turn, uid, jobHref, body, md, matrix }: { turn: TranscriptTurn; 
       {turn.text && <div className={body}><Markdown size={md}>{turn.text}</Markdown></div>}
       {uid && turn.jobs?.map((j: JobNote) => <JobStatus key={j.id} uid={uid} job={j} href={jobHref} />)}
       {turn.searchErrors?.length ? <p role="status" className="text-sm text-jh-mute">Search didn&apos;t run — {[...new Set(turn.searchErrors)].map(searchErrorWords).join("; ")}.</p> : null}
-      {turn.matrix && matrix && <div className="pt-2"><ScoreMatrix kind={turn.matrix.kind} items={turn.matrix.items} meta={turn.matrix.meta} onSubmit={matrix.onScores} disabled={matrix.disabled} wide={matrix.wide} onExpand={matrix.onExpand} /></div>}
+      {turn.matrix && matrix && <div className="pt-2"><ScoreMatrix kind={turn.matrix.kind} items={turn.matrix.items} meta={turn.matrix.meta} evidence={turn.matrix.evidence} suggested={turn.matrix.suggested} connections={turn.matrix.connections} onSubmit={matrix.onScores} disabled={matrix.disabled} wide={matrix.wide} onExpand={matrix.onExpand} onConnections={matrix.onConnections} /></div>}
     </div>
   );
 }

@@ -4,6 +4,7 @@
 // readable half. Pure — tested.
 
 import type { RubricKind, ScoredRow } from "./rubrics";
+import type { CompanyEvidence } from "./evidence";
 
 export interface WriteNote {
   /** Section labels as the page shows them: "Contact details", "Headline". */
@@ -18,8 +19,12 @@ export interface WriteNote {
 /** A research job a coach turn started — the panel reads users/{uid}/engineJobs/{id} live (docs/UX_COACH_AGENTIC.md §2). */
 export interface JobNote { id: string; type: string; label: string }
 
-/** A scoring matrix a coach turn showed (docs/UX_COACH_AGENTIC.md §9–§10): the rubric, the rows, and a mute line under each where the row needs context. */
-export interface MatrixNote { kind: RubricKind; items: string[]; meta?: string[] }
+/**
+ * A scoring matrix a coach turn showed (docs/UX_COACH_AGENTIC.md §9–§10): the rubric, the rows, and a mute line under each
+ * where the row needs context. For companies (docs/UX_COACH_COMPANY_SCORING.md): the portal's evidence per row, the cells it
+ * pre-filled (null = the member's), and how many connections matched.
+ */
+export interface MatrixNote { kind: RubricKind; items: string[]; meta?: string[]; evidence?: CompanyEvidence[]; suggested?: (number | null)[][]; connections?: { total: number; matched: number } | null }
 /** The member's answer to a matrix, with the portal's totals and ranks — the member turn IS the scored table. */
 export interface ScoredNote { kind: RubricKind; rows: ScoredRow[] }
 
