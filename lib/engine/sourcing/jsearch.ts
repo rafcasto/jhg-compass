@@ -26,9 +26,16 @@ export const jsearchProvider = (env: Env = process.env): JsearchProvider => (env
 
 export interface JsearchQuery { country: PipelineCountry; q: string; location: string }
 
+/** The search endpoint: JSEARCH_BASE_URL when set (the exact URL RapidAPI's code snippet shows for the Search endpoint — listings move), else the provider's default. */
+export function jsearchBase(env: Env = process.env): string {
+  const own = env.JSEARCH_BASE_URL?.trim();
+  if (own && /^https:\/\//i.test(own)) return own.replace(/\?.*$/, "");
+  return jsearchProvider(env) === "openwebninja" ? OPENWEBNINJA_BASE : JSEARCH_BASE;
+}
+
 /** JSearch takes the place in the query ("Product Manager in Auckland"), the country as a code, and a freshness window. */
 export function jsearchUrl(q: JsearchQuery, env: Env = process.env): string {
-  const u = new URL(jsearchProvider(env) === "openwebninja" ? OPENWEBNINJA_BASE : JSEARCH_BASE);
+  const u = new URL(jsearchBase(env));
   u.searchParams.set("query", q.location ? `${q.q} in ${q.location}` : q.q);
   u.searchParams.set("page", "1");
   u.searchParams.set("num_pages", "1");
@@ -39,7 +46,7 @@ export function jsearchUrl(q: JsearchQuery, env: Env = process.env): string {
 
 export const jsearchHeaders = (env: Env = process.env): Record<string, string> => jsearchProvider(env) === "openwebninja"
   ? { "x-api-key": env.JSEARCH_API_KEY ?? "" }
-  : { "x-rapidapi-key": env.JSEARCH_API_KEY ?? "", "x-rapidapi-host": JSEARCH_HOST };
+  : { "x-rapidapi-key": env.JSEARCH_API_KEY ?? "", "x-rapidapi-host": new URL(jsearchBase(env)).hostname };
 
 interface JsearchJob {
   job_id?: unknown; job_title?: unknown; employer_name?: unknown; employer_website?: unknown; job_publisher?: unknown; job_apply_link?: unknown;
