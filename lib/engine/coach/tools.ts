@@ -203,12 +203,17 @@ export function updateProfileTool(coach: CoachKey) {
 // ---- run_research: a research step as a job, not a turn (docs/COACH_ASSESSMENT_2026-11-16.md §1.2) ----
 
 export const RUN_RESEARCH = "run_research";
-export const RESEARCH_KINDS = ["postings"] as const;
+export const RESEARCH_KINDS = ["postings", "companies"] as const;
 export type ResearchKind = (typeof RESEARCH_KINDS)[number];
 export const isResearchKind = (v: unknown): v is ResearchKind => (RESEARCH_KINDS as readonly string[]).includes(v as string);
 
-/** Which research jobs each coach may start. Only True North's postings for now; industries and companies follow. */
-export const COACH_RESEARCH: Partial<Record<CoachKey, readonly ResearchKind[]>> = { trueNorth: ["postings"] };
+/** Which research jobs each coach may start (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §2). Industries follow. */
+export const COACH_RESEARCH: Partial<Record<CoachKey, readonly ResearchKind[]>> = { trueNorth: ["postings"], targetCompanies: ["companies"] };
+
+const RESEARCH_KIND_HELP: Record<ResearchKind, string> = {
+  postings: "postings: 15–20 live postings for the member's competencies and region (True North Part B)",
+  companies: "companies: up to 40 employers for the member's True North industries and titles, each with an opened growth source and careers page (Target companies Part A); re-run with names[] to source companies the member adds",
+};
 
 /** The tool definition — the portal runs the research beside the conversation and the result lands on the page and in the coach's next turn. */
 export function runResearchTool(coach: CoachKey) {
@@ -221,10 +226,11 @@ export function runResearchTool(coach: CoachKey) {
     input_schema: {
       type: "object" as const,
       properties: {
-        kind: { type: "string", enum: [...kinds], description: "postings: 15–20 live postings for the member's competencies and region (True North Part B)" },
+        kind: { type: "string", enum: [...kinds], description: kinds.map((k) => RESEARCH_KIND_HELP[k]).join("; ") },
         titles: { type: "array", items: { type: "string" }, description: "Titles the member already named as targets, when any (≤ 6)" },
         boards: { type: "array", items: { type: "string" }, description: "Job boards the member said they check, in their words (≤ 6)" },
         region: { type: "string", description: "Where to search, when the member corrected the profile's location in this conversation" },
+        names: { type: "array", items: { type: "string" }, description: "companies only: companies the member added by name, to be sourced like the rest (≤ 10)" },
       },
       required: ["kind"],
       additionalProperties: false,

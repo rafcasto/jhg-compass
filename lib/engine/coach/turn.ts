@@ -12,7 +12,7 @@ import type { SystemPart } from "../claude";
 import { isTextCvFile } from "../../careerops/intake";
 import { findJhPage, findJhSection, type JhPageKey, type JhSectionKey } from "../../jobhacking/sections";
 import { rubricOf, scoredRecap } from "./rubrics";
-import type { TranscriptTurn } from "./transcript";
+import { searchErrorWords, type TranscriptTurn } from "./transcript";
 
 /**
  * A document the member hands the coach with a turn (docs/UX_COACH_AGENTIC.md §3): their CV as Markdown or
@@ -46,6 +46,8 @@ export interface TurnContext {
   landed?: readonly { label: string; summary: string }[];
   /** Research jobs that failed since the last turn — label and the error, so the coach can say so and decide. */
   failed?: readonly { label: string; error: string }[];
+  /** The web search's error codes on the coach's last turn (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §4 PR 0) — so the coach says so instead of improvising a list. */
+  searchErrors?: readonly string[];
 }
 
 export interface FirstTurnInput {
@@ -163,7 +165,33 @@ export function contextNote(ctx: TurnContext | null | undefined): string | null 
   }
   for (const j of ctx.landed ?? []) parts.push(`Research landed since your last turn — ${j.label}. It is already on the member's page; review it with them, do not write it again:\n${j.summary}`);
   for (const j of ctx.failed ?? []) parts.push(`Research failed since your last turn — ${j.label}: ${j.error}. Tell the member in one line and either start it again or carry on by hand.`);
+  if (ctx.searchErrors?.length) parts.push(searchErrorNote(ctx.searchErrors));
   return parts.length ? parts.join("\n\n") : null;
+}
+
+// ---- web search errors (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §4 PR 0) ----
+//
+// The server tool answers an error block instead of results when the call's cap is spent or the
+// service is down. The model's reflex is "while the tool is unavailable…" and a list from memory;
+// the portal records the code and says, as the operator, what happened and what not to do.
+
+/** The error codes in a message's web_search_tool_result blocks — empty when every search answered. */
+export function searchErrorsOf(content: readonly { type: string; content?: unknown }[]): string[] {
+  const out: string[] = [];
+  for (const b of content) {
+    if (b.type !== "web_search_tool_result") continue;
+    const c = b.content as { type?: string; error_code?: string } | unknown[] | undefined;
+    if (!c || Array.isArray(c) || c.type !== "web_search_tool_result_error") continue;
+    out.push(typeof c.error_code === "string" && c.error_code ? c.error_code : "unknown");
+  }
+  return out;
+}
+
+/** The operator's line after a search error — in the same turn when the model goes on to a tool call, else on its next turn. */
+export function searchErrorNote(codes: readonly string[]): string {
+  const unique = [...new Set(codes)];
+  const what = unique.map((c) => `${c} — ${searchErrorWords(c)}`).join("; ");
+  return `Your web search failed (${what}). Tell the member in one line that the search did not run. Do not present a list, a number or a link as researched when the search behind it failed; ask them for what they already know, or come back to it next turn. Never say "the tool is unavailable" without saying what you did not find.`;
 }
 
 /** The jobs to tell the coach about: finished after its last turn, with a summary (done) or an error (failed). */

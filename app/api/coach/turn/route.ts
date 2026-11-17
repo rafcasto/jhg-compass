@@ -18,7 +18,7 @@ import { isQueueConfigured, publishRun } from "@/lib/engine/queue";
 import { runUnit } from "@/lib/engine/run";
 import { applyCoachPatch, CoachWriteError } from "@/lib/engine/coach/write";
 import { getSession, messagesOf, saveSession, type CoachSession } from "@/lib/engine/coach/session";
-import { MAX_DOCUMENT_CHARS, MAX_PDF_BYTES, PDF_TRANSCRIBE_PROMPT, START_CUE, START_WITH_CV_CUE, buildMessages, isCoachDocumentName, isPdfName, landedSince, recapOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type CoachDocument, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
+import { MAX_DOCUMENT_CHARS, MAX_PDF_BYTES, PDF_TRANSCRIBE_PROMPT, START_CUE, START_WITH_CV_CUE, buildMessages, isCoachDocumentName, isPdfName, landedSince, recapOf, searchErrorNote, searchErrorsOf, systemFor, toolResultOf, transcriptFits, withoutOperatorNotes, type CoachDocument, type TurnContext, type TurnMessage } from "@/lib/engine/coach/turn";
 import { STREAM_FRAME, applyEvent, emptyPending, pendingMatrixOf, type JobNote, type ScoredNote, type TranscriptTurn, type TurnEvent, type WriteNote } from "@/lib/engine/coach/transcript";
 import { profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
@@ -144,6 +144,8 @@ export async function POST(req: NextRequest) {
   const memberText = scored ? scored.message : start ? (document ? START_WITH_CV_CUE : START_CUE) : text || `Here is ${document!.name}.`;
   // Research that finished since the coach last spoke rides on this turn's operator note (docs/COACH_ASSESSMENT_2026-11-16.md §1.2).
   if (!isFirst || session.turns.length) Object.assign(ctx, landedSince(await listUserJobs(uid, 10), session.lastTurnAt, (t) => ENGINE_JOB_LABELS[t as EngineJobType] ?? t));
+  // A search that failed on the last turn is said, not improvised around (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §4 PR 0).
+  if (session.lastSearchErrors?.length) ctx.searchErrors = session.lastSearchErrors;
   let messages: TurnMessage[] = buildMessages(history, memberText, first, ctx, document);
   const now = Date.now();
 
@@ -154,6 +156,7 @@ export async function POST(req: NextRequest) {
       let pending = emptyPending();
       let usd = pdfUsd;
       let completed = false;
+      const searchErrors: string[] = [];
       try {
         if (scored) {
           // Code writes the scores (decision 2026-11-16: code checks, the model converses) — before the coach speaks, as the page's own write line.
@@ -182,6 +185,9 @@ export async function POST(req: NextRequest) {
           usd += estimatedUsd;
           if (msg.stop_reason === "refusal") throw new ClaudeRefusal(msg.stop_details?.category ?? null, msg.stop_details?.explanation ?? null);
           messages = [...messages, { role: "assistant", content: msg.content }];
+          // The web search answered an error block: recorded on the turn; the operator says so to the model (this round when it goes on, else next turn).
+          const roundErrors = searchErrorsOf(msg.content);
+          if (roundErrors.length) { searchErrors.push(...roundErrors); console.warn(`[coach:${coach.key}] web search failed: ${roundErrors.join(", ")} (uid ${uid})`); }
           if (msg.stop_reason !== "tool_use") break;
 
           const results: Anthropic.Beta.BetaToolResultBlockParam[] = [];
@@ -239,10 +245,10 @@ export async function POST(req: NextRequest) {
               results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, ...err }), is_error: true });
             }
           }
-          messages = [...messages, { role: "user", content: results }];
+          messages = [...messages, { role: "user", content: roundErrors.length ? [...results, { type: "text", text: searchErrorNote(roundErrors) }] : results }];
         }
 
-        const coachTurn: TranscriptTurn = { role: "coach", text: pending.text.trim() || textOf([]), at: Date.now(), ...(pending.writes.length ? { writes: pending.writes } : {}), ...(pending.jobs.length ? { jobs: pending.jobs } : {}), ...(pending.matrix ? { matrix: pending.matrix } : {}) };
+        const coachTurn: TranscriptTurn = { role: "coach", text: pending.text.trim() || textOf([]), at: Date.now(), ...(pending.writes.length ? { writes: pending.writes } : {}), ...(pending.jobs.length ? { jobs: pending.jobs } : {}), ...(pending.matrix ? { matrix: pending.matrix } : {}), ...(searchErrors.length ? { searchErrors } : {}) };
         // A start from a CV shows as the member's turn — the file they handed over — so the transcript says where the drafts came from.
         // Scores from the matrix show as the member's turn too: the scored table, not the generated prose the coach read.
         const memberTurn: TranscriptTurn | null = start && !document ? null : scored ? { role: "member", text: "", at: now, scored: scored.note } : { role: "member", text: start ? "" : text, at: now, ...(document ? { attachment: document.name } : {}) };
@@ -258,6 +264,8 @@ export async function POST(req: NextRequest) {
           startedAt: session.turnCount === 0 ? now : session.startedAt,
           lastTurnAt: Date.now(),
           openedOn: session.openedOn ?? ctx.page ?? null,
+          lastSearchErrors: searchErrors,
+          searchErrors: searchErrors.reduce((acc, c) => ({ ...acc, [c]: (acc[c] ?? 0) + 1 }), { ...(session.searchErrors ?? {}) }),
         };
         await saveSession(uid, coach.key, next);
         send({ type: "done", turn: coachTurn, usdThisTurn: usd });

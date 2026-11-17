@@ -70,7 +70,8 @@ describe("run_research — the coach starts a job, not a search", () => {
     expect(coachTools("trueNorth").map((x) => x.name)).toEqual(["update_profile", "run_research"]);
     expect(coachTools("linkedin").map((x) => x.name)).toEqual(["update_profile"]);
     expect(isResearchKind("postings")).toBe(true);
-    expect(isResearchKind("companies")).toBe(false);
+    expect(isResearchKind("companies")).toBe(true);
+    expect(COACH_RESEARCH.targetCompanies).toEqual(["companies"]);
     expect(COACH_PROMPTS.trueNorth.text).toContain('run_research with kind "postings"');
     expect(COACH_PROMPTS.trueNorth.text).not.toContain("You do the research, in this conversation");
     expect(COACH_PROMPTS.trueNorth.version).toBe(5);
