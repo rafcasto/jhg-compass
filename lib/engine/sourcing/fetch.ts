@@ -42,7 +42,7 @@ async function getJson(url: string, headers: Record<string, string> = {}): Promi
   const t = setTimeout(() => ctl.abort(), TIMEOUT_MS);
   try {
     const r = await fetch(url, { signal: ctl.signal, headers: { accept: "application/json", "user-agent": "JobHackerCompass/1.0", ...headers } });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    if (!r.ok) { const body = (await r.text().catch(() => "")).replace(/\s+/g, " ").trim().slice(0, 120); throw new Error(`HTTP ${r.status}${body ? ` — ${body}` : ""}`); }
     return await r.json();
   } finally { clearTimeout(t); }
 }

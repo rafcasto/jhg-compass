@@ -39,7 +39,7 @@ describe("the companies job", () => {
 
   it("is what Coach 3's prompt asks for in Part A — once, then the member decides", () => {
     const p = COACH_PROMPTS.targetCompanies;
-    expect(p.version).toBe(7);
+    expect(p.version).toBe(8);
     expect(p.text).toContain('Call run_research with kind "companies" — once, at the start of Part A.');
     expect(p.text).toContain("Until then do not search for companies yourself.");
     expect(p.text).toContain("goes through run_research once more with names[]");

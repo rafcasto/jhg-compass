@@ -9,12 +9,14 @@ import type { JhgBlock } from "../../careerops/types";
 import { POSTINGS_TARGET } from "../research/postings";
 import { COMPANIES_TARGET } from "../research/companies";
 
-export interface JobLike { type: string; status: string; createdAt?: number }
+export interface JobLike { type: string; status: string; createdAt?: number; result?: unknown }
 
 export interface ResearchDue { kind: ResearchKind; line: string }
 
 const active = (jobs: readonly JobLike[], kind: ResearchKind) => jobs.some((j) => j.type === kind && (j.status === "queued" || j.status === "running"));
-const ranSince = (jobs: readonly JobLike[], kind: ResearchKind, since: number) => jobs.some((j) => j.type === kind && j.status === "done" && (j.createdAt ?? 0) >= since);
+/** A done job counts as having run the step only when it put something on the page — one that added nothing (no key, no region, an API error) did not. */
+const produced = (j: JobLike): boolean => { const r = j.result as { added?: number; count?: number } | null | undefined; return typeof r?.added === "number" ? r.added > 0 : (r?.count ?? 0) > 0; };
+const ranSince = (jobs: readonly JobLike[], kind: ResearchKind, since: number) => jobs.some((j) => j.type === kind && j.status === "done" && (j.createdAt ?? 0) >= since && produced(j));
 
 /**
  * Which research job this coach's current step calls for — none while one is queued or running, none once the step's data is

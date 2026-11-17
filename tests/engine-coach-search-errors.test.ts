@@ -39,8 +39,8 @@ describe("the operator's line", () => {
 });
 
 describe("the stopgap cap", () => {
-  it("gives Target companies eight searches a call until the companies job exists", () => {
-    expect(findCoach("targetCompanies")?.search).toBe(8);
+  it("gives Target companies two searches a call — the 40 are the companies job's, never built by hand", () => {
+    expect(findCoach("targetCompanies")?.search).toBe(2);
     expect(findCoach("trueNorth")?.search).toBe(5);
   });
 });

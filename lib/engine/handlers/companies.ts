@@ -41,14 +41,19 @@ export const companies: Handler = async ({ uid, job, config, agent, log, progres
   // Pass 1 — the job boards, grouped by employer (an API; zero tokens): titles and industries, city and country-wide; the
   // industry a query named rides on the employers it found; a posting link on an ATS board is the careers page.
   let posted: Candidate[] = [];
+  let boardsNote = "";
   const industryNames = payload.industries.map((i) => i.name);
-  if (sourcingConfigured() && payload.country && (payload.titles.length || industryNames.length)) {
+  const boardsSkipped = !sourcingConfigured() ? "no job-board API key is configured (JSEARCH_API_KEY, SERPAPI_KEY or ADZUNA_APP_ID/KEY on the host)" : !payload.country ? `no source covers the region "${payload.region || "(empty)"}" — the pipeline runs for NZ · AU · US · CA; fix the location on True North` : !(payload.titles.length || industryNames.length) ? "True North has no target titles and no industries to search by" : null;
+  if (!boardsSkipped) {
     await progress("Reading the job boards");
-    const run = await sourcePostings({ titles: payload.titles, competencies: [], industries: industryNames, broaden: true, region: payload.region, country: payload.country }, log, today, { maxQueries: COMPANIES_MAX_BOARD_QUERIES, meteredMax: COMPANIES_MAX_BOARD_QUERIES, meteredAlways: true });
+    const run = await sourcePostings({ titles: payload.titles, competencies: [], industries: industryNames, broaden: true, region: payload.region, country: payload.country! }, log, today, { maxQueries: COMPANIES_MAX_BOARD_QUERIES, meteredMax: COMPANIES_MAX_BOARD_QUERIES, meteredAlways: true });
     posted = fromPostings(run.rows, payload.titles);
+    boardsNote = run.note;
     await log(`${run.note} → ${posted.length} employers${run.metered ? ` · ${run.metered} paid searches` : ""}`);
-  } else await log(`job boards skipped — ${!sourcingConfigured() ? "no adapter key" : !payload.country ? "no source covers the region" : "no titles or industries"}`);
+  } else await log(`job boards skipped — ${boardsSkipped}`);
   if (await cancelled()) return null;
+  // API only and nothing from the boards: say why, loudly — a quiet "0 added" sends the coach back to searching by hand.
+  if (payload.proposal === "off" && !posted.length && !payload.names.length) throw new Error(boardsSkipped ? `The job boards were not read — ${boardsSkipped}.` : `The job boards returned no employers — ${boardsNote}${/failed/.test(boardsNote) ? " (an HTTP 403 means the RapidAPI subscription to JSearch is not active)" : ""}.`);
 
   // Pass 2 — the industry-led proposal: one call with search; the pages never enter a transcript. Only to fill a gap the
   // boards left ("auto"), or never ("off" — API only); names the member added always go through it, since a name is not a query.
@@ -110,7 +115,7 @@ export const companies: Handler = async ({ uid, job, config, agent, log, progres
 
   const rows = toProfileCompanies(payload.stored, verified, payload);
   const added = rows.length - payload.stored.length;
-  if (!added && !payload.stored.length) throw new Error("No company's growth source could be opened — try again, or the coach can source by hand.");
+  if (!added && !payload.stored.length) throw new Error("No company's growth source could be opened — try again; the step stays the portal's.");
   await applyCoachPatch({ uid, coach: "targetCompanies", patch: { jhg: { targetCompanies: { companies: rows } } }, portal: payload.portal });
 
   // The shared half (plan §6): what every member can reuse about a company — never the member's scores.
