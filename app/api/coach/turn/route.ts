@@ -14,6 +14,7 @@ import { scoreSkills, scoresMessage, skillRow } from "@/lib/engine/coach/skills"
 import { applyCompanyScores, companyFlags, companyMeta, companyRows, companyScoresMessage, matrixCompanies, overrideFlags, withOverrides } from "@/lib/engine/coach/companies";
 import { isConnectionsCsv, isConnectionsFileName, matchConnections, parseConnections } from "@/lib/engine/coach/connections";
 import { buildCompaniesEvidence, saveConnections, saveFinalScores } from "@/lib/engine/coach/evidence-server";
+import { researchDue } from "@/lib/engine/coach/research-due";
 import { createJob, listUserJobs, patchJob } from "@/lib/engine/jobs-server";
 import { ENGINE_JOB_LABELS, type EngineJobType } from "@/lib/engine/keys";
 import { isQueueConfigured, publishRun } from "@/lib/engine/queue";
@@ -167,7 +168,10 @@ export async function POST(req: NextRequest) {
   }
   const memberText = scored ? scored.message : start ? (document ? START_WITH_CV_CUE : START_CUE) : connectionsLine ? [text, connectionsLine].filter(Boolean).join("\n\n") : text || `Here is ${document!.name}.`;
   // Research that finished since the coach last spoke rides on this turn's operator note (docs/COACH_ASSESSMENT_2026-11-16.md §1.2).
-  if (!isFirst || session.turns.length) Object.assign(ctx, landedSince(await listUserJobs(uid, 10), session.lastTurnAt, (t) => ENGINE_JOB_LABELS[t as EngineJobType] ?? t));
+  const recentJobs = await listUserJobs(uid, 10);
+  if (!isFirst || session.turns.length) Object.assign(ctx, landedSince(recentJobs, session.lastTurnAt, (t) => ENGINE_JOB_LABELS[t as EngineJobType] ?? t));
+  // The step's job, named every turn until it has run — an older conversation shows the coach searching for itself (lib/engine/coach/research-due.ts).
+  ctx.researchDue = researchDue(coach.key, setup?.jhg, recentJobs, session.startedAt)?.line ?? null;
   // A search that failed on the last turn is said, not improvised around (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §4 PR 0).
   if (session.lastSearchErrors?.length) ctx.searchErrors = session.lastSearchErrors;
   let messages: TurnMessage[] = buildMessages(history, memberText, first, ctx, document);
