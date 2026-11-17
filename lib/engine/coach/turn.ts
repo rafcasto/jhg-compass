@@ -50,6 +50,8 @@ export interface TurnContext {
   searchErrors?: readonly string[];
   /** The research job this coach's current step calls for (lib/engine/coach/research-due.ts) — named every turn until it has run. */
   researchDue?: string | null;
+  /** The member opened the coach from a section whose part comes later than the current one (lib/engine/coach/parts.ts steerNote) — stay on the current part. */
+  steer?: string | null;
 }
 
 export interface FirstTurnInput {
@@ -165,6 +167,7 @@ export function contextNote(ctx: TurnContext | null | undefined): string | null 
     const section = ctx.section ? findJhSection(ctx.section) : undefined;
     if (page) parts.push(`The member is looking at ${page.label}${section ? ` · ${section.label}` : ""}.`);
   }
+  if (ctx.steer) parts.push(ctx.steer);
   for (const j of ctx.landed ?? []) parts.push(`Research landed since your last turn — ${j.label}. It is already on the member's page; review it with them, do not write it again:\n${j.summary}`);
   for (const j of ctx.failed ?? []) parts.push(`Research failed since your last turn — ${j.label}: ${j.error}. Tell the member in one line and either start it again or carry on by hand.`);
   if (ctx.searchErrors?.length) parts.push(searchErrorNote(ctx.searchErrors));

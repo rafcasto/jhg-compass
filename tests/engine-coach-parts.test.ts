@@ -29,3 +29,35 @@ describe("the Part line", () => {
     expect(coachPart("targetCompanies", { version: 1, jhg: { targetCompanies: { companies: forty.map((c) => ({ ...c, scores: { total: 12 } })) } } })).toBe("Part C · Top 10 and careers pages");
   });
 });
+
+// The page reads result-first (Top 3 · Top 10 · Top 40); the conversation keeps the work's order. A member who opens the
+// coach from an empty Top 3 is told where it comes from and kept on Part A.
+import { SECTION_PARTS, currentPartIndex, steerNote } from "@/lib/engine/coach/parts";
+import { contextNote } from "@/lib/engine/coach/turn";
+
+describe("steerNote", () => {
+  const fresh = { version: 1 } as const;
+  const scored = { version: 1, jhg: { targetCompanies: { companies: Array.from({ length: 40 }, (_, i) => ({ name: `Co ${i}`, scores: { total: 12 } })) } } } as const;
+  it("maps the Target companies sections to the parts that produce them", () => {
+    expect(SECTION_PARTS.targetCompanies).toEqual({ top40: 0, companies: 2, top10: 2, top3: 3 });
+    expect(currentPartIndex("targetCompanies", fresh)).toBe(0);
+    expect(currentPartIndex("targetCompanies", scored)).toBe(2);
+  });
+  it("steers a coach opened from an empty Top 3 back to Part A, in the operator's words", () => {
+    const line = steerNote("targetCompanies", "top3", fresh);
+    expect(line).toContain("opened you from the empty Top 3 section — that is Part D · Top 3");
+    expect(line).toContain("You are on Part A · The 40");
+    expect(line).toContain("Do not start on Top 3.");
+    expect(contextNote({ page: "companies", section: "top3", steer: line })).toBe(`The member is looking at Target companies · Top 3.\n\n${line}`);
+  });
+  it("says nothing for the current part, an earlier part, an unknown section, or no section", () => {
+    expect(steerNote("targetCompanies", "top40", fresh)).toBeNull();
+    expect(steerNote("targetCompanies", "top10", scored)).toBeNull();
+    expect(steerNote("targetCompanies", "top40", scored)).toBeNull();
+    expect(steerNote("targetCompanies", "top3", scored)).toContain("Part D · Top 3");
+    expect(steerNote("narrative", "headline", fresh)).toBeNull();
+    expect(steerNote("targetCompanies", null, fresh)).toBeNull();
+    expect(steerNote("trueNorth", "industry", fresh)).toContain("Part C · Industries and the North Star");
+    expect(steerNote("trueNorth", "salary", fresh)).toBeNull();
+  });
+});

@@ -15,6 +15,7 @@ import { applyCompanyScores, companyFlags, companyMeta, companyRows, companyScor
 import { isConnectionsCsv, isConnectionsFileName, matchConnections, parseConnections } from "@/lib/engine/coach/connections";
 import { buildCompaniesEvidence, saveConnections, saveFinalScores } from "@/lib/engine/coach/evidence-server";
 import { researchDue } from "@/lib/engine/coach/research-due";
+import { steerNote } from "@/lib/engine/coach/parts";
 import { createJob, listUserJobs, patchJob } from "@/lib/engine/jobs-server";
 import { ENGINE_JOB_LABELS, type EngineJobType } from "@/lib/engine/keys";
 import { isQueueConfigured, publishRun } from "@/lib/engine/queue";
@@ -172,6 +173,8 @@ export async function POST(req: NextRequest) {
   if (!isFirst || session.turns.length) Object.assign(ctx, landedSince(recentJobs, session.lastTurnAt, (t) => ENGINE_JOB_LABELS[t as EngineJobType] ?? t));
   // The step's job, named every turn until it has run — an older conversation shows the coach searching for itself (lib/engine/coach/research-due.ts).
   ctx.researchDue = researchDue(coach.key, setup?.jhg, recentJobs, session.startedAt)?.line ?? null;
+  // Opened from an empty Top 3? The conversation keeps the work's order (the 40 first) — the page's order is for reading (lib/engine/coach/parts.ts steerNote).
+  ctx.steer = steerNote(coach.key, ctx.section, profileFromSetup({ profile, setup }));
   // A search that failed on the last turn is said, not improvised around (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §4 PR 0).
   if (session.lastSearchErrors?.length) ctx.searchErrors = session.lastSearchErrors;
   let messages: TurnMessage[] = buildMessages(history, memberText, first, ctx, document);
