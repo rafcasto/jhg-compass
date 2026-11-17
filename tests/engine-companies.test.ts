@@ -145,6 +145,8 @@ describe("the companies job, API first", () => {
     expect(q[0].industry).toBeUndefined();
     // Without broaden, no country-wide variants; the cap still holds.
     expect(queriesFor({ titles: ["PM"], competencies: [], industries: ["Agritech"], region: "Sydney", country: "au" }).map((x) => x.where)).toEqual(["Sydney", "Sydney"]);
+    // A company the member named is asked by name, country-wide, first — the API-only way to add one.
+    expect(queriesFor({ titles: ["PM"], competencies: [], names: ["Halter"], region: "Sydney", country: "au" }).map((x) => [x.what, x.where])).toEqual([["Halter jobs", ""], ["PM", "Sydney"]]);
   });
   it("carries the industry a query named onto the employers it found, and the board a posting link sits on as the careers page", () => {
     const rows: SourcedPosting[] = [

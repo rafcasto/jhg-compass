@@ -38,6 +38,8 @@ export const maxDuration = 300;
 
 const MAX_TEXT = 8000;
 const MAX_TOOL_ROUNDS = 6;
+/** A research job of one kind runs once per step: a repeat within this window is refused unless it names new companies. */
+const RESEARCH_COOLDOWN_MS = 10 * 60_000;
 
 // Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section? },
 //         scores?: [{ item, values: [n, n, n, n] }] — the member's answers to the pending scoring matrix (docs/UX_COACH_AGENTIC.md §9–§10);
@@ -229,6 +231,13 @@ export async function POST(req: NextRequest) {
               // A research step as a job: created and queued here, run beside the conversation, read live by the panel.
               const input = (b.input ?? {}) as Record<string, unknown>;
               if (!isResearchKind(input.kind)) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: "unknown research kind" }), is_error: true }); continue; }
+              // One job per step: a second run within ten minutes repeats the same searches for the same money — refused unless it names new companies.
+              const sameKind = recentJobs.filter((j) => j.type === input.kind);
+              const running = sameKind.find((j) => j.status === "queued" || j.status === "running");
+              const recent = sameKind.find((j) => j.status === "done" && Date.now() - (j.endedAt ?? 0) < RESEARCH_COOLDOWN_MS);
+              const names = Array.isArray(input.names) ? (input.names as unknown[]).filter((x): x is string => typeof x === "string" && !!x.trim()) : [];
+              if (running) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: "That research is already running — its result reaches you on your next turn. Do not start it again." }), is_error: true }); continue; }
+              if (recent && !names.length) { results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ ok: false, error: `That research finished ${Math.max(1, Math.round((Date.now() - (recent.endedAt ?? 0)) / 60_000))} minutes ago and its result is on the page. Do not run it again for the same list; to add companies the member named, pass them in names[].` }), is_error: true }); continue; }
               try {
                 const type: EngineJobType = input.kind;
                 const { kind: _k, ...hints } = input;
