@@ -5,7 +5,8 @@ import { PROFILE_VERSION, mergeProfile, profileFromSetup, profileToSetupPatch, p
 import { validateProfileFile } from "@/lib/careerops/profile-schema";
 import { buildPortalsYaml } from "@/lib/careerops/portals-yaml";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
-import type { CareerOpsSetupV2, JhgCompany } from "@/lib/careerops/types";
+import type { CareerOpsSetupV2, JhgCompany, JhgTargetCompanies } from "@/lib/careerops/types";
+import { deriveCompanyLists } from "./lists";
 import { jhFileName, jhFilePreview, jhFileProfile, shapeJhFile } from "@/lib/jobhacking/profile-files";
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import type { Profile } from "@/lib/types";
@@ -84,6 +85,12 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
   if (!schema.ok) throw new CoachWriteError("The write did not match the profile schema", schema.errors.map((e) => `${e.path}: ${e.message}`));
 
   mergeOwnBlocks(incoming, current, coach);
+  // The page's lists are code's, from the working material, on every write (lib/engine/coach/lists.ts) — not the model's at hand-over.
+  if (coach === "targetCompanies") {
+    const tc = (incoming.jhg as Record<string, unknown>).targetCompanies as JhgTargetCompanies | undefined;
+    const lists = deriveCompanyLists(tc, current.companyLists);
+    if (lists) incoming.companyLists = lists;
+  }
   const parsed = fromMaletaYaml(incoming);
   const shaped = shapeJhFile(coach, parsed, current);
   let merged = mergeProfile(current, shaped);

@@ -63,6 +63,8 @@ Every value is a link to the section that fills it; a blank renders the template
 
 ## 3b. Target companies — the ranked lists
 
+**Decision (2026-11-17).** With the coach, `companyLists` is **derived by code on every write of `jhg.targetCompanies`** (`lib/engine/coach/lists.ts`): the Top 40 is the companies as they stand (rank order, split by the sub-sector's outlook, careers page only when opened), the Top 10 and Top 3 appear once the coach writes those keys. Before, the model wrote the lists at hand-over only, and a member watched Part A fill forty rows on an empty page.
+
 **Decision (2026-11-05).** The page's rail is **Top 3 · Top 10 · Top 40 · Watchlist** — the first three are the Packer's `companyLists` (`top3` · `top10` · `all`), the member reads them and never types into them; the fourth is the watchlist editor as before, now called *Watchlist* so the page's own name isn't repeated in its rail. No second tab system: the rail *is* the sub-menu, as on every sectioned page. The page opens on the Top 3.
 
 **The representation, by Refactoring UI.** The question was table vs cards. Neither, as a blanket answer:
