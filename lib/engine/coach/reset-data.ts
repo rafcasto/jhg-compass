@@ -31,6 +31,29 @@ function prune(obj: Record<string, unknown>): void {
   }
 }
 
+/** The marker the server turns into FieldValue.delete() — a merge write keeps a nested key it does not mention, so removals must be explicit at every depth. */
+export const DELETE = Symbol("delete");
+export type MergeDiff = { [k: string]: unknown | typeof DELETE | MergeDiff };
+
+const isPlain = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
+
+/**
+ * What to write, with merge, so a document shaped like `before` reads like `after`: keys gone → DELETE (recursing into objects
+ * both sides have, so `jhg.targetCompanies` is deleted while `jhg.narrative` stays), changed leaves → their new value, arrays whole.
+ * `null` when nothing differs.
+ */
+export function mergeDiff(before: Record<string, unknown>, after: Record<string, unknown>): MergeDiff | null {
+  const out: MergeDiff = {};
+  for (const k of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    const b = before[k], a = after[k];
+    if (!(k in after)) { out[k] = DELETE; continue; }
+    if (!(k in before)) { out[k] = a; continue; }
+    if (isPlain(b) && isPlain(a)) { const d = mergeDiff(b, a); if (d) out[k] = d; continue; }
+    if (JSON.stringify(b) !== JSON.stringify(a)) out[k] = a;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 /** The page sections a reset clears, in the member's words — for the confirmation. */
 export const RESET_CLEARS: Record<CoachKey, string> = {
   narrative: "contact details, headline, core competencies, bridge story and the Narrative workbook",
