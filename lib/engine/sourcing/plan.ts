@@ -13,6 +13,8 @@ export interface SourcingBrief {
   industries?: string[];
   /** Also ask country-wide, not only the city — for the companies job, where the field matters more than the commute. */
   broaden?: boolean;
+  /** Companies the member named — asked by name, so a named employer that is hiring comes back with its postings. */
+  names?: string[];
 }
 export interface PlannedQuery { what: string; where: string; from: "title" | "competency" | "industry"; industry?: string }
 
@@ -30,6 +32,7 @@ export function queriesFor(b: SourcingBrief, max = MAX_QUERIES): PlannedQuery[] 
     if (!w || seen.has(k) || out.length >= max) return;
     seen.add(k); out.push({ what: w, where, from, ...(industry ? { industry } : {}) });
   };
+  for (const n of b.names ?? []) add(`${n} jobs`, "", "title");
   for (const t of b.titles) add(t, city, "title");
   for (const i of b.industries ?? []) add(`${i} jobs`, city, "industry", i.trim());
   if (b.broaden && city) for (const t of b.titles) add(t, "", "title");
