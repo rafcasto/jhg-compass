@@ -62,3 +62,18 @@ describe("quota errors", () => {
     expect(configuredAdapters({ JSEARCH_API_KEY: "k", SERPAPI_KEY: "s" }).map((a) => a.source)).toEqual(["jsearch", "serp"]);
   });
 });
+
+// A refused key is out for the run like a spent quota — the next Google route takes over, and the words say where to fix it.
+import { authWords, isAuthError, isSourceOut } from "@/lib/engine/sourcing/adapters";
+
+describe("a refused key", () => {
+  it("is recognised and explained — subscribe on RapidAPI, the key alone does nothing", () => {
+    expect(isAuthError('HTTP 403 — {"message":"You are not subscribed to this API."}')).toBe(true);
+    expect(isAuthError("HTTP 401 — Invalid API key")).toBe(true);
+    expect(isAuthError("HTTP 500")).toBe(false);
+    expect(isSourceOut("HTTP 429 — Too many requests")).toBe(true);
+    expect(isSourceOut("HTTP 403 — forbidden")).toBe(true);
+    expect(isSourceOut("HTTP 502")).toBe(false);
+    expect(authWords("jsearch")).toContain("subscribe to the free Basic plan");
+  });
+});

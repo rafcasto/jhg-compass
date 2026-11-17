@@ -53,7 +53,7 @@ export const companies: Handler = async ({ uid, job, config, agent, log, progres
   } else await log(`job boards skipped — ${boardsSkipped}`);
   if (await cancelled()) return null;
   // API only and nothing from the boards: say why, loudly — a quiet "0 added" sends the coach back to searching by hand.
-  if (payload.proposal === "off" && !posted.length) throw new Error(boardsSkipped ? `The job boards were not read — ${boardsSkipped}.` : `The job boards returned no employers — ${boardsNote}${/HTTP 403/.test(boardsNote) ? " (an HTTP 403 means the RapidAPI subscription to JSearch is not active)" : ""}${/HTTP 429/.test(boardsNote) ? " (a 429 is the source's quota or rate limit — wait for the month to reset, raise the plan, or set the other Google key as the fallback)" : ""}.`);
+  if (payload.proposal === "off" && !posted.length) throw new Error(boardsSkipped ? `The job boards were not read — ${boardsSkipped}.` : `The job boards returned no employers — ${boardsNote}${/HTTP 429/.test(boardsNote) ? " (a 429 is the source's quota or rate limit — wait for the month to reset, raise the plan, or set the other Google key as the fallback)" : ""}.`);
 
   // Pass 2 — the industry-led proposal: one call with search; the pages never enter a transcript. Only to fill a gap the
   // boards left ("auto"), or never ("off" — API only); names the member added always go through it, since a name is not a query.
