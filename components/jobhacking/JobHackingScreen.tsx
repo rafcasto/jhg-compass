@@ -22,6 +22,8 @@ import type { Goal } from "@/lib/goal";
 import type { Profile } from "@/lib/types";
 import { cvRuleFacts, cvRuleLists, languageLines } from "@/lib/jobhacking/workbook";
 import CompanyListPanel from "./CompanyListPanel";
+import { AddCompany, CompaniesJobStatus, SourceCompaniesButton, useSourceCompanies } from "./SourceCompanies";
+import type { CompanyEvidence } from "@/lib/engine/coach/evidence";
 import FileFacts from "./FileFacts";
 import LinkedinProfilePanel from "./LinkedinProfilePanel";
 import { JH_SECTION_ICONS } from "./pageIcons";
@@ -92,6 +94,9 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
   const pageCoach = coachForPage(page);
   const { flash: lastWrite } = useCoachUi();
   const flash = useMemo(() => flashKeysFor(lastWrite, sections), [lastWrite, sections]);
+  // Page-first Target companies: the companies job from the page, its live status, the evidence under the rows.
+  const sourcing = useSourceCompanies(page === "companies" ? uid : undefined, portal);
+  const { data: evidence } = useLiveDoc<{ byName?: Record<string, CompanyEvidence> }>(uid && page === "companies" ? paths.coachEvidence(uid, "companies") : null);
   const coachLink = coach && pageCoach ? {
     label: "Fill this in with your coach",
     onClick: (section: JhSectionKey) => {
@@ -111,8 +116,8 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
       intro={meta.intro}
       identity={page === "narrative" ? <Identity profile={profile} email={email} /> : undefined}
       lead={page === "true-north" ? <TrueNorthStatement goal={{ ...goal, ...draft }} base={base} /> : undefined}
-      actions={sharePage ? <ShareButton page={sharePage} record={share} empty={nothingToShare} /> : undefined}
-      status={sharePage ? <ShareStatus page={sharePage} record={share} /> : undefined}
+      actions={page === "companies" || sharePage ? <>{page === "companies" && <SourceCompaniesButton running={sourcing.running} busy={sourcing.busy} onSource={() => void sourcing.source()} />}{sharePage && <ShareButton page={sharePage} record={share} empty={nothingToShare} />}</> : undefined}
+      status={page === "companies" || sharePage ? <>{page === "companies" && uid && <CompaniesJobStatus uid={uid} latest={sourcing.latest} error={sourcing.error} href={jhSectionHref("top40", base)} />}{sharePage && <ShareStatus page={sharePage} record={share} />}</> : undefined}
       items={items}
       rows={rows}
       active={active}
@@ -136,8 +141,16 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
           // The True North file's boundaries — read-only.
           case "boundaries": return <BoundariesPanel jhg={jhg} />;
           // The Packer's lists: read-only, the same ranked rows on all three, each with the research written for it.
-          case "top3": case "top10": case "top40":
+          case "top3": case "top10":
             return <CompanyListPanel listKey={JH_LIST_OF[key]} list={setup?.companyLists?.[JH_LIST_OF[key]]} jhg={jhg} />;
+          // Page-first (decision 2026-11-17): the 40 are sourced and pruned here; the evidence the portal built shows under each row.
+          case "top40":
+            return (
+              <div className="space-y-6">
+                <CompanyListPanel listKey="all" list={setup?.companyLists?.all} jhg={jhg} evidence={evidence?.byName ?? null} onRemove={(name) => void sourcing.remove(name)} onSource={() => void sourcing.source()} sourcing={sourcing.running || sourcing.busy} />
+                {setup?.jhg?.targetCompanies?.companies?.length ? <AddCompany disabled={sourcing.running || sourcing.busy} onAdd={(name) => sourcing.source([name])} /> : null}
+              </div>
+            );
           // The watchlist reads as the same rows, with an Edit that opens the shared editor.
           case "companies": return <WatchlistSection uid={uid} setup={setup} goalRole={goal.role} />;
           // The story bank: read as rows, edited on request, with the STAR lines and story facts the Packer wrote.

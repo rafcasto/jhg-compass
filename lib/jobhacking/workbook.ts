@@ -172,6 +172,18 @@ export const SCORE_LEGEND = "Scores: total · Growth · Interest · Access · Pr
 export const inspiredByLabel = (v: string | null | undefined): string => { const t = text(v).replace(/_/g, " "); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };
 
 /** What a Top 40 row shows under its name — the growth signal, where it is, who the member knows. */
+/** The portal's evidence under a Top 40 row (docs/UX_COACH_COMPANY_SCORING.md §2) — what it is hiring for, the signal, who the member knows, the fit. */
+export function evidenceFacts(e: { growth: { suggested: number; why: string[] }; access: { contacts: { name: string; position: string }[]; more: number }; interest: { line: string }; proof: { line: string; phrases: string[] } } | null | undefined): Fact[] {
+  if (!e) return [];
+  const who = e.access.contacts.map((c) => (c.position ? `${c.name}, ${c.position}` : c.name)).join(" · ") + (e.access.more ? ` · +${e.access.more} more` : "");
+  return facts([
+    fact("Hiring", e.growth.why.find((w) => /^hiring/.test(w)) ?? null),
+    fact("You know", who),
+    fact("Fit", e.interest.line),
+    fact("They ask for", e.proof.phrases.length ? e.proof.phrases.map((p) => `“${p}”`).join(", ") : null),
+  ]);
+}
+
 export function companyFacts(c: RankedCompany, j: JhgBlock | null | undefined): Fact[] {
   const r = companyByName(j).get(norm(c.name));
   if (!r) return [];

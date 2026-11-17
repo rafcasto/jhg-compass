@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ExternalLink, Link2Off } from "lucide-react";
 import { companyTypeLabel, industryLine } from "@/lib/jobhacking/company-lists";
 import { scoresLine, type Fact } from "@/lib/jobhacking/workbook";
@@ -18,12 +19,14 @@ const STATUS_NOTE: Partial<Record<NonNullable<RankedCompany["careersUrlStatus"]>
 };
 const careersLabel = (c: RankedCompany) => `${c.name} careers page${STATUS_NOTE[c.careersUrlStatus ?? "none"] ?? ""} — opens in a new tab`;
 
-export default function CompanyRow({ c, secondLine, facts = [] }: {
+export default function CompanyRow({ c, secondLine, facts = [], trailing }: {
   c: RankedCompany;
   /** Overrides the industry · sub-sector line (the watchlist shows the careers host when the coach has no industry for it). */
   secondLine?: string;
   /** What the workbook says about this company (why now, the thesis, the growth signal) — under the second line. */
   facts?: readonly Fact[];
+  /** One more 40 px control after the careers target — the Top 40's Remove while the member prunes the field. */
+  trailing?: ReactNode;
 }) {
   const type = companyTypeLabel(c.companyType);
   const line = secondLine ?? industryLine(c);
@@ -47,6 +50,7 @@ export default function CompanyRow({ c, secondLine, facts = [] }: {
       <div className="flex items-center gap-2">
         {type && <span className="pill-neutral hidden sm:inline-flex">{type}</span>}
         <CareersLink c={c} />
+        {trailing}
       </div>
     </li>
   );
