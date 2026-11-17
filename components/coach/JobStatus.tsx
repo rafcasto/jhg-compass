@@ -27,7 +27,7 @@ export default function JobStatus({ uid, job, href }: { uid: string; job: JobNot
       </p>
     );
   }
-  if (status === "failed") return <p role="status" className="text-sm text-jh-red">Couldn&apos;t finish {job.label.toLowerCase()}{data?.error ? ` — ${data.error}` : ""}. Ask your coach to try again.</p>;
+  if (status === "failed") return <p role="status" className="text-sm text-jh-red">Couldn&apos;t finish {job.label.toLowerCase()}{data?.error ? ` — ${data.error}` : ""}. Try again in a few minutes.</p>;
   if (status === "cancelled") return <p role="status" className="text-sm text-jh-mute">{job.label} · stopped</p>;
   const { phrase, count } = splitCount(data?.progress || (status === "queued" ? "Starting" : job.label));
   return (

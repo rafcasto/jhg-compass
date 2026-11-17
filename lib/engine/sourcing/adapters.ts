@@ -30,9 +30,16 @@ export const ADAPTERS: Record<Source, SourceAdapter> = {
   serp: { source: "serp", metered: true, maxQueries: SERP_MAX_QUERIES, configured: serpConfigured, url: (q, country, env) => serpJobsUrl({ country, q: q.what, location: q.where }, env), parse: parseSerpJobs },
 };
 
-/** The adapters with a key, free ones first, in the registry's order — and one metered source at most: both Google routes carry the same data, so the first configured (JSearch, the cheaper) runs and the other stays idle. */
+/** The adapters with a key, free ones first, then the metered ones in the registry's order (JSearch, the cheaper, before SerpApi). The run uses one metered source and falls back to the next only when the first is out (quota, rate limit) — both Google routes carry the same data. */
 export const configuredAdapters = (env: Env = process.env): SourceAdapter[] => {
   const on = SOURCES.map((s) => ADAPTERS[s]).filter((a) => a.configured(env));
-  const metered = on.filter((a) => a.metered);
-  return [...on.filter((a) => !a.metered), ...metered.slice(0, 1)];
+  return [...on.filter((a) => !a.metered), ...on.filter((a) => a.metered)];
 };
+
+/** RapidAPI and SerpApi say "out" with a 429: the plan's monthly quota, or requests too close together. */
+export const isQuotaError = (message: string): boolean => /\b429\b|too many requests|quota|rate limit/i.test(message);
+
+/** What a 429 means to the member and the admin, by source. */
+export const quotaWords = (source: Source): string => source === "jsearch"
+  ? "JSearch's RapidAPI plan is out of requests for the month (the free plan is 200) or we asked too fast — check RapidAPI → My Apps → JSearch → usage"
+  : source === "serp" ? "SerpApi's plan is out of searches for the month or we asked too fast — check serpapi.com → account" : "the source refused: too many requests";

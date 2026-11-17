@@ -42,7 +42,7 @@ describe("JobStatus", () => {
     expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
     live.data = { status: "failed", error: "No posting could be opened" };
     rerender(<JobStatus uid="u1" job={job} />);
-    expect(screen.getByRole("status")).toHaveTextContent("Couldn't finish reading postings — No posting could be opened. Ask your coach to try again.");
+    expect(screen.getByRole("status")).toHaveTextContent("Couldn't finish reading postings — No posting could be opened. Try again in a few minutes.");
     expect(screen.getByRole("status")).toHaveClass("text-jh-red");
   });
 });
