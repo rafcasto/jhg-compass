@@ -127,8 +127,9 @@ export function fromPostings(rows: readonly SourcedPosting[], titles: readonly s
     const industries = list.map((p) => p.foundBy?.industry).filter((x): x is string => !!x);
     const industry = industries.length ? [...industries].sort((a, b) => industries.filter((x) => x === b).length - industries.filter((x) => x === a).length)[0] : "";
     const board = list.map((p) => atsOf(p.url)).find((b) => b !== null);
+    const website = list.map((p) => p.companyWebsite ?? "").find((w) => /^https?:\/\//i.test(w)) ?? "";
     const forTitle = list.some((p) => p.foundBy?.from === "title") && titles.length ? ` for ${titles[0]}` : "";
-    out.push({ name: newest.company, inspiredBy: industry ? "industry_growth" : "job_posting", industry, subSector: "", location: newest.location, website: "", growthSignal: `${n} open posting${n === 1 ? "" : "s"} now — ${roles}${newest.postedAt ? ` (${newest.postedAt})` : ""}${forTitle}`, growthSource: newest.url, careersUrl: board ? atsBoardPage(board) : "" });
+    out.push({ name: newest.company, inspiredBy: industry ? "industry_growth" : "job_posting", industry, subSector: "", location: newest.location, website, growthSignal: `${n} open posting${n === 1 ? "" : "s"} now — ${roles}${newest.postedAt ? ` (${newest.postedAt})` : ""}${forTitle}`, growthSource: newest.url, careersUrl: board ? atsBoardPage(board) : "" });
   }
   // The employers posting most, first.
   return out.sort((a, b) => parseInt(b.growthSignal) - parseInt(a.growthSignal));

@@ -31,9 +31,9 @@ export function countryOf(region: string | null | undefined): PipelineCountry | 
 /** The city half of a region — "Auckland, New Zealand" → "Auckland"; the whole string when there is no comma. */
 export const cityOf = (region: string): string => region.split(",")[0].trim();
 
-export const SOURCES = ["adzuna", "careerjet", "serp"] as const;
+export const SOURCES = ["adzuna", "careerjet", "jsearch", "serp"] as const;
 export type Source = (typeof SOURCES)[number];
-export const SOURCE_LABELS: Record<Source, string> = { adzuna: "Adzuna", careerjet: "Careerjet", serp: "Google for Jobs" };
+export const SOURCE_LABELS: Record<Source, string> = { adzuna: "Adzuna", careerjet: "Careerjet", jsearch: "Google for Jobs (JSearch)", serp: "Google for Jobs (SerpApi)" };
 
 /** One posting as a source returned it — what jobPostings/{source}_{externalId} stores (plan §6). */
 export interface SourcedPosting {
@@ -49,6 +49,8 @@ export interface SourcedPosting {
   description: string;
   /** ISO date when the source says; "" when it doesn't. */
   postedAt: string;
+  /** The employer's own site when the source knows it (JSearch does) — the company's key and the careers-page fallback. */
+  companyWebsite?: string;
   /** The planned query that returned it — an industry query names the industry, so an employer found that way carries it. */
   foundBy?: { what: string; from: "title" | "competency" | "industry"; industry?: string };
 }

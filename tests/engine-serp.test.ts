@@ -9,8 +9,8 @@ import { SOURCES, SOURCE_LABELS } from "@/lib/engine/sourcing/keys";
 describe("SerpApi google_jobs", () => {
   const env = { SERPAPI_KEY: "k1" };
   it("is a source, configured by its key, asking google_jobs in the country with the city as location", () => {
-    expect(SOURCES).toEqual(["adzuna", "careerjet", "serp"]);
-    expect(SOURCE_LABELS.serp).toBe("Google for Jobs");
+    expect(SOURCES).toEqual(["adzuna", "careerjet", "jsearch", "serp"]);
+    expect(SOURCE_LABELS.serp).toBe("Google for Jobs (SerpApi)");
     expect(serpConfigured({})).toBe(false);
     expect(serpConfigured(env)).toBe(true);
     const u = new URL(serpJobsUrl({ country: "nz", q: "Product Manager", location: "Auckland" }, env));
