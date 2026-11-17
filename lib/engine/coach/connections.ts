@@ -47,17 +47,22 @@ function csvRecords(text: string): string[] {
   return records;
 }
 
-const headerIndex = (records: readonly string[]): number => records.findIndex((r) => { const cells = splitCsvLine(r).map((c) => c.toLowerCase()); return cells.includes("first name") && cells.includes("company") && cells.includes("position"); });
+/** A header cell as LinkedIn writes it, whatever the BOM, quotes, case or spacing around it. */
+const cell = (c: string) => c.replace(/^\uFEFF/, "").replace(/^"|"$/g, "").trim().toLowerCase().replace(/\s+/g, " ");
+const headerIndex = (records: readonly string[]): number => records.findIndex((r) => { const cells = splitCsvLine(r).map(cell); return cells.includes("first name") && cells.includes("company") && cells.includes("position"); });
 
-/** Whether a text is LinkedIn's connections export — its header within the first lines. */
-export const isConnectionsCsv = (text: string): boolean => text.length <= MAX_CONNECTIONS_CHARS && headerIndex(csvRecords(text.slice(0, 4000))) >= 0;
+/** The text without a byte-order mark — LinkedIn's export sometimes carries one. */
+const clean = (text: string) => text.replace(/^\uFEFF/, "");
+
+/** Whether a text is LinkedIn's connections export — its header within the first lines (the note lines can run long). */
+export const isConnectionsCsv = (text: string): boolean => text.length <= MAX_CONNECTIONS_CHARS && headerIndex(csvRecords(clean(text).slice(0, 20_000))) >= 0;
 
 /** The rows, the email column dropped, rows without a name skipped. */
 export function parseConnections(text: string): Connection[] {
-  const records = csvRecords(text);
+  const records = csvRecords(clean(text));
   const h = headerIndex(records);
   if (h < 0) return [];
-  const cols = splitCsvLine(records[h]).map((c) => c.toLowerCase());
+  const cols = splitCsvLine(records[h]).map(cell);
   const ix = (name: string) => cols.indexOf(name);
   const iFirst = ix("first name"), iLast = ix("last name"), iUrl = ix("url"), iCompany = ix("company"), iPosition = ix("position"), iOn = ix("connected on");
   const out: Connection[] = [];

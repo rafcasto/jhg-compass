@@ -24,6 +24,10 @@ describe("the connections export", () => {
     expect(isConnectionsFileName("cv.pdf")).toBe(false);
     expect(isConnectionsCsv(CSV)).toBe(true);
     expect(isConnectionsCsv("name,age\nBob,3")).toBe(false);
+    // A BOM, Windows line ends, quoted header cells and no note lines — still LinkedIn's file.
+    const bom = '\uFEFF"First Name","Last Name","URL","Email Address","Company","Position","Connected On"\r\nJane,Doe,https://l/in/j,,Halter,Head of Product,12 Mar 2024\r\n';
+    expect(isConnectionsCsv(bom)).toBe(true);
+    expect(parseConnections(bom)).toEqual([{ name: "Jane Doe", url: "https://l/in/j", company: "Halter", position: "Head of Product", connectedOn: "12 Mar 2024" }]);
   });
   it("parses rows with quotes, drops the email column and rows without a name", () => {
     expect(splitCsvLine('"Smith, Jr.",Bob,"a ""quoted"" cell",x')).toEqual(["Smith, Jr.", "Bob", 'a "quoted" cell', "x"]);
