@@ -75,7 +75,36 @@ describe("CompanyListPanel — Top 40", () => {
   it("explains where the lists come from when there are none, with one way in", () => {
     render(<CompanyListPanel listKey="top10" list={undefined} />);
     expect(screen.getByText("No Top 10 yet")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Upload target companies/ })).toHaveAttribute("href", "/jobhacking/settings");
+    expect(screen.getByText(/comes out of the Top 40 with your coach/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Upload target companies/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("region")).toBeNull();
+  });
+});
+
+// Page-first Top 40 (decision 2026-11-17): Source my 40 on the empty state, a Remove on each row, the portal's evidence under it.
+import { vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { evidenceFacts } from "@/lib/jobhacking/workbook";
+
+describe("CompanyListPanel — page-first Top 40", () => {
+  it("offers Source my 40 on the empty Top 40 and nothing else", async () => {
+    const onSource = vi.fn();
+    render(<CompanyListPanel listKey="all" list={undefined} onSource={onSource} />);
+    expect(screen.getByText("No Top 40 yet")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Source my 40" }));
+    expect(onSource).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("link", { name: /Upload target companies/ })).not.toBeInTheDocument();
+  });
+  it("puts a Remove on each row and the evidence under it", async () => {
+    const onRemove = vi.fn();
+    const evidence = { "Wattle HR Cloud": { growth: { suggested: 5 as const, why: ["hiring 2 roles for you now — Product Manager (Seek, 2026-11-12)", "Series B ›"] }, access: { suggested: 5 as const, contacts: [{ name: "Jane Doe", position: "Head of Product", connectedOn: "" }], more: 1 }, interest: { line: "Auckland · scaleup — the type you aim at" }, proof: { phrases: ["own the roadmap"], matches: [], line: "" } } };
+    render(<CompanyListPanel listKey="all" list={all} evidence={evidence} onRemove={onRemove} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Remove Wattle HR Cloud from your Top 40" }));
+    expect(onRemove).toHaveBeenCalledWith("Wattle HR Cloud");
+    expect(screen.getByText("hiring 2 roles for you now — Product Manager (Seek, 2026-11-12)")).toBeInTheDocument();
+    expect(screen.getByText("Jane Doe, Head of Product · +1 more")).toBeInTheDocument();
+    expect(screen.getByText(/Remove a company with ×/)).toBeInTheDocument();
+    expect(evidenceFacts(evidence["Wattle HR Cloud"]).map((f) => f.label)).toEqual(["Hiring", "You know", "Fit", "They ask for"]);
+    expect(evidenceFacts(null)).toEqual([]);
   });
 });

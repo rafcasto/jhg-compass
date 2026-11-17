@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, FileUp, Sunrise, Sunset, CircleDashed, type LucideProps } from "lucide-react";
+import { ExternalLink, FileUp, Sunrise, Sunset, CircleDashed, X, type LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { JH_SETTINGS_HREF } from "@/lib/jobhacking/sections";
 import { companyListLabel, facets, listGroups, type CompanyListKey } from "@/lib/jobhacking/company-lists";
-import { SCORE_LEGEND, companyFacts, top10Facts, top3Facts, type Fact } from "@/lib/jobhacking/workbook";
+import { SCORE_LEGEND, companyFacts, evidenceFacts, top10Facts, top3Facts, type Fact } from "@/lib/jobhacking/workbook";
+import type { CompanyEvidence } from "@/lib/engine/coach/evidence";
 import type { CompanyList, CompanyTrend, JhgBlock, RankedCompany } from "@/lib/careerops/types";
 import CompanyRow from "./CompanyRow";
 
@@ -34,11 +35,18 @@ const TREND_ICON: Record<CompanyTrend, ComponentType<LucideProps>> = { sunrise: 
 // company name; a row the workbook does not mention shows nothing extra.
 const FACTS: Record<CompanyListKey, (c: RankedCompany, j: JhgBlock | null | undefined) => Fact[]> = { top3: top3Facts, top10: top10Facts, all: companyFacts };
 
-export default function CompanyListPanel({ listKey, list, jhg }: {
+export default function CompanyListPanel({ listKey, list, jhg, evidence, onRemove, onSource, sourcing = false }: {
   listKey: CompanyListKey;
   list: CompanyList | null | undefined;
   /** The workbook — the research behind the rows. */
   jhg?: JhgBlock | null;
+  /** The portal's evidence per company name (docs/UX_COACH_COMPANY_SCORING.md) — under a Top 40 row when there is one. */
+  evidence?: Record<string, CompanyEvidence> | null;
+  /** Page-first Top 40 (decision 2026-11-17): a Remove on each row while the member prunes the field. */
+  onRemove?: (name: string) => void;
+  /** Page-first Top 40: the empty state's one action — the companies job from the page. */
+  onSource?: () => void;
+  sourcing?: boolean;
 }) {
   const label = companyListLabel(listKey);
   const groups = listGroups(list);
@@ -47,14 +55,25 @@ export default function CompanyListPanel({ listKey, list, jhg }: {
   const anyScores = groups.some((g) => g.companies.some((c) => c.scores));
 
   if (!groups.length) {
+    if (listKey === "all" && onSource) {
+      return (
+        <div className="mx-auto max-w-md py-6 text-center">
+          <p className="font-display font-semibold text-jh-ink">No Top 40 yet</p>
+          <p className="mt-1 text-sm text-jh-mute">The portal reads the job boards for your True North — who is hiring your titles and in your industries — and puts up to forty employers here with their careers pages. A minute or two.</p>
+          <button type="button" onClick={onSource} disabled={sourcing} className="btn-primary btn-sm mt-4">{sourcing ? "Sourcing…" : "Source my 40"}</button>
+        </div>
+      );
+    }
     return (
       <div className="mx-auto max-w-md py-6 text-center">
         <p className="font-display font-semibold text-jh-ink">No {label} yet</p>
-        <p className="mt-1 text-sm text-jh-mute">Your coach&apos;s Packer writes the ranked lists into your target-companies.yml. Upload it and they appear here.</p>
-        <Link href={JH_SETTINGS_HREF} className="btn-secondary btn-sm mt-4"><FileUp className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Upload target companies</Link>
+        <p className="mt-1 text-sm text-jh-mute">{listKey === "all" ? "Your coach's Packer writes the ranked lists into your target-companies.yml. Upload it and they appear here." : `Your ${label} comes out of the Top 40 with your coach — the scores, then the ten, then the three.`}</p>
+        {listKey === "all" && <Link href={JH_SETTINGS_HREF} className="btn-secondary btn-sm mt-4"><FileUp className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Upload target companies</Link>}
       </div>
     );
   }
+  const lower = (s: string) => s.trim().toLowerCase();
+  const evidenceOf = (name: string) => evidence ? evidence[name] ?? Object.entries(evidence).find(([k]) => lower(k) === lower(name))?.[1] : undefined;
 
   return (
     <div className="space-y-8">
@@ -78,7 +97,12 @@ export default function CompanyListPanel({ listKey, list, jhg }: {
                 </dl>
               )}
             </header>
-            <ol className="divide-y divide-jh-line border-t border-jh-line">{g.companies.map((c) => <CompanyRow key={`${c.rank}-${c.name}`} c={c} facts={FACTS[listKey](c, jhg)} />)}</ol>
+            <ol className="divide-y divide-jh-line border-t border-jh-line">
+              {g.companies.map((c) => (
+                <CompanyRow key={`${c.rank}-${c.name}`} c={c} facts={[...FACTS[listKey](c, jhg), ...(listKey === "all" ? evidenceFacts(evidenceOf(c.name)) : [])]}
+                  trailing={listKey === "all" && onRemove ? <button type="button" onClick={() => onRemove(c.name)} className="icon-btn" aria-label={`Remove ${c.name} from your Top 40`} title="Remove"><X className="h-4 w-4" strokeWidth={1.5} aria-hidden /></button> : undefined} />
+              ))}
+            </ol>
           </section>
         );
       })}
@@ -116,7 +140,7 @@ export default function CompanyListPanel({ listKey, list, jhg }: {
           </ul>
         </section>
       )}
-      <p className="text-xs text-jh-mute">Ranked by your coach. Sunrise companies are growing; sunset companies are shrinking or standing still.{anyScores && ` ${SCORE_LEGEND}`} Upload a new target-companies.yml to change the lists.</p>
+      <p className="text-xs text-jh-mute">Ranked by your coach. Sunrise companies are growing; sunset companies are shrinking or standing still.{anyScores && ` ${SCORE_LEGEND}`} {onRemove ? "Remove a company with ×; add one by name below." : "Upload a new target-companies.yml to change the lists."}</p>
     </div>
   );
 }

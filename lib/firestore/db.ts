@@ -37,6 +37,8 @@ export const paths = {
   claudeUsage: (uid: string, month: string) => doc(db, "users", uid, "claudeUsage", month),
   // A coach conversation (docs/UX_COACH.md §7): the readable turns and the API transcript. Server-written, owner-read.
   coachSession: (uid: string, coach: string) => doc(db, "users", uid, "coachSessions", coach),
+  // What the portal derived for a coach's matrix (docs/UX_COACH_COMPANY_SCORING.md §2) — the evidence under a Top 40 row. Server-written, owner-read.
+  coachEvidence: (uid: string, kind: string) => doc(db, "users", uid, "coachEvidence", kind),
   engineConfig: () => doc(db, "config", "engine"),
   grant: (uid: string) => doc(db, "accessGrants", uid),
   adminConfig: () => doc(db, "config", "admin"),
