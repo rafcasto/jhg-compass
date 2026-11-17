@@ -169,7 +169,7 @@ export function contextNote(ctx: TurnContext | null | undefined): string | null 
   }
   if (ctx.steer) parts.push(ctx.steer);
   for (const j of ctx.landed ?? []) parts.push(`Research landed since your last turn — ${j.label}. It is already on the member's page; review it with them, do not write it again:\n${j.summary}`);
-  for (const j of ctx.failed ?? []) parts.push(`Research failed since your last turn — ${j.label}: ${j.error}. Tell the member in one line and either start it again or carry on by hand.`);
+  for (const j of ctx.failed ?? []) parts.push(`Research failed since your last turn — ${j.label}: ${j.error}. Tell the member in one line what failed and what fixes it (a setting on the host, a field on their True North), then stop or start it again once fixed. The step is the portal's — do not do that research yourself.`);
   if (ctx.searchErrors?.length) parts.push(searchErrorNote(ctx.searchErrors));
   if (ctx.researchDue) parts.push(ctx.researchDue);
   return parts.length ? parts.join("\n\n") : null;
