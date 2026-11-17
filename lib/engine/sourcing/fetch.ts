@@ -2,6 +2,7 @@ import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { configuredAdapters, isQuotaError, quotaWords, type SourceAdapter } from "./adapters";
+import { cacheFresh, cacheKey, meteredMaxFrom } from "./cache";
 import { serpTopUpNeeded } from "./serp";
 import { atsBoardApi, atsJobCount, atsOf, type AtsBoard } from "./ats";
 import { companyKey, postingDocId, SOURCE_LABELS, type PipelineCountry, type Source, type SourcedPosting } from "./keys";
@@ -64,6 +65,8 @@ export interface SourcingOptions {
   meteredMax?: number;
   /** Run the metered source for every query, not only to fill a gap — when the field is the point. */
   meteredAlways?: boolean;
+  /** Rows from the free sources that make the metered top-up unnecessary (default ENOUGH_FOR_NO_TOP_UP; the companies job wants more). */
+  enough?: number;
 }
 
 export async function sourcePostings(brief: SourcingBrief, log: (line: string) => Promise<void> = async () => {}, today = new Date().toISOString().slice(0, 10), opts: SourcingOptions = {}): Promise<SourcingRun> {
@@ -75,15 +78,23 @@ export async function sourcePostings(brief: SourcingBrief, log: (line: string) =
   let meteredUsed = false;
   for (const a of configuredAdapters()) {
     if (a.metered && meteredUsed) continue; // one metered source a run; the next is the fallback below
-    if (a.metered && !opts.meteredAlways && !serpTopUpNeeded(mergePostings(lists).length, freeRan, ENOUGH_FOR_NO_TOP_UP)) { await log(`${SOURCE_LABELS[a.source]} skipped — the free sources were enough`); break; }
+    if (a.metered && !opts.meteredAlways && !serpTopUpNeeded(mergePostings(lists).length, freeRan, opts.enough ?? ENOUGH_FOR_NO_TOP_UP)) { await log(`${SOURCE_LABELS[a.source]} skipped — the free sources were enough`); break; }
     const got: SourcedPosting[] = [];
     let error: string | undefined;
     let quotaOut = false;
-    const mine = queries.slice(0, a.metered ? (opts.meteredMax ?? a.maxQueries) : a.maxQueries);
-    for (const [i, q] of mine.entries()) {
-      if (a.metered && i > 0) await sleep(METERED_SPACING_MS);
+    const meteredCap = Math.min(opts.meteredMax ?? a.maxQueries, meteredMaxFrom());
+    if (a.metered && meteredCap === 0) { await log(`${SOURCE_LABELS[a.source]} switched off (SOURCING_METERED_MAX=0)`); continue; }
+    const mine = queries.slice(0, a.metered ? meteredCap : a.maxQueries);
+    let spent = 0;
+    for (const q of mine) {
       try {
+        // Asked today already — by anyone: the shared cache answers and nothing is spent.
+        const cached = await readCache(a, q, brief.country);
+        if (cached) { got.push(...cached.map((r) => ({ ...r, foundBy: { what: q.what, from: q.from, ...(q.industry ? { industry: q.industry } : {}) } }))); await log(`${SOURCE_LABELS[a.source]} · "${q.what}" in ${q.where || brief.country} · ${cached.length} rows (cached)`); continue; }
+        if (a.metered && spent > 0) await sleep(METERED_SPACING_MS);
         const rows = await fetchQuery(a, q, brief.country, today);
+        spent++;
+        await writeCache(a, q, brief.country, rows);
         got.push(...rows);
         if (a.metered) metered++;
         await log(`${SOURCE_LABELS[a.source]} · "${q.what}" in ${q.where || brief.country} · ${rows.length} rows`);
@@ -102,6 +113,19 @@ export async function sourcePostings(brief: SourcingBrief, log: (line: string) =
   }
   const rows = newestFirst(mergePostings(lists));
   return { rows, note: sourcingNote(parts, rows.length), queries: queries.length, metered };
+}
+
+// The shared query cache — sourcingCache/{source_country_what_where}: the rows and when they were fetched; 24 h.
+interface CacheDoc { rows: SourcedPosting[]; fetchedAt: number }
+async function readCache(a: SourceAdapter, q: { what: string; where: string }, country: PipelineCountry): Promise<SourcedPosting[] | null> {
+  try {
+    const snap = await adminDb().doc(`sourcingCache/${cacheKey(a.source, country, q.what, q.where)}`).get();
+    const d = snap.exists ? (snap.data() as CacheDoc) : null;
+    return d && cacheFresh(d.fetchedAt) && Array.isArray(d.rows) ? d.rows.map(({ foundBy: _f, ...r }) => r as SourcedPosting) : null;
+  } catch { return null; }
+}
+async function writeCache(a: SourceAdapter, q: { what: string; where: string }, country: PipelineCountry, rows: readonly SourcedPosting[]): Promise<void> {
+  try { await adminDb().doc(`sourcingCache/${cacheKey(a.source, country, q.what, q.where)}`).set({ source: a.source, country, what: q.what, where: q.where, rows: rows.map(({ foundBy: _f, ...r }) => r), fetchedAt: Date.now() }); } catch { /* a cache miss next time is the only cost */ }
 }
 
 /** One query against one source — a 429 is retried once after a pause (a burst limit clears; a monthly quota does not, and the caller stops). */

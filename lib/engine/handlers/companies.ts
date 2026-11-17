@@ -8,7 +8,7 @@ import { resolvePrompt } from "../config";
 import { getPromptOverride } from "../config-server";
 import { applyCoachPatch } from "../coach/write";
 import { COMPANIES_PROMPT, COMPANIES_PROMPT_VERSION } from "../prompts/companies";
-import { COMPANIES_MAX_BOARD_QUERIES, COMPANIES_MAX_SEARCHES, COMPANIES_MAX_URL_CHECKS, COMPANIES_TARGET, CompaniesSchema, companiesPayload, companiesPayloadEmpty, companiesSummary, companiesTask, fromPostings, mergeCandidates, toProfileCompanies, type Candidate, type CompaniesAnswer, type CompaniesResult, type VerifiedCandidate } from "../research/companies";
+import { COMPANIES_ENOUGH_ROWS, COMPANIES_MAX_BOARD_QUERIES, COMPANIES_MAX_SEARCHES, COMPANIES_MAX_URL_CHECKS, COMPANIES_TARGET, CompaniesSchema, companiesPayload, companiesPayloadEmpty, companiesSummary, companiesTask, fromPostings, mergeCandidates, toProfileCompanies, type Candidate, type CompaniesAnswer, type CompaniesResult, type VerifiedCandidate } from "../research/companies";
 import { urlWasFound } from "../research/postings";
 import { companyKey, countryOf, domainOf } from "../sourcing/keys";
 import { confirmCareersUrl, mapLimit, opens, sourcePostings, sourcingConfigured } from "../sourcing/fetch";
@@ -46,7 +46,7 @@ export const companies: Handler = async ({ uid, job, config, agent, log, progres
   const boardsSkipped = !sourcingConfigured() ? "no job-board API key is configured (JSEARCH_API_KEY, SERPAPI_KEY or ADZUNA_APP_ID/KEY on the host)" : !payload.country ? `no source covers the region "${payload.region || "(empty)"}" — the pipeline runs for NZ · AU · US · CA; fix the location on True North` : !(payload.titles.length || industryNames.length || payload.names.length) ? "True North has no target titles and no industries to search by" : null;
   if (!boardsSkipped) {
     await progress("Reading the job boards");
-    const run = await sourcePostings({ titles: payload.titles, competencies: [], industries: industryNames, names: payload.names, broaden: true, region: payload.region, country: payload.country! }, log, today, { maxQueries: COMPANIES_MAX_BOARD_QUERIES, meteredMax: COMPANIES_MAX_BOARD_QUERIES, meteredAlways: true });
+    const run = await sourcePostings({ titles: payload.titles, competencies: [], industries: industryNames, names: payload.names, broaden: true, region: payload.region, country: payload.country! }, log, today, { maxQueries: COMPANIES_MAX_BOARD_QUERIES, enough: COMPANIES_ENOUGH_ROWS });
     posted = fromPostings(run.rows, payload.titles);
     boardsNote = run.note;
     await log(`${run.note} → ${posted.length} employers${run.metered ? ` · ${run.metered} paid searches` : ""}`);

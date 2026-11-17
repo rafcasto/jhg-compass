@@ -52,6 +52,7 @@ service cloud.firestore {
     //      member; postings are keyed by source. Readable by any signed-in member, server-written only. ----
     match /companies/{key} { allow read: if isSignedIn(); allow write: if false; }
     match /jobPostings/{id} { allow read: if isSignedIn(); allow write: if false; }
+    match /sourcingCache/{id} { allow read, write: if false; }
 
     // ---- share links (a JobHacking page shared read-only, docs/UX_SHARE.md): server-only.
     //      The owner's own record lives under users/{uid}/shares/{page} (owner read, above). ----

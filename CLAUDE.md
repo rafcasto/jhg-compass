@@ -128,7 +128,9 @@
   first** (2026-11-17, `lib/engine/sourcing/`): the `postings` job reads Adzuna / Careerjet when a key is set and the region is a pipeline
   country (`countryOf`), writes the shared `jobPostings` / `companies` collections, and the model only quotes the descriptions (`withPhrases`
   keeps a phrase only when the snippet contains it); it falls back to the model's search otherwise. Add a source as an adapter in that
-  folder (pure URL + parse, tested; the fetch in `fetch.ts`), never as a search in a prompt; a careers URL is `confirmed` by the ATS
+  folder (pure URL + parse, tested; the fetch in `fetch.ts`), never as a search in a prompt; **free first** (2026-11-17): a metered source
+  (JSearch, SerpApi) runs only to fill the free sources' gap, at most `SOURCING_METERED_MAX` requests a run, and every query's rows are
+  cached 24 h in the shared `sourcingCache` (`cache.ts`) — never ask a paid source the same question twice in a day; a careers URL is `confirmed` by the ATS
   registry's board answering (`confirmCareersUrl`), never by the model. **The companies job is API-first**: the boards' pass (titles and
   industries as queries, city and country-wide; `fromPostings`) is the list, and the model's industry-led proposal runs only to fill a gap
   (`proposal: "auto"`) or never (`COMPANIES_PROPOSAL=off`) — never as the first source.
