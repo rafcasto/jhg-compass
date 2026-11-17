@@ -77,3 +77,19 @@ describe("a refused key", () => {
     expect(authWords("jsearch")).toContain("subscribe to the free Basic plan");
   });
 });
+
+// Two doors to the same API: RapidAPI's gateway, or OpenWeb Ninja's own platform — the key goes to the right host with the right header.
+import { OPENWEBNINJA_BASE, jsearchProvider } from "@/lib/engine/sourcing/jsearch";
+
+describe("JSearch providers", () => {
+  it("sends an OpenWeb Ninja key to api.openwebninja.com in x-api-key, a RapidAPI key to the gateway", () => {
+    const own = { JSEARCH_API_KEY: "own1", JSEARCH_PROVIDER: "openwebninja" };
+    expect(jsearchProvider(own)).toBe("openwebninja");
+    expect(jsearchProvider({ JSEARCH_API_KEY: "r" })).toBe("rapidapi");
+    const u = new URL(jsearchUrl({ country: "nz", q: "Product Manager", location: "Auckland" }, own));
+    expect(u.origin + u.pathname).toBe(OPENWEBNINJA_BASE);
+    expect(u.searchParams.get("query")).toBe("Product Manager in Auckland");
+    expect(jsearchHeaders(own)).toEqual({ "x-api-key": "own1" });
+    expect(jsearchHeaders({ JSEARCH_API_KEY: "r" })).toEqual({ "x-rapidapi-key": "r", "x-rapidapi-host": JSEARCH_HOST });
+  });
+});

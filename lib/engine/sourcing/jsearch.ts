@@ -7,8 +7,13 @@
 
 import type { PipelineCountry, SourcedPosting } from "./keys";
 
+// Two doors to the same API: RapidAPI's marketplace gateway (the key in x-rapidapi-key, the host header), or OpenWeb Ninja's own
+// platform — app.openwebninja.com — (the key in x-api-key). JSEARCH_PROVIDER picks the door; the data and the query are the same.
+export const JSEARCH_PROVIDERS = ["rapidapi", "openwebninja"] as const;
+export type JsearchProvider = (typeof JSEARCH_PROVIDERS)[number];
 export const JSEARCH_BASE = "https://jsearch.p.rapidapi.com/search";
 export const JSEARCH_HOST = "jsearch.p.rapidapi.com";
+export const OPENWEBNINJA_BASE = "https://api.openwebninja.com/jsearch/search";
 /** Queries a run may spend on the top-up — titles first (queriesFor orders them so). */
 export const JSEARCH_MAX_QUERIES = 4;
 
@@ -16,11 +21,14 @@ type Env = Record<string, string | undefined>;
 
 export const jsearchConfigured = (env: Env = process.env): boolean => !!env.JSEARCH_API_KEY;
 
+/** Which door the key opens — JSEARCH_PROVIDER, default RapidAPI (the marketplace most keys come from). */
+export const jsearchProvider = (env: Env = process.env): JsearchProvider => (env.JSEARCH_PROVIDER === "openwebninja" ? "openwebninja" : "rapidapi");
+
 export interface JsearchQuery { country: PipelineCountry; q: string; location: string }
 
 /** JSearch takes the place in the query ("Product Manager in Auckland"), the country as a code, and a freshness window. */
-export function jsearchUrl(q: JsearchQuery): string {
-  const u = new URL(JSEARCH_BASE);
+export function jsearchUrl(q: JsearchQuery, env: Env = process.env): string {
+  const u = new URL(jsearchProvider(env) === "openwebninja" ? OPENWEBNINJA_BASE : JSEARCH_BASE);
   u.searchParams.set("query", q.location ? `${q.q} in ${q.location}` : q.q);
   u.searchParams.set("page", "1");
   u.searchParams.set("num_pages", "1");
@@ -29,7 +37,9 @@ export function jsearchUrl(q: JsearchQuery): string {
   return u.toString();
 }
 
-export const jsearchHeaders = (env: Env = process.env): Record<string, string> => ({ "x-rapidapi-key": env.JSEARCH_API_KEY ?? "", "x-rapidapi-host": JSEARCH_HOST });
+export const jsearchHeaders = (env: Env = process.env): Record<string, string> => jsearchProvider(env) === "openwebninja"
+  ? { "x-api-key": env.JSEARCH_API_KEY ?? "" }
+  : { "x-rapidapi-key": env.JSEARCH_API_KEY ?? "", "x-rapidapi-host": JSEARCH_HOST };
 
 interface JsearchJob {
   job_id?: unknown; job_title?: unknown; employer_name?: unknown; employer_website?: unknown; job_publisher?: unknown; job_apply_link?: unknown;
