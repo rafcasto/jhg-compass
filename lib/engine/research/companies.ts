@@ -10,10 +10,13 @@ import type { ProfileFile } from "../../careerops/profile-file";
 import type { JhgCompany } from "../../careerops/types";
 import type { ProfilePortal } from "../../jobhacking/sections";
 import { slug, type PipelineCountry, type SourcedPosting } from "../sourcing/keys";
+import { atsBoardPage, atsOf } from "../sourcing/ats";
 
 export const COMPANIES_TARGET = 40;
 /** The model's one call proposes the industry-led passes; its searches are capped — the links are opened by code after. */
 export const COMPANIES_MAX_SEARCHES = 10;
+/** The job boards' queries for the companies job — titles and industries, city and country-wide; the metered source may spend this many. */
+export const COMPANIES_MAX_BOARD_QUERIES = 12;
 export const COMPANIES_MAX_URL_CHECKS = 80;
 /** Companies per industry the proposal is asked for — enough that forty survive verification and the never-join list. */
 export const COMPANIES_PER_INDUSTRY = 8;
@@ -38,6 +41,8 @@ export interface CompaniesPayload {
   stored: JhgCompany[];
   /** Names the member added in the conversation — sourced like the rest. */
   names: string[];
+  /** The model's industry-led proposal: "auto" runs it only when the boards leave the list short; "off" never (API only). */
+  proposal: "auto" | "off";
   portal: ProfilePortal;
 }
 
@@ -56,6 +61,7 @@ export function companiesPayload(profile: ProfileFile, hints: Record<string, unk
     neverApply: strings(tn?.boundaries?.neverApply, 20), exclude: tn?.boundaries?.exclude?.trim() ?? "",
     stored: (profile.jhg?.targetCompanies?.companies ?? []).filter((c) => c?.name?.trim()),
     names: strings(hints.names, 10),
+    proposal: hints.proposal === "off" || (hints.proposal === undefined && process.env.COMPANIES_PROPOSAL === "off") ? "off" : "auto",
     portal: hints.portal === "compass" ? "compass" : "jobhacking",
   };
 }
@@ -106,7 +112,10 @@ export interface Candidate {
 
 const nameKey = (n: string) => slug(n);
 
-/** The job boards' postings grouped by employer — the first pass, an API: the signal is the open roles, the source the newest posting. */
+/**
+ * The job boards' postings grouped by employer — the API pass: the signal is the open roles, the source the newest posting,
+ * the industry the query that found it (when an industry query did), the careers page the ATS board a posting link sits on.
+ */
 export function fromPostings(rows: readonly SourcedPosting[], titles: readonly string[]): Candidate[] {
   const by = new Map<string, SourcedPosting[]>();
   for (const r of rows) { const k = nameKey(r.company); by.set(k, [...(by.get(k) ?? []), r]); }
@@ -115,7 +124,11 @@ export function fromPostings(rows: readonly SourcedPosting[], titles: readonly s
     const newest = [...list].sort((a, b) => (b.postedAt || "").localeCompare(a.postedAt || ""))[0];
     const n = list.length;
     const roles = [...new Set(list.map((p) => p.title))].slice(0, 2).join(", ");
-    out.push({ name: newest.company, inspiredBy: "job_posting", industry: "", subSector: "", location: newest.location, website: "", growthSignal: `${n} open posting${n === 1 ? "" : "s"} now — ${roles}${newest.postedAt ? ` (${newest.postedAt})` : ""}${titles.length ? ` for ${titles[0]}` : ""}`, growthSource: newest.url, careersUrl: "" });
+    const industries = list.map((p) => p.foundBy?.industry).filter((x): x is string => !!x);
+    const industry = industries.length ? [...industries].sort((a, b) => industries.filter((x) => x === b).length - industries.filter((x) => x === a).length)[0] : "";
+    const board = list.map((p) => atsOf(p.url)).find((b) => b !== null);
+    const forTitle = list.some((p) => p.foundBy?.from === "title") && titles.length ? ` for ${titles[0]}` : "";
+    out.push({ name: newest.company, inspiredBy: industry ? "industry_growth" : "job_posting", industry, subSector: "", location: newest.location, website: "", growthSignal: `${n} open posting${n === 1 ? "" : "s"} now — ${roles}${newest.postedAt ? ` (${newest.postedAt})` : ""}${forTitle}`, growthSource: newest.url, careersUrl: board ? atsBoardPage(board) : "" });
   }
   // The employers posting most, first.
   return out.sort((a, b) => parseInt(b.growthSignal) - parseInt(a.growthSignal));

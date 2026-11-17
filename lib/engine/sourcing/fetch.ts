@@ -53,21 +53,30 @@ export interface SourcingRun { rows: SourcedPosting[]; note: string; queries: nu
 export const ENOUGH_FOR_NO_TOP_UP = 30;
 
 /** Every configured source for the brief's country — free ones for every query, the metered one only to fill a gap, within its cap; merged newest first. */
-export async function sourcePostings(brief: SourcingBrief, log: (line: string) => Promise<void> = async () => {}, today = new Date().toISOString().slice(0, 10)): Promise<SourcingRun> {
-  const queries = queriesFor(brief);
+export interface SourcingOptions {
+  /** Queries a run may make in all (the planner's cap). */
+  maxQueries?: number;
+  /** Queries the metered source may spend — the companies job allows more than the postings top-up. */
+  meteredMax?: number;
+  /** Run the metered source for every query, not only to fill a gap — when the field is the point. */
+  meteredAlways?: boolean;
+}
+
+export async function sourcePostings(brief: SourcingBrief, log: (line: string) => Promise<void> = async () => {}, today = new Date().toISOString().slice(0, 10), opts: SourcingOptions = {}): Promise<SourcingRun> {
+  const queries = queriesFor(brief, opts.maxQueries);
   const parts: { source: string; country: PipelineCountry; queries: number; rows: number; error?: string }[] = [];
   const lists: SourcedPosting[][] = [];
   let metered = 0;
   let freeRan = false;
   for (const a of configuredAdapters()) {
-    if (a.metered && !serpTopUpNeeded(mergePostings(lists).length, freeRan, ENOUGH_FOR_NO_TOP_UP)) { await log(`${SOURCE_LABELS[a.source]} skipped — the free sources were enough`); continue; }
+    if (a.metered && !opts.meteredAlways && !serpTopUpNeeded(mergePostings(lists).length, freeRan, ENOUGH_FOR_NO_TOP_UP)) { await log(`${SOURCE_LABELS[a.source]} skipped — the free sources were enough`); continue; }
     const got: SourcedPosting[] = [];
     let error: string | undefined;
-    const mine = queries.slice(0, a.maxQueries);
+    const mine = queries.slice(0, a.metered ? (opts.meteredMax ?? a.maxQueries) : a.maxQueries);
     for (const q of mine) {
       try {
         const json = await getJson(a.url(q, brief.country, process.env));
-        const rows = a.parse(json, brief.country, today);
+        const rows = a.parse(json, brief.country, today).map((r) => ({ ...r, foundBy: { what: q.what, from: q.from, ...(q.industry ? { industry: q.industry } : {}) } }));
         got.push(...rows);
         if (a.metered) metered++;
         await log(`${SOURCE_LABELS[a.source]} · "${q.what}" in ${q.where || brief.country} · ${rows.length} rows`);

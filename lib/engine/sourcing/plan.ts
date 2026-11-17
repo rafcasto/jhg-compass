@@ -7,22 +7,33 @@ import { cityOf, type PipelineCountry, type SourcedPosting } from "./keys";
 
 export const MAX_QUERIES = 8;
 
-export interface SourcingBrief { titles: string[]; competencies: string[]; region: string; country: PipelineCountry }
-export interface PlannedQuery { what: string; where: string; from: "title" | "competency" }
+export interface SourcingBrief {
+  titles: string[]; competencies: string[]; region: string; country: PipelineCountry;
+  /** True North's industries — as queries they return the employers hiring in that industry (the companies job's API-first pass). */
+  industries?: string[];
+  /** Also ask country-wide, not only the city — for the companies job, where the field matters more than the commute. */
+  broaden?: boolean;
+}
+export interface PlannedQuery { what: string; where: string; from: "title" | "competency" | "industry"; industry?: string }
 
-/** The queries a run makes, titles first (the market's words) then competencies, ≤ MAX_QUERIES, no duplicates. */
+/**
+ * The queries a run makes, ≤ max, no duplicates: titles in the city (the market's words), industries in the city, then — when
+ * broadened — titles country-wide, then competencies. An industry query carries its industry so the employers it finds do too.
+ */
 export function queriesFor(b: SourcingBrief, max = MAX_QUERIES): PlannedQuery[] {
-  const where = cityOf(b.region);
+  const city = cityOf(b.region);
   const seen = new Set<string>();
   const out: PlannedQuery[] = [];
-  const add = (what: string, from: PlannedQuery["from"]) => {
+  const add = (what: string, where: string, from: PlannedQuery["from"], industry?: string) => {
     const w = what.trim().replace(/\s+/g, " ");
-    const k = w.toLowerCase();
+    const k = `${w.toLowerCase()}|${where.toLowerCase()}`;
     if (!w || seen.has(k) || out.length >= max) return;
-    seen.add(k); out.push({ what: w, where, from });
+    seen.add(k); out.push({ what: w, where, from, ...(industry ? { industry } : {}) });
   };
-  for (const t of b.titles) add(t, "title");
-  for (const c of b.competencies) add(c, "competency");
+  for (const t of b.titles) add(t, city, "title");
+  for (const i of b.industries ?? []) add(`${i} jobs`, city, "industry", i.trim());
+  if (b.broaden && city) for (const t of b.titles) add(t, "", "title");
+  for (const c of b.competencies) add(c, city, "competency");
   return out;
 }
 
