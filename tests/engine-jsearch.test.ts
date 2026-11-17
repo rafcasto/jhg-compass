@@ -15,7 +15,7 @@ describe("JSearch", () => {
     expect(jsearchConfigured({})).toBe(false);
     expect(jsearchConfigured(env)).toBe(true);
     const u = new URL(jsearchUrl({ country: "nz", q: "Product Manager", location: "Auckland" }));
-    expect(u.origin + u.pathname).toBe("https://jsearch.p.rapidapi.com/search");
+    expect(u.origin + u.pathname).toBe("https://jsearch.p.rapidapi.com/search-v2");
     expect(u.searchParams.get("query")).toBe("Product Manager in Auckland");
     expect(u.searchParams.get("country")).toBe("nz");
     expect(u.searchParams.get("date_posted")).toBe("month");
@@ -104,7 +104,18 @@ describe("JSearch endpoint override", () => {
     expect(jsearchBase(env)).toBe("https://jsearch6.p.rapidapi.com/v2/search");
     expect(new URL(jsearchUrl({ country: "nz", q: "PM", location: "Auckland" }, env)).pathname).toBe("/v2/search");
     expect(jsearchHeaders(env)["x-rapidapi-host"]).toBe("jsearch6.p.rapidapi.com");
-    expect(jsearchBase({ JSEARCH_API_KEY: "r", JSEARCH_BASE_URL: "not a url" })).toBe("https://jsearch.p.rapidapi.com/search");
-    expect(jsearchBase({ JSEARCH_API_KEY: "r" })).toBe("https://jsearch.p.rapidapi.com/search");
+    expect(jsearchBase({ JSEARCH_API_KEY: "r", JSEARCH_BASE_URL: "not a url" })).toBe("https://jsearch.p.rapidapi.com/search-v2");
+    expect(jsearchBase({ JSEARCH_API_KEY: "r" })).toBe("https://jsearch.p.rapidapi.com/search-v2");
+  });
+});
+
+// /search-v2 (live 2026-11-18): the jobs sit under data.jobs with a cursor; job_location is the place as written.
+describe("JSearch /search-v2 shape", () => {
+  it("parses data.jobs[] as it parses data[], and prefers job_location", () => {
+    const v2 = { status: "OK", data: { jobs: [{ job_id: "aW5kZWVk", job_title: "Data Quality Technical Lead", employer_name: "Fonterra", employer_website: "http://www.fonterra.com", job_publisher: "fonterra.com", job_apply_link: "https://careers.fonterra.com/careers/JobDetail/Data-Quality", job_description: "Lead the data quality…", job_location: "Auckland City, Auckland", job_city: "Auckland City", job_state: "N", job_country: "NZ", job_posted_at_datetime_utc: "2026-11-16T19:49:33.000Z" }], cursor: "abc" } };
+    const rows = parseJsearch(v2, "nz");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ source: "jsearch", externalId: "aW5kZWVk", company: "Fonterra", location: "Auckland City, Auckland", url: "https://careers.fonterra.com/careers/JobDetail/Data-Quality", postedAt: "2026-11-16", companyWebsite: "http://www.fonterra.com" });
+    expect(parseJsearch({ status: "OK", data: { cursor: "x" } }, "nz")).toEqual([]);
   });
 });

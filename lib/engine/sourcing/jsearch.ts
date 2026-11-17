@@ -11,7 +11,8 @@ import type { PipelineCountry, SourcedPosting } from "./keys";
 // platform — app.openwebninja.com — (the key in x-api-key). JSEARCH_PROVIDER picks the door; the data and the query are the same.
 export const JSEARCH_PROVIDERS = ["rapidapi", "openwebninja"] as const;
 export type JsearchProvider = (typeof JSEARCH_PROVIDERS)[number];
-export const JSEARCH_BASE = "https://jsearch.p.rapidapi.com/search";
+// The listing renamed its search endpoint to /search-v2 (verified live 2026-11-18: /search answers 404 "does not exist", /search-v2 answers 200).
+export const JSEARCH_BASE = "https://jsearch.p.rapidapi.com/search-v2";
 export const JSEARCH_HOST = "jsearch.p.rapidapi.com";
 export const OPENWEBNINJA_BASE = "https://api.openwebninja.com/jsearch/search";
 /** Queries a run may spend on the top-up — titles first (queriesFor orders them so). */
@@ -50,23 +51,27 @@ export const jsearchHeaders = (env: Env = process.env): Record<string, string> =
 
 interface JsearchJob {
   job_id?: unknown; job_title?: unknown; employer_name?: unknown; employer_website?: unknown; job_publisher?: unknown; job_apply_link?: unknown;
-  job_description?: unknown; job_city?: unknown; job_state?: unknown; job_country?: unknown; job_posted_at_datetime_utc?: unknown;
+  job_description?: unknown; job_city?: unknown; job_state?: unknown; job_country?: unknown; job_location?: unknown; job_posted_at_datetime_utc?: unknown;
   apply_options?: { publisher?: unknown; apply_link?: unknown }[];
 }
 
 const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
-/** { status: "OK", data: [] } → postings; the apply link is the URL (the board's own page), the publisher's name rides the description. */
+/**
+ * Both shapes the API has had → postings: `data: [job]` (the original /search) and `data: { jobs: [job], cursor }` (/search-v2,
+ * verified live 2026-11-18). The apply link is the URL (the board's own page); the publisher's name rides the description.
+ */
 export function parseJsearch(json: unknown, country: PipelineCountry): SourcedPosting[] {
   const data = (json as { data?: unknown } | null)?.data;
-  if (!Array.isArray(data)) return [];
+  const jobs = Array.isArray(data) ? data : data && typeof data === "object" && Array.isArray((data as { jobs?: unknown }).jobs) ? (data as { jobs: unknown[] }).jobs : null;
+  if (!jobs) return [];
   const out: SourcedPosting[] = [];
-  for (const j of data as JsearchJob[]) {
+  for (const j of jobs as JsearchJob[]) {
     const title = str(j.job_title), company = str(j.employer_name);
     const apply = str(j.job_apply_link) || (j.apply_options ?? []).map((o) => str(o.apply_link)).find((l) => /^https?:\/\//i.test(l)) || "";
     const externalId = str(j.job_id) || apply;
     if (!title || !company || !/^https?:\/\//i.test(apply) || !externalId) continue;
-    const location = [str(j.job_city), str(j.job_state), str(j.job_country)].filter(Boolean).join(", ");
+    const location = str(j.job_location) || [str(j.job_city), str(j.job_state), str(j.job_country)].filter(Boolean).join(", ");
     const via = str(j.job_publisher);
     const website = str(j.employer_website);
     out.push({ source: "jsearch", externalId: externalId.slice(0, 120), title, company, location, country, url: apply, description: `${via ? `[${via}] ` : ""}${str(j.job_description)}`, postedAt: str(j.job_posted_at_datetime_utc).slice(0, 10), ...(website ? { companyWebsite: website } : {}) });
