@@ -10,6 +10,7 @@ import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { useAccess } from "@/lib/firestore/access";
 import { auth } from "@/lib/firebase/client";
 import { PROFILE_FILENAME, profileFromSetup, profileToYaml } from "@/lib/careerops/profile-file";
+import { RESET_CLEARS } from "@/lib/engine/coach/reset-data";
 import { COACHES, coachStates, type CoachKey } from "@/lib/engine/coach/keys";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
 import type { Profile } from "@/lib/types";
@@ -63,17 +64,22 @@ function CoachSettings({ uid, setup, profile }: { uid: string; setup: CareerOpsS
   const [notice, setNotice] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const chosen = COACHES.find((c) => c.key === over) ?? started[0];
 
-  const startOver = async () => {
+  // Two resets (decision 2026-11-17): the conversation alone, or the conversation and what that coach wrote — its page sections
+  // go back to empty (lib/engine/coach/reset-data.ts). Other coaches' sections never move.
+  const startOver = async (data = false) => {
     if (!chosen) return;
-    if (!window.confirm(`Start ${chosen.label} over? The conversation is cleared. Everything on the ${chosen.label} page stays.`)) return;
+    const ask = data
+      ? `Start ${chosen.label} over and clear its data? The conversation goes, and so do ${RESET_CLEARS[chosen.key]}. Other pages are untouched. This cannot be undone.`
+      : `Start ${chosen.label} over? The conversation is cleared. Everything on the ${chosen.label} page stays.`;
+    if (!window.confirm(ask)) return;
     setBusy(true); setNotice(null);
     try {
       const token = await auth.currentUser!.getIdToken();
-      const res = await fetch(`/api/coach/turn?coach=${chosen.key}`, { method: "DELETE", headers: { authorization: `Bearer ${token}` } });
+      const res = await fetch(`/api/coach/turn?coach=${chosen.key}${data ? "&data=1" : ""}`, { method: "DELETE", headers: { authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error();
-      setNotice({ kind: "ok", text: `${chosen.label} starts fresh next time you open your coach there.` });
+      setNotice({ kind: "ok", text: data ? `${chosen.label} starts from nothing next time you open your coach there — its page is clear.` : `${chosen.label} starts fresh next time you open your coach there.` });
     } catch {
-      setNotice({ kind: "err", text: "Couldn't clear that conversation — try again." });
+      setNotice({ kind: "err", text: data ? "Couldn't clear that coach — try again." : "Couldn't clear that conversation — try again." });
     } finally { setBusy(false); }
   };
 
@@ -102,7 +108,7 @@ function CoachSettings({ uid, setup, profile }: { uid: string; setup: CareerOpsS
             <p className="text-sm text-jh-mute">Nothing to start over yet — no coach has begun.</p>
           ) : (
             <div className="card p-4 space-y-3">
-              <p className="text-sm text-jh-mute">Clears one conversation so that coach starts from the page as it stands. Your profile is never touched.</p>
+              <p className="text-sm text-jh-mute"><em>Start a coach over</em> clears one conversation so that coach starts from the page as it stands; your profile is never touched. <em>…and clear its data</em> also empties that coach&apos;s page sections — the other pages stay.</p>
               <div className="flex flex-wrap items-end gap-3">
                 <label className="min-w-48 flex-1">
                   <span className="label">Coach</span>
@@ -110,7 +116,8 @@ function CoachSettings({ uid, setup, profile }: { uid: string; setup: CareerOpsS
                     {started.map((c) => <option key={c.key} value={c.key}>{c.n} · {c.label}</option>)}
                   </select>
                 </label>
-                <button type="button" onClick={startOver} disabled={busy || !chosen} className="btn-ghost disabled:opacity-60">{busy ? "Clearing…" : "Start a coach over"}</button>
+                <button type="button" onClick={() => void startOver(false)} disabled={busy || !chosen} className="btn-ghost disabled:opacity-60">{busy ? "Clearing…" : "Start a coach over"}</button>
+                <button type="button" onClick={() => void startOver(true)} disabled={busy || !chosen} className="btn-ghost disabled:opacity-60">{busy ? "Clearing…" : "…and clear its data"}</button>
               </div>
               {notice && <p role="status" className={`text-sm ${notice.kind === "ok" ? "text-jh-ink" : "text-jh-red"}`}>{notice.text}</p>}
             </div>

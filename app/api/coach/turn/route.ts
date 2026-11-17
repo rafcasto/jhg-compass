@@ -15,6 +15,7 @@ import { applyCompanyScores, companyFlags, companyMeta, companyRows, companyScor
 import { isConnectionsCsv, isConnectionsFileName, matchConnections, parseConnections } from "@/lib/engine/coach/connections";
 import { buildCompaniesEvidence, saveConnections, saveFinalScores } from "@/lib/engine/coach/evidence-server";
 import { researchDue } from "@/lib/engine/coach/research-due";
+import { resetCoach } from "@/lib/engine/coach/reset-server";
 import { steerNote } from "@/lib/engine/coach/parts";
 import { createJob, listUserJobs, patchJob } from "@/lib/engine/jobs-server";
 import { ENGINE_JOB_LABELS, type EngineJobType } from "@/lib/engine/keys";
@@ -317,13 +318,19 @@ export async function POST(req: NextRequest) {
   return new Response(readable, { headers: { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform", connection: "keep-alive", "x-accel-buffering": "no" } });
 }
 
-// Start over (docs/UX_COACH.md §7): the transcript goes, the profile stays.
+// Start over (docs/UX_COACH.md §7): the transcript goes, the profile stays — unless `data=1`, which also removes what that
+// coach wrote (its owned paths and stamp; lib/engine/coach/reset-data.ts) so the page is clean for a new run.
 export async function DELETE(req: NextRequest) {
   const m = await requireEngineMember(req);
   if (!m) return NextResponse.json({ ok: false }, { status: 403 });
   const coachKey = req.nextUrl.searchParams.get("coach");
   if (!isCoachKey(coachKey)) return NextResponse.json({ ok: false, error: "unknown coach" }, { status: 400 });
-  await adminDb().doc(`users/${m.user.uid}/coachSessions/${coachKey}`).delete();
-  return NextResponse.json({ ok: true });
+  const data = req.nextUrl.searchParams.get("data") === "1";
+  try {
+    const r = await resetCoach(m.user.uid, coachKey, data);
+    return NextResponse.json({ ok: true, ...r });
+  } catch (e: unknown) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "reset failed" }, { status: 500 });
+  }
 }
 

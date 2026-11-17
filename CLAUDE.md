@@ -76,7 +76,10 @@
   profile.yml* and *Start a coach over* under *Danger*; the six slots render only for members without the coach. On the JobHacking pages
   an empty section offers *Fill this in with your coach ›* (`SectionsPage` `coachLink`) and a write the panel streams lights the rows it
   names for 600 ms (`jh-flash`, `flashSections` in the coach store). Compass → Settings is untouched by this phase. **Admin → Member data**
-  (`lib/member-data.ts` is the one list of a member's subcollections — extend it when the tree grows): reset coach · reset all · delete.
+  (`lib/member-data.ts` is the one list of a member's subcollections — extend it when the tree grows): reset coach · reset all · delete. **A member resets a coach two ways** (2026-11-17, JobHacking → Settings → Danger): *Start a coach over* clears the
+  conversation; *…and clear its data* also removes what that coach wrote — its `COACH_OWNED_PATHS` and its stamp, through the same
+  profile ↔ setup mapping every write uses (`lib/engine/coach/reset-data.ts` pure, `reset-server.ts`; `DELETE /api/coach/turn?coach=…&data=1`).
+  Other coaches' sections never move; Coach 3's derived evidence goes with it, the member's connections stay.
   **Code checks, the model converses** (decision 2026-11-16): the hand-over checks live in `lib/engine/coach/checks.ts` and run in
   `applyCoachPatch` whenever `progress` is given; Top-40 totals and ranks are computed there (`rankCompanies`), never by the model; a
   hand-over with a failed check is stored `in_progress`. Add a check to `checks.ts` and name it in the prompt's hand-over line — never
