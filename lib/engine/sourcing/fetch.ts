@@ -37,11 +37,11 @@ export const sourcingConfigured = (env: Record<string, string | undefined> = pro
 
 export const configuredSources = (env: Record<string, string | undefined> = process.env): Source[] => configuredAdapters(env).map((a) => a.source);
 
-async function getJson(url: string): Promise<unknown> {
+async function getJson(url: string, headers: Record<string, string> = {}): Promise<unknown> {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), TIMEOUT_MS);
   try {
-    const r = await fetch(url, { signal: ctl.signal, headers: { accept: "application/json", "user-agent": "JobHackerCompass/1.0" } });
+    const r = await fetch(url, { signal: ctl.signal, headers: { accept: "application/json", "user-agent": "JobHackerCompass/1.0", ...headers } });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.json();
   } finally { clearTimeout(t); }
@@ -75,7 +75,7 @@ export async function sourcePostings(brief: SourcingBrief, log: (line: string) =
     const mine = queries.slice(0, a.metered ? (opts.meteredMax ?? a.maxQueries) : a.maxQueries);
     for (const q of mine) {
       try {
-        const json = await getJson(a.url(q, brief.country, process.env));
+        const json = await getJson(a.url(q, brief.country, process.env), a.headers?.(process.env));
         const rows = a.parse(json, brief.country, today).map((r) => ({ ...r, foundBy: { what: q.what, from: q.from, ...(q.industry ? { industry: q.industry } : {}) } }));
         got.push(...rows);
         if (a.metered) metered++;
@@ -109,7 +109,7 @@ export async function upsertSourced(rows: readonly SourcedPosting[]): Promise<vo
     if (++n >= 400) await flush();
   }
   for (const [key, p] of companies) {
-    batch.set(db.doc(`companies/${key}`), { key, name: p.company, country: p.country, location: p.location, lastSeenAt: now, postingsSeen: FieldValue.increment(1) }, { merge: true });
+    batch.set(db.doc(`companies/${key}`), { key, name: p.company, country: p.country, location: p.location, ...(p.companyWebsite ? { website: p.companyWebsite } : {}), lastSeenAt: now, postingsSeen: FieldValue.increment(1) }, { merge: true });
     if (++n >= 400) await flush();
   }
   await flush();
