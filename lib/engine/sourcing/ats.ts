@@ -46,6 +46,18 @@ export function atsBoardApi(b: AtsBoard): string {
   }
 }
 
+/** The board's own page that lists its jobs — the careers URL a member opens. */
+export function atsBoardPage(b: AtsBoard): string {
+  switch (b.provider) {
+    case "greenhouse": return `https://boards.greenhouse.io/${b.boardId}`;
+    case "lever": return `https://jobs.lever.co/${b.boardId}`;
+    case "ashby": return `https://jobs.ashbyhq.com/${b.boardId}`;
+    case "workable": return `https://apply.workable.com/${b.boardId}/`;
+    case "smartrecruiters": return `https://careers.smartrecruiters.com/${b.boardId}`;
+    case "teamtailor": return `https://${b.boardId}.teamtailor.com/jobs`;
+  }
+}
+
 /** The number of jobs a board's answer lists — the registry's one parse, per provider; null when the shape is unknown. */
 export function atsJobCount(provider: AtsProvider, json: unknown): number | null {
   const j = json as Record<string, unknown> | unknown[] | null;

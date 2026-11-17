@@ -80,7 +80,7 @@ describe("the companies job", () => {
     const c = fromPostings(rows, ["Product Manager"]);
     expect(c.map((x) => x.name)).toEqual(["Halter", "Xero"]);
     expect(c[0]).toMatchObject({ inspiredBy: "job_posting", growthSource: "https://www.adzuna.co.nz/land/ad/2", location: "Auckland" });
-    expect(c[0].growthSignal).toBe("2 open postings now — Product Manager, Head of Product (2026-11-12) for Product Manager");
+    expect(c[0].growthSignal).toBe("2 open postings now — Product Manager, Head of Product (2026-11-12)");
     expect(c[1].growthSignal).toContain("1 open posting now");
   });
 
@@ -124,5 +124,48 @@ describe("the companies job", () => {
     const parsed = CompaniesSchema.safeParse({ companies: [{ name: "Halter", companyType: "scaleup", inspiredBy: "competitor", industry: "Agritech", subSector: "", location: "Auckland", website: "", growthSignal: "x", growthSource: "https://a/b", careersUrl: "" }], note: "" });
     expect(parsed.success).toBe(true);
     expect(CompaniesSchema.safeParse({ companies: [{ name: "H", companyType: "mega", inspiredBy: "competitor", industry: "", subSector: "", location: "", website: "", growthSignal: "", growthSource: "", careersUrl: "" }], note: "" }).success).toBe(false);
+  });
+});
+
+// API first (2026-11-17): the boards' pass asks titles and industries, city and country-wide, reads the careers page off a
+// posting link on an ATS board, and the model's proposal runs only to fill a gap — or never.
+import { queriesFor } from "@/lib/engine/sourcing/plan";
+import { atsBoardPage } from "@/lib/engine/sourcing/ats";
+
+describe("the companies job, API first", () => {
+  it("plans titles in the city, industries in the city, titles country-wide, then competencies — the industry on its query", () => {
+    const q = queriesFor({ titles: ["Product Manager", "Head of Product"], competencies: ["Discovery"], industries: ["Agritech", "Fintech"], broaden: true, region: "Auckland, New Zealand", country: "nz" }, 12);
+    expect(q.map((x) => [x.what, x.where, x.from])).toEqual([
+      ["Product Manager", "Auckland", "title"], ["Head of Product", "Auckland", "title"],
+      ["Agritech jobs", "Auckland", "industry"], ["Fintech jobs", "Auckland", "industry"],
+      ["Product Manager", "", "title"], ["Head of Product", "", "title"],
+      ["Discovery", "Auckland", "competency"],
+    ]);
+    expect(q[2].industry).toBe("Agritech");
+    expect(q[0].industry).toBeUndefined();
+    // Without broaden, no country-wide variants; the cap still holds.
+    expect(queriesFor({ titles: ["PM"], competencies: [], industries: ["Agritech"], region: "Sydney", country: "au" }).map((x) => x.where)).toEqual(["Sydney", "Sydney"]);
+  });
+  it("carries the industry a query named onto the employers it found, and the board a posting link sits on as the careers page", () => {
+    const rows: SourcedPosting[] = [
+      posting({ externalId: "1", company: "Halter", url: "https://jobs.lever.co/halter/abc-123", foundBy: { what: "Agritech jobs", from: "industry", industry: "Agritech" } }),
+      posting({ externalId: "2", company: "Halter", title: "Head of Product", url: "https://www.seek.co.nz/job/1", foundBy: { what: "Product Manager", from: "title" } }),
+      posting({ externalId: "3", company: "Xero", url: "https://www.seek.co.nz/job/2", foundBy: { what: "Product Manager", from: "title" } }),
+    ];
+    const c = fromPostings(rows, ["Product Manager"]);
+    expect(c[0]).toMatchObject({ name: "Halter", industry: "Agritech", inspiredBy: "industry_growth", careersUrl: "https://jobs.lever.co/halter" });
+    expect(c[0].growthSignal).toContain("for Product Manager");
+    expect(c[1]).toMatchObject({ name: "Xero", industry: "", inspiredBy: "job_posting", careersUrl: "" });
+    expect(atsBoardPage({ provider: "greenhouse", boardId: "xero" })).toBe("https://boards.greenhouse.io/xero");
+    expect(atsBoardPage({ provider: "teamtailor", boardId: "halter" })).toBe("https://halter.teamtailor.com/jobs");
+  });
+  it("switches the proposal off by hint or by environment", () => {
+    expect(companiesPayload(profile, {}, countryOf).proposal).toBe("auto");
+    expect(companiesPayload(profile, { proposal: "off" }, countryOf).proposal).toBe("off");
+    const prev = process.env.COMPANIES_PROPOSAL;
+    process.env.COMPANIES_PROPOSAL = "off";
+    expect(companiesPayload(profile, {}, countryOf).proposal).toBe("off");
+    expect(companiesPayload(profile, { proposal: "auto" }, countryOf).proposal).toBe("auto");
+    if (prev === undefined) delete process.env.COMPANIES_PROPOSAL; else process.env.COMPANIES_PROPOSAL = prev;
   });
 });

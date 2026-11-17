@@ -8,7 +8,7 @@ import { resolvePrompt } from "../config";
 import { getPromptOverride } from "../config-server";
 import { applyCoachPatch } from "../coach/write";
 import { COMPANIES_PROMPT, COMPANIES_PROMPT_VERSION } from "../prompts/companies";
-import { COMPANIES_MAX_SEARCHES, COMPANIES_MAX_URL_CHECKS, CompaniesSchema, companiesPayload, companiesPayloadEmpty, companiesSummary, companiesTask, fromPostings, mergeCandidates, toProfileCompanies, type Candidate, type CompaniesAnswer, type CompaniesResult, type VerifiedCandidate } from "../research/companies";
+import { COMPANIES_MAX_BOARD_QUERIES, COMPANIES_MAX_SEARCHES, COMPANIES_MAX_URL_CHECKS, COMPANIES_TARGET, CompaniesSchema, companiesPayload, companiesPayloadEmpty, companiesSummary, companiesTask, fromPostings, mergeCandidates, toProfileCompanies, type Candidate, type CompaniesAnswer, type CompaniesResult, type VerifiedCandidate } from "../research/companies";
 import { urlWasFound } from "../research/postings";
 import { companyKey, countryOf, domainOf } from "../sourcing/keys";
 import { confirmCareersUrl, mapLimit, opens, sourcePostings, sourcingConfigured } from "../sourcing/fetch";
@@ -38,23 +38,30 @@ export const companies: Handler = async ({ uid, job, config, agent, log, progres
   const today = new Date().toISOString().slice(0, 10);
   await log(`sourcing from: ${payload.industries.map((i) => i.name).join(" · ") || "no industries"} · titles ${payload.titles.join(" · ") || "none"} · ${payload.region || "no region"} · ${payload.stored.length} stored`);
 
-  // Pass 1 — the job boards, grouped by employer (an API; zero tokens).
+  // Pass 1 — the job boards, grouped by employer (an API; zero tokens): titles and industries, city and country-wide; the
+  // industry a query named rides on the employers it found; a posting link on an ATS board is the careers page.
   let posted: Candidate[] = [];
-  if (sourcingConfigured() && payload.country && payload.titles.length) {
+  const industryNames = payload.industries.map((i) => i.name);
+  if (sourcingConfigured() && payload.country && (payload.titles.length || industryNames.length)) {
     await progress("Reading the job boards");
-    const run = await sourcePostings({ titles: payload.titles, competencies: [], region: payload.region, country: payload.country }, log);
+    const run = await sourcePostings({ titles: payload.titles, competencies: [], industries: industryNames, broaden: true, region: payload.region, country: payload.country }, log, today, { maxQueries: COMPANIES_MAX_BOARD_QUERIES, meteredMax: COMPANIES_MAX_BOARD_QUERIES, meteredAlways: true });
     posted = fromPostings(run.rows, payload.titles);
-    await log(`${run.note} → ${posted.length} employers`);
-  } else await log(`job boards skipped — ${!sourcingConfigured() ? "no adapter key" : !payload.country ? "no source covers the region" : "no titles"}`);
+    await log(`${run.note} → ${posted.length} employers${run.metered ? ` · ${run.metered} paid searches` : ""}`);
+  } else await log(`job boards skipped — ${!sourcingConfigured() ? "no adapter key" : !payload.country ? "no source covers the region" : "no titles or industries"}`);
   if (await cancelled()) return null;
 
-  // Pass 2 — the industry-led proposal: one call with search; the pages never enter a transcript.
-  await progress("Researching the industries");
+  // Pass 2 — the industry-led proposal: one call with search; the pages never enter a transcript. Only to fill a gap the
+  // boards left ("auto"), or never ("off" — API only); names the member added always go through it, since a name is not a query.
+  const fromBoards = mergeCandidates(payload.stored, [posted], payload.neverApply).kept.length;
+  const short = payload.stored.length + fromBoards < COMPANIES_TARGET;
+  const propose = payload.names.length > 0 || (payload.proposal === "auto" && short && payload.industries.length > 0);
   const prompt = resolvePrompt(COMPANIES_PROMPT, COMPANIES_PROMPT_VERSION, override);
   const base = { model: cfg.model, effort: cfg.effort, maxTokens: cfg.maxTokens, system: prompt.text, messages: [{ role: "user" as const, content: companiesTask(payload, today) }], maxSearches: COMPANIES_MAX_SEARCHES };
   let answer: CompaniesAnswer = { companies: [], note: "" };
   let sources: { url: string }[] = [];
-  if (payload.industries.length || payload.names.length) {
+  if (!propose) await log(`proposal skipped — ${payload.proposal === "off" ? "switched off (API only)" : `the boards found ${fromBoards}, enough with ${payload.stored.length} stored`}`);
+  else {
+    await progress("Researching the industries");
     try {
       const r = await callJson({ ...base, schema: CompaniesSchema });
       await meter(r.model, r.usage); await log(usageLine(r));

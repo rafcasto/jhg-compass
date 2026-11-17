@@ -49,6 +49,8 @@ export interface SourcedPosting {
   description: string;
   /** ISO date when the source says; "" when it doesn't. */
   postedAt: string;
+  /** The planned query that returned it — an industry query names the industry, so an employer found that way carries it. */
+  foundBy?: { what: string; from: "title" | "competency" | "industry"; industry?: string };
 }
 
 /** jobPostings/{id} — the id does unique(source, externalId). */
