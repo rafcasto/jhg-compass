@@ -66,6 +66,6 @@ describe("the composer's Paperclip", () => {
     const user = userEvent.setup();
     await user.type(screen.getByRole("textbox", { name: "Your answer" }), "hello{Enter}");
     expect(onSend).toHaveBeenCalledWith("hello", null);
-    expect(screen.getByRole("button", { name: "Add a document" })).toHaveClass("icon-btn");
+    expect(screen.getByRole("button", { name: "Add a document or your LinkedIn connections" })).toHaveClass("icon-btn");
   });
 });

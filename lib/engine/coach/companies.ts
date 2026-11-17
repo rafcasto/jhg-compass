@@ -58,6 +58,28 @@ export function companyFlags(companies: readonly JhgCompany[]): MatrixFlag[] {
   return [...out.filter((f) => f.id !== "tie_at_cut"), ...out.filter((f) => f.id === "tie_at_cut")];
 }
 
+/** A suggested number the member changed (docs/UX_COACH_COMPANY_SCORING.md §4) — the coach asks why, up or down. */
+export function overrideFlags(rows: readonly MatrixRow[]): MatrixFlag[] {
+  const r = COMPANIES_RUBRIC;
+  const out: MatrixFlag[] = [];
+  const label = (axis: string) => r.axes.find((a) => a.key === axis)?.short ?? axis;
+  const up: string[] = [], down: string[] = [];
+  for (const row of rows) for (const o of row.overrides ?? []) {
+    const now = valueOf(row, r, o.axis);
+    const line = `${row.item} — ${label(o.axis)} ${o.from} → ${now}`;
+    (now > o.from ? up : down).push(line);
+  }
+  if (up.length) out.push({ id: "override_up", line: `Raised above what the portal found: ${up.join("; ")}. Ask for the route or the signal behind each — a person, a posting, something they know — or the number comes back down.`, items: up });
+  if (down.length) out.push({ id: "override_down", line: `Lowered below what the portal found: ${down.join("; ")}. Ask what they know that the portal did not — it may be right, and it belongs in challenges[].`, items: down });
+  return out;
+}
+
+/** The ranked rows with the member's overrides back on them — companyRows rebuilds from stored scores, which carry none. */
+export function withOverrides(scored: readonly ScoredRow[], rows: readonly MatrixRow[]): ScoredRow[] {
+  const by = new Map(rows.filter((x) => x.overrides?.length).map((x) => [lower(x.item), x.overrides!]));
+  return scored.map((s) => { const o = by.get(lower(s.item)); return o ? { ...s, overrides: o } : s; });
+}
+
 /** The member's scores as the coach reads them — the ranked 40 plus the flags; totals and ranks are the portal's. */
 export function companyScoresMessage(companies: readonly JhgCompany[], flags: readonly MatrixFlag[] = companyFlags(companies)): string {
   const r = COMPANIES_RUBRIC;

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Paperclip, Send, X } from "lucide-react";
-import { readCoachDocument, type CoachAttachment } from "./document";
+import { isConnectionsAttachment, readComposerFile, type CoachAttachment, type ComposerAttachment, type ConnectionsAttachment } from "./document";
 
 // The composer (docs/UX_COACH.md §3): a textarea that grows to six lines and the one red
 // button in the panel. Enter sends, Shift+Enter breaks a line. One `.icon-btn` (Paperclip)
@@ -10,14 +10,16 @@ import { readCoachDocument, type CoachAttachment } from "./document";
 // attached file shows as a pill above the textarea and goes with the next turn.
 // While a scoring matrix waits for scores (docs/UX_COACH_AGENTIC.md §9–§10) Send steps down to
 // `.btn-secondary`: the matrix's `Send scores` is the panel's one red until it is answered.
+// The same Paperclip takes LinkedIn's Connections.csv (docs/UX_COACH_COMPANY_SCORING.md §3) — sent apart from a
+// document, parsed on the server, never shown to the model.
 export default function Composer({ onSend, disabled = false, placeholder = "Type your answer…", tone = "primary" }: {
-  onSend: (text: string, document: CoachAttachment | null) => void;
+  onSend: (text: string, document: CoachAttachment | null, connections?: ConnectionsAttachment | null) => void;
   disabled?: boolean;
   placeholder?: string;
   tone?: "primary" | "secondary";
 }) {
   const [text, setText] = useState("");
-  const [doc, setDoc] = useState<CoachAttachment | null>(null);
+  const [doc, setDoc] = useState<ComposerAttachment | null>(null);
   const [docError, setDocError] = useState<string | null>(null);
   const ref = useRef<HTMLTextAreaElement>(null);
   const file = useRef<HTMLInputElement>(null);
@@ -32,7 +34,7 @@ export default function Composer({ onSend, disabled = false, placeholder = "Type
   const submit = () => {
     const t = text.trim();
     if ((!t && !doc) || disabled) return;
-    onSend(t, doc);
+    if (doc && isConnectionsAttachment(doc)) onSend(t, null, doc); else onSend(t, doc);
     setText(""); setDoc(null);
   };
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -41,8 +43,8 @@ export default function Composer({ onSend, disabled = false, placeholder = "Type
   const take = async (f: File | undefined) => {
     setDocError(null);
     if (!f) return;
-    const r = await readCoachDocument(f);
-    if (r.ok) setDoc(r.document); else setDocError(r.error);
+    const r = await readComposerFile(f);
+    if (r.ok) setDoc(r.attachment); else setDocError(r.error);
     if (file.current) file.current.value = "";
   };
 
@@ -57,8 +59,8 @@ export default function Composer({ onSend, disabled = false, placeholder = "Type
       )}
       {docError && <p role="alert" className="text-sm text-jh-red">{docError}</p>}
       <div className="flex items-end gap-2">
-        <input ref={file} type="file" accept=".pdf,.md,.markdown,.txt,application/pdf,text/markdown,text/plain" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => void take(e.target.files?.[0])} />
-        <button type="button" onClick={() => file.current?.click()} disabled={disabled} className="icon-btn mb-0.5" aria-label="Add a document"><Paperclip className="h-5 w-5" strokeWidth={1.75} aria-hidden /></button>
+        <input ref={file} type="file" accept=".pdf,.md,.markdown,.txt,.csv,application/pdf,text/markdown,text/plain,text/csv" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => void take(e.target.files?.[0])} />
+        <button type="button" onClick={() => file.current?.click()} disabled={disabled} className="icon-btn mb-0.5" aria-label="Add a document or your LinkedIn connections"><Paperclip className="h-5 w-5" strokeWidth={1.75} aria-hidden /></button>
         <textarea
           ref={ref}
           value={text}
