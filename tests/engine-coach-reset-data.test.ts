@@ -50,3 +50,17 @@ describe("stripCoachData", () => {
     for (const c of COACHES) expect(RESET_CLEARS[c.key]).toBeTruthy();
   });
 });
+
+// A merge write keeps a nested key it does not mention — so the diff marks removals at every depth.
+import { DELETE, mergeDiff } from "@/lib/engine/coach/reset-data";
+
+describe("mergeDiff", () => {
+  it("marks removed keys for deletion at any depth, writes changed leaves, leaves the rest alone", () => {
+    const before = { companyLists: { all: {} }, notes: "x", portals: { companies: [{ name: "Halter" }], positive: ["PM"] }, jhg: { progress: { narrative: { status: "complete" }, targetCompanies: { status: "in_progress" } }, narrative: { leadSkills: ["a"] }, targetCompanies: { companies: [{ name: "Halter" }] } }, cvMarkdown: "cv" };
+    const after = { portals: { positive: ["PM"] }, jhg: { progress: { narrative: { status: "complete" } }, narrative: { leadSkills: ["a"] } }, cvMarkdown: "cv" };
+    expect(mergeDiff(before, after)).toEqual({ companyLists: DELETE, notes: DELETE, portals: { companies: DELETE }, jhg: { progress: { targetCompanies: DELETE }, targetCompanies: DELETE } });
+    expect(mergeDiff({ a: 1 }, { a: 1 })).toBeNull();
+    expect(mergeDiff({ a: [1, 2] }, { a: [1] })).toEqual({ a: [1] });
+    expect(mergeDiff({}, { a: { b: 1 } })).toEqual({ a: { b: 1 } });
+  });
+});
