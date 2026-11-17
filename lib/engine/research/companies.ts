@@ -15,8 +15,10 @@ import { atsBoardPage, atsOf } from "../sourcing/ats";
 export const COMPANIES_TARGET = 40;
 /** The model's one call proposes the industry-led passes; its searches are capped — the links are opened by code after. */
 export const COMPANIES_MAX_SEARCHES = 10;
-/** The job boards' queries for the companies job — titles and industries, city and country-wide; the metered source may spend this many. */
+/** The job boards' queries for the companies job — titles and industries, city and country-wide (the free sources answer them all). */
 export const COMPANIES_MAX_BOARD_QUERIES = 12;
+/** Rows from the free sources that make the metered top-up unnecessary for the companies job — about forty employers' worth. */
+export const COMPANIES_ENOUGH_ROWS = 80;
 export const COMPANIES_MAX_URL_CHECKS = 80;
 /** Companies per industry the proposal is asked for — enough that forty survive verification and the never-join list. */
 export const COMPANIES_PER_INDUSTRY = 8;
