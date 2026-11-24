@@ -1,4 +1,4 @@
-// Coach 3 — Target Companies. The Gem (maleta/gemini-pack/coach-3-target-companies/gem-3-target-companies.md, v7)
+// Coach 3 — Target Companies. The Packer's coach-3 prompt (v7)
 // inside the portal (docs/UX_COACH.md §4). portals.yml is not written by the coach: the portal derives the
 // Scout's file from watchlist.companies and the True North keywords.
 

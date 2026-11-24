@@ -58,7 +58,7 @@ small addition through the SDK's document input) and drafts contact details, hea
 story *as proposals*; the conversation becomes *confirm, correct, sharpen* instead of *dictate*. The prompts' rule holds —
 "never fabricate the member's data" — because the source is the member's own document and nothing is written without a
 yes. Coach 4 (Story Bank) does the same with the CV's bullets: each becomes a candidate story to verify, which is the
-Gem's method anyway. Coach 5 (Master CV) starts from the stored `cv` when there is one.
+source prompt's method anyway. Coach 5 (Master CV) starts from the stored `cv` when there is one.
 
 This is not the retired six-file upload (decision 5): it is one document the member already owns, and the CV is a
 required CareerOps input regardless (`setup.cvMarkdown`). *Narrative in about an hour* becomes about twenty minutes.

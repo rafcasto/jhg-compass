@@ -1,9 +1,9 @@
 // Worked examples, verbs and objects for story sentences — Coaches 4 and 5. Prompts for the member's memory, never facts put in their mouth.
-// Copied verbatim from maleta/gemini-pack/coach-4-story-bank/value-proof-reference-library.md (the Gem's knowledge file). Edit the source there and recopy.
+// The Packer's coach-4 knowledge file (value-proof-reference-library.md), carried here as the repo's copy. This file is the one the coach reads.
 
 export const VALUE_PROOF_LIBRARY = `# Value Proof Reference Library
 
-Knowledge file for **Coach 3 — Evidence**. Lifted verbatim on 2026-10-26 from the JobHackers Day 3 source material (previously embedded in the Day 3 Gem). The coach offers items from this file only as prompts to jog the student's memory, never as facts put in their mouth: every object, number, timeframe and context in a Value Proof sentence must come from the student.
+Knowledge file for **Coach 3 — Evidence**. Lifted verbatim on 2026-10-26 from the JobHackers Day 3 source material. The coach offers items from this file only as prompts to jog the student's memory, never as facts put in their mouth: every object, number, timeframe and context in a Value Proof sentence must come from the student.
 
 ## 1. One worked example per action verb
 Increase — Increased retention rate by +98% in 1 year with a new type of "members only" discount card.

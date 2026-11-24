@@ -23,6 +23,7 @@ import type { Profile } from "@/lib/types";
 import { cvRuleFacts, cvRuleLists, languageLines } from "@/lib/jobhacking/workbook";
 import CompanyListPanel from "./CompanyListPanel";
 import { AddCompany, CompaniesJobStatus, SourceCompaniesButton, useSourceCompanies } from "./SourceCompanies";
+import { PostingsJobStatus, usePostingsJob } from "./PostingsJobStatus";
 import type { CompanyEvidence } from "@/lib/engine/coach/evidence";
 import FileFacts from "./FileFacts";
 import LinkedinProfilePanel from "./LinkedinProfilePanel";
@@ -96,6 +97,8 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
   const flash = useMemo(() => flashKeysFor(lastWrite, sections), [lastWrite, sections]);
   // Page-first Target companies: the companies job from the page, its live status, the evidence under the rows.
   const sourcing = useSourceCompanies(page === "companies" ? uid : undefined, portal);
+  // True North: the coach's postings job is read on the page too — a failed search is said where the postings would be.
+  const postingsJob = usePostingsJob(page === "true-north" ? uid : undefined);
   const { data: evidence } = useLiveDoc<{ byName?: Record<string, CompanyEvidence> }>(uid && page === "companies" ? paths.coachEvidence(uid, "companies") : null);
   const coachLink = coach && pageCoach ? {
     label: "Fill this in with your coach",
@@ -117,7 +120,7 @@ export default function JobHackingScreen({ page, portal = "jobhacking", careerOp
       identity={page === "narrative" ? <Identity profile={profile} email={email} /> : undefined}
       lead={page === "true-north" ? <TrueNorthStatement goal={{ ...goal, ...draft }} base={base} /> : undefined}
       actions={page === "companies" || sharePage ? <>{page === "companies" && <SourceCompaniesButton running={sourcing.running} busy={sourcing.busy} onSource={() => void sourcing.source()} />}{sharePage && <ShareButton page={sharePage} record={share} empty={nothingToShare} />}</> : undefined}
-      status={page === "companies" || sharePage ? <>{page === "companies" && uid && <CompaniesJobStatus uid={uid} latest={sourcing.latest} error={sourcing.error} href={jhSectionHref("top40", base)} />}{sharePage && <ShareStatus page={sharePage} record={share} />}</> : undefined}
+      status={page === "companies" || page === "true-north" || sharePage ? <>{page === "true-north" && uid && <PostingsJobStatus uid={uid} latest={postingsJob} href={jhSectionHref("roles", base)} />}{page === "companies" && uid && <CompaniesJobStatus uid={uid} latest={sourcing.latest} error={sourcing.error} href={jhSectionHref("top40", base)} />}{sharePage && <ShareStatus page={sharePage} record={share} />}</> : undefined}
       items={items}
       rows={rows}
       active={active}

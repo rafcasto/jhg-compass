@@ -46,7 +46,7 @@ describe("the six coaches", () => {
     expect(nextCoach(coachStates(null)).key).toBe("narrative");
   });
 
-  it("has a prompt for every coach, each with its Gem's opening line, the tool, and its knowledge file where the Gem had one", () => {
+  it("has a prompt for every coach, each with its source prompt's opening line, the tool, and its knowledge file where the source had one", () => {
     for (const c of COACHES) { expect(c.ready).toBe(true); expect(COACH_PROMPTS[c.key].text).toContain("update_profile"); }
     expect(COACH_PROMPTS.narrative.text).toContain("Brief narrative outlining who you are");
     expect(COACH_PROMPTS.trueNorth.text).toContain("Clear definition of your Professional Target");

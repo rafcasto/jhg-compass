@@ -27,9 +27,14 @@ export function storyBankCounts(s: StoryBankSource | null | undefined): StoryBan
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** "3 stories · 3 proof points · 2 snapshots" — only the parts the file carries; "" when it carries none. */
+/** The program's target for the bank — Coach 4's "eight to ten proven stories" (lib/engine/coach/keys.ts). */
+export const STORY_BANK_TARGET = { min: 8, max: 10 } as const;
+
+/** "3 stories · 2 proof points · 3 snapshots · aim for 8–10 stories" — the aim only while there are stories but not yet enough. */
 export function storyBankSummary(s: StoryBankSource | null | undefined): string {
   const n = storyBankCounts(s);
-  return [n.stories ? plural(n.stories, "story", "stories") : "", n.proofPoints ? plural(n.proofPoints, "proof point") : "", n.snapshots ? plural(n.snapshots, "snapshot") : ""]
+  const aim = n.stories > 0 && n.stories < STORY_BANK_TARGET.min ? `aim for ${STORY_BANK_TARGET.min}–${STORY_BANK_TARGET.max} stories` : "";
+  return [n.stories ? plural(n.stories, "story", "stories") : "", n.proofPoints ? plural(n.proofPoints, "proof point") : "", n.snapshots ? plural(n.snapshots, "snapshot") : "", aim]
     .filter(Boolean).join(" · ");
 }
 

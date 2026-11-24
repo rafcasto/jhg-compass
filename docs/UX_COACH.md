@@ -12,15 +12,15 @@
 
 ## 0. Where we are — score 5 / 10
 
-The six Gemini Gems (`maleta/gemini-pack`, v7) are the better product: one question at a time, warm but blunt, never fabricate, each coach owns one part of the profile. The portal is the better reader: one schema, merge key by key, every field shown on the page it belongs to. What is wrong is the seam between them.
+The Packer's six coach prompts (v7) are the better product: one question at a time, warm but blunt, never fabricate, each coach owns one part of the profile. The portal is the better reader: one schema, merge key by key, every field shown on the page it belongs to. What is wrong is the seam between them.
 
 | Today | What's wrong (Refactoring UI lens) |
 |---|---|
-| The member builds the profile **in Gemini**, then carries six files to the portal | The portal's primary job — build your profile — has no primary action in the portal. **Hierarchy:** the one thing that matters most is a link out to another product. |
+| The member builds the profile **outside the portal**, then carries six files to it | The portal's primary job — build your profile — has no primary action in the portal. **Hierarchy:** the one thing that matters most is a link out to another product. |
 | JobHacking → Settings is the only door; every page reads *Not in your profile yet* until the files arrive | A new member sees four pages of empty rows and a Settings page that asks for files they do not have. **Empty state** with no call to action. |
-| Each Gem asks the member to upload the earlier files it reads | The portal already holds them. The member is the courier between two systems that know the same things. |
+| Each coach prompt asks the member to upload the earlier files it reads | The portal already holds them. The member is the courier between two systems that know the same things. |
 | Save points are the member's job | A chat that gets too long loses work. Nothing in the portal knows a coach was half done. |
-| The coach's rules live in six Gem prompts outside the repo | Not versioned with the schema the portal validates. |
+| The coach's rules live in six prompts outside the repo | Not versioned with the schema the portal validates. |
 
 What is right and stays: the six coaches in order; one question at a time; the member says yes to every table and draft *in the conversation*; the schema; `mergeProfile`; `FileFacts`; the pages; the two-level menu.
 
@@ -29,7 +29,7 @@ What is right and stays: the six coaches in order; one question at a time; the m
 **The coach sits beside every page and writes the profile as you talk.** The member's profile (`users/{uid}` + `users/{uid}/careerOps/setup`) is the coach's context and its output: it reads the stored profile when a conversation opens, and every time the member says yes to a table or a draft it writes those keys — the same schema paths a file would have carried — straight into the profile. The page beside it updates live. No file, no slot, no upload, no review step: the conversation is the review.
 
 ```
-Gemini (today)       member ──talks──▶ Gem ──prints──▶ file ──member carries──▶ Settings slot ──review──▶ merge ──▶ pages
+Before (files)       member ──talks──▶ coach ──prints──▶ file ──member carries──▶ Settings slot ──review──▶ merge ──▶ pages
 Coach (proposed)     member ──talks──▶ Coach ──"yes"──▶ update_profile ──merge──▶ the page beside the conversation
 ```
 
@@ -152,7 +152,7 @@ For a member with the flag (decision 5), **the six slots, the drop zone, the upl
 
 - **JobHacking → Settings** (`JobHackingSettings`): the header *Your coach writes your profile* + one line; the six coach rows in the two groups (the expanded page's rail, as a list — open one, see its state); then *Export profile.yml* (`.btn-secondary`) and, under a `.section-label` *Danger*, *Start a coach over* (`.btn-ghost`, confirm; clears that transcript, never the profile).
 - **Compass → Settings hub**: *Your profile files* is replaced by **Your coach** — the same six rows — above *Your profile*. Export stays the page action.
-- The `jhg.progress.<coach>` stamps the coach writes drive every state the slots used to show; `profileFiles` is simply not written. A member who had uploaded Gemini files before the flag keeps everything: the coach reads the profile as it is and resumes from it (the Gems' own rule).
+- The `jhg.progress.<coach>` stamps the coach writes drive every state the slots used to show; `profileFiles` is simply not written. A member who had uploaded files before the flag keeps everything: the coach reads the profile as it is and resumes from it (the source prompts' own rule).
 
 ## 6. The API — Claude on Vercel
 
@@ -167,7 +167,7 @@ The coach runs on Vercel against the Claude API — as the CareerOps engine will
 | Tools | **`update_profile`** (closed schema, **not strict** — strict mode caps optional fields at 24 across the tools, which no coach's keys fit; the server enforces shape and ownership instead): `{ patch: <partial profile in the schema's keys>, progress?: "in_progress" \| "complete" }`. The server validates the patch against the schema, restricts it to **the keys this coach owns** (§1 of the schema; `lib/coach/owns.ts`, tested — a Narrative key from Coach 2 comes back as a tool error the coach reads), merges with `mergeProfile` semantics (lists replace, maps merge key by key, nothing unmentioned is dropped), writes one `setDoc` with merge to `users/{uid}/careerOps/setup` — `jhg.identity.fullName` to `users/{uid}` as `shapeJhFile` does — and stamps `jhg.progress.<coach>`. Coaches 2 and 3 also get `web_search_20260209` (`max_uses` 5 per call, so at most 30 a turn; 3 for the others — `COACHES[].search`, fixed for the conversation since a tool change mid-conversation breaks the cache) for market wording, postings and growth signals (decision 4); *nothing found online becomes a claim about the student* stays in the prompt. |
 | Long sessions | The stored transcript has a byte budget (`MAX_TRANSCRIPT_BYTES`, 256 KiB — the Firestore document holds 1 MiB and the research coaches' search results run to hundreds of KB a turn). History is never edited in place (an edit would invalidate every later thinking block); when a turn pushes the transcript past the budget — or a stored one is already past it — it is dropped whole and the next turn starts over as a first turn: the profile as it stands plus a recap of the most recent readable `turns` (`recapOf`, 48 KiB). Since every yes is already in the profile, the recap never holds the only copy of anything. (Decided 2026-11-12, replacing server-side compaction, which keeps the full history client-side and so never bounded the document.) |
 | Thinking | Omitted (adaptive by default on Opus 5.5); `display` stays `omitted`. |
-| Prompts (decision 6) | The six `gem-*.md` + `profile-schema.md` + samples move into the repo as `lib/coach/prompts/` (the source stays in `maleta/`; the pack is a build output already), with the Gemini-isms replaced once: "print the file / offer a download" → "call `update_profile` after each yes, `progress: complete` at hand-over"; "upload your files" → "your profile is in front of me"; Google Search → the tool; the page-context rule added. **Admin override in Firestore** through the pattern `agents-config.ts` already has: `config/coach/{coach}` with `systemPrompt`, `promptVersion`, `updatedBy`, archived versions under `config/coach/promptVersions/{coach}-{n}`, *Reset to default* restoring the repo text — edited in Admin → CareerOps → a new **Coach** tab (§8). |
+| Prompts (decision 6) | The six coach prompts + `profile-schema.md` + samples move into the repo as `lib/coach/prompts/` (the Packer's source stays where it is; the pack is a build output already), with the file-era idioms replaced once: "print the file / offer a download" → "call `update_profile` after each yes, `progress: complete` at hand-over"; "upload your files" → "your profile is in front of me"; Google Search → the tool; the page-context rule added. **Admin override in Firestore** through the pattern `agents-config.ts` already has: `config/coach/{coach}` with `systemPrompt`, `promptVersion`, `updatedBy`, archived versions under `config/coach/promptVersions/{coach}-{n}`, *Reset to default* restoring the repo text — edited in Admin → CareerOps → a new **Coach** tab (§8). |
 
 ## 7. Storage
 

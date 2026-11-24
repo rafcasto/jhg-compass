@@ -32,6 +32,15 @@ describe("JobStatus", () => {
     expect(fetchMock).toHaveBeenCalledWith(`/api/engine/jobs/${job.id}`, expect.objectContaining({ method: "DELETE" }));
   });
 
+  it("carries one mute aside under the running line when given one, and never once the job has landed", () => {
+    live.data = { status: "running", progress: "Reading the job boards" };
+    const { rerender } = render(<JobStatus uid="u1" job={job} aside="Saved as it lands — you can close this and come back any time." />);
+    expect(screen.getByText("Saved as it lands — you can close this and come back any time.")).toHaveClass("text-jh-mute");
+    live.data = { status: "done", result: { count: 18 } };
+    rerender(<JobStatus uid="u1" job={job} aside="Saved as it lands — you can close this and come back any time." />);
+    expect(screen.queryByText(/Saved as it lands/)).toBeNull();
+  });
+
   it("says Starting while queued, lands as a check line with the count and a View link, fails in one red line", () => {
     const { rerender } = render(<JobStatus uid="u1" job={job} href="/jobhacking/true-north" />);
     expect(screen.getByRole("status")).toHaveTextContent("Starting");
