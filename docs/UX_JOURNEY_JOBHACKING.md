@@ -314,7 +314,7 @@ closes the loop on Stage 4's effort.
 - *LN* in the menu is a word the page doesn't use (*LinkedIn profile*) — deliberate, slightly cryptic on first sight.
 
 **Opportunities**
-- A per-block *Copy* `.icon-btn` with the character count beside it (*1,980 / 2,600*).
+- ~~A per-block *Copy* with the character count beside it~~ — already built: `LinkedinProfilePanel` has a Copy per block and a mono *187 / 220* count, red only when over. The map's first draft missed it.
 - The hand-over could set the open-to-work *goal* words from the statement — one sentence she pastes into LinkedIn's
   open-to-work dialog (never stored on `contact.linkedin`, which is the URL).
 
@@ -435,8 +435,20 @@ Applied the same day the map was written, with the rename of the third portal to
 | #7 — invisible cooldown | *Source my 40*'s 429 now says *run it again in N min* (`app/api/coach/companies/route.ts`). |
 | Stage 0 · 2 · 3 · 6 — the retired product name on member screens | Gone from the switcher, eyebrows, the gate page, intake copy, the export header, stored log lines and the coaches' prompts; `/careerops/*` redirects to `/job-search/*`. |
 
-Still open from the table: #1 (no-coach onboarding), #3 (search PRs in flight), #6 (40 rows on a phone), #8 (feedback's way back),
-#9 (the gate), #10 (`.docx`), and the Stage 2 *saved as we go* line.
+Still open after the first pass: #1 (no-coach onboarding), #3 (search PRs in flight), #6 (40 rows on a phone), #8 (feedback's way
+back), #9 (the gate), #10 (`.docx`), and the Stage 2 *saved as we go* line.
+
+## The second pass — 2026-11-24, same day
+
+| Pain | Done |
+|---|---|
+| Stage 2 — nothing says the work is kept during a 1–3 min wait | The first research job of a conversation carries one mute line under its status while it runs: *Saved as it lands — you can close this and come back any time.* (`FIRST_JOB_ASIDE`, `JobStatus aside`). The page's own job lines carry none. |
+| Stage 2 — a failed search is said only in the transcript | True North reads the coach's `postings` job under its header (`PostingsJobStatus`: while running, and fifteen minutes after it lands or fails; the rule in `lib/jobhacking/postings-job.ts`) — the same `JobStatus` line, so a failure is seen where the postings would have been. |
+| Stage 2 — the web fallback is silent | The `postings` handler's progress says *Searching the web for postings* on the fallback road, against *Reading the job boards* on the API road. |
+| Stage 4 — N stories, of how many? | The Story Bank row's summary ends *· aim for 8–10 stories* while there are stories but fewer than eight (`STORY_BANK_TARGET`). |
+
+Still open: #1 (no-coach onboarding — needs the Gem link), #3 (search PRs in flight), #6 (40 rows on a phone), #8 (feedback's way back),
+#9 (the gate — a decision), #10 (`.docx`), and Stage 8's hand-off for JobHacking-only members (a decision).
 
 ## What this map does not change
 
