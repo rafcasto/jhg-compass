@@ -90,6 +90,19 @@ export const nextCoach = (states: Record<CoachKey, CoachState>): Coach => COACHE
 export const missingBefore = (coach: Coach, states: Record<CoachKey, CoachState>): Coach[] =>
   coach.needs.filter((k) => states[k] !== "complete").map((k) => findCoach(k)!);
 
+/** "Narrative and True North" — the gate's coaches as one phrase. */
+export const gateWords = (missing: readonly Coach[]): string => missing.map((c) => c.label).join(" and ");
+
+/**
+ * The gate is a default, not a wall (decision 2026-11-25, docs/UX_JOURNEY_JOBHACKING.md pain 9): a member who already
+ * knows her forty, or has a CV, may start a coach anyway. The one warning line under the gate — the pedagogy carried in a sentence.
+ */
+export const skipGateWarning = (coach: Coach, missing: readonly Coach[]): string =>
+  `${coach.label} works best after ${gateWords(missing)} — it'll ask you for what it needs.`;
+
+/** All six complete — the hand-off: the Job Search portal is switched on by code (decision 2026-11-25, docs/UX_JOURNEY_JOBHACKING.md Stage 8). */
+export const allCoachesComplete = (states: Record<CoachKey, CoachState>): boolean => COACHES.every((c) => states[c.key] === "complete");
+
 /** The coaches that start from the member's CV when none is stored (docs/COACH_ASSESSMENT_2026-11-16.md §1.1): Narrative, Story Bank, Master CV. */
 export const coachStartsFromCv = (key: CoachKey): boolean => key === "narrative" || key === "storyBank" || key === "masterCv";
 

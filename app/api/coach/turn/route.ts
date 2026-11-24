@@ -7,7 +7,7 @@ import { getEngineConfig, getPromptOverride } from "@/lib/engine/config-server";
 import { quotaCheck, quotaLine, resolvePrompt } from "@/lib/engine/config";
 import { getUsageMonth, recordUsage } from "@/lib/engine/usage-server";
 import { COACH_PROMPTS, coachPromptKey } from "@/lib/engine/coach/prompts";
-import { findCoach, isCoachKey, missingBefore, coachStates } from "@/lib/engine/coach/keys";
+import { findCoach, gateWords, isCoachKey, missingBefore, coachStates } from "@/lib/engine/coach/keys";
 import { RUN_RESEARCH, SCORE_MATRIX, UPDATE_PROFILE, coachTools, isResearchKind } from "@/lib/engine/coach/tools";
 import { cleanItems, coachRubrics, isRubricKind, parseRows, rubricOf } from "@/lib/engine/coach/rubrics";
 import { scoreSkills, scoresMessage, skillRow } from "@/lib/engine/coach/skills";
@@ -41,7 +41,7 @@ const MAX_TOOL_ROUNDS = 6;
 /** A research job of one kind runs once per step: a repeat within this window is refused unless it names new companies. */
 const RESEARCH_COOLDOWN_MS = 10 * 60_000;
 
-// Body: { coach: CoachKey, text?: string, start?: true, portal: "jobhacking" | "compass", context?: { page?, section? },
+// Body: { coach: CoachKey, text?: string, start?: true, skipGate?: true — start past the gate (decision 2026-11-25; remembered on the session), portal: "jobhacking" | "compass", context?: { page?, section? },
 //         scores?: [{ item, values: [n, n, n, n] }] — the member's answers to the pending scoring matrix (docs/UX_COACH_AGENTIC.md §9–§10);
 //                 the portal totals, ranks, flags and stores them, and the coach reads the table as the member's words
 //         document?: { name, text } — the member's CV as .md / .txt, read in the browser (docs/UX_COACH_AGENTIC.md §3)
@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
   if (!isCoachKey(coachKey)) return NextResponse.json({ ok: false, error: "unknown coach" }, { status: 400 });
   const coach = findCoach(coachKey)!;
   const start = body?.start === true;
+  const skipGate = start && body?.skipGate === true;
   const text = typeof body?.text === "string" ? body.text.trim().slice(0, MAX_TEXT) : "";
   let document: CoachDocument | null = null;
   let pdf: { name: string; data: string } | null = null;
@@ -111,8 +112,11 @@ export async function POST(req: NextRequest) {
   }
   const profile = profileSnap.exists ? (profileSnap.data() as Profile) : null;
   const setup = setupSnap.exists ? (setupSnap.data() as CareerOpsSetupV2) : null;
+  // The gate is a default, not a wall (decision 2026-11-25): a start that says skipGate passes it, and the session remembers
+  // which coaches were missing so every turn's operator note tells the coach to ask for what they would have written.
   const missing = missingBefore(coach, coachStates(setup?.jhg?.progress));
-  if (missing.length) return NextResponse.json({ ok: false, error: `${coach.label} starts after ${missing.map((c) => c.label).join(" and ")}.` }, { status: 409 });
+  const gateSkipped = skipGate && missing.length ? missing.map((c) => c.label) : session.gateSkipped ?? [];
+  if (missing.length && !gateSkipped.length) return NextResponse.json({ ok: false, error: `${coach.label} starts after ${gateWords(missing)}.` }, { status: 409 });
 
   // No transcript to replay — a new conversation, or one whose transcript outgrew its budget: the
   // first turn carries the profile and, after a restart, a recap of what the member can read.
@@ -180,6 +184,9 @@ export async function POST(req: NextRequest) {
   ctx.steer = steerNote(coach.key, ctx.section, profileFromSetup({ profile, setup }));
   // A search that failed on the last turn is said, not improvised around (docs/SEARCH_TO_API_ASSESSMENT_2026-11-17.md §4 PR 0).
   if (session.lastSearchErrors?.length) ctx.searchErrors = session.lastSearchErrors;
+  // Still missing: once the gate's coaches complete the note stops — the profile answers.
+  const stillMissing = gateSkipped.filter((l) => missing.some((c) => c.label === l));
+  if (stillMissing.length) ctx.gateSkipped = stillMissing;
   let messages: TurnMessage[] = buildMessages(history, memberText, first, ctx, document);
   const now = Date.now();
 
@@ -310,6 +317,7 @@ export async function POST(req: NextRequest) {
           startedAt: session.turnCount === 0 ? now : session.startedAt,
           lastTurnAt: Date.now(),
           openedOn: session.openedOn ?? ctx.page ?? null,
+          ...(gateSkipped.length ? { gateSkipped } : {}),
           lastSearchErrors: searchErrors,
           searchErrors: searchErrors.reduce((acc, c) => ({ ...acc, [c]: (acc[c] ?? 0) + 1 }), { ...(session.searchErrors ?? {}) }),
         };

@@ -117,7 +117,11 @@
   back wide → docked → closed. `ScoreMatrix wide` is one line a row. Never add a third size or a coach page.
   **CV-first** (decision 2026-11-16, `docs/UX_COACH_AGENTIC.md §3`): a document the member hands the coach (`CoachDocument`, `.md`/`.txt`
   through `isCoachDocumentName`) rides on the turn it arrived with and is never stored by itself — the coach proposes, the member confirms,
-  `update_profile` writes. Coaches 1 · 4 · 5 (`coachStartsFromCv`) open on `CvStart` while `setup.cvMarkdown` is empty. Never auto-save a
+  `update_profile` writes. Coaches 1 · 4 · 5 (`coachStartsFromCv`) open on `CvStart` while `setup.cvMarkdown` is empty.
+  **The gate is a default, not a wall** (decision 2026-11-25): a gated coach offers *Start anyway* (`GateStart`, `skipGateWarning`) — the start
+  carries `skipGate`, the session keeps `gateSkipped`, the operator note (`gateSkippedNote`) tells the coach to ask for what the missing coaches
+  would have written; never add a second gate or a hard refusal. **6 of 6 switches Job Search on by code** (`allCoachesComplete` →
+  `grantJobSearchOnCompletion` in `applyCoachPatch`, `SIX_OF_SIX_LINE`; the rail's *Open Job Search ›*) — never an admin step the member waits on. Never auto-save a
   handed-over CV to `cvMarkdown`; that is the Master CV page's and Coach 5's job. A PDF (`CoachPdf`) is transcribed to text once on the
   turn route and never stored as bytes — the transcript budget (`MAX_TRANSCRIPT_BYTES`) is the reason. The panel's Part line comes from
   `lib/engine/coach/parts.ts` (the stored keys), never from the model.
