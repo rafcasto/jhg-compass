@@ -1,5 +1,5 @@
 // Where to find growth numbers and company signals, per country — Coaches 2 and 3.
-// Copied verbatim from maleta/gemini-pack/coach-2-true-north/growth-company-source-directory.md (the Gem's knowledge file). Edit the source there and recopy.
+// The Packer's coach-2 knowledge file (growth-company-source-directory.md), carried here as the repo's copy. This file is the one the coach reads.
 
 export const GROWTH_SOURCE_DIRECTORY = `# Growth Company Source Directory
 
@@ -95,5 +95,5 @@ Then: use the student's sources for every T2 and T3 row; mark each row's source 
 
 ## Maintenance
 
-Owner: Rafael. Review each November, after the Deloitte, AFR and Globe and Mail editions publish. When a list changes status, change the status word here; never edit a Gem to carry source names, the Gem only points to this file.
+Owner: Rafael. Review each November, after the Deloitte, AFR and Globe and Mail editions publish. When a list changes status, change the status word here; never put source names in a coach's prompt; the prompt only points to this file.
 `;

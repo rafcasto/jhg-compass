@@ -1,4 +1,4 @@
-// Coach 2 — True North. The Gem (maleta/gemini-pack/coach-2-true-north/gem-2-true-north.md, v7) inside the
+// Coach 2 — True North. The Packer's coach-2 prompt (v7) inside the
 // portal: same conversation, same rules, same keys — the file replaced by update_profile, the uploads by the
 // profile in front of the coach, Google Search by the portal's web search (docs/UX_COACH.md §4).
 

@@ -1,4 +1,4 @@
-// Coach 6 — LinkedIn. The Gem (maleta/gemini-pack/coach-6-linkedin/gem-6-linkedin.md, v7) inside the portal
+// Coach 6 — LinkedIn. The Packer's coach-6 prompt (v7) inside the portal
 // (docs/UX_COACH.md §4). ln.md is not written by the coach: the LinkedIn page renders every block to paste.
 
 export const LINKEDIN_PROMPT_VERSION = 4;

@@ -16,7 +16,7 @@ statement the portal is built around (`lib/goal.ts`). Everything below is the ro
 she can send to someone.
 
 **Two paths through the same pages.** A member *with the coach* builds the profile in conversation beside each page. A
-member *without* it builds it in the six Gemini Gems and carries six `.yml` files to Settings. The stages are the same;
+member *without* it brings six `.yml` files to Settings (the slots stay for files a member already has). The stages are the same;
 the touchpoints and the pain differ, so each stage notes both.
 
 ---
@@ -54,11 +54,12 @@ coach launcher (bottom-right, ink disc with a tail *Start Narrative*) · JobHack
   your coach ›*. She knows what to do without reading anything.
 - *Without the coach:* 😐 → 😤. Four pages of *Not in your profile yet* and a Settings page of six slots asking for
   files she does not have. The doc itself names this: *"a new member sees four pages of empty rows and a Settings page
-  that asks for files they do not have"* (`UX_COACH.md §0`). Her next step is in another product (the Gemini Gems).
+  that asks for files they do not have"* (`UX_COACH.md §0`). Nothing on the screen says what fills them.
 
 **Pain points**
-- **No-coach path:** the portal's primary job has no primary action in the portal; she is the courier between Gemini and
-  Settings, six times.
+- **No-coach path:** the portal's primary job has no primary action in the portal; the six slots ask for files and
+  nothing says where they come from. **Decided 2026-11-25:** onboarding is the coach, in the app — there is no other
+  product to point to. A member registered without `features.coach` is a flag to review, not a path to design for.
 - **Upload lock** (`config/feedback.uploadLock`): if the admin has it on, each slot's button says *Unlock* and opens a
   four-question survey — once per file, six times. A gate, not an error, but six gates before any content lands.
 - Narrow desktop (1024–1279): the 440 px panel overlays the page rather than docking; the expanded state is one tap away
@@ -68,8 +69,8 @@ coach launcher (bottom-right, ink disc with a tail *Start Narrative*) · JobHack
 **Opportunities**
 - Make the rail of six (`CoachRail`, today on JobHacking → Settings) the panel's *empty state* on first open — the
   assessment already proposes it (`COACH_ASSESSMENT §1.5`). Zero new components.
-- For no-coach members, the Settings header could carry the one sentence that is true: *Your coach is in Gemini — bring
-  each file here as it's ready* with the Gem link. Honest about the courier role rather than silent.
+- For a member without the coach flag, the one honest line is *Your coach is on its way — your files, if you have them,
+  go here.* No link out: everything is handled in the app (decision 2026-11-25).
 - The registration email could say the arc in two lines (six conversations, the first about an hour).
 
 **Metrics:** sign-up → first coach turn (time, %); sign-up → first section non-empty; % of JobHacking-only members who
@@ -403,7 +404,7 @@ coach restarts / data clears; 429 quota hits; 30-day return rate after completio
    program's best moment (the market's own words); members who leave may not come back. The honesty of the status line is
    doing a lot of work.
 3. **Evidence beside the score (Stage 3).** *2 connections at …* turns a chore into recognition. This is where the
-   portal is better than the Gems were.
+   portal is better than the Packer's prompts alone were.
 4. **The Master CV lands (Stage 5).** The payoff; and the first promise the shell might not keep (*CareerOps can run*).
 5. **6 of 6 (Stage 8).** Done — then what. The product's ending is currently decided by an admin flag.
 
@@ -411,7 +412,7 @@ coach restarts / data clears; 429 quota hits; 30-day return rate after completio
 
 | # | Pain | Stage | Impact | Frequency | Fix size | Where |
 |---|---|---|---|---|---|---|
-| 1 | Empty-state onboarding for no-coach members (courier role, upload lock) | 0 | high | every no-coach member | medium | `JobHackingSettings`, registration email |
+| 1 | Empty-state onboarding for no-coach members (six slots with no origin, upload lock) | 0 | high | every no-coach member | medium | `JobHackingSettings`, registration email |
 | 2 | *CareerOps can run from here* when `features.careerOps` is off | 5 · 8 | high (trust) | every JobHacking-only member | small | `readinessLine` / `coachRailRows` take the flag |
 | 3 | Failed search improvised around | 2 | high (trust) | per 429 / refused key | in flight | `SEARCH_TO_API_ASSESSMENT` PRs in order |
 | 4 | `Connections.csv` asked for at Stage 3, takes LinkedIn a day | 3 | medium | every member | small | Stage 1 hand-over line |
@@ -447,7 +448,7 @@ back), #9 (the gate), #10 (`.docx`), and the Stage 2 *saved as we go* line.
 | Stage 2 — the web fallback is silent | The `postings` handler's progress says *Searching the web for postings* on the fallback road, against *Reading the job boards* on the API road. |
 | Stage 4 — N stories, of how many? | The Story Bank row's summary ends *· aim for 8–10 stories* while there are stories but fewer than eight (`STORY_BANK_TARGET`). |
 
-Still open: #1 (no-coach onboarding — needs the Gem link), #3 (search PRs in flight), #6 (40 rows on a phone), #8 (feedback's way back),
+Still open: #1 (no-coach onboarding — decided 2026-11-25: the coach is the onboarding, in the app; no link to another product), #3 (search PRs in flight), #6 (40 rows on a phone), #8 (feedback's way back),
 #9 (the gate — a decision), #10 (`.docx`), and Stage 8's hand-off for JobHacking-only members (a decision).
 
 ## What this map does not change
