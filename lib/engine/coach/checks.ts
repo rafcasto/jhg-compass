@@ -263,14 +263,15 @@ export function coachChecks(coach: CoachKey, profile: ProfileFile, now = Date.no
 export const failedChecks = (checks: readonly Check[]): Check[] => checks.filter((c) => !c.pass);
 
 /**
- * Readiness for CareerOps (docs/UX_COACH.md §12): a CV, a goal with a role, and a watched company with a
- * careers page. One mute sentence; zero tokens to compute.
+ * Readiness for the Job Search portal (docs/UX_COACH.md §12): a CV, a goal with a role, and a watched company with a
+ * careers page. One mute sentence; zero tokens to compute. Shown only to a member who has that portal
+ * (`features.careerOps`) — the caller decides; the sentence itself never names a product the member may not have.
  */
 export function readinessLine(profile: ProfileFile): { ready: boolean; line: string } {
   const missing: string[] = [];
   if (!profile.cv?.trim()) missing.push("your Master CV");
   if (!profile.goal?.role?.trim()) missing.push("your True North goal");
   if (!(profile.watchlist?.companies ?? []).some((c) => isUrl(c.careersUrl))) missing.push("a Top-10 careers page");
-  if (!missing.length) return { ready: true, line: "CareerOps can run from here." };
-  return { ready: false, line: `CareerOps can run once ${missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]}`} ${missing.length === 1 ? "is" : "are"} in.` };
+  if (!missing.length) return { ready: true, line: "Your job search can start from here." };
+  return { ready: false, line: `Your job search can start once ${missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]}`} ${missing.length === 1 ? "is" : "are"} in.` };
 }

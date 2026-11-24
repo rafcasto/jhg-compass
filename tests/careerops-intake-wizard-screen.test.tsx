@@ -189,12 +189,12 @@ describe("IntakeWizard — the review tab", () => {
     const user = userEvent.setup();
     show(complete);
     await user.click(screen.getByRole("button", { name: /^Enter the portal$/i }));
-    expect(replace).toHaveBeenCalledWith("/careerops/sourcing");
+    expect(replace).toHaveBeenCalledWith("/job-search/sourcing");
   });
 
   it("still links to the full Setup screen for what intake does not cover", () => {
     show(complete);
-    expect(screen.getByRole("link", { name: /Full setup/i })).toHaveAttribute("href", "/careerops/setup");
+    expect(screen.getByRole("link", { name: /Full setup/i })).toHaveAttribute("href", "/job-search/setup");
   });
 });
 

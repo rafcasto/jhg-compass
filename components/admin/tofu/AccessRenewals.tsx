@@ -75,8 +75,8 @@ export default function AccessRenewals() {
     finally { setBusy(false); }
   }
 
-  // Portal switches — CareerOps (career-ops agents on the Pi) and JobHacking — on/off for the selected members.
-  const PORTAL_LABEL = { careerOps: "CareerOps", jobHacking: "JobHacking", coach: "Coach" } as const;
+  // Portal switches — Job Search (the career-ops agents on the Pi) and JobHacking — on/off for the selected members.
+  const PORTAL_LABEL = { careerOps: "Job Search", jobHacking: "JobHacking", coach: "Coach" } as const;
   async function setPortal(flag: keyof typeof PORTAL_LABEL, on: boolean) {
     if (!selectedRows.length) return;
     const label = PORTAL_LABEL[flag];
@@ -121,7 +121,7 @@ export default function AccessRenewals() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-jh-line">
-          <span className="inline-flex items-center gap-1.5 text-sm text-jh-mute"><Bot className="h-4 w-4" /> CareerOps portal (switch via the logo)</span>
+          <span className="inline-flex items-center gap-1.5 text-sm text-jh-mute"><Bot className="h-4 w-4" /> Job Search portal (switch via the logo)</span>
           <button type="button" onClick={() => setAgents(true)} disabled={featBusy || selectedRows.length === 0} className="btn-secondary text-xs px-3 py-2 disabled:opacity-40">
             {featBusy ? "Saving…" : `Enable for ${selectedRows.length || "selected"}`}
           </button>
@@ -180,7 +180,7 @@ export default function AccessRenewals() {
                   <th className="px-3 py-2 w-8">
                     <input type="checkbox" aria-label="Select all shown" checked={allVisibleSelected} onChange={toggleAll} className="h-4 w-4 accent-jh-red" />
                   </th>
-                  {["Member", "Status", "CareerOps", "JobHacking", "Coach", "Access period", "Plan · source", "Last change"].map((h) => (
+                  {["Member", "Status", "Job Search", "JobHacking", "Coach", "Access period", "Plan · source", "Last change"].map((h) => (
                     <th key={h} className="font-semibold px-3 py-2 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>

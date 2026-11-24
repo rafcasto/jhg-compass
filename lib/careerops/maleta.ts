@@ -100,7 +100,7 @@ export const START_PATHS: readonly StartPath[] = [
   {
     key: "maleta",
     label: "Upload la maleta",
-    blurb: "Already have it written down? Drop in a maleta file, a career-ops config/profile.yml, or a modes/_profile.md and we'll read what's there.",
+    blurb: "Already have it written down? Drop in a profile file, a config/profile.yml, or a modes/_profile.md and we'll read what's there.",
     asks: "One .md or .yml file",
     minutes: "under a minute",
   },
@@ -218,9 +218,9 @@ export function maletaToYaml(m: Maleta): string {
   };
   const body = yamlDump(JSON.parse(JSON.stringify(doc)), { lineWidth: 100, noRefs: true, skipInvalid: true });
   return [
-    "# La Maleta — everything CareerOps knows about you, in one file.",
+    "# Your profile — everything JobHacker Compass knows about you, in one file.",
     "# Exported by JobHacker Compass. Bring it back any time, or keep it with",
-    "# your career-ops checkout. Safe to edit by hand.",
+    "# your own files. Safe to edit by hand.",
     `# version: ${m.version || MALETA_VERSION}`,
     "",
     body,
@@ -232,7 +232,7 @@ export function maletaToMarkdown(m: Maleta): string {
   const out: string[] = [
     "# La Maleta",
     "",
-    "<!-- Everything CareerOps knows about you, in one file. Exported by",
+    "<!-- Everything JobHacker Compass knows about you, in one file. Exported by",
     `     JobHacker Compass (maleta version ${m.version || MALETA_VERSION}). Safe to edit by hand. -->`,
     "",
   ];
@@ -672,7 +672,7 @@ export function parseMaleta(text: string, filename?: string): MaletaParse {
     const rec = doc as Record<string, unknown>;
     const looksCareerOps = "candidate" in rec || "target_roles" in rec;
     maleta = looksCareerOps ? fromCareerOpsProfileYaml(rec, warnings) : fromMaletaYaml(rec);
-    if (looksCareerOps) warnings.push("Read as a career-ops config/profile.yml. Your CV isn't in that file — add it separately.");
+    if (looksCareerOps) warnings.push("Read as a config/profile.yml. Your CV isn't in that file — add it separately.");
   } else {
     maleta = parseMarkdown(text, warnings);
   }
@@ -682,8 +682,8 @@ export function parseMaleta(text: string, filename?: string): MaletaParse {
     return {
       ...empty, format,
       error: format === "yaml"
-        ? "Nothing recognisable in there. A maleta has keys like goal, contact, personalization — or use a career-ops config/profile.yml."
-        : "Nothing recognisable in there. A maleta uses headings like ## North Star, ## CV, or the career-ops ## Your … sections.",
+        ? "Nothing recognisable in there. A maleta has keys like goal, contact, personalization — or use a config/profile.yml."
+        : "Nothing recognisable in there. A maleta uses headings like ## North Star, ## CV, or the ## Your … sections of a profile.md.",
     };
   }
   return { ok: true, format, maleta, found, warnings };

@@ -29,7 +29,7 @@ import type { Profile } from "@/lib/types";
 export default function JobHackingSettings() {
   const { user, isAdmin } = useAuth();
   const uid = user?.uid;
-  const { coachEnabled, loading: accessLoading } = useAccess(uid);
+  const { coachEnabled, agentsEnabled, loading: accessLoading } = useAccess(uid);
   const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
   const { data: setup } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
   const [dropped, setDropped] = useState<Dropped | null>(null);
@@ -38,7 +38,7 @@ export default function JobHackingSettings() {
 
   if (!uid || accessLoading) return <div className="space-y-6"><PageHeader eyebrow="JobHacking" title="Settings" intro="" /><p className="text-jh-mute animate-pulse">Loading…</p></div>;
 
-  if (withCoach) return <CoachSettings uid={uid} setup={setup} profile={profile} />;
+  if (withCoach) return <CoachSettings uid={uid} setup={setup} profile={profile} jobSearch={agentsEnabled || isAdmin} />;
 
   return (
     <div
@@ -55,7 +55,11 @@ export default function JobHackingSettings() {
   );
 }
 
-function CoachSettings({ uid, setup, profile }: { uid: string; setup: CareerOpsSetupV2 | null; profile: Profile | null }) {
+function CoachSettings({ uid, setup, profile, jobSearch }: {
+  uid: string; setup: CareerOpsSetupV2 | null; profile: Profile | null;
+  /** The member has the Job Search portal — only then may the rail say the search can start from the Master CV. */
+  jobSearch: boolean;
+}) {
   const states = useMemo(() => coachStates(setup?.jhg?.progress), [setup?.jhg?.progress]);
   const current = useMemo(() => profileFromSetup({ profile, setup }), [profile, setup]);
   const started = COACHES.filter((c) => states[c.key] !== "not_started");
@@ -96,7 +100,7 @@ function CoachSettings({ uid, setup, profile }: { uid: string; setup: CareerOpsS
         }
       />
       <div className="max-w-3xl space-y-8">
-        <CoachRail states={states} portal="jobhacking" hasCv={!!setup?.cvMarkdown?.trim()} />
+        <CoachRail states={states} portal="jobhacking" hasCv={!!setup?.cvMarkdown?.trim()} jobSearch={jobSearch} />
 
         <div className="md:hidden">
           <button type="button" onClick={() => downloadText(PROFILE_FILENAME, profileToYaml(current))} className="btn-secondary w-full"><Download className="h-4 w-4" strokeWidth={1.5} aria-hidden /> Export profile.yml</button>

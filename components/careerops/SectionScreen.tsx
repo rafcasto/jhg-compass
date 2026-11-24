@@ -54,7 +54,7 @@ export default function SectionScreen({ section }: { section: SectionKey }) {
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="eyebrow">CareerOps · {sec.label} ({sec.tools.length})</p>
+          <p className="eyebrow">Job Search · {sec.label} ({sec.tools.length})</p>
           <h1>{sec.tagline}</h1>
         </div>
         <div className="text-sm text-right space-y-1">

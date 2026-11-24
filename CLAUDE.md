@@ -9,6 +9,14 @@
   `profile.yml`. Existing `maleta*` identifiers in `lib/careerops/maleta.ts`, `MaletaUpload.tsx`,
   `StartChooser.tsx`, `IntakeScreen.tsx`, `docs/LA_MALETA.md` and their tests are legacy; rename them when
   touched, and never add new ones.
+- **"Job Search", never "CareerOps"** (decision 2026-11-24). The third portal — Sourcing · Scoring · Tailoring · Tracking, the career-ops
+  agents on the Pi — is **Job Search** to anyone outside the repo: the portal switcher, eyebrows, the gate page, the coach's readiness
+  line, admin labels, exported files, stored log lines, and the URL `/job-search/*` (`/careerops/*` redirects, `jobSearchRedirects`
+  in `lib/settings-redirects.mjs`). The upstream name may not be shown to members. **Inside the repo it stays** — `lib/careerops/`,
+  `CareerOpsSetupV2`, the `careerOps*` Firestore collections, `features.careerOps`, the `(careerops)` route group, `careerops-worker`
+  — the same legacy-identifier rule as `maleta*`: never rename a collection for it, never add a new member-facing use. The readiness
+  line and the rail's Master CV suffix are shown only to a member with `features.careerOps` (`jobSearch` on `coachRailRows` and
+  `Transcript`) — never promise a portal the member does not have (`docs/UX_JOURNEY_JOBHACKING.md`).
 - **Settings is the profile** (decision 2026-11-07, `docs/UX_SETTINGS_HUB.md`): the Compass shell's account group is **Settings · Sign out**
   — there is no Profile page or row any more (`/profile*` redirects, `lib/settings-redirects.mjs`). `/settings` is a **hub**
   (`components/profile/SettingsHub.tsx`: identity · five area rows that quote the member's data · the six Packer files) and

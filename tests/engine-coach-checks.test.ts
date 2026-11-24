@@ -118,19 +118,19 @@ describe("Story Bank, Master CV and LinkedIn checks", () => {
 });
 
 describe("readiness and the tool result", () => {
-  it("says what CareerOps still needs", () => {
-    expect(readinessLine({ version: 1 }).line).toBe("CareerOps can run once your Master CV, your True North goal and a Top-10 careers page are in.");
-    expect(readinessLine({ version: 1, cv: "# CV", goal: { role: "PM" } }).line).toBe("CareerOps can run once a Top-10 careers page is in.");
-    expect(readinessLine({ version: 1, cv: "# CV", goal: { role: "PM" }, watchlist: { companies: [{ name: "A", careersUrl: "https://a.example/jobs" }], positive: [], negative: [] } })).toEqual({ ready: true, line: "CareerOps can run from here." });
+  it("says what the job search still needs — never naming the retired product", () => {
+    expect(readinessLine({ version: 1 }).line).toBe("Your job search can start once your Master CV, your True North goal and a Top-10 careers page are in.");
+    expect(readinessLine({ version: 1, cv: "# CV", goal: { role: "PM" } }).line).toBe("Your job search can start once a Top-10 careers page is in.");
+    expect(readinessLine({ version: 1, cv: "# CV", goal: { role: "PM" }, watchlist: { companies: [{ name: "A", careersUrl: "https://a.example/jobs" }], positive: [], negative: [] } })).toEqual({ ready: true, line: "Your job search can start from here." });
   });
   it("carries the failed checks, the stored progress and the readiness line", () => {
     const r = toolResultOf(["Headline"], "narrative:\n  headline: x", [], { failedChecks: [{ id: "N3", label: "3–5 superpowers", fix: "1 superpower — need 3 to 5" }], progress: "in_progress" });
     expect(r.progress).toBe("in_progress");
     expect((r.checks as { failed: unknown[]; note: string }).failed).toEqual([{ id: "N3", check: "3–5 superpowers", fix: "1 superpower — need 3 to 5" }]);
     expect((r.checks as { note: string }).note).toContain("Not marked complete");
-    const ok = toolResultOf(["Headline"], "x", [], { failedChecks: [], progress: "complete", readiness: "CareerOps can run from here." });
+    const ok = toolResultOf(["Headline"], "x", [], { failedChecks: [], progress: "complete", readiness: "Your job search can start from here." });
     expect(ok.checks).toBe("all passed");
-    expect(ok.readiness).toBe("CareerOps can run from here.");
+    expect(ok.readiness).toBe("Your job search can start from here.");
     expect(toolResultOf(["Headline"], "x")).toEqual({ ok: true, updated: ["Headline"], profile: "x" });
   });
 });

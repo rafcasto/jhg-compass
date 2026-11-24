@@ -149,7 +149,7 @@ export interface IntakeStep {
   optional: boolean;
 }
 
-export const INTAKE_HREF = "/careerops/intake";
+export const INTAKE_HREF = "/job-search/intake";
 
 /**
  * The four things intake asks for, in the order the portal needs them. Only
@@ -183,7 +183,7 @@ export function intakeSteps(s: IntakeSignals): IntakeStep[] {
       key: "watchlist",
       label: "Companies to watch",
       detail: "Careers pages the Scout checks for new postings. Zero tokens — it reads the public boards.",
-      href: "/careerops/setup",
+      href: "/job-search/setup",
       done: s.companies > 0,
       optional: false,
     },
@@ -191,7 +191,7 @@ export function intakeSteps(s: IntakeSignals): IntakeStep[] {
       key: "answers",
       label: "Standard answers",
       detail: "The questions every application form asks. Answer once and the Apply screen reuses them.",
-      href: "/careerops/setup",
+      href: "/job-search/setup",
       done: s.answers > 0,
       optional: true,
     },

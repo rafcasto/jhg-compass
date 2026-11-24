@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import { useAccess } from "@/lib/firestore/access";
 import { Sheet } from "@/components/tracker/Sheet";
 import { paths, useLiveDoc } from "@/lib/firestore/db";
 import { auth } from "@/lib/firebase/client";
@@ -38,9 +39,11 @@ import { closeCoach, flashSections, openCoach, restoreWide, setWide, useCoachUi 
 // from wide to docked before it closes; the choice is remembered on the device.
 export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const ui = useCoachUi();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const pathname = usePathname();
   const uid = user?.uid;
+  const { agentsEnabled } = useAccess(uid);
+  const jobSearch = agentsEnabled || isAdmin; // the Job Search portal — the readiness line is shown only to those who have it
   const coach = findCoach(ui.coach);
   const { data: setup } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
   const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
@@ -166,9 +169,9 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       {wide && <div className="lg:hidden"><CoachRail states={states} portal={portal} hasCv={hasCv} /></div>}
     </div>
   ) : cvFirst && canTalk ? (
-    <CvStart coachLabel={coach.label} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
+    <CvStart coachLabel={coach.label} again={coach.key !== "narrative"} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
   ) : (
-    <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} onConnections={(c) => void send(null, null, null, c)} wide={wide} onExpand={() => setWide(true)} />
+    <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} onConnections={(c) => void send(null, null, null, c)} wide={wide} onExpand={() => setWide(true)} jobSearch={jobSearch} />
   );
 
   return (

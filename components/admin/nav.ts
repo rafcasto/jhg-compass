@@ -53,7 +53,7 @@ export const TABS = [
   { key: "cms", label: "Lead magnet CMS", title: "JHCompass lead magnet CMS", subs: CMS_SUBTABS },
   { key: "interactions", label: "User interactions", title: "User interactions", subs: INTERACTIONS_SUBTABS },
   { key: "analytics", label: "Analytics", title: "Analytics", subs: ANALYTICS_SUBTABS },
-  { key: "careerops", label: "CareerOps", title: "CareerOps portal — agents on the Pi", subs: AGENTS_SUBTABS },
+  { key: "careerops", label: "Job Search", title: "Job Search portal — agents on the Pi", subs: AGENTS_SUBTABS },
   { key: "claude", label: "Claude", title: "The Claude engine — the coach and the agents inside JobHacking and Compass", subs: ENGINE_SUBTABS },
 ] as const;
 export type TabKey = (typeof TABS)[number]["key"];

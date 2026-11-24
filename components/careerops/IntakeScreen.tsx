@@ -51,7 +51,7 @@ function Inner() {
   if (loading || !ctx || ctx.setupLoading) return <p className="text-jh-mute animate-pulse">Loading…</p>;
   if (!allowed) return null; // the layout shows the "not switched on" card
 
-  const heading = phase === "choose" ? "Let's get you set up" : phase === "maleta" ? "Upload la maleta" : "Your CareerOps intake";
+  const heading = phase === "choose" ? "Let's get you set up" : phase === "maleta" ? "Upload la maleta" : "Your Job Search intake";
   const blurb = phase === "choose"
     ? "Three ways in, and they all end up in the same place. Everything stays on our own hardware, and nothing is ever submitted on your behalf."
     : phase === "maleta"
@@ -61,7 +61,7 @@ function Inner() {
   return (
     <div className="max-w-3xl space-y-6">
       <header>
-        <p className="eyebrow">CareerOps · Intake</p>
+        <p className="eyebrow">Job Search · Intake</p>
         <h1 className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-jh-red" strokeWidth={1.5} /> {heading}
         </h1>

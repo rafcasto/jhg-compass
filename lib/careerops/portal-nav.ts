@@ -10,7 +10,7 @@ export interface PortalSection { key: string; label: string; href: string; tagli
 
 export const PORTAL_SECTIONS = [
   {
-    key: "sourcing", label: "Sourcing", href: "/careerops/sourcing", tagline: "Find roles at your target companies.",
+    key: "sourcing", label: "Sourcing", href: "/job-search/sourcing", tagline: "Find roles at your target companies.",
     tools: [
       { key: "scan", label: "scan", title: "Scan target companies", blurb: "Searches the careers pages and job boards of the companies on your watchlist for postings that match your North Star goal — role keywords, archetypes, exclusions. Zero tokens: it reads the public boards directly." },
       { key: "pipeline", label: "pipeline", title: "Process a batch of postings", blurb: "Paste a list of posting URLs — from your inbox, a job alert, anywhere. Each one goes through the auto-pipeline: scored, written up as a report, tailored CV drafted when it clears 4.0, and logged on your Progress board as pending." },
@@ -18,7 +18,7 @@ export const PORTAL_SECTIONS = [
     ],
   },
   {
-    key: "scoring", label: "Scoring", href: "/careerops/scoring", tagline: "Decide if a role is worth your time.",
+    key: "scoring", label: "Scoring", href: "/job-search/scoring", tagline: "Decide if a role is worth your time.",
     tools: [
       { key: "oferta", label: "oferta", title: "Score one posting", blurb: "One job description scored 1–5 on five criteria — North Star alignment, CV vs requirements, compensation, cultural signals, red flags — with the full report: executive summary, CV match, seniority, compensation, personalisation hook, interview probability." },
       { key: "ofertas", label: "ofertas", title: "Score a handful of related roles", blurb: "Two to nine postings at once, ranked when they land. Same report per posting." },
@@ -28,7 +28,7 @@ export const PORTAL_SECTIONS = [
     ],
   },
   {
-    key: "tailoring", label: "Tailoring", href: "/careerops/tailoring", tagline: "Get in front of humans and apply effortlessly.",
+    key: "tailoring", label: "Tailoring", href: "/job-search/tailoring", tagline: "Get in front of humans and apply effortlessly.",
     tools: [
       { key: "contacto", label: "contacto", title: "Find the right person and draft the DM", blurb: "Picks the one person worth contacting for a scored role — hiring manager, recruiter, team peer or interviewer — and drafts a targeted message under 300 characters in the three-sentence framework for that persona." },
       { key: "pdf", label: "pdf", title: "ATS-ready CV for a posting", blurb: "Tailors your CV to a scored posting and renders the ATS-safe PDF. Nothing is claimed that isn't in your CV — the keywords it couldn't honestly use are listed." },
@@ -36,7 +36,7 @@ export const PORTAL_SECTIONS = [
     ],
   },
   {
-    key: "tracking", label: "Tracking", href: "/careerops/tracking", tagline: "Prepare, follow up, learn from the pattern, close the deal.",
+    key: "tracking", label: "Tracking", href: "/job-search/tracking", tagline: "Prepare, follow up, learn from the pattern, close the deal.",
     tools: [
       { key: "tracker", label: "tracker", title: "Every evaluation, application and reply", blurb: "One table across your reports, generated documents and Progress-board stage — what was scored, what was sent, what came back." },
       { key: "interview-prep", label: "interview-prep", title: "Interview intelligence for a role", blurb: "A company- and role-specific prep document for whoever is in the room — recruiter, hiring manager, peer/technical or panel — with likely questions, talking points and STAR+R stories drawn from your CV." },
@@ -49,8 +49,8 @@ export const PORTAL_SECTIONS = [
 export type SectionKey = (typeof PORTAL_SECTIONS)[number]["key"];
 export type ToolKey = (typeof PORTAL_SECTIONS)[number]["tools"][number]["key"];
 
-export const PORTAL_HOME = "/careerops/sourcing";
-export const SETUP_HREF = "/careerops/setup";
+export const PORTAL_HOME = "/job-search/sourcing";
+export const SETUP_HREF = "/job-search/setup";
 // Onboarding. First-timers land here instead of the full Setup screen: one
 // thing at a time (CV first), then the checklist of what is still missing.
 // The canonical definition lives in lib/careerops/intake.ts; re-exported here

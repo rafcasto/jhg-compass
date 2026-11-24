@@ -43,7 +43,7 @@ export default function Tracker({ ctx }: ToolProps) {
     try {
       const ref = await createDoc(paths.opportunities(ctx.uid), {
         company: r.company, role: r.role, market: "visible", stage: stages[0].id, contactIds: [], log: [],
-        source: "CareerOps · Evaluator", url: r.url ?? "", notes: `Evaluator score ${r.score ?? "?"}/5 · ${r.archetype} · ${r.legitimacy}`,
+        source: "Evaluator", url: r.url ?? "", notes: `Evaluator score ${r.score ?? "?"}/5 · ${r.archetype} · ${r.legitimacy}`,
       });
       await updateDoc(doc(paths.careerOpsReports(ctx.uid), r.id), { addedOpportunityId: ref.id });
       track(TAGS.ADD_OPPORTUNITY, { source: "careerops", props: { from: "tracker", score: r.score } });

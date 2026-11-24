@@ -50,7 +50,7 @@ export default function Followup({ ctx }: ToolProps) {
     await job.run({ type: "followup", opportunityId: o.id, company: o.company, role: o.role ?? "", stage: stages.find((s) => s.id === o.stage)?.label ?? o.stage, daysSince: since ?? 0, channel, lastNote, ...(report ? { reportJobId: report.jobId } : {}) });
   }
   async function markSent(o: Opportunity) {
-    await updateDoc(doc(paths.opportunities(ctx.uid), o.id), { log: arrayUnion({ at: Date.now(), text: `Follow-up sent (${channel}) — CareerOps` }) });
+    await updateDoc(doc(paths.opportunities(ctx.uid), o.id), { log: arrayUnion({ at: Date.now(), text: `Follow-up sent (${channel})` }) });
   }
   const body = typeof shown?.data?.body === "string" ? (shown.data.body as string) : null;
 

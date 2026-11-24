@@ -32,8 +32,8 @@ export default function AgentsTab({ sub, onSub }: { sub: AgentsSub; onSub: (s: A
 
   return (
     <div className="space-y-6">
-      <TabHeader icon={Bot} title="CareerOps"
-        intro="The agents behind the CareerOps portal, running on the Raspberry Pi — Scout, Extractor, Evaluator, Tailor, Writer and Researcher. Pick the model each agent uses, edit its prompt, and train new models. The site never runs a model: it queues jobs into Upstash Redis and the Pi worker does the work." />
+      <TabHeader icon={Bot} title="Job Search"
+        intro="The agents behind the Job Search portal, running on the Raspberry Pi — Scout, Extractor, Evaluator, Tailor, Writer and Researcher. Pick the model each agent uses, edit its prompt, and train new models. The site never runs a model: it queues jobs into Upstash Redis and the Pi worker does the work." />
       <SubTabs items={AGENTS_SUBTABS} value={sub} onChange={onSub} ariaLabel="Agents sections" />
       {sub === "overview" && <Overview status={status} error={err} onRefresh={refresh} />}
       {sub === "models" && <Models status={status} />}
