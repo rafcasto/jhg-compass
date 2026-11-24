@@ -15,8 +15,10 @@ import ScoreMatrix, { ScoredRows } from "./ScoreMatrix";
 // line. 24 px between turns, 8 px inside one. Scrolls to the newest as it arrives. The scoring
 // matrix (docs/UX_COACH_AGENTIC.md §9–§10) is the one form in it: shown on the coach turn that asked
 // for it until a member turn carries the scores, which then render as the scored table.
-export default function Transcript({ turns, pending, error, quota, uid, jobHref, onScores, wide = false, onExpand, onConnections }: {
+export default function Transcript({ turns, pending, error, quota, uid, jobHref, onScores, wide = false, onExpand, onConnections, jobSearch = false }: {
   turns: readonly TranscriptTurn[];
+  /** The member has the Job Search portal — only then is a hand-over's readiness sentence shown (CLAUDE.md: never promise a portal the member lacks). */
+  jobSearch?: boolean;
   /** The member — the research jobs a turn started are read live under their account. */
   uid?: string;
   /** Where a finished research job's View › goes (the page it wrote). */
@@ -45,10 +47,10 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
 
   return (
     <div className="space-y-6" aria-live="polite">
-      {turns.map((t, i) => <Turn key={`${t.at}-${i}`} turn={t} uid={uid} jobHref={jobHref} body={body} md={md} matrix={t.at === matrixTurnAt && onScores ? { onScores, disabled: !!pending, wide, onExpand, onConnections } : undefined} />)}
+      {turns.map((t, i) => <Turn key={`${t.at}-${i}`} turn={t} uid={uid} jobHref={jobHref} body={body} md={md} jobSearch={jobSearch} matrix={t.at === matrixTurnAt && onScores ? { onScores, disabled: !!pending, wide, onExpand, onConnections } : undefined} />)}
       {pending && (
         <div className="space-y-2">
-          {pending.writes.map((w, i) => <WriteStatus key={i} note={w} />)}
+          {pending.writes.map((w, i) => <WriteStatus key={i} note={w} jobSearch={jobSearch} />)}
           {uid && pending.jobs.map((j) => <JobStatus key={j.id} uid={uid} job={j} href={jobHref} />)}
           {pending.text
             ? <div className={body}><Markdown size={md}>{pending.text}</Markdown></div>
@@ -63,7 +65,7 @@ export default function Transcript({ turns, pending, error, quota, uid, jobHref,
   );
 }
 
-function Turn({ turn, uid, jobHref, body, md, matrix }: { turn: TranscriptTurn; uid?: string; jobHref?: string; body: string; md: "sm" | "base"; matrix?: { onScores: (rows: MatrixRow[]) => void; disabled: boolean; wide: boolean; onExpand?: () => void; onConnections?: (c: ConnectionsAttachment) => void } }) {
+function Turn({ turn, uid, jobHref, body, md, matrix, jobSearch }: { turn: TranscriptTurn; uid?: string; jobHref?: string; body: string; md: "sm" | "base"; jobSearch: boolean; matrix?: { onScores: (rows: MatrixRow[]) => void; disabled: boolean; wide: boolean; onExpand?: () => void; onConnections?: (c: ConnectionsAttachment) => void } }) {
   if (turn.role === "member") {
     return (
       <div className="rounded-md bg-jh-mist px-4 py-3">
@@ -76,7 +78,7 @@ function Turn({ turn, uid, jobHref, body, md, matrix }: { turn: TranscriptTurn; 
   }
   return (
     <div className="space-y-2">
-      {turn.writes?.map((w, i) => <WriteStatus key={i} note={w} />)}
+      {turn.writes?.map((w, i) => <WriteStatus key={i} note={w} jobSearch={jobSearch} />)}
       {turn.text && <div className={body}><Markdown size={md}>{turn.text}</Markdown></div>}
       {uid && turn.jobs?.map((j: JobNote) => <JobStatus key={j.id} uid={uid} job={j} href={jobHref} />)}
       {turn.searchErrors?.length ? <p role="status" className="text-sm text-jh-mute">Search didn&apos;t run — {[...new Set(turn.searchErrors)].map(searchErrorWords).join("; ")}.</p> : null}
@@ -98,14 +100,14 @@ function Thinking() {
 // A write is a bare status line, not a box — the member's turn is the transcript's one box kind
 // (docs/UX_COACH_AGENTIC.md §1).
 // On a hand-over the readiness sentence follows, mute, from code (docs/UX_COACH_AGENTIC.md §4) — never a banner.
-function WriteStatus({ note }: { note: WriteNote }) {
+function WriteStatus({ note, jobSearch }: { note: WriteNote; jobSearch: boolean }) {
   return (
     <div className="space-y-1">
       <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-jh-ink">
         <Check className="h-4 w-4 shrink-0 text-rb-green-dark" aria-hidden /> {writeLine(note)}
         {note.links.length > 0 && <Link href={note.links[0].href} className="link text-sm">View ›</Link>}
       </p>
-      {note.readiness && <p className="text-sm text-jh-mute">{note.readiness}</p>}
+      {jobSearch && note.readiness && <p className="text-sm text-jh-mute">{note.readiness}</p>}
     </div>
   );
 }

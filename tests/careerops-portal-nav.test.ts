@@ -16,7 +16,7 @@ describe("CareerOps portal navigation", () => {
     expect(parseTool("scoring", "batch")).toBe("batch");
     expect(parseTool("scoring", "nope")).toBe("oferta");
     expect(parseTool("tracking", null)).toBe("tracker");
-    expect(toolHref("tailoring", "pdf")).toBe("/careerops/tailoring?tool=pdf");
-    expect(PORTAL_HOME).toBe("/careerops/sourcing");
+    expect(toolHref("tailoring", "pdf")).toBe("/job-search/tailoring?tool=pdf");
+    expect(PORTAL_HOME).toBe("/job-search/sourcing");
   });
 });

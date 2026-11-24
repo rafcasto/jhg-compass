@@ -14,7 +14,7 @@ export default function EngineTab({ sub, onSub }: { sub: EngineSub; onSub: (s: E
   return (
     <div className="space-y-6">
       <TabHeader icon={Sparkles} title="Claude"
-        intro="The engine behind the AI coach on JobHacking and Compass → Settings — and, as they are reused there, the CareerOps agents. Every call is metered per member per month; limits start at none (measure first), and the price table is yours to correct." />
+        intro="The engine behind the AI coach on JobHacking and Compass → Settings — and, as they are reused there, the Job Search agents. Every call is metered per member per month; limits start at none (measure first), and the price table is yours to correct." />
       <SubTabs items={ENGINE_SUBTABS} value={sub} onChange={onSub} ariaLabel="Claude sections" />
       {sub === "usage" && <Usage />}
       {sub === "settings" && <Settings />}

@@ -29,10 +29,13 @@ describe("the rail of six", () => {
     expect(coachProgressLine(states)).toBe("1 of 6 complete");
   });
 
-  it("says on the Master CV row when CareerOps can run", () => {
+  it("says on the Master CV row when the job search can start — only for a member who has that portal", () => {
     const all = coachStates({ narrative: { status: "complete" }, trueNorth: { status: "complete" }, targetCompanies: { status: "complete" }, storyBank: { status: "complete" } });
-    expect(coachRailRows(all, { hasCv: false }).find((r) => r.key === "masterCv")).toMatchObject({ state: "empty", summary: "about 2 hours · CareerOps can run once your CV is in", count: "about 2 hours" });
-    expect(coachRailRows(all, { hasCv: true }).find((r) => r.key === "masterCv")!.summary).toBe("about 2 hours · CareerOps can run from here");
+    expect(coachRailRows(all, { hasCv: false, jobSearch: true }).find((r) => r.key === "masterCv")).toMatchObject({ state: "empty", summary: "about 2 hours · Your job search can start once your CV is in", count: "about 2 hours" });
+    expect(coachRailRows(all, { hasCv: true, jobSearch: true }).find((r) => r.key === "masterCv")!.summary).toBe("about 2 hours · Your job search can start from here");
+    // Without the portal the row says nothing about it — and never the retired product name.
+    expect(coachRailRows(all, { hasCv: true }).find((r) => r.key === "masterCv")!.summary).toBe("about 2 hours");
+    expect(JSON.stringify(coachRailRows(all, { hasCv: true, jobSearch: true }))).not.toMatch(/careerops/i);
     expect(coachProgressLine(coachStates(null))).toBe("0 of 6 complete");
   });
 });

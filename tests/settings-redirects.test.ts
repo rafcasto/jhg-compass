@@ -47,3 +47,13 @@ describe("JobHacking artefact redirects (decision 2026-11-09)", () => {
     expect(all[0]).toEqual({ source: "/jobhacking/artefacts", has: [{ type: "query", key: "section", value: "story-bank" }], destination: "/jobhacking/story-bank", permanent: true });
   });
 });
+
+describe("Job Search redirects (decision 2026-11-24)", () => {
+  it("sends the third portal's old URL, and every path under it, to /job-search", async () => {
+    const { jobSearchRedirects } = await import("../lib/settings-redirects.mjs");
+    expect(jobSearchRedirects()).toEqual([
+      { source: "/careerops", destination: "/job-search", permanent: true },
+      { source: "/careerops/:path*", destination: "/job-search/:path*", permanent: true },
+    ]);
+  });
+});

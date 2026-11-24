@@ -33,8 +33,13 @@ export function coachRailItems(portal: ProfilePortal = "jobhacking"): CoachRailI
 }
 
 export interface RailOptions {
-  /** The member has a CV stored — the Master CV row says CareerOps can run (docs/UX_COACH.md §12). */
+  /** The member has a CV stored — the Master CV row says the job search can start (docs/UX_COACH.md §12). */
   hasCv?: boolean;
+  /**
+   * The member has the Job Search portal (`features.careerOps`, or is an admin). Without it the Master CV row says
+   * nothing about it — a promise the shell cannot keep is worse than silence (docs/UX_JOURNEY_JOBHACKING.md, pain 2).
+   */
+  jobSearch?: boolean;
 }
 
 /**
@@ -50,7 +55,7 @@ export function coachRailRows(states: Record<CoachKey, CoachState>, opts: RailOp
     if (state === "done") summary = "Complete";
     else if (gated) summary = `After ${missing[missing.length - 1].label}`;
     else summary = state === "partial" ? `In progress · ${c.time}` : c.time;
-    if (c.key === "masterCv" && state !== "done") summary += opts.hasCv ? " · CareerOps can run from here" : " · CareerOps can run once your CV is in";
+    if (c.key === "masterCv" && state !== "done" && opts.jobSearch) summary += opts.hasCv ? " · Your job search can start from here" : " · Your job search can start once your CV is in";
     return { key: c.key, state, summary, ...(gated || state === "done" ? {} : { count: c.time }) };
   });
 }

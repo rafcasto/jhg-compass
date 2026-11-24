@@ -83,7 +83,7 @@ describe("Setup screen — an intake North Star survives an unrelated save", () 
     render(<Setup />);
     expect(screen.getByText(/Built from the North Star you set in intake/)).toBeInTheDocument();
     expect(screen.getByText(/It overrides your Compass goal/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /intake/i })).toHaveAttribute("href", "/careerops/intake");
+    expect(screen.getByRole("link", { name: /intake/i })).toHaveAttribute("href", "/job-search/intake");
   });
 });
 
@@ -102,7 +102,7 @@ describe("Setup screen — Compass stays the default", () => {
     setup = { cvMarkdown: "# Jane", profileYaml: "", notes: "", updatedAt: 1, portals: { companies: [], positive: [], negative: [] } };
     render(<Setup />);
     expect(screen.getByText(/Built from your Compass goal/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /set one in intake/i })).toHaveAttribute("href", "/careerops/intake");
+    expect(screen.getByRole("link", { name: /set one in intake/i })).toHaveAttribute("href", "/job-search/intake");
   });
 
   it("falls back to Compass when intake is chosen but has no job title", async () => {

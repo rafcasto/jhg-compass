@@ -3,7 +3,7 @@ import { TABS, adminHash, firstSub, parseAdminHash } from "@/components/admin/na
 
 describe("admin navigation", () => {
   it("has exactly the five top-level tabs, in order", () => {
-    expect(TABS.map((t) => t.label)).toEqual(["TOFU", "Lead magnet CMS", "User interactions", "Analytics", "CareerOps", "Claude"]);
+    expect(TABS.map((t) => t.label)).toEqual(["TOFU", "Lead magnet CMS", "User interactions", "Analytics", "Job Search", "Claude"]);
     expect(TABS[5].subs.map((s) => s.key)).toEqual(["usage", "settings"]);
   });
   it("careerops sits after analytics with overview first, and old #agents links still land there", () => {

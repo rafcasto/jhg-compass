@@ -177,7 +177,7 @@ preferences:
 
   it("says what it did and what it could not bring", () => {
     const p = parseMaleta(PROFILE_YML, "profile.yml");
-    expect(p.warnings.join(" ")).toMatch(/career-ops config\/profile\.yml/);
+    expect(p.warnings.join(" ")).toMatch(/config\/profile\.yml/);
     expect(p.warnings.join(" ")).toMatch(/CV isn't in that file/);
     expect(p.warnings.join(" ")).toMatch(/listed 2/); // two primary roles, took the first
     expect(p.maleta.cv).toBeUndefined();

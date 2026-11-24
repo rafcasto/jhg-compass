@@ -30,7 +30,7 @@ export default function Portals({ value, onChange, status = [], suggested = [] }
                 <details className="pl-1">
                   <summary className="cursor-pointer text-xs text-jh-mute flex items-center gap-1"><Settings2 className="h-3.5 w-3.5" /> Advanced{c.provider || c.apiUrl ? ` — ${[c.provider, c.apiUrl ? "API URL" : ""].filter(Boolean).join(", ")}` : ""}</summary>
                   <div className="grid sm:grid-cols-2 gap-2 mt-1.5">
-                    <label className="block"><span className="text-xs text-jh-mute">Board provider <span className="text-jh-mute">(career-ops id, e.g. successfactors, phenom, smartrecruiters)</span></span>
+                    <label className="block"><span className="text-xs text-jh-mute">Board provider <span className="text-jh-mute">(board id, e.g. successfactors, phenom, smartrecruiters)</span></span>
                       <input aria-label={`Company ${i + 1} provider`} className={`field text-sm font-mono ${c.provider && !PROVIDER_ID.test(c.provider.trim().toLowerCase()) ? "border-jh-red" : ""}`} placeholder="auto-detect" value={c.provider ?? ""} onChange={(e) => setCo(i, { provider: e.target.value })} /></label>
                     <label className="block"><span className="text-xs text-jh-mute">API / board URL <span className="text-jh-mute">(when the board lives on a different host than the careers page)</span></span>
                       <input aria-label={`Company ${i + 1} API URL`} className="field text-sm font-mono" placeholder="https://jobs.example.com" value={c.apiUrl ?? ""} onChange={(e) => setCo(i, { apiUrl: e.target.value })} /></label>

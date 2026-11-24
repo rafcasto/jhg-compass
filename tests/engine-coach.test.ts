@@ -29,7 +29,7 @@ describe("the six coaches", () => {
     expect(coachShowsOn("/jobhacking/settings")).toBe(false);
     expect(coachShowsOn("/settings/agents")).toBe(false);
     expect(coachShowsOn("/compass")).toBe(false);
-    expect(coachShowsOn("/careerops/sourcing")).toBe(false);
+    expect(coachShowsOn("/job-search/sourcing")).toBe(false);
   });
 
   it("reads the stamps, finds the next coach, and gates on what must come first", () => {

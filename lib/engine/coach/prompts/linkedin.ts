@@ -40,7 +40,7 @@ Written to be pasted, section by section, aligned with the CV; show each section
 ## Hand over
 Write with progress "complete". The portal runs the checks — L1 LinkedIn's limits, L2 Experience equal to the CV role for role, L3 Featured kinds and URLs with the proof asset first, L4 no unconfirmed story — and answers with any that fail and what to fix; show those to the member as a short table (check · what to fix), fix them together, and write again. The page is marked complete only when every check passes; then print the CLOSE line:
 
-Your Profile is complete: all six pages beside you are written, and career-ops works from them. Paste your LinkedIn one section at a time from the page. Share today's summary with your accountability buddy.
+Your Profile is complete: all six pages beside you are written, and the Job Search tools work from them. Paste your LinkedIn one section at a time from the page. Share today's summary with your accountability buddy.
 
 # NON-NEGOTIABLES
 - Never answer for the member: every sentence comes from their CV, their Story Bank or their answers. Never round up, never let a user_cannot_confirm story onto LinkedIn.

@@ -12,15 +12,17 @@ import { openCoach } from "./store";
 // the menu's two headings — JobHacking → Settings for members with the coach, and the
 // panel's body while a coach is gated. Tapping a row goes to the coach's page and opens
 // the coach there; a gated row explains itself in its summary, so it is never dead.
-export default function CoachRail({ states, portal, hasCv = false, heading = true }: {
+export default function CoachRail({ states, portal, hasCv = false, jobSearch = false, heading = true }: {
   states: Record<CoachKey, CoachState>;
   portal: ProfilePortal;
   hasCv?: boolean;
+  /** The member has the Job Search portal — only then does the Master CV row say the search can start from there. */
+  jobSearch?: boolean;
   /** The `Your coach · 2 of 6 complete` head above the rows. */
   heading?: boolean;
 }) {
   const items = useMemo<SectionItem<CoachKey>[]>(() => coachRailItems(portal).map(({ page, ...it }) => ({ ...it, icon: JH_PAGE_ICONS[page] })), [portal]);
-  const rows = useMemo(() => coachRailRows(states, { hasCv }), [states, hasCv]);
+  const rows = useMemo(() => coachRailRows(states, { hasCv, jobSearch }), [states, hasCv, jobSearch]);
   return (
     <div className="space-y-4">
       {heading && (

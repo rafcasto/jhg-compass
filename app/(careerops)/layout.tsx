@@ -10,7 +10,7 @@ import AppShell from "@/components/AppShell";
 import Paywall from "@/components/Paywall";
 import VerifyEmail from "@/components/VerifyEmail";
 
-// The CareerOps portal shell. Same gates as the Compass shell (signed in, email
+// The Job Search portal shell (internally still "careerops" — CLAUDE.md). Same gates as the Compass shell (signed in, email
 // verified, onboarded, access active) plus one more: the admin has switched the
 // portal on for this member (accessGrants/{uid}.features.careerOps). Admins always get in.
 export default function CareerOpsLayout({ children }: { children: React.ReactNode }) {
@@ -40,8 +40,8 @@ export default function CareerOpsLayout({ children }: { children: React.ReactNod
     <AppShell daysLeft={daysLeft} agentsEnabled={agentsEnabled} jobHackingEnabled={jobHackingEnabled} compassEnabled={compassEnabled} portal="careerops">
       {allowed ? children : (
         <div className="card p-10 text-center">
-          <h1 className="mb-2">CareerOps isn&apos;t switched on for you yet</h1>
-          <p className="text-jh-mute">Ask your JobHackers coach to enable the CareerOps portal on your account. Your Compass is still here — click the logo to switch back.</p>
+          <h1 className="mb-2">Job Search isn&apos;t switched on for you yet</h1>
+          <p className="text-jh-mute">Ask your JobHackers coach to enable Job Search on your account. Your Compass is still here — click the logo to switch back.</p>
         </div>
       )}
       {!hasAccess && <Paywall />}

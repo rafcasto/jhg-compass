@@ -110,8 +110,8 @@ describe("CareerOps intake — the checklist", () => {
     const by = Object.fromEntries(intakeSteps(full).map((s) => [s.key, s.href]));
     expect(by.cv).toBe(INTAKE_HREF);
     expect(by.northstar).toBe("/compass");       // the North Star lives on the Compass tab
-    expect(by.watchlist).toBe("/careerops/setup");
-    expect(by.answers).toBe("/careerops/setup");
+    expect(by.watchlist).toBe("/job-search/setup");
+    expect(by.answers).toBe("/job-search/setup");
   });
 
   it("counts progress over the required steps only, so an optional one can't stall it", () => {
@@ -137,7 +137,7 @@ describe("CareerOps intake — the checklist", () => {
 
 describe("CareerOps intake — routing", () => {
   it("is one route, exported from both modules", () => {
-    expect(INTAKE_HREF).toBe("/careerops/intake");
+    expect(INTAKE_HREF).toBe("/job-search/intake");
     expect(NAV_INTAKE_HREF).toBe(INTAKE_HREF);
   });
 });

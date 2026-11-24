@@ -86,7 +86,7 @@ export default function NorthStarSource({ uid, setup, profile }: { uid: string; 
         <legend className="sr-only">North Star source</legend>
         {([
           { key: "compass" as const, icon: Compass, title: "Use my Compass North Star", blurb: `Whatever is on the Compass tab: ${summarise(compassGoal ?? {})}.` },
-          { key: "intake" as const, icon: Sparkles, title: "Set it here in intake", blurb: "Overrides your Compass goal for every CareerOps tool. Your Compass tab keeps its own copy." },
+          { key: "intake" as const, icon: Sparkles, title: "Set it here in intake", blurb: "Overrides your Compass goal for every Job Search tool. Your Compass tab keeps its own copy." },
         ]).map((o) => (
           <label key={o.key} className={`flex items-start gap-3 rounded-sm border p-3 cursor-pointer transition-colors ${choice === o.key ? "border-jh-red bg-jh-red/5" : "border-jh-line hover:border-jh-line-2"}`}>
             <input

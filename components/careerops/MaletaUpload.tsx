@@ -39,7 +39,7 @@ export default function MaletaUpload({ uid, setup, profile, onDone, onBack }: {
     setErr(null);
     setParsed(null);
     if (!READABLE.test(file.name)) {
-      setErr("La maleta is a .md or .yml file. Export yours from CareerOps, or bring a career-ops config/profile.yml or modes/_profile.md.");
+      setErr("La maleta is a .md or .yml file. Export your profile from Settings, or bring a config/profile.yml or modes/_profile.md.");
       return;
     }
     if (file.size > MALETA_MAX_BYTES) {
@@ -88,7 +88,7 @@ export default function MaletaUpload({ uid, setup, profile, onDone, onBack }: {
           <h2 className="flex items-center gap-2 text-lg"><FileUp className="h-4 w-4 text-jh-red" /> Upload la maleta</h2>
           <p className="text-jh-mute text-sm mt-1 max-w-2xl">
             Everything in one file. We&apos;ll read what&apos;s there and show you before saving anything — a maleta exported
-            from here, a career-ops <code className="text-xs">config/profile.yml</code>, or a{" "}
+            from here, a <code className="text-xs">config/profile.yml</code>, or a{" "}
             <code className="text-xs">modes/_profile.md</code>.
           </p>
         </div>

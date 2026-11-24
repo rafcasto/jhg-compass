@@ -68,7 +68,7 @@ describe("IntakeScreen — the three ways in", () => {
     render(<IntakeScreen />);
     await user.click(screen.getByRole("button", { name: /Go through intake/i }));
     expect(screen.getByRole("tablist", { name: /Intake steps/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Your CareerOps intake");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Your Job Search intake");
   });
 
   it("tells the light path which tabs actually matter, so six tabs don't imply six obligations", async () => {
