@@ -7,8 +7,10 @@ import { readCoachDocument, type CoachAttachment } from "./document";
 // while no CV is stored — opens on one empty state: one primary action (the panel's one red while
 // Send is not on screen yet) and a tertiary link. Centred, the one place centring is right. The file
 // control is the native input behind the button — no drop zone in a 440 px lane.
-export default function CvStart({ coachLabel, onStart }: {
+export default function CvStart({ coachLabel, onStart, again = false }: {
   coachLabel: string;
+  /** Not the first coach to ask: say why the CV an earlier coach read is not here (it rode that turn, never stored — docs/UX_COACH_AGENTIC.md §3). */
+  again?: boolean;
   /** Start the conversation — with the member's CV, or without one. */
   onStart: (document: CoachAttachment | null) => void;
 }) {
@@ -31,7 +33,8 @@ export default function CvStart({ coachLabel, onStart }: {
       <button type="button" onClick={() => file.current?.click()} className="btn-primary">Add your CV</button>
       <button type="button" onClick={() => onStart(null)} className="link text-sm">Start without one</button>
       {error && <p role="alert" className="max-w-[36ch] text-sm text-jh-red">{error}</p>}
-      <p className="text-xs text-jh-mute">PDF, Markdown or plain text (.pdf, .md, .txt)</p>
+      <p className="text-xs text-jh-mute">PDF, Markdown or plain text (.pdf, .md, .txt) — a Word file, save as PDF first.</p>
+      {again && <p className="mx-auto max-w-[36ch] text-xs text-jh-mute">Shared your CV with an earlier coach? It stayed in that conversation. Add it again here, or put it on the Master CV page once and every coach reads it from there.</p>}
     </div>
   );
 }

@@ -169,7 +169,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       {wide && <div className="lg:hidden"><CoachRail states={states} portal={portal} hasCv={hasCv} /></div>}
     </div>
   ) : cvFirst && canTalk ? (
-    <CvStart coachLabel={coach.label} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
+    <CvStart coachLabel={coach.label} again={coach.key !== "narrative"} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
   ) : (
     <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} onConnections={(c) => void send(null, null, null, c)} wide={wide} onExpand={() => setWide(true)} jobSearch={jobSearch} />
   );

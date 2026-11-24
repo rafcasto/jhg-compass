@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const running = jobs.find((j) => j.status === "queued" || j.status === "running");
     if (running) return NextResponse.json({ ok: false, error: "Already sourcing — give it a minute.", jobId: running.id }, { status: 409 });
     const recent = jobs.find((j) => j.status === "done" && Date.now() - (j.endedAt ?? 0) < COOLDOWN_MS);
-    if (recent && !names.length) return NextResponse.json({ ok: false, error: `Sourced ${Math.max(1, Math.round((Date.now() - (recent.endedAt ?? 0)) / 60_000))} minutes ago — the result is on the page. Add a company by name, or wait ten minutes to run it again.` }, { status: 429 });
+    if (recent && !names.length) return NextResponse.json({ ok: false, error: `Sourced ${Math.max(1, Math.round((Date.now() - (recent.endedAt ?? 0)) / 60_000))} minutes ago — the result is on the page. Add a company by name, or run it again in ${Math.max(1, Math.ceil((COOLDOWN_MS - (Date.now() - (recent.endedAt ?? 0))) / 60_000))} min.` }, { status: 429 });
     try {
       const job = await createJob({ uid, type: "companies", payload: { portal, coach: "targetCompanies", ...(names.length ? { names } : {}) }, createdBy: `page:${m.user.email ?? uid}` });
       if (isQueueConfigured()) {
