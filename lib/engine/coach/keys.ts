@@ -1,4 +1,4 @@
-// The six coaches (docs/UX_COACH.md) — the Gemini Gems of the Packer, inside the portal.
+// The six coaches (docs/UX_COACH.md) — the Packer's six coach prompts, inside the portal.
 // Pure: names, order, which page each writes, which coaches it needs first. The
 // conversation runs in lib/engine/coach/turn.ts; the writes in write.ts. Tested.
 
@@ -21,7 +21,7 @@ export interface Coach {
   outcome: string;
   /** How long it takes, in the student guide's words. */
   time: string;
-  /** The coaches that must be complete first (the Gem's "Asks for"). */
+  /** The coaches that must be complete first (the source prompt's "Asks for"). */
   needs: readonly CoachKey[];
   /** Built — a coach without a prompt is shown but cannot start yet. */
   ready: boolean;

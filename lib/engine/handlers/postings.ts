@@ -64,7 +64,7 @@ async function viaSearch(payload: PostingsPayload, override: Awaited<ReturnType<
   const prompt = resolvePrompt(POSTINGS_PROMPT, POSTINGS_PROMPT_VERSION, override);
   const today = new Date().toISOString().slice(0, 10);
   const task = postingsTask(payload, today);
-  await progress("Searching postings");
+  await progress("Searching the web for postings"); // not "Reading the job boards": the member should know this is the slower road
   const base = { model: cfg.model, effort: cfg.effort, maxTokens: cfg.maxTokens, system: prompt.text, messages: [{ role: "user" as const, content: task }], maxSearches: POSTINGS_MAX_SEARCHES };
   let answer: PostingsAnswer;
   let sources: { url: string }[];

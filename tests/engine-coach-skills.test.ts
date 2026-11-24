@@ -20,7 +20,7 @@ describe("the registry", () => {
     expect(RUBRIC_KINDS).toEqual(["skills", "companies"]);
     for (const r of Object.values(RUBRICS)) { expect(r.axes).toHaveLength(4); for (const a of r.axes) expect(a.anchors).toHaveLength(5); for (const k of r.tieBreak) expect(r.axes.map((a) => a.key)).toContain(k); }
     expect(SKILL_AXES.map((a) => a.key)).toEqual(["good", "love", "proof", "pays"]);
-    expect(SKILL_AXES[2].anchors[1]).toBe("No result in 10 seconds"); // the one anchor the Gem had, kept
+    expect(SKILL_AXES[2].anchors[1]).toBe("No result in 10 seconds"); // the one anchor the source prompt had, kept
     expect(C.axes.map((a) => a.key)).toEqual(["growth", "interest", "access", "proof"]);
     expect(C.tieBreak).toEqual(["interest", "proof"]); // the prompt's rule, and rankCompanies'
     expect(C.cut).toBe(10);

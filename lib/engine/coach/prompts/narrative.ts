@@ -1,4 +1,4 @@
-// Coach 1 — Narrative. The Gem's instructions (maleta/gemini-pack/coach-1-narrative/gem-1-narrative.md, v7)
+// Coach 1 — Narrative. The Packer's coach-1 prompt (v7)
 // inside the portal: the same conversation, the same rules, the same keys — with the file replaced by
 // the update_profile tool, the uploads by the profile in front of the coach, and Google Search by
 // the portal's web search when it is on (docs/UX_COACH.md §4, decision 6: repo default + admin override).

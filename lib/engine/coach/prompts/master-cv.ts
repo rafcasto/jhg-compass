@@ -1,4 +1,4 @@
-// Coach 5 — Master CV. The Gem (maleta/gemini-pack/coach-5-master-cv/gem-5-master-cv.md, v7) inside the
+// Coach 5 — Master CV. The Packer's coach-5 prompt (v7) inside the
 // portal (docs/UX_COACH.md §4). cv.md is not written by the coach: `cv` IS the CV, and the portal hands it
 // to career-ops itself.
 

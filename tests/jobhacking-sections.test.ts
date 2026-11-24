@@ -215,7 +215,7 @@ describe("JobHacking — rows", () => {
   });
 
   it("summarises the story bank by what the file carries, and the master CV as Settings does", () => {
-    expect(rows["story-bank"]).toMatchObject({ state: "done", summary: "3 stories · 2 proof points · 1 snapshot", count: "3" });
+    expect(rows["story-bank"]).toMatchObject({ state: "done", summary: "3 stories · 2 proof points · 1 snapshot · aim for 8–10 stories", count: "3" });
     expect(rows["master-cv"].state).toBe("done");
     expect(rows["master-cv"].summary).toMatch(/^\d+ words · (Ready to score|A bit thin)$/);
     expect(rows["linkedin-profile"]).toMatchObject({ state: "done", summary: "Headline · 2 roles · 2 skills", count: "3/7" });

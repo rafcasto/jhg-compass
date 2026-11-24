@@ -1,6 +1,6 @@
 // The repo defaults for each coach's prompt (decision 6: repo default, admin override in
 // config/engine/prompts/coach:<key>), and the knowledge file each one carries — a second
-// cached system block, the Gem's knowledge attachment.
+// cached system block, the source prompt's knowledge attachment.
 
 import type { CoachKey } from "../keys";
 import { NARRATIVE_PROMPT, NARRATIVE_PROMPT_VERSION } from "./narrative";

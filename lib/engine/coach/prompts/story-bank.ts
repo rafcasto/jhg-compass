@@ -1,4 +1,4 @@
-// Coach 4 — Story Bank. The Gem (maleta/gemini-pack/coach-4-story-bank/gem-4-story-bank.md, v7) inside the
+// Coach 4 — Story Bank. The Packer's coach-4 prompt (v7) inside the
 // portal (docs/UX_COACH.md §4). article-digest.md is not written by the coach: the portal holds the same
 // stories and story facts and hands them to career-ops itself.
 
