@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import SectionList, { type SectionItem } from "@/components/profile/SectionList";
 import { JH_PAGE_ICONS } from "@/components/jobhacking/pageIcons";
 import { coachProgressLine, coachRailItems, coachRailRows } from "@/lib/engine/coach/rail";
-import type { CoachKey, CoachState } from "@/lib/engine/coach/keys";
+import { allCoachesComplete, type CoachKey, type CoachState } from "@/lib/engine/coach/keys";
+import { PORTAL_HOME } from "@/lib/careerops/portal-nav";
 import type { ProfilePortal } from "@/lib/jobhacking/sections";
 import { openCoach } from "./store";
 
@@ -29,6 +31,8 @@ export default function CoachRail({ states, portal, hasCv = false, jobSearch = f
         <div>
           <p className="section-label">Your coach</p>
           <p className="mt-1 text-sm text-jh-mute">{coachProgressLine(states)}</p>
+          {/* The hand-off (decision 2026-11-25): six complete switched Job Search on by code — the one next step, said where the six are counted. */}
+          {allCoachesComplete(states) && jobSearch && <p className="mt-1 text-sm text-jh-ink">Your job search is on. <Link href={PORTAL_HOME} className="link">Open Job Search ›</Link></p>}
         </div>
       )}
       <SectionList items={items} rows={rows} variant="rows" label="Your coaches" onSelect={(key) => openCoach(key)} />

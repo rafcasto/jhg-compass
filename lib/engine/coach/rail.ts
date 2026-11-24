@@ -50,7 +50,8 @@ export function coachRailRows(states: Record<CoachKey, CoachState>, opts: RailOp
   return COACHES.map((c) => {
     const state = STATE_OF[states[c.key]];
     const missing = missingBefore(c, states);
-    const gated = missing.length > 0 && state !== "done";
+    // In progress is past the gate: the member started anyway (decision 2026-11-25) — the row says so, not *After …*.
+    const gated = missing.length > 0 && state === "empty";
     let summary: string;
     if (state === "done") summary = "Complete";
     else if (gated) summary = `After ${missing[missing.length - 1].label}`;

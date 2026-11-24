@@ -52,7 +52,13 @@ export interface TurnContext {
   researchDue?: string | null;
   /** The member opened the coach from a section whose part comes later than the current one (lib/engine/coach/parts.ts steerNote) — stay on the current part. */
   steer?: string | null;
+  /** The coaches this one needs that are not complete — the member started anyway (decision 2026-11-25): ask for what they would have written, never assume it. */
+  gateSkipped?: readonly string[];
 }
+
+/** The operator's line when the member started past the gate. */
+export const gateSkippedNote = (labels: readonly string[]): string =>
+  `The member started this coach before ${labels.join(" and ")} ${labels.length === 1 ? "was" : "were"} complete — their choice; do not send them back. Where you would read what ${labels.length === 1 ? "that coach" : "those coaches"} writes, ask the member for it in one question at a time, and write only to your own keys as ever.`;
 
 export interface FirstTurnInput {
   profileYaml: string;
@@ -168,6 +174,7 @@ export function contextNote(ctx: TurnContext | null | undefined): string | null 
     if (page) parts.push(`The member is looking at ${page.label}${section ? ` · ${section.label}` : ""}.`);
   }
   if (ctx.steer) parts.push(ctx.steer);
+  if (ctx.gateSkipped?.length) parts.push(gateSkippedNote(ctx.gateSkipped));
   for (const j of ctx.landed ?? []) parts.push(`Research landed since your last turn — ${j.label}. It is already on the member's page; review it with them, do not write it again:\n${j.summary}`);
   for (const j of ctx.failed ?? []) parts.push(`Research failed since your last turn — ${j.label}: ${j.error}. Tell the member in one line what failed and what fixes it (a setting on the host, a field on their True North), then stop or start it again once fixed. The step is the portal's — do not do that research yourself.`);
   if (ctx.searchErrors?.length) parts.push(searchErrorNote(ctx.searchErrors));

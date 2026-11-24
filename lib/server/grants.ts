@@ -1,4 +1,5 @@
 import "server-only";
+import { logEvent, TAGS } from "@/lib/events";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import type { AccessGrant, AdminConfig, GrantFeatures, GrantStatus, Profile } from "@/lib/types";
 import { effectiveStatus, renewalPeriod, type MemberAccessRow } from "@/lib/access";
@@ -197,6 +198,27 @@ export async function renewGrants(uids: string[], days: number, by: string | nul
     if (n) await batch.commit();
   }
   return { renewed, missing };
+}
+
+/** Who switched Job Search on when the six coaches completed (decision 2026-11-25) — the admin screen's *by* column reads it. */
+export const SIX_OF_SIX_BY = "six coaches complete";
+
+/**
+ * The hand-off (decision 2026-11-25, docs/UX_JOURNEY_JOBHACKING.md Stage 8): a member whose six coaches are all complete
+ * has the Job Search portal switched on by code, once. True when the flag flipped on this call; false when it was on
+ * already or the member has no grant.
+ */
+export async function grantJobSearchOnCompletion(uid: string): Promise<boolean> {
+  const db = adminDb();
+  const ref = db.doc(`accessGrants/${uid}`);
+  const snap = await ref.get();
+  if (!snap.exists) return false;
+  const g = snap.data() as AccessGrant;
+  if (g.features?.careerOps === true) return false;
+  const now = Date.now();
+  await ref.set({ features: { ...(g.features ?? {}), careerOps: true }, featuresUpdatedAt: now, featuresUpdatedBy: SIX_OF_SIX_BY, updatedAt: now }, { merge: true });
+  await logEvent({ firebaseUid: uid, email: g.email, key: TAGS.AGENTS_TOGGLED, source: "coach", props: { careerOps: true, by: SIX_OF_SIX_BY } }).catch(() => undefined);
+  return true;
 }
 
 // ---- feature flags (Admin → TOFU → Access renewals → CareerOps / JobHacking / Coach columns) ----

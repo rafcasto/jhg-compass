@@ -20,6 +20,7 @@ import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import CoachRail from "./CoachRail";
 import Composer from "./Composer";
 import CvStart from "./CvStart";
+import GateStart from "./GateStart";
 import type { CoachAttachment, ConnectionsAttachment } from "./document";
 import Transcript from "./Transcript";
 import { closeCoach, flashSections, openCoach, restoreWide, setWide, useCoachUi } from "./store";
@@ -58,7 +59,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const started = useRef<string | null>(null);
   useEffect(() => { restoreWide(); }, []);
 
-  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: MatrixRow[] | null = null, connections: ConnectionsAttachment | null = null) => {
+  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: MatrixRow[] | null = null, connections: ConnectionsAttachment | null = null, skipGate = false) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
@@ -74,7 +75,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       const res = await fetch("/api/coach/turn", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        body: JSON.stringify({ coach: coach.key, portal, ...(scores ? { scores } : text ? { text } : connections ? {} : { start: true }), ...(document ? { document } : {}), ...(connections ? { connections: { name: connections.name, text: connections.text } } : {}), context: { page, section } }),
+        body: JSON.stringify({ coach: coach.key, portal, ...(scores ? { scores } : text ? { text } : connections ? {} : { start: true, ...(skipGate ? { skipGate: true } : {}) }), ...(document ? { document } : {}), ...(connections ? { connections: { name: connections.name, text: connections.text } } : {}), context: { page, section } }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({}));
@@ -127,15 +128,18 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   // A conversation that has not started yet starts itself: the coach opens (docs/UX_COACH.md §3) — unless
   // this coach starts from a CV and none is stored (docs/UX_COACH_AGENTIC.md §3): then the panel offers one first.
   const states = coachStates(setup?.jhg?.progress);
-  const missing = coach ? missingBefore(coach, states) : [];
+  const [skipped, setSkipped] = useState<string | null>(null); // the member said Start anyway — until the session carries it
+  // The gate is a default, not a wall (decision 2026-11-25): a conversation that started past it, or is starting now, is not gated.
+  const pastGate = !!coach && (session?.gateSkipped?.length ? true : skipped === coach.key);
+  const missing = coach && !pastGate ? missingBefore(coach, states) : [];
   const notStarted = (session?.turns?.length ?? 0) === 0 && !pending && !localTurns.length;
   const cvFirst = !!coach && coachStartsFromCv(coach.key) && !setup?.cvMarkdown?.trim() && notStarted && !sessionLoading;
   useEffect(() => {
     if (!ui.open || !coach || !coach.ready || sessionLoading || missing.length || cvFirst) return;
     if ((session?.turns?.length ?? 0) > 0 || started.current === coach.key) return;
     started.current = coach.key;
-    void send(null);
-  }, [ui.open, coach, sessionLoading, session?.turns?.length, missing.length, cvFirst, send]);
+    void send(null, null, null, null, skipped === coach.key);
+  }, [ui.open, coach, sessionLoading, session?.turns?.length, missing.length, cvFirst, send, skipped]);
 
   if (!ui.open || !coach) return null;
   const turns: TranscriptTurn[] = [...(session?.turns ?? []), ...localTurns];
@@ -164,12 +168,12 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   ) : missing.length ? (
     // Gated: say why in one line, then the rail of six so the way forward is a tap away (docs/UX_COACH_AGENTIC.md §5) — wide already has the rail beside.
     <div className="space-y-6">
-      <p className="text-sm text-jh-mute">{coach.label} starts after {missing.map((c) => c.label).join(" and ")} — your coach needs what they write first.</p>
+      <GateStart coach={coach} missing={missing} disabled={sessionLoading} onStart={() => { setSkipped(coach.key); if (!coachStartsFromCv(coach.key) || setup?.cvMarkdown?.trim()) { started.current = coach.key; void send(null, null, null, null, true); } }} />
       {!wide && <CoachRail states={states} portal={portal} hasCv={hasCv} />}
       {wide && <div className="lg:hidden"><CoachRail states={states} portal={portal} hasCv={hasCv} /></div>}
     </div>
   ) : cvFirst && canTalk ? (
-    <CvStart coachLabel={coach.label} again={coach.key !== "narrative"} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
+    <CvStart coachLabel={coach.label} again={coach.key !== "narrative"} onStart={(d) => { started.current = coach.key; void send(null, d, null, null, skipped === coach.key); }} />
   ) : (
     <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} onConnections={(c) => void send(null, null, null, c)} wide={wide} onExpand={() => setWide(true)} jobSearch={jobSearch} />
   );
