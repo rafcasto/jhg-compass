@@ -29,8 +29,10 @@ describe("story bank", () => {
   });
 
   it("summarises what the file carries and nothing else", () => {
-    expect(storyBankSummary(setup)).toBe("3 stories · 2 proof points · 3 snapshots");
-    expect(storyBankSummary({ stories: [{ title: "One" }] })).toBe("1 story");
+    expect(storyBankSummary(setup)).toBe("3 stories · 2 proof points · 3 snapshots · aim for 8–10 stories");
+    expect(storyBankSummary({ stories: [{ title: "One" }] })).toBe("1 story · aim for 8–10 stories");
+    // Enough stories: the aim goes away; none: nothing to aim from (the row says Not set).
+    expect(storyBankSummary({ stories: Array.from({ length: 8 }, (_, i) => ({ title: `S${i}` })) })).toBe("8 stories");
     expect(storyBankSummary({ narrative: { proofPoints: [{ name: "P" }] }, snapshots: [{ company: "A" }] })).toBe("1 proof point · 1 snapshot");
     expect(storyBankSummary(null)).toBe("");
     expect(storyBankCounts(undefined).total).toBe(0);

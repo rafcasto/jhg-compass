@@ -12,7 +12,11 @@ import type { JobNote } from "@/lib/engine/coach/transcript";
 // a mono count when the phrase carries one, a tertiary Stop. Not a card, not a spinner block;
 // the result's weight goes to the page. The live source is users/{uid}/engineJobs/{id} — the
 // same document the admin tab reads. Reused later by the Target companies page when a scan runs.
-export default function JobStatus({ uid, job, href }: { uid: string; job: JobNote; href?: string }) {
+export default function JobStatus({ uid, job, href, aside }: {
+  uid: string; job: JobNote; href?: string;
+  /** One mute sentence under the line while the job runs — the transcript's "saved as it lands" on a conversation's first job; the page passes none. */
+  aside?: string;
+}) {
   const { data } = useLiveDoc<EngineJob>(paths.engineJob(uid, job.id));
   const status = data?.status ?? "queued";
   const stop = async () => {
@@ -31,12 +35,15 @@ export default function JobStatus({ uid, job, href }: { uid: string; job: JobNot
   if (status === "cancelled") return <p role="status" className="text-sm text-jh-mute">{job.label} · stopped</p>;
   const { phrase, count } = splitCount(data?.progress || (status === "queued" ? "Starting" : job.label));
   return (
-    <p role="status" className="flex items-center gap-2 text-sm text-jh-ink">
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-jh-mute animate-pulse" aria-hidden />
-      <span className="min-w-0 flex-1 truncate">{phrase}</span>
-      {count && <span className="font-mono text-xs text-jh-mute">{count}</span>}
-      {!data?.cancel && <button type="button" onClick={() => void stop()} className="link text-sm">Stop</button>}
-    </p>
+    <div className="space-y-1">
+      <p role="status" className="flex items-center gap-2 text-sm text-jh-ink">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-jh-mute animate-pulse" aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{phrase}</span>
+        {count && <span className="font-mono text-xs text-jh-mute">{count}</span>}
+        {!data?.cancel && <button type="button" onClick={() => void stop()} className="link text-sm">Stop</button>}
+      </p>
+      {aside && <p className="text-xs text-jh-mute">{aside}</p>}
+    </div>
   );
 }
 
