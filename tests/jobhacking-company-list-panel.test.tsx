@@ -97,7 +97,7 @@ describe("CompanyListPanel — page-first Top 40", () => {
   });
   it("puts a Remove on each row and the evidence under it", async () => {
     const onRemove = vi.fn();
-    const evidence = { "Wattle HR Cloud": { growth: { suggested: 5 as const, why: ["hiring 2 roles for you now — Product Manager (Seek, 2026-11-12)", "Series B ›"] }, access: { suggested: 5 as const, contacts: [{ name: "Jane Doe", position: "Head of Product", connectedOn: "" }], more: 1 }, interest: { line: "Auckland · scaleup — the type you aim at" }, proof: { phrases: ["own the roadmap"], matches: [], line: "" } } };
+    const evidence = { "Wattle HR Cloud": { growth: { suggested: 5 as const, why: ["hiring 2 roles for you now — Product Manager (Seek, 2026-11-12)", "Series B ›"] }, access: { suggested: 5 as const, contacts: [{ name: "Jane Doe", position: "Head of Product", connectedOn: "" }], more: 1 }, interest: { suggested: 4 as const, line: "Auckland · scaleup — the type you aim at" }, proof: { suggested: 3 as const, phrases: ["own the roadmap"], matches: [], line: "" } } };
     render(<CompanyListPanel listKey="all" list={all} evidence={evidence} onRemove={onRemove} />);
     await userEvent.setup().click(screen.getByRole("button", { name: "Remove Wattle HR Cloud from your Top 40" }));
     expect(onRemove).toHaveBeenCalledWith("Wattle HR Cloud");

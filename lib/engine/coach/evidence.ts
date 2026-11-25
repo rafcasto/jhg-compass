@@ -1,13 +1,19 @@
-// The portal's evidence under each company in the scoring matrix (docs/UX_COACH_COMPANY_SCORING.md §2): Growth and Access
-// suggested from stored facts against the rubric's own anchors; Interest and Proof given context, never a number. Every
-// line here is a template over data — the model writes none of it. Pure. Tested.
+// The portal's evidence under each company in the scoring matrix (docs/UX_COACH_COMPANY_SCORING.md §2, §7): all four
+// numbers suggested from stored facts against the rubric's own anchors — Market signal from the postings and the growth
+// source, Fit from the member's target industries, company type and boundaries, Access from their LinkedIn connections,
+// Proficiency from their scored skills against what the company posts for (decision 2026-11-25). The member confirms or
+// changes any number; every line here is a template over data — the model writes none of it. Pure. Tested.
 
 import type { JhgBoundaries, JhgCompany, JhgPosting } from "../../careerops/types";
 import { MAX_NAMED_CONTACTS, type Connection } from "./connections";
+import type { SkillScore } from "./skills";
 
-export interface GrowthEvidence { suggested: 1 | 2 | 3 | 4 | 5; why: string[] }
+export type Suggested = 1 | 2 | 3 | 4 | 5;
+export interface GrowthEvidence { suggested: Suggested; why: string[] }
 export interface AccessEvidence { suggested: 1 | 3 | 5; contacts: { name: string; position: string; connectedOn: string }[]; more: number }
-export interface CompanyEvidence { growth: GrowthEvidence; access: AccessEvidence; interest: { line: string }; proof: { phrases: string[]; matches: string[]; line: string } }
+export interface FitEvidence { suggested: Suggested; line: string }
+export interface ProficiencyEvidence { suggested: Suggested; phrases: string[]; matches: string[]; line: string }
+export interface CompanyEvidence { growth: GrowthEvidence; access: AccessEvidence; interest: FitEvidence; proof: ProficiencyEvidence }
 
 /** A posting at the company as the shared collection or the member's True North carries it. */
 export interface PostingFact { title: string; postedAt: string; source: string; phrases?: string[] }
@@ -98,6 +104,45 @@ export function interestContext(company: Pick<JhgCompany, "location" | "companyT
   return parts.join(" · ") || "no boundary on file speaks to this one";
 }
 
+const nameMatches = (a: string, b: string) => { const x = tokens(a), y = new Set(tokens(b)); return x.length > 0 && x.some((t) => y.has(t)); };
+
+/**
+ * Fit against the anchors, from the aspiration (decision 2026-11-25): on the never list → 1; outside the boundaries with no
+ * remote → 2; open → 3; the member's industry or company type → 4; both, within the boundaries → 5.
+ */
+export function fitSuggestion(company: Pick<JhgCompany, "location" | "companyType" | "name" | "industry" | "subSector">, boundaries: JhgBoundaries | undefined, wantedType: string, targetIndustries: readonly string[]): FitEvidence {
+  const line = interestContext(company, boundaries, wantedType);
+  if (boundaries?.neverApply?.some((n) => inText(company.name, n) || inText(n, company.name))) return { suggested: 1, line };
+  const city = company.location?.split(",")[0].trim() ?? "";
+  const remote = !!boundaries?.remote && /^y/i.test(boundaries.remote);
+  const excluded = !!city && !!boundaries?.exclude && inText(boundaries.exclude, city);
+  const outside = !!city && !!boundaries?.willWorkIn && !inText(boundaries.willWorkIn, city);
+  if (excluded && !remote) return { suggested: 2, line };
+  const industry = targetIndustries.some((t) => nameMatches(t, company.industry ?? "") || nameMatches(t, company.subSector ?? ""));
+  const type = !!wantedType && !!company.companyType && company.companyType.toLowerCase() === wantedType.toLowerCase();
+  const inBounds = !excluded && !(outside && !remote);
+  const suggested: Suggested = industry && type && inBounds ? 5 : industry || type ? (inBounds ? 4 : 3) : 3;
+  return { suggested, line: industry ? `${line} · your industry` : line };
+}
+
+/**
+ * Proficiency against the anchors, from the scored skills (decision 2026-11-25): no postings read → 2; nothing they post for is a
+ * skill of theirs → 1; a skill matches → 3; a skill they are solid at (Good ≥ 4) → 4; a top-six skill with proof (Prove ≥ 4) that
+ * matches what they hire for → 5. Competencies without a score count as a match at 3.
+ */
+export function proficiencySuggestion(phrases: readonly string[], competencies: readonly string[], skills: readonly SkillScore[], topCut = 6): ProficiencyEvidence {
+  const ctx = proofContext(phrases, competencies);
+  if (!ctx.phrases.length) return { suggested: 2, ...ctx };
+  const matched = skills.filter((s) => { const st = tokens(s.skill); return st.length && ctx.phrases.some((q) => { const qt = new Set(tokens(q)); return st.some((t) => qt.has(t)); }); });
+  const names = [...new Set([...ctx.matches, ...matched.map((s) => s.skill)])];
+  if (!names.length) return { suggested: 1, ...ctx };
+  const best = matched.reduce<SkillScore | null>((b, s) => (!b || s.good > b.good ? s : b), null);
+  const top = matched.some((s) => s.rank > 0 && s.rank <= topCut && s.proof >= 4);
+  const suggested: Suggested = top ? 5 : best && best.good >= 4 ? 4 : 3;
+  const line = `they post for ${ctx.phrases.map((q) => `"${q}"`).join(", ")} — you have ${names.join(", ")}${best ? ` (${best.skill}: good ${best.good}, proof ${best.proof})` : ""}`;
+  return { suggested, phrases: ctx.phrases, matches: names, line };
+}
+
 /** Proof gets no number: what they post for, beside the competency of yours that fits — matched on words, never written. */
 export function proofContext(phrases: readonly string[], competencies: readonly string[]): { phrases: string[]; matches: string[]; line: string } {
   const quoted = [...new Set(phrases.map((p) => p.trim()).filter(Boolean))].slice(0, 3);
@@ -114,6 +159,10 @@ export interface EvidenceInput {
   contacts: Connection[];
   archetypeTitles: string[];
   competencies: string[];
+  /** The member's scored skills (Coach 1's matrix) — Proficiency reads them. */
+  skills?: SkillScore[];
+  /** The True North's industries and sub-sectors by name — Fit reads them. */
+  targetIndustries?: string[];
   boundaries: JhgBoundaries | undefined;
   wantedType: string;
   today: string;
@@ -123,13 +172,17 @@ export function evidenceFor(i: EvidenceInput): CompanyEvidence {
   const growth = growthSuggestion(i.company, i.postings, i.archetypeTitles, i.today);
   const now = i.postings.filter((p) => !p.postedAt || daysBetween(p.postedAt, i.today) <= POSTING_DAYS).length;
   const access = accessSuggestion(i.contacts, now, i.archetypeTitles);
-  const interest = { line: interestContext(i.company, i.boundaries, i.wantedType) };
-  const proof = proofContext(i.postings.flatMap((p) => p.phrases ?? []), i.competencies);
+  const interest = fitSuggestion(i.company, i.boundaries, i.wantedType, i.targetIndustries ?? []);
+  const proof = proficiencySuggestion(i.postings.flatMap((p) => p.phrases ?? []), i.competencies, i.skills ?? []);
   return { growth, access, interest, proof };
 }
 
-/** The matrix's pre-filled cells in axis order: growth · interest · access · proof. */
-export const suggestedValues = (e: CompanyEvidence): (number | null)[] => [e.growth.suggested, null, e.access.suggested, null];
+/** The matrix's pre-filled cells in axis order: Market signal · Fit · Access · Proficiency — all four from data (decision 2026-11-25). */
+export const suggestedValues = (e: CompanyEvidence): (number | null)[] => [e.growth.suggested, e.interest.suggested, e.access.suggested, e.proof.suggested];
+
+/** The True North's industries and sub-sectors by name — what Fit matches a company's industry against. */
+export const targetIndustriesOf = (trueNorth: { industries?: { name: string; subSectors?: { name: string }[] }[] } | undefined): string[] =>
+  (trueNorth?.industries ?? []).flatMap((i) => [i.name, ...(i.subSectors ?? []).map((s) => s.name)]).map((s) => s.trim()).filter(Boolean);
 
 /** The archetype's titles: the primary cluster's first, then the target titles. */
 export function archetypeTitlesOf(trueNorth: { clusters?: { titles?: string[]; fit?: string }[]; titles?: { target?: string[] } } | undefined): string[] {

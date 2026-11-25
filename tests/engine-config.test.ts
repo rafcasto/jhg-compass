@@ -4,8 +4,8 @@ import { DEFAULT_PRICES } from "@/lib/engine/pricing";
 import { ENGINE_AGENTS } from "@/lib/engine/keys";
 
 describe("config/engine", () => {
-  it("defaults every agent to Opus 5.5 at its own effort, limits off", () => {
-    for (const k of ENGINE_AGENTS) expect(DEFAULT_ENGINE_CONFIG.agents[k].model).toBe("claude-opus-5-5");
+  it("defaults the coach to Haiku 5.5 (decision 2026-11-25) and every other agent to Opus 5.5, each at its own effort, limits off", () => {
+    for (const k of ENGINE_AGENTS) expect(DEFAULT_ENGINE_CONFIG.agents[k].model).toBe(k === "coach" ? "claude-haiku-5-5" : "claude-opus-5-5");
     expect(DEFAULT_ENGINE_CONFIG.agents.coach.effort).toBe("low");
     expect(DEFAULT_ENGINE_CONFIG.agents.evaluator.effort).toBe("high");
     expect(DEFAULT_ENGINE_CONFIG.monthlyBudgetUsd).toBe(0);

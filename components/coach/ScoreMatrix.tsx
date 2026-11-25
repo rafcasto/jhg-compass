@@ -115,8 +115,8 @@ export default function ScoreMatrix({ kind, items, meta, evidence, suggested, co
 
   const header = assisted
     ? connections
-      ? <>Growth and Access are suggested from the postings, each growth source and your {connections.total.toLocaleString()} LinkedIn connections ({connections.matched} {connections.matched === 1 ? "company has" : "companies have"} one). Change any you disagree with; Interest and Proof are yours.</>
-      : <>Growth is suggested from the postings and each growth source; Access is a guess until you add your LinkedIn connections. Interest and Proof are yours.</>
+      ? <>All four are suggested from what is on file — the postings and growth sources, your True North, your scored skills, and your {connections.total.toLocaleString()} LinkedIn connections ({connections.matched} {connections.matched === 1 ? "company has" : "companies have"} one). Change any you know better.</>
+      : <>All four are suggested from what is on file — the postings and growth sources, your True North and your scored skills; Access is a guess until you add your LinkedIn connections. Change any you know better.</>
     : <>Four numbers for each. What each number means is inside every list — the same scale for everyone.</>;
 
   return (
@@ -203,22 +203,22 @@ export default function ScoreMatrix({ kind, items, meta, evidence, suggested, co
 // where one was suggested, the people and the matched competency in body ink. The source is the row's one link.
 function EvidenceBlock({ evidence, suggested, axes }: { evidence: CompanyEvidence; suggested: readonly (number | null)[]; axes: readonly string[] }) {
   const n = (axis: string) => suggested[axes.indexOf(axis)];
-  const Line = ({ axis, children }: { axis: string; children: React.ReactNode }) => (
-    <p className="text-xs leading-5 text-jh-mute line-clamp-2"><span className="label mb-0 mr-1 inline">{axis}{n(axis.toLowerCase()) !== null && n(axis.toLowerCase()) !== undefined ? ` ${n(axis.toLowerCase())}` : ""} ·</span>{children}</p>
+  const Line = ({ axis, label, children }: { axis: string; label: string; children: React.ReactNode }) => (
+    <p className="text-xs leading-5 text-jh-mute line-clamp-2"><span className="label mb-0 mr-1 inline">{label}{n(axis) !== null && n(axis) !== undefined ? ` ${n(axis)}` : ""} ·</span>{children}</p>
   );
   const growth = evidence.growth.why.map((w, i) => (w.endsWith(" ›") ? <span key={i}>{i ? " · " : ""}{w.slice(0, -2)} <span className="text-jh-body">›</span></span> : <span key={i}>{i ? " · " : ""}{w}</span>));
   const access = evidence.access.contacts.length
     ? <>{evidence.access.contacts.map((c, i) => <span key={c.name}>{i ? " · " : ""}<span className="text-jh-body">{c.name}</span>{c.position ? `, ${c.position}` : ""}</span>)}{evidence.access.more ? ` · +${evidence.access.more} more` : ""}</>
     : <>{evidence.access.suggested === 3 ? "no connection on file — a posting is a route" : "no connection on file"}</>;
   const proof = evidence.proof.phrases.length
-    ? <>they post for {evidence.proof.phrases.map((p, i) => <span key={p}>{i ? ", " : ""}&ldquo;{p}&rdquo;</span>)} — {evidence.proof.matches.length ? <>you have <span className="text-jh-body">{evidence.proof.matches.join(", ")}</span></> : "none of your competencies in their words"}</>
+    ? <>they post for {evidence.proof.phrases.map((p, i) => <span key={p}>{i ? ", " : ""}&ldquo;{p}&rdquo;</span>)} — {evidence.proof.matches.length ? <>you have <span className="text-jh-body">{evidence.proof.matches.join(", ")}</span></> : "none of your skills in their words"}</>
     : <>{evidence.proof.line}</>;
   return (
     <div className="space-y-1 pt-1" data-evidence>
-      <Line axis="Growth">{growth}</Line>
-      <Line axis="Access">{access}</Line>
-      <Line axis="Interest">{evidence.interest.line}</Line>
-      <Line axis="Proof">{proof}</Line>
+      <Line axis="growth" label="Signal">{growth}</Line>
+      <Line axis="interest" label="Fit">{evidence.interest.line}</Line>
+      <Line axis="access" label="Access">{access}</Line>
+      <Line axis="proof" label="Skills">{proof}</Line>
     </div>
   );
 }

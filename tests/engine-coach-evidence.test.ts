@@ -125,14 +125,14 @@ describe("interest and proof — context, no number", () => {
 });
 
 describe("the evidence for a row", () => {
-  it("pre-fills growth and access, leaves interest and proof to the member", () => {
+  it("pre-fills all four — signal, fit, access, proficiency — from what is on file", () => {
     const e = evidenceFor({
       company: { name: "Halter", location: "Auckland", companyType: "scaleup", growthSignal: "Series B NZD 20m (Sep 2026)", growthSource: "https://n/x" },
       postings: [{ title: "Senior Product Manager", postedAt: "2026-11-12", source: "Seek", phrases: ["own the roadmap"] }],
       contacts: [{ name: "Jane Doe", url: "", company: "Halter", position: "Head of Product", connectedOn: "2024" }],
-      archetypeTitles: titles, competencies: ["Roadmap ownership"], boundaries: { willWorkIn: "Auckland" }, wantedType: "scaleup", today,
+      archetypeTitles: titles, competencies: ["Roadmap ownership"], skills: [{ skill: "Roadmap ownership", good: 5, love: 4, proof: 4, pays: 4, total: 17, rank: 1 }], targetIndustries: ["Agritech"], boundaries: { willWorkIn: "Auckland" }, wantedType: "scaleup", today,
     });
-    expect(suggestedValues(e)).toEqual([5, null, 5, null]);
+    expect(suggestedValues(e)).toEqual([5, 4, 5, 5]);
     expect(e.interest.line).toBe("Auckland · scaleup — the type you aim at");
     expect(e.proof.matches).toEqual(["Roadmap ownership"]);
     expect(archetypeTitlesOf({ clusters: [{ titles: ["Product Lead", "PM"], fit: "primary" }, { titles: ["Other"], fit: "secondary" }], titles: { target: ["PM", "Head of Product"] } })).toEqual(["Product Lead", "PM", "Head of Product"]);
@@ -155,7 +155,7 @@ describe("overrides", () => {
     const flags = overrideFlags(parsed.rows);
     expect(flags.map((f) => f.id)).toEqual(["override_up", "override_down"]);
     expect(flags[0].line).toContain("Xero — Access 1 → 4");
-    expect(flags[1].line).toContain("Halter — Growth 5 → 3");
+    expect(flags[1].line).toContain("Halter — Signal 5 → 3");
     const scored = withOverrides(rankRows(parsed.rows.map(({ item, values }) => ({ item, values })), r), parsed.rows);
     expect(scored.find((s) => s.item === "Xero")?.overrides).toEqual([{ axis: "access", from: 1 }]);
     expect(scored.find((s) => s.item === "Canva")?.overrides).toBeUndefined();

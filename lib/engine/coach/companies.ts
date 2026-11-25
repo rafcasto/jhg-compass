@@ -48,13 +48,13 @@ export function companyFlags(companies: readonly JhgCompany[]): MatrixFlag[] {
   const out = commonFlags(rows, r, "Ask which ten they would drop first and rescore those.", "Ask for the three they would call tomorrow.");
   const find = (name: string) => companies.find((c) => lower(c.name) === lower(name));
   const dreams = rows.filter((s) => valueOf(s, r, "interest") === 5 && valueOf(s, r, "access") <= 2 && valueOf(s, r, "proof") <= 2).map((s) => s.item);
-  if (dreams.length) out.push({ id: "dream", line: `Interest 5 with Access and Proof at 1–2 — a dream, not a target: ${dreams.join(", ")}. Ask what would make it a target.`, items: dreams });
+  if (dreams.length) out.push({ id: "dream", line: `Fit 5 with Access and Proficiency at 1–2 — a dream, not a target: ${dreams.join(", ")}. Ask what would make it a target.`, items: dreams });
   const noRoute = rows.filter((s) => valueOf(s, r, "access") === 5 && !find(s.item)?.knownContact?.trim()).map((s) => s.item);
   if (noRoute.length) out.push({ id: "access_no_route", line: `Access 5 with no one named: ${noRoute.join(", ")}. Ask for the route — a person, a community, a posting, an event — or the 5 comes down.`, items: noRoute });
   const noSource = rows.filter((s) => valueOf(s, r, "growth") === 5 && !find(s.item)?.growthSource?.trim()).map((s) => s.item);
-  if (noSource.length) out.push({ id: "growth_no_source", line: `Growth 5 with no source on file: ${noSource.join(", ")}. Name the signal and where it was read, or the 5 comes down.`, items: noSource });
+  if (noSource.length) out.push({ id: "growth_no_source", line: `Market signal 5 with no source on file: ${noSource.join(", ")}. Name the signal and where it was read, or the 5 comes down.`, items: noSource });
   const proofFive = topCut(rows, r.cut).filter((s) => valueOf(s, r, "proof") === 5).map((s) => s.item);
-  if (proofFive.length) out.push({ id: "proof_five", line: `Proof 5 in the top ${r.cut}: ${proofFive.join(", ")}. Ask which competency solves which visible problem there — one sentence each.`, items: proofFive });
+  if (proofFive.length) out.push({ id: "proof_five", line: `Proficiency 5 in the top ${r.cut}: ${proofFive.join(", ")}. Ask which skill answers which problem there — one sentence each.`, items: proofFive });
   return [...out.filter((f) => f.id !== "tie_at_cut"), ...out.filter((f) => f.id === "tie_at_cut")];
 }
 

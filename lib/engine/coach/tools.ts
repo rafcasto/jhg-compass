@@ -89,10 +89,8 @@ export const COACH_PATCH_SCHEMAS: Record<CoachKey, Record<string, unknown>> = {
     }),
   }),
 
+  // watchlist.companies, companyLists and notes are derived by code on every write (write.ts, lists.ts) — not in the schema.
   targetCompanies: obj({
-    watchlist: obj({ companies: rows(obj({ name: str("As the company writes it"), careersUrl: str("The careers page — only when the member confirmed or corrected it") }), "The Top 10 in rank order") }, "What the Scout watches"),
-    companyLists: obj({ all: SPLIT, top10: SPLIT, top3: SPLIT }, "The 40 / Top 10 / Top 3, each split sunrise · sunset · unclassified, rank order; written at hand-over"),
-    notes: str("The §6 notes block, complete, now with 'Top 3 right now: …'"),
     jhg: obj({
       targetCompanies: obj({
         companies: rows(obj({

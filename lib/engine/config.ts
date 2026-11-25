@@ -30,7 +30,8 @@ export interface EngineConfig {
 export const DEFAULT_ENGINE_CONFIG: EngineConfig = {
   agents: {
     // A turn is ≤ 250 words, but a save point writes whole lists (Coach 3: forty companies) in one tool call.
-    coach:      { model: DEFAULT_MODEL, effort: "low",    maxTokens: 32000, enabled: true },
+    // Decision 2026-11-25: the coach runs on Haiku 5.5 — the prompts are written for it (one turn shape, checklists, nothing to derive or count); the admin may override per agent.
+    coach:      { model: "claude-haiku-5-5", effort: "low", maxTokens: 32000, enabled: true },
     evaluator:  { model: DEFAULT_MODEL, effort: "high",   maxTokens: 16000, enabled: true },
     tailor:     { model: DEFAULT_MODEL, effort: "medium", maxTokens: 16000, enabled: true },
     writer:     { model: DEFAULT_MODEL, effort: "medium", maxTokens: 8000,  enabled: true },

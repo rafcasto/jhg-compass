@@ -105,6 +105,15 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
     const tc = (incoming.jhg as Record<string, unknown>).targetCompanies as JhgTargetCompanies | undefined;
     const lists = deriveCompanyLists(tc, current.companyLists);
     if (lists) incoming.companyLists = lists;
+    // The Scout's watchlist is the Top 10 in rank order, a careers URL only when the member confirmed or corrected it; the notes end
+    // with the Top 3 — both the prompt's "derived" rules, in code (decision 2026-11-25). Never the model's.
+    const top10 = tc?.top10 ?? [];
+    if (top10.length) incoming.watchlist = { ...((incoming.watchlist as Record<string, unknown> | undefined) ?? {}), companies: top10.map((t) => ({ name: t.name, ...(t.careersUrl && (t.careersUrlStatus === "confirmed" || t.careersUrlStatus === "corrected") ? { careersUrl: t.careersUrl } : {}) })) };
+    const top3 = tc?.top3 ?? [];
+    if (top3.length) {
+      const base = (typeof incoming.notes === "string" ? incoming.notes : current.notes ?? "").split("\n").filter((l) => l.trim() && !/^Top 3 right now:/.test(l));
+      incoming.notes = [...base, `Top 3 right now: ${top3.map((t) => t.name).join(", ")}`].join("\n");
+    }
   }
   const parsed = fromMaletaYaml(incoming);
   const shaped = shapeJhFile(coach, parsed, current);

@@ -42,7 +42,7 @@ export default function CompanyRow({ c, secondLine, facts = [], trailing }: {
             {/* Below sm the pill is hidden, so the type joins the second line. */}
             {type && <span className="sm:hidden">{line ? " · " : ""}{type}</span>}
             {/* The Packer's scores — why the row sits where it does. Mono, mute: a fact, not a verdict. */}
-            {scores && <span className="font-mono text-xs tabular-nums" title="Total · Growth · Interest · Access · Proof">{line || type ? " · " : ""}{scores}</span>}
+            {scores && <span className="font-mono text-xs tabular-nums" title="Total · Market signal · Fit · Access · Proficiency">{line || type ? " · " : ""}{scores}</span>}
           </p>
         )}
         <FactLines facts={facts} />

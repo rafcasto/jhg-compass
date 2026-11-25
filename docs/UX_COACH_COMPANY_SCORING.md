@@ -215,3 +215,21 @@ decided against in §10 (the matrix is scored once, as one turn) and stays so; t
 | 2 | Suggest Access **4** when the connection is old (`Connected On` > 3 years) | **no** — the anchor says *second-degree*; an old first-degree is still a message away |
 | 3 | Let the member upload the CSV from the Target companies page too (outside the coach) | **not in this PR** — the coach asks for it where it is used; the page can offer it later behind the same route |
 | 4 | Show `evidence` on the share document (`/share/<token>`) | **no** — connections are private; the share stays scores and lists |
+
+## 7. Revision 2026-11-25 — all four from data, in the member's four words
+
+**Decision (Rafael):** the Job Search's company scoring reads what the profile already holds — *access* from the LinkedIn connections
+the member uploaded, *proficiency* from the skills scored in Coach 1's matrix, *fit* from the aspiration (True North's industries,
+company type, boundaries), *market signal* from whether the company is hiring for the archetype's roles. So §2's two context-only
+axes become suggestions too, and the rubric's words are the member's four. The stored keys (`growth · interest · access · proof`)
+are unchanged — no schema or Packer change; only the labels, anchors and suggestions moved.
+
+| Axis (key) | Was | Now — suggested by code (`evidence.ts`) |
+|---|---|---|
+| **Market signal** (`growth`) | Growth signals, suggested | the same rule: hiring for the archetype's roles now + a dated event ≤ 90 days → 5 … nothing → 1 |
+| **Fit** (`interest`) | Interest, context only | `fitSuggestion`: on the never list → 1; outside the boundaries with no remote → 2; open → 3; the member's industry **or** company type → 4; both, within the boundaries → 5 (`targetIndustriesOf(trueNorth)` — industries and sub-sectors by name) |
+| **Access** (`access`) | suggested | unchanged |
+| **Proficiency** (`proof`) | Proof, context only | `proficiencySuggestion`: no postings read → 2; nothing they post for is a skill → 1; a skill matches → 3; a skill with Good ≥ 4 → 4; a top-six skill with Prove ≥ 4 → 5 — matched on words between the postings' phrases and `jhg.narrative.skillScores` (+ the competencies, unscored, at 3) |
+
+The matrix header says all four are suggested; the evidence block names them Signal · Fit · Access · Skills; the flags in `companies.ts`
+and Coach 3's prompt (v9) use the same words. The member still decides: a change rides as an override the coach challenges.

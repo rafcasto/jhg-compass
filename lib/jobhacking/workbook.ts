@@ -166,7 +166,7 @@ export function scoresLine(s: CompanyScores | null | undefined): string {
   return [total, parts.join(" ")].filter(Boolean).join(" · ");
 }
 
-export const SCORE_LEGEND = "Scores: total · Growth · Interest · Access · Proof, each 1–5.";
+export const SCORE_LEGEND = "Scores: total · Market signal · Fit · Access · Proficiency, each 1–5.";
 
 /** The reason a company was shortlisted, as a word: "press_or_funding" → Press or funding. */
 export const inspiredByLabel = (v: string | null | undefined): string => { const t = text(v).replace(/_/g, " "); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };

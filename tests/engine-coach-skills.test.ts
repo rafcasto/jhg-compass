@@ -60,7 +60,7 @@ describe("the registry", () => {
     const input = [row("x", 3, 3, 3, 3), row("y", 3, 3, 3, 3), row("z", 2, 2, 2, 2)];
     expect(rankRows(input, S)).toEqual(rankRows([...input], S));
     expect(rankRows(input, S).map((s) => s.rank)).toEqual([1, 2, 3]);
-    expect(scoredTable(cs, C)).toContain("| # | Company | Growth | Interest | Access | Proof | Total |");
+    expect(scoredTable(cs, C)).toContain("| # | Company | Signal | Fit | Access | Skills | Total |");
     expect(scoredRecap(cs, C)).toBe("Scored 3 companies — ranked: x 14, z 14, y 14");
   });
 

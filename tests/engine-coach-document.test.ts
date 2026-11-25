@@ -45,7 +45,7 @@ describe("the coaches that start from a CV", () => {
     expect(["narrative", "trueNorth", "targetCompanies", "storyBank", "masterCv", "linkedin"].filter((k) => coachStartsFromCv(k as never))).toEqual(["narrative", "storyBank", "masterCv"]);
     for (const k of ["narrative", "storyBank", "masterCv"] as const) {
       expect(COACH_PROMPTS[k].text).toContain("# WHEN A CV IS IN FRONT OF YOU");
-      expect(COACH_PROMPTS[k].version).toBe(k === "narrative" ? 7 : 5); // Narrative v7: the scoring matrix (docs/UX_COACH_AGENTIC.md §9)
+      expect(COACH_PROMPTS[k].version).toBe({ narrative: 8, storyBank: 6, masterCv: 6 }[k]); // v8 · v6 · v6: written for Haiku 5.5 (decision 2026-11-25)
     }
     expect(COACH_PROMPTS.narrative.text).toContain("write only what they confirm");
     expect(COACH_PROMPTS.trueNorth.text).not.toContain("# WHEN A CV IS IN FRONT OF YOU");
