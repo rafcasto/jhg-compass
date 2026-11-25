@@ -7,6 +7,7 @@ import { buildPortalsYaml } from "@/lib/careerops/portals-yaml";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import type { CareerOpsSetupV2, JhgCompany, JhgTargetCompanies } from "@/lib/careerops/types";
 import { deriveCompanyLists } from "./lists";
+import { deriveTrueNorth } from "./derive-true-north";
 import { jhFileName, jhFilePreview, jhFileProfile, shapeJhFile } from "@/lib/jobhacking/profile-files";
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import type { Profile } from "@/lib/types";
@@ -91,11 +92,28 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
   if (!schema.ok) throw new CoachWriteError("The write did not match the profile schema", schema.errors.map((e) => `${e.path}: ${e.message}`));
 
   mergeOwnBlocks(incoming, current, coach);
+  // The North Star is code's, from the working material, on every write (lib/engine/coach/derive-true-north.ts) — never the model's.
+  if (coach === "trueNorth") {
+    const derived = deriveTrueNorth((incoming.jhg as Record<string, unknown>).trueNorth as Parameters<typeof deriveTrueNorth>[0], current.jhg?.identity);
+    for (const [k, v] of Object.entries(derived)) {
+      const cur = incoming[k];
+      incoming[k] = typeof v === "string" ? v : { ...(cur && typeof cur === "object" ? (cur as Record<string, unknown>) : {}), ...(v as Record<string, unknown>) };
+    }
+  }
   // The page's lists are code's, from the working material, on every write (lib/engine/coach/lists.ts) — not the model's at hand-over.
   if (coach === "targetCompanies") {
     const tc = (incoming.jhg as Record<string, unknown>).targetCompanies as JhgTargetCompanies | undefined;
     const lists = deriveCompanyLists(tc, current.companyLists);
     if (lists) incoming.companyLists = lists;
+    // The Scout's watchlist is the Top 10 in rank order, a careers URL only when the member confirmed or corrected it; the notes end
+    // with the Top 3 — both the prompt's "derived" rules, in code (decision 2026-11-25). Never the model's.
+    const top10 = tc?.top10 ?? [];
+    if (top10.length) incoming.watchlist = { ...((incoming.watchlist as Record<string, unknown> | undefined) ?? {}), companies: top10.map((t) => ({ name: t.name, ...(t.careersUrl && (t.careersUrlStatus === "confirmed" || t.careersUrlStatus === "corrected") ? { careersUrl: t.careersUrl } : {}) })) };
+    const top3 = tc?.top3 ?? [];
+    if (top3.length) {
+      const base = (typeof incoming.notes === "string" ? incoming.notes : current.notes ?? "").split("\n").filter((l) => l.trim() && !/^Top 3 right now:/.test(l));
+      incoming.notes = [...base, `Top 3 right now: ${top3.map((t) => t.name).join(", ")}`].join("\n");
+    }
   }
   const parsed = fromMaletaYaml(incoming);
   const shaped = shapeJhFile(coach, parsed, current);

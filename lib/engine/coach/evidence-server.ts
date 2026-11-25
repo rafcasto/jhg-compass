@@ -4,7 +4,8 @@ import type { JhgCompany } from "@/lib/careerops/types";
 import type { ProfileFile } from "@/lib/careerops/profile-file";
 import { companyKey, slug } from "../sourcing/keys";
 import { CONNECTIONS_CHUNK, chunkConnections, companyMatches, matchConnections, type Connection } from "./connections";
-import { archetypeTitlesOf, daysBetween, evidenceFor, suggestedValues, trueNorthPostingsAt, type CompanyEvidence, type PostingFact } from "./evidence";
+import { archetypeTitlesOf, daysBetween, evidenceFor, suggestedValues, targetIndustriesOf, trueNorthPostingsAt, type CompanyEvidence, type PostingFact } from "./evidence";
+import type { SkillScore } from "./skills";
 
 // The server half of the assisted matrix (docs/UX_COACH_COMPANY_SCORING.md §2–§3): the member's connections under their
 // account in chunks, the shared postings at each company, the evidence built per row and kept on
@@ -71,11 +72,13 @@ export async function buildCompaniesEvidence(uid: string, companies: readonly Jh
   const archetypeTitles = archetypeTitlesOf(tn);
   const competencies = profile.narrative?.superpowers ?? [];
   const wantedType = profile.goal?.companyType?.trim() || tn?.companyType?.trim() || "";
+  const skills = ((profile.jhg?.narrative?.skillScores ?? []) as Partial<SkillScore>[]).filter((x): x is SkillScore => typeof x.skill === "string" && typeof x.good === "number");
+  const targetIndustries = targetIndustriesOf(tn);
   const byName: Record<string, CompanyEvidence> = {};
   const suggested: Record<string, (number | null)[]> = {};
   for (const c of companies) {
     const postings = [...(shared.get(c.name) ?? []), ...trueNorthPostingsAt(tn?.postings, c.name, companyMatches)];
-    const e = evidenceFor({ company: c, postings, contacts: matched.get(c.name) ?? [], archetypeTitles, competencies, boundaries: tn?.boundaries, wantedType, today });
+    const e = evidenceFor({ company: c, postings, contacts: matched.get(c.name) ?? [], archetypeTitles, competencies, skills, targetIndustries, boundaries: tn?.boundaries, wantedType, today });
     byName[c.name] = e; suggested[c.name] = suggestedValues(e);
   }
   const out: CompaniesEvidence = { byName, suggested, connections: uploadedAt ? { total: connections.length, matched: matched.size } : null, builtAt: Date.now() };

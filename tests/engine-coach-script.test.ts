@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { ProfileFile } from "@/lib/careerops/profile-file";
 import { COACH_PARTS } from "@/lib/engine/coach/parts";
 import { asideFor, canContinue, completedSteps, currentStep, findStep, previousStep, scriptFor, stepFields, stepPosition, validateStep, type JobLike, type StepValues } from "@/lib/engine/coach/script";
-import { TRUE_NORTH_SCRIPT, derivePay, derivePlace, notesBlock, phraseCounts, repeatedTitles } from "@/lib/engine/coach/script/true-north";
+import { TRUE_NORTH_SCRIPT, phraseCounts, repeatedTitles } from "@/lib/engine/coach/script/true-north";
 import { foreignPaths } from "@/lib/engine/coach/tools";
 
 // The scripted coach (decision C, docs/DECISION_PROFILE_INTERFACE_2026-11-25.md): Coach 2's conversation as steps — one
@@ -56,12 +56,11 @@ describe("the True North script", () => {
     // A skipped culture leaves no mark; the next answer marks it.
     expect(currentStep(S, withBoundaries({ ...payB, ...rightsB, ...placeB, ...moveB, ...neverB }))?.id).toBe("negotiation");
     expect(currentStep(S, withBoundaries(allA))?.id).toBe("review-a");
-    const reviewed = withBoundaries(allA, { notes: "Hard no's (do not apply): on-call weekends" });
-    expect(currentStep(S, reviewed)?.id).toBe("boards");
-    // The job runs: the boards step is answered, the keepers wait — nothing in the slot but the job line.
+    // The review writes no key: it is answered once the boards step is — the job running, or the postings landed.
     const running: JobLike[] = [{ id: "j1", type: "postings", status: "running" }];
-    expect(currentStep(S, reviewed, { jobs: running })).toBeNull();
-    const landed = withBoundaries(allA, { notes: reviewed.notes, jhg: { trueNorth: { postings } } });
+    expect(currentStep(S, withBoundaries(allA), { jobs: running })).toBeNull();
+    expect(completedSteps(S, withBoundaries(allA), { jobs: running }).map((s) => s.id)).toContain("review-a");
+    const landed = withBoundaries(allA, { jhg: { trueNorth: { postings } } });
     expect(currentStep(S, landed)?.id).toBe("keepers");
     const kept = { ...landed, jhg: { trueNorth: { ...landed.jhg!.trueNorth, keepers: ["agile delivery", "release management", "stakeholder management"] } } };
     expect(currentStep(S, kept)?.id).toBe("titles");
@@ -81,44 +80,20 @@ describe("the True North script", () => {
     expect(canContinue(pay, payB, empty)).toBe(true);
   });
 
-  it("derives goal.salary, the floor and compTargets on the pay step — the statement fills in as she answers", () => {
-    const patch = findStep(S, "pay")!.patch(payB, empty) as Record<string, Record<string, unknown>>;
-    expect(patch.jhg).toEqual({ trueNorth: { boundaries: payB } });
-    expect(patch.goal).toEqual({ salary: "NZD 140,000–170,000" });
-    expect(patch.policy).toEqual({ minimumSalary: "NZD 130,000" });
-    expect(patch.personalization).toEqual({ compTargets: "Target NZD 140,000–170,000; floor NZD 130,000." });
-    expect(derivePay({ currency: "NZD" })).toEqual({});
+  it("writes only the step's boundaries — the North Star is derived on the write path", () => {
+    expect(findStep(S, "pay")!.patch(payB, empty)).toEqual({ jhg: { trueNorth: { boundaries: payB } } });
     expect(findStep(S, "pay")!.summary(payB)).toBe("NZD 140,000–170,000 · floor 130,000");
+    expect(findStep(S, "rights")!.patch({ authorizedIn: ["New Zealand", "Australia"], needsSponsorship: "Y", visaStatus: "work visa" }, empty)).toEqual({ jhg: { trueNorth: { boundaries: { authorizedIn: ["New Zealand", "Australia"], needsSponsorship: "Y", visaStatus: "work visa" } } } });
+    expect(findStep(S, "place")!.patch({ ...placeB, exclude: "Hamilton" }, empty)).toEqual({ jhg: { trueNorth: { boundaries: { ...placeB, exclude: "Hamilton" } } } });
   });
 
-  it("derives the location policy from the place steps as they stand, and work rights on the policy", () => {
-    const afterPlace = findStep(S, "place")!.patch({ ...placeB, exclude: "Hamilton" }, empty) as Record<string, Record<string, unknown>>;
-    expect(afterPlace.policy).toEqual({ locationFlexibility: "Remote: yes; Local hybrid: 3 days" });
-    expect(afterPlace.personalization).toEqual({ locationPolicy: ["Will work in: Auckland", "Exclude: Hamilton", "Remote: yes", "Local hybrid: 3 days"] });
-    const afterMove = findStep(S, "move")!.patch(moveB, withBoundaries(placeB)) as Record<string, Record<string, unknown>>;
-    expect(afterMove.policy).toEqual({ locationFlexibility: "Remote: yes; Local hybrid: 3 days; Relocate: no" });
-    expect((afterMove.personalization.locationPolicy as string[]).at(-1)).toBe("Travel for a remote role elsewhere: a week a quarter");
-    expect(derivePlace({})).toEqual({});
-    const rights = findStep(S, "rights")!.patch({ authorizedIn: ["New Zealand", "Australia"], needsSponsorship: "Y", visaStatus: "work visa" }, empty) as Record<string, Record<string, unknown>>;
-    expect(rights.policy).toEqual({ visaStatus: "work visa", authorizedIn: ["New Zealand", "Australia"], needsSponsorship: true });
-  });
-
-  it("writes the notice period as a number and the notes block at the save point, in the prompt's order", () => {
+  it("writes the notice period as a number; the save point writes the stamp only", () => {
     const never = findStep(S, "never")!.patch({ hardNos: ["on-call weekends"], excludeLevels: [], neverApply: ["Acme"], noticePeriodDays: "28" }, empty) as { jhg: { trueNorth: { boundaries: Record<string, unknown> } } };
     expect(never.jhg.trueNorth.boundaries).toEqual({ hardNos: ["on-call weekends"], excludeLevels: [], neverApply: ["Acme"], noticePeriodDays: 28 });
-    const notes = notesBlock({ ...allA, neverApply: ["Acme"], softDislikes: ["open plan"] });
-    expect(notes.split("\n")).toEqual([
-      "Hard no's (do not apply): on-call weekends",
-      "Culture must-haves: clear decision rights; deprioritise when absent: Y",
-      "Soft dislikes (lower, not a no): open plan",
-      "Notice period: 28 days",
-      "Never apply: Acme",
-    ]);
     const review = findStep(S, "review-a")!;
     expect(review.kind).toBe("review");
     expect(review.progress).toBe("in_progress");
-    expect(review.patch({}, withBoundaries(allA))).toEqual({ notes: notesBlock(allA) });
-    expect(notesBlock({})).toBe("");
+    expect(review.patch({}, withBoundaries(allA))).toEqual({});
   });
 
   it("reads a stored answer back for Back and Change", () => {
@@ -144,7 +119,7 @@ describe("the True North script", () => {
     expect(tf.rows).toEqual(["Delivery Lead", "Head of Delivery", "Programme Manager"]);
   });
 
-  it("keeps the titles honest: a target and an exclude, and the Scout's keywords from them", () => {
+  it("keeps the titles honest: a target and an exclude", () => {
     const titles = findStep(S, "titles")!;
     const p: ProfileFile = { version: 1, jhg: { trueNorth: { postings, boundaries: { excludeLevels: ["Junior"] } } } };
     expect(validateStep(titles, { titles: { "Delivery Lead": "target", "Head of Delivery": "analog", "Programme Manager": "target" } }, p)).toMatchObject({ titles: expect.stringContaining("exclude") });
@@ -152,7 +127,7 @@ describe("the True North script", () => {
     expect(validateStep(titles, { titles: { "Delivery Lead": "target", "Head of Delivery": "analog" } }, p)).toEqual({ titles: "Every row needs a choice" });
     const ok = { titles: { "Delivery Lead": "target", "Head of Delivery": "analog", "Programme Manager": "exclude" } };
     expect(validateStep(titles, ok, p)).toEqual({});
-    expect(titles.patch(ok, p)).toEqual({ jhg: { trueNorth: { titles: { target: ["Delivery Lead"], analog: ["Head of Delivery"], exclude: ["Programme Manager"] } } }, watchlist: { positive: ["Delivery Lead"], negative: ["Programme Manager", "Junior"] } });
+    expect(titles.patch(ok, p)).toEqual({ jhg: { trueNorth: { titles: { target: ["Delivery Lead"], analog: ["Head of Delivery"], exclude: ["Programme Manager"] } } } });
     expect(titles.summary(ok)).toBe("target: Delivery Lead · analog: Head of Delivery · exclude: Programme Manager");
     expect(titles.read({ version: 1, jhg: { trueNorth: { titles: { target: ["A"], exclude: ["B"] } } } })).toEqual({ titles: { A: "target", B: "exclude" } });
   });

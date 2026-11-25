@@ -116,31 +116,31 @@ describe("ScoreMatrix with evidence", () => {
   const ev = (over: Partial<CompanyEvidence> = {}): CompanyEvidence => ({
     growth: { suggested: 5, why: ["hiring 2 roles for you now — Senior Product Manager (Seek, 2026-11-12)", "Series B NZD 20m (Sep 2026) ›"] },
     access: { suggested: 5, contacts: [{ name: "Jane Doe", position: "Head of Product", connectedOn: "2024" }], more: 2 },
-    interest: { line: "Auckland · scaleup — the type you aim at" },
-    proof: { phrases: ["own the roadmap"], matches: ["Roadmap ownership"], line: "" },
+    interest: { suggested: 4, line: "Auckland · scaleup — the type you aim at" },
+    proof: { suggested: 4, phrases: ["own the roadmap"], matches: ["Roadmap ownership"], line: "" },
     ...over,
   });
-  const quiet = ev({ growth: { suggested: 1, why: ["nothing on file"] }, access: { suggested: 1, contacts: [], more: 0 }, proof: { phrases: [], matches: [], line: "no postings read — a guess unless you know their problem" } });
+  const quiet = ev({ growth: { suggested: 1, why: ["nothing on file"] }, access: { suggested: 1, contacts: [], more: 0 }, proof: { suggested: 2, phrases: [], matches: [], line: "no postings read — a guess unless you know their problem" } });
 
-  it("pre-fills Growth and Access, shows the reasons under the name, counts the member's two columns, sends overrides", async () => {
+  it("pre-fills what the evidence suggests, shows the reasons under the name, counts the rest as the member's, sends overrides", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<ScoreMatrix kind="companies" items={["Halter", "Xero"]} evidence={[ev(), quiet]} suggested={[[5, null, 5, null], [1, null, 1, null]]} connections={{ total: 312, matched: 14 }} onSubmit={onSubmit} />);
     expect(screen.getByText(/312 LinkedIn connections \(14 companies have one\)/)).toBeInTheDocument();
-    expect((screen.getByRole("combobox", { name: "Growth signals — Halter" }) as HTMLSelectElement).value).toBe("5");
+    expect((screen.getByRole("combobox", { name: "Market signal — Halter" }) as HTMLSelectElement).value).toBe("5");
     expect((screen.getByRole("combobox", { name: "Access — Halter" }) as HTMLSelectElement).value).toBe("5");
-    expect((screen.getByRole("combobox", { name: "Interest — Halter" }) as HTMLSelectElement).value).toBe("");
+    expect((screen.getByRole("combobox", { name: "Fit — Halter" }) as HTMLSelectElement).value).toBe("");
     expect(screen.getByText("Jane Doe")).toBeInTheDocument();
     expect(screen.getByText(/\+2 more/)).toBeInTheDocument();
     expect(screen.getByText("Roadmap ownership")).toBeInTheDocument();
     expect(screen.getByText(/no postings read — a guess/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add Connections.csv" })).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("0 of 2 scored");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Interest — Halter" }), "4");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Proof — Halter" }), "3");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Fit — Halter" }), "4");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Proficiency — Halter" }), "3");
     await user.selectOptions(screen.getByRole("combobox", { name: "Access — Halter" }), "4");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Interest — Xero" }), "2");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Proof — Xero" }), "1");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Fit — Xero" }), "2");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Proficiency — Xero" }), "1");
     expect(screen.getByRole("status")).toHaveTextContent("2 of 2 scored");
     await user.click(screen.getByRole("button", { name: "Send scores" }));
     expect(onSubmit).toHaveBeenCalledWith([{ item: "Halter", values: [5, 4, 4, 3], overrides: [{ axis: "access", from: 5 }] }, { item: "Xero", values: [1, 2, 1, 1] }]);

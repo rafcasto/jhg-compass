@@ -45,10 +45,11 @@ export const RUBRICS: Record<RubricKind, Rubric> = {
   companies: {
     kind: "companies", coach: "targetCompanies", title: "Score your companies", item: "company", items: "companies",
     axes: [
-      { key: "growth", label: "Growth signals", short: "Growth", anchors: ["Shrinking or silent", "Steady, nothing new", "One recent signal", "Several dated signals", "Funding, hiring wave or expansion this quarter"] },
-      { key: "interest", label: "Interest", short: "Interest", anchors: ["Would not go", "Only if nothing else", "Open to it", "Want to be there", "Top of my list, within my boundaries"] },
+      // Decision 2026-11-25: all four suggested by code (evidence.ts) — the stored keys keep their names; the words are the member's four.
+      { key: "growth", label: "Market signal", short: "Signal", anchors: ["Shrinking or silent", "Steady, nothing new", "One recent signal", "Hiring for my roles now, or several dated signals", "Hiring for my roles now and a dated event this quarter"] },
+      { key: "interest", label: "Fit", short: "Fit", anchors: ["Would not go — on my never list", "Only if nothing else — outside my boundaries", "Open to it", "My industry or my company type", "My industry and my type, within my boundaries"] },
       { key: "access", label: "Access", short: "Access", anchors: ["Nobody, no route", "A cold application", "A community, event or posting", "A second-degree contact", "Someone I can message today"] },
-      { key: "proof", label: "Proof", short: "Proof", anchors: ["No visible problem I solve", "A guess", "One competency fits a stated need", "A competency fits a problem they posted about", "My story answers a problem they are hiring for"] },
+      { key: "proof", label: "Proficiency", short: "Skills", anchors: ["Nothing they hire for is a skill of mine", "A guess — no postings read", "A skill of mine matches what they post for", "A skill I'm solid at matches what they post for", "A top skill with proof matches what they hire for"] },
     ],
     tieBreak: ["interest", "proof"], cut: 10, cutLine: "The line is the cut: ranks 1–10 become your Top 10.", min: 3, max: 50,
   },

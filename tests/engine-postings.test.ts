@@ -74,7 +74,7 @@ describe("run_research — the coach starts a job, not a search", () => {
     expect(COACH_RESEARCH.targetCompanies).toEqual(["companies"]);
     expect(COACH_PROMPTS.trueNorth.text).toContain('run_research with kind "postings"');
     expect(COACH_PROMPTS.trueNorth.text).not.toContain("You do the research, in this conversation");
-    expect(COACH_PROMPTS.trueNorth.version).toBe(5);
+    expect(COACH_PROMPTS.trueNorth.version).toBe(6);
   });
 
   it("rides the stream as a job event and lands on the coach's turn", () => {
