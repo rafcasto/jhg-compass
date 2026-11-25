@@ -11,7 +11,8 @@ import { jhFileName, jhFilePreview, jhFileProfile, shapeJhFile } from "@/lib/job
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import type { Profile } from "@/lib/types";
 import { coachChecks, failedChecks, rankCompanies, readinessLine, type Check } from "./checks";
-import type { CoachKey } from "./keys";
+import { allCoachesComplete, coachStates, type CoachKey } from "./keys";
+import { grantJobSearchOnCompletion } from "@/lib/server/grants";
 import { foreignPaths } from "./tools";
 import type { WriteNote } from "./transcript";
 
@@ -50,9 +51,14 @@ export interface CoachWriteResult {
   checks: Check[];
   /** The progress actually stored: a hand-over with failed checks stays in_progress. */
   progress?: "in_progress" | "complete";
-  /** One sentence on CareerOps readiness — on a hand-over. */
+  /** One sentence on the job search's readiness — on a hand-over. */
   readiness?: string;
+  /** This hand-over completed the sixth coach and switched the Job Search portal on (decision 2026-11-25). */
+  jobSearchGranted?: boolean;
 }
+
+/** The readiness sentence at 6 of 6, when the portal has just been switched on — the hand-off said where it happens. */
+export const SIX_OF_SIX_LINE = "All six complete — your job search is switched on. Open it from the portal switcher.";
 
 const isoDay = (now: number) => new Date(now).toISOString().slice(0, 10);
 
@@ -121,14 +127,17 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
   const changed = rows.filter((r) => r.inFile && r.kind !== "keep");
   const seen = new Set<string>();
   const unique = changed.filter((r) => !seen.has(r.key) && seen.add(r.key));
-  const readiness = progress === "complete" ? readinessLine(merged).line : undefined;
+  // The hand-off (decision 2026-11-25): the sixth completion switches Job Search on, by code, once — never a flag the member waits on.
+  const sixOfSix = progress === "complete" && allCoachesComplete(coachStates(merged.jhg?.progress as Parameters<typeof coachStates>[0]));
+  const jobSearchGranted = sixOfSix ? await grantJobSearchOnCompletion(uid) : false;
+  const readiness = progress === "complete" ? (sixOfSix ? SIX_OF_SIX_LINE : readinessLine(merged).line) : undefined;
   const note: WriteNote = {
     labels: unique.map((r) => r.label),
     links: unique.map((r) => ({ label: r.label, href: r.href.startsWith(BASE_OF[portal]) ? r.href : r.href })),
     ...(progress ? { progress } : {}),
     ...(readiness ? { readiness } : {}),
   };
-  return { note, stored: profileToYaml(stripToCoach(merged, shaped)), warnings: schema.warnings, checks, progress, readiness };
+  return { note, stored: profileToYaml(stripToCoach(merged, shaped)), warnings: schema.warnings, checks, progress, readiness, ...(jobSearchGranted ? { jobSearchGranted } : {}) };
 }
 
 /** The merged profile cut down to the top-level sections this write touched — what the coach needs to see back. */

@@ -25,6 +25,8 @@ export interface CoachSession {
   lastSearchErrors?: string[];
   /** Search errors over the conversation, by code — the admin's count. */
   searchErrors?: Record<string, number>;
+  /** The member started this coach past its gate (decision 2026-11-25): the coaches that were not complete then. Every turn's operator note carries them. */
+  gateSkipped?: string[];
 }
 
 const ref = (uid: string, coach: CoachKey) => adminDb().doc(`users/${uid}/coachSessions/${coach}`);

@@ -6,7 +6,7 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useAccess } from "@/lib/firestore/access";
 import { Sheet } from "@/components/tracker/Sheet";
-import { paths, useLiveDoc } from "@/lib/firestore/db";
+import { paths, useLiveCollection, useLiveDoc } from "@/lib/firestore/db";
 import { auth } from "@/lib/firebase/client";
 import { COACH_TOTAL, coachForPage, coachStartsFromCv, coachStates, findCoach, missingBefore, pageOfPath } from "@/lib/engine/coach/keys";
 import { coachPart } from "@/lib/engine/coach/parts";
@@ -16,10 +16,15 @@ import { applyEvent, emptyPending, parseEvent, pendingMatrixOf, type PendingTurn
 import type { MatrixRow } from "@/lib/engine/coach/rubrics";
 import type { CoachSession } from "@/lib/engine/coach/session";
 import type { CareerOpsSetupV2 } from "@/lib/careerops/types";
+import type { EngineJob } from "@/lib/engine/jobs";
+import { asideFor, currentStep, findStep, previousStep, scriptFor, stepPosition, waitingOn, type Step, type StepValues } from "@/lib/engine/coach/script";
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import CoachRail from "./CoachRail";
 import Composer from "./Composer";
 import CvStart from "./CvStart";
+import GateStart from "./GateStart";
+import StepSlot from "./StepSlot";
+import StepTranscript from "./StepTranscript";
 import type { CoachAttachment, ConnectionsAttachment } from "./document";
 import Transcript from "./Transcript";
 import { closeCoach, flashSections, openCoach, restoreWide, setWide, useCoachUi } from "./store";
@@ -48,6 +53,12 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const { data: setup } = useLiveDoc<CareerOpsSetupV2>(uid ? paths.careerOpsSetup(uid) : null);
   const { data: profile } = useLiveDoc<Profile>(uid ? paths.profile(uid) : null);
   const { data: session, loading: sessionLoading } = useLiveDoc<CoachSession>(uid && coach ? paths.coachSession(uid, coach.key) : null);
+  // The scripted coach (decision C, docs/UX_SCRIPTED_COACH.md): a coach with a script runs its steps in the slot; the member's
+  // recent jobs say when a job step is still running. The conversation takes over once the script has nothing left to ask.
+  const { data: jobs } = useLiveCollection<EngineJob>(uid, paths.engineJobs);
+  const [reopen, setReopen] = useState<string | null>(null); // Back · Change: an answered step in the slot again
+  const [stepBusy, setStepBusy] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
 
   const [pending, setPending] = useState<PendingTurn | null>(null);
   const [localTurns, setLocalTurns] = useState<TranscriptTurn[]>([]); // the member's words until the server echoes them
@@ -58,7 +69,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   const started = useRef<string | null>(null);
   useEffect(() => { restoreWide(); }, []);
 
-  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: MatrixRow[] | null = null, connections: ConnectionsAttachment | null = null) => {
+  const send = useCallback(async (text: string | null, document: CoachAttachment | null = null, scores: MatrixRow[] | null = null, connections: ConnectionsAttachment | null = null, skipGate = false) => {
     if (!coach || busy.current) return;
     busy.current = true;
     setError(null); setHandoff(null);
@@ -74,7 +85,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       const res = await fetch("/api/coach/turn", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        body: JSON.stringify({ coach: coach.key, portal, ...(scores ? { scores } : text ? { text } : connections ? {} : { start: true }), ...(document ? { document } : {}), ...(connections ? { connections: { name: connections.name, text: connections.text } } : {}), context: { page, section } }),
+        body: JSON.stringify({ coach: coach.key, portal, ...(scores ? { scores } : text ? { text } : connections ? {} : { start: true, ...(skipGate ? { skipGate: true } : {}) }), ...(document ? { document } : {}), ...(connections ? { connections: { name: connections.name, text: connections.text } } : {}), context: { page, section } }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({}));
@@ -119,7 +130,7 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
     if (coach && pageCoach.key !== coach.key && !busy.current) {
       openCoach(pageCoach.key);
       setHandoff(`Now with ${pageCoach.label} — ${coach.label} is saved where you left it.`);
-      setPending(null); setLocalTurns([]); setError(null);
+      setPending(null); setLocalTurns([]); setError(null); setReopen(null); setStepError(null);
       started.current = null;
     }
   }, [pathname, ui.open, coach]);
@@ -127,27 +138,60 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   // A conversation that has not started yet starts itself: the coach opens (docs/UX_COACH.md §3) — unless
   // this coach starts from a CV and none is stored (docs/UX_COACH_AGENTIC.md §3): then the panel offers one first.
   const states = coachStates(setup?.jhg?.progress);
-  const missing = coach ? missingBefore(coach, states) : [];
+  const [skipped, setSkipped] = useState<string | null>(null); // the member said Start anyway — until the session carries it
+  // The gate is a default, not a wall (decision 2026-11-25): a conversation that started past it, or is starting now, is not gated.
+  const pastGate = !!coach && (session?.gateSkipped?.length ? true : skipped === coach.key);
+  const missing = coach && !pastGate ? missingBefore(coach, states) : [];
   const notStarted = (session?.turns?.length ?? 0) === 0 && !pending && !localTurns.length;
   const cvFirst = !!coach && coachStartsFromCv(coach.key) && !setup?.cvMarkdown?.trim() && notStarted && !sessionLoading;
+  const file = profileFromSetup({ profile, setup });
+  const script = coach && coach.ready && !missing.length ? scriptFor(coach.key) : null;
+  const ctx = { jobs };
+  const scriptStep: Step | null = script ? (reopen && findStep(script, reopen)) || currentStep(script, file, ctx) : null;
+  const waiting = script && !scriptStep ? waitingOn(script, file, ctx) : null;
+  const scripted = !!script && !!(scriptStep || waiting);
   useEffect(() => {
-    if (!ui.open || !coach || !coach.ready || sessionLoading || missing.length || cvFirst) return;
+    if (!ui.open || !coach || !coach.ready || sessionLoading || missing.length || cvFirst || scripted) return;
     if ((session?.turns?.length ?? 0) > 0 || started.current === coach.key) return;
     started.current = coach.key;
-    void send(null);
-  }, [ui.open, coach, sessionLoading, session?.turns?.length, missing.length, cvFirst, send]);
+    void send(null, null, null, null, skipped === coach.key);
+  }, [ui.open, coach, sessionLoading, session?.turns?.length, missing.length, cvFirst, send, skipped, scripted]);
+
+  // A step's answer, its skip, or its job — the write goes down the coach's own path (/api/coach/step → applyCoachPatch).
+  const stepCall = useCallback(async (url: string, body: Record<string, unknown>) => {
+    setStepBusy(true); setStepError(null);
+    try {
+      const token = await auth.currentUser!.getIdToken();
+      const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ ...body, portal }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setStepError(d.error ?? "That didn't save — try again."); return false; }
+      if (d.note?.labels) flashSections(d.note.labels);
+      setReopen(null);
+      return true;
+    } catch { setStepError("Lost the connection — try again."); return false; }
+    finally { setStepBusy(false); }
+  }, [portal]);
+  const submitStep = useCallback((step: Step, values: StepValues) => {
+    if (!coach) return;
+    if (step.kind === "job" && step.job) return void stepCall("/api/engine/jobs", { type: step.job.type, ...step.job.payload(values, file), coach: coach.key });
+    void stepCall("/api/coach/step", { coach: coach.key, step: step.id, values });
+  }, [coach, file, stepCall]);
+  const skipStep = useCallback((step: Step) => { if (coach) void stepCall("/api/coach/step", { coach: coach.key, step: step.id, skip: true }); }, [coach, stepCall]);
 
   if (!ui.open || !coach) return null;
   const turns: TranscriptTurn[] = [...(session?.turns ?? []), ...localTurns];
   const complete = states[coach.key] === "complete";
   // Where the conversation is — from the stored keys, zero tokens (docs/UX_COACH_AGENTIC.md §1). Only once it has started.
-  const part = turns.length && !missing.length ? coachPart(coach.key, profileFromSetup({ profile, setup }), complete) : null;
+  // On a script, the step's part and its place in it: *Part A · Boundaries · 3 / 8*.
+  const slotStep = scriptStep ?? waiting?.step ?? null;
+  const position = script && slotStep ? stepPosition(script, slotStep) : null;
+  const part = position ? position.part : turns.length && !missing.length ? coachPart(coach.key, file, complete) : null;
   const canTalk = coach.ready && !missing.length && !quota;
   // A matrix waits: its Send scores is the one red; the composer's Send steps down (docs/UX_COACH_AGENTIC.md §9–§10).
   const matrixWaiting = !pending && !!pendingMatrixOf(turns);
 
   const wide = ui.wide;
-  const composer = canTalk && !cvFirst ? <Composer onSend={(t, d, c) => void send(t || null, d, null, c ?? null)} disabled={!!pending} tone={matrixWaiting ? "secondary" : "primary"} placeholder={matrixWaiting ? "Or tell your coach what to change…" : complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
+  const composer = canTalk && !cvFirst && !scripted ? <Composer onSend={(t, d, c) => void send(t || null, d, null, c ?? null)} disabled={!!pending} tone={matrixWaiting ? "secondary" : "primary"} placeholder={matrixWaiting ? "Or tell your coach what to change…" : complete ? "Anything to change?" : "Type your answer…"} /> : undefined;
   // Wide: the rail's column on the left (lg+), the conversation in one readable column — body and footer share the grid so the composer sits under the transcript.
   const column = (node: ReactNode, rail?: ReactNode) => !wide ? node : (
     <div className="lg:grid lg:grid-cols-[232px_minmax(0,1fr)] lg:gap-8">
@@ -155,7 +199,18 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
       <div className="mx-auto w-full max-w-2xl">{node}</div>
     </div>
   );
-  const footer = composer ? column(composer) : undefined;
+  const jobHref = `${BASE_OF[portal]}/${coach.page}`;
+  const stepSlot = script && slotStep ? (
+    <StepSlot
+      step={slotStep} profile={file} aside={asideFor(script, slotStep)} reopened={!!reopen} busy={stepBusy} error={stepError} wide={wide}
+      job={waiting?.job ?? (slotStep.job ? [...jobs].filter((j) => j.type === slotStep.job!.type).sort((a, b) => b.createdAt - a.createdAt)[0] ?? null : null)}
+      uid={uid} jobHref={jobHref}
+      onSubmit={(v) => submitStep(slotStep, v)}
+      onSkip={slotStep.skipValues ? () => skipStep(slotStep) : undefined}
+      onBack={reopen ? () => setReopen(null) : previousStep(script, slotStep, file, ctx) ? () => setReopen(previousStep(script, slotStep, file, ctx)!.id) : undefined}
+    />
+  ) : null;
+  const footer = scripted && stepSlot ? column(stepSlot) : composer ? column(composer) : undefined;
   const hasCv = !!setup?.cvMarkdown?.trim();
   const rail = <aside className="lg:sticky lg:top-0"><CoachRail states={states} portal={portal} hasCv={hasCv} /></aside>;
 
@@ -164,12 +219,14 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
   ) : missing.length ? (
     // Gated: say why in one line, then the rail of six so the way forward is a tap away (docs/UX_COACH_AGENTIC.md §5) — wide already has the rail beside.
     <div className="space-y-6">
-      <p className="text-sm text-jh-mute">{coach.label} starts after {missing.map((c) => c.label).join(" and ")} — your coach needs what they write first.</p>
+      <GateStart coach={coach} missing={missing} disabled={sessionLoading} onStart={() => { setSkipped(coach.key); if (!coachStartsFromCv(coach.key) || setup?.cvMarkdown?.trim()) { started.current = coach.key; void send(null, null, null, null, true); } }} />
       {!wide && <CoachRail states={states} portal={portal} hasCv={hasCv} />}
       {wide && <div className="lg:hidden"><CoachRail states={states} portal={portal} hasCv={hasCv} /></div>}
     </div>
+  ) : scripted && script ? (
+    <StepTranscript script={script} profile={file} ctx={ctx} portal={portal} uid={uid} jobHref={jobHref} handoff={handoff} wide={wide} onChange={(s) => { setStepError(null); setReopen(s.id); }} />
   ) : cvFirst && canTalk ? (
-    <CvStart coachLabel={coach.label} again={coach.key !== "narrative"} onStart={(d) => { started.current = coach.key; void send(null, d); }} />
+    <CvStart coachLabel={coach.label} again={coach.key !== "narrative"} onStart={(d) => { started.current = coach.key; void send(null, d, null, null, skipped === coach.key); }} />
   ) : (
     <Transcript turns={turns} pending={pending} error={error} quota={quota} uid={uid} jobHref={`${BASE_OF[portal]}/${coach.page}`} onScores={(s) => void send(null, null, s)} onConnections={(c) => void send(null, null, null, c)} wide={wide} onExpand={() => setWide(true)} jobSearch={jobSearch} />
   );
@@ -190,8 +247,8 @@ export default function CoachPanel({ portal }: { portal: ProfilePortal }) {
     >
       {column(
         <>
-          {part && <p className="section-label mb-4">{part}</p>}
-          {handoff && <p role="status" className="mb-4 text-sm text-jh-mute">{handoff}</p>}
+          {part && <p className="section-label mb-4">{part}{position && position.total > 1 ? <span className="ml-2 font-mono normal-case tracking-normal">{position.n} / {position.total}</span> : null}</p>}
+          {handoff && !scripted && <p role="status" className="mb-4 text-sm text-jh-mute">{handoff}</p>}
           {body}
         </>,
         rail,

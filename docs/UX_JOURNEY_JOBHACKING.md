@@ -200,7 +200,8 @@ axes" into "check 40 suggestions", which is the difference between finishing and
 
 **Pain points**
 - **The gate.** Coach 3 needs Narrative *and* True North complete (`missingBefore` → 409). A member who already knows her
-  40 cannot start here; the rail says *After True North* and that is all.
+  40 cannot start here; the rail says *After True North* and that is all. **Decided 2026-11-25:** the gate is a default,
+  not a wall — *Start anyway* under the gate, with the warning (third pass, below).
 - **Forty rows on a phone.** Three lists plus a watchlist, each up to 40 ranked rows; no in-page jump (the share doc
   names the same scroll). Scoring 40 rows on a 390 px screen is a sitting of its own.
 - **Ten-minute cooldown** on *Source my 40* (unless `names[]`): a member who removes six rows and re-sources waits with no
@@ -386,8 +387,9 @@ different switch she doesn't control. For a JobHacking-only member, the end of S
 - Returning after weeks: the launcher opens the last coach's long transcript; no *what changed since* on the pages.
 
 **Opportunities**
-- Decide the hand-off for JobHacking-only members at Stage 6 and *say it* on the page: CareerOps is granted (and how), or
-  the next step is human (the cohort, a call).
+- ~~Decide the hand-off for JobHacking-only members at Stage 6 and *say it* on the page~~ **Decided 2026-11-25:** Job Search
+  is switched on by code at 6 of 6 (`grantJobSearchOnCompletion` from `applyCoachPatch`), and the rail says *Your job search
+  is on · Open Job Search ›* where the six are counted (third pass, below).
 - Mark on the Top 40 which rows the Scout watches (the first 25 with a careers URL) — a mute glyph, not a colour.
 - A *since you were last here* line in the rail (jobs landed, lists re-derived) for the returning member.
 
@@ -450,6 +452,15 @@ back), #9 (the gate), #10 (`.docx`), and the Stage 2 *saved as we go* line.
 
 Still open: #1 (no-coach onboarding — decided 2026-11-25: the coach is the onboarding, in the app; no link to another product), #3 (search PRs in flight), #6 (40 rows on a phone), #8 (feedback's way back),
 #9 (the gate — a decision), #10 (`.docx`), and Stage 8's hand-off for JobHacking-only members (a decision).
+
+## The third pass — 2026-11-25, the two decisions
+
+| Pain | Decided · done |
+|---|---|
+| #9 — the sequential gate (Stage 3, Stage 5) | **A skip with a warning.** The gate stays the default: a gated coach's panel says why, then offers *Start anyway* (`.btn-secondary`, never the red) with one line under it — *Target companies works best after Narrative and True North — it'll ask you for what it needs* (`skipGateWarning`, `GateStart`). The start carries `skipGate`; the route lets it through and the session remembers which coaches were missing (`CoachSession.gateSkipped`); every turn's operator note tells the coach to ask for what those coaches would have written and never send the member back (`gateSkippedNote`), until they complete. A coach in progress reads *In progress*, not *After …*, on the rail. The rail of six stays under the gate, so the default path is one tap away. |
+| Stage 8 — the hand-off for JobHacking-only members | **Job Search is granted automatically at 6 of 6.** The sixth hand-over's write (`applyCoachPatch`, `allCoachesComplete`) switches `features.careerOps` on by code, once (`grantJobSearchOnCompletion`, logged as `AGENTS_TOGGLED` by *six coaches complete*); the write's readiness sentence becomes *All six complete — your job search is switched on. Open it from the portal switcher* (`SIX_OF_SIX_LINE`), and the rail's head reads *Your job search is on · Open Job Search ›* (`CoachRail`). The grant is read live, so the switcher and the line appear without a reload. No admin flag decides the ending any more. |
+
+Still open after the third pass: #3 (search PRs in flight), #6 (40 rows on a phone — its own PR), #8 (feedback's way back), #10 (`.docx`).
 
 ## What this map does not change
 
