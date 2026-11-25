@@ -66,25 +66,8 @@ export const COACH_PATCH_SCHEMAS: Record<CoachKey, Record<string, unknown>> = {
     }),
   }),
 
+  // The North Star (goal · policy · personalization · watchlist · notes) is derived by code on every write (derive-true-north.ts) — not in the schema, so the model cannot write it.
   trueNorth: obj({
-    goal: obj({
-      role: str("'{level of the primary cluster} {first title of the primary cluster}'"), seniority: str("The primary cluster's level, as posted"),
-      subsector: str("First sub-sector of the first industry"), companyType: str("jhg.trueNorth.companyType"), city: str("jhg.identity.location"),
-      salary: str("'{currency} {salaryLower}–{salaryUpper}'"),
-    }, "The North Star — derived from the clusters and boundaries, written at hand-over"),
-    policy: obj({
-      minimumSalary: str("'{currency} {salaryFloor}'"),
-      locationFlexibility: str("'Remote: …; Local hybrid: …; Relocate: …', empty parts left out"),
-      visaStatus: str("One line"), authorizedIn: list("Countries with work rights"), needsSponsorship: { type: "boolean", description: "true only when the member said Y" },
-    }),
-    personalization: obj({
-      targetRoles: rows(obj({ archetype: str("First title of the cluster, ≤ 80"), axes: str("The cluster's axes joined ', ' + '; ' + the cluster name, ≤ 200"), buys: str("≤ 200") }), "One per cluster, ≤ 8"),
-      compTargets: str("'Target {currency} {lower}–{upper}; floor {currency} {floor}.' ≤ 800"),
-      negotiationScripts: list("The member's negotiation lines, their words; left out when empty (≤ 6)"),
-      locationPolicy: list("'Will work in: …', 'Exclude: …', 'Remote: …', 'Local hybrid: …', 'Relocate: …', 'Travel for a remote role elsewhere: …' — empty ones left out (≤ 8)"),
-    }),
-    watchlist: obj({ positive: list("titles.target"), negative: list("titles.exclude + excludeLevels") }, "Title keywords for the Scout"),
-    notes: str("The §6 notes block, complete: hard no's; culture must-haves (+ deprioritise when absent); soft dislikes; notice period; never apply"),
     jhg: obj({
       trueNorth: obj({
         boundaries: obj({

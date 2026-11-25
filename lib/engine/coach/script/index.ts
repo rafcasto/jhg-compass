@@ -22,11 +22,12 @@ const isAvailable = (step: Step, p: ProfileFile, ctx: StepContext) => !step.avai
 
 /**
  * A step is answered when the profile holds its answer — or, for a step the member may skip (*I don't know yet*; the
- * schema prunes an empty answer, so a skip leaves no mark), when any later step of the script is answered.
+ * schema prunes an empty answer, so a skip leaves no mark) and for a review step (a save point writes no key of its own),
+ * when any later step of the script is answered.
  */
 export function stepDone(script: CoachScript, step: Step, p: ProfileFile, ctx: StepContext = EMPTY_CONTEXT): boolean {
   if (step.done(p, ctx)) return true;
-  if (!step.skipValues) return false;
+  if (!step.skipValues && step.kind !== "review") return false;
   const i = script.steps.indexOf(step);
   return script.steps.slice(i + 1).some((s) => s.done(p, ctx));
 }

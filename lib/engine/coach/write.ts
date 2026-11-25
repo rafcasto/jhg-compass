@@ -7,6 +7,7 @@ import { buildPortalsYaml } from "@/lib/careerops/portals-yaml";
 import { buildSetupProfileYaml } from "@/lib/careerops/setup-yaml";
 import type { CareerOpsSetupV2, JhgCompany, JhgTargetCompanies } from "@/lib/careerops/types";
 import { deriveCompanyLists } from "./lists";
+import { deriveTrueNorth } from "./derive-true-north";
 import { jhFileName, jhFilePreview, jhFileProfile, shapeJhFile } from "@/lib/jobhacking/profile-files";
 import { BASE_OF, type ProfilePortal } from "@/lib/jobhacking/sections";
 import type { Profile } from "@/lib/types";
@@ -91,6 +92,14 @@ export async function applyCoachPatch(input: CoachWriteInput): Promise<CoachWrit
   if (!schema.ok) throw new CoachWriteError("The write did not match the profile schema", schema.errors.map((e) => `${e.path}: ${e.message}`));
 
   mergeOwnBlocks(incoming, current, coach);
+  // The North Star is code's, from the working material, on every write (lib/engine/coach/derive-true-north.ts) — never the model's.
+  if (coach === "trueNorth") {
+    const derived = deriveTrueNorth((incoming.jhg as Record<string, unknown>).trueNorth as Parameters<typeof deriveTrueNorth>[0], current.jhg?.identity);
+    for (const [k, v] of Object.entries(derived)) {
+      const cur = incoming[k];
+      incoming[k] = typeof v === "string" ? v : { ...(cur && typeof cur === "object" ? (cur as Record<string, unknown>) : {}), ...(v as Record<string, unknown>) };
+    }
+  }
   // The page's lists are code's, from the working material, on every write (lib/engine/coach/lists.ts) — not the model's at hand-over.
   if (coach === "targetCompanies") {
     const tc = (incoming.jhg as Record<string, unknown>).targetCompanies as JhgTargetCompanies | undefined;
