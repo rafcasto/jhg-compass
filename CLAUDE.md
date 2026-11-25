@@ -147,6 +147,19 @@
   industries as queries, city and country-wide; `fromPostings`) is the list, and the model's industry-led proposal runs only to fill a gap
   (`proposal: "auto"`) or never (`COMPANIES_PROPOSAL=off`) — never as the first source.
 
+- **The scripted coach — page first, a guide beside it, one conversation** (decision C, 2026-11-25, `docs/DECISION_PROFILE_INTERFACE_2026-11-25.md`;
+  the panel in `docs/UX_SCRIPTED_COACH.md`, the hand-by-hand map in `docs/UX_JOURNEY_SCRIPTED_COACH.md`): the JobHacking pages stay the product
+  and every section stays editable by hand; a coach with a **script** (`lib/engine/coach/script/` — `SCRIPTS`, one file per coach, `types.ts` the
+  contract) asks **predefined steps, one decision each (≤ 4 fields or one list)**, in the panel's footer slot where the composer was (`StepSlot`);
+  the transcript is the **record of decisions** rendered from the stored profile (`StepTranscript`: the answer as the member's block, the write
+  line, *Change ›*), never stored itself. A step's answer goes down the one write path (`POST /api/coach/step` → `applyCoachPatch`); a job step
+  starts its engine job through `/api/engine/jobs`; the derived keys the prompt asks the model to write "by these rules" (`goal.salary`,
+  `policy.locationFlexibility`, `notes`…) are written by the rule on the step that gives them inputs. The engine (`currentStep · waitingOn ·
+  completedSteps`) hands over to the model conversation when the script has nothing left to ask — Coach 2 is scripted through Part A and the
+  deterministic half of Part B (postings job · keepers by phrase frequency · title buckets); clusters and Part C stay with the conversation until
+  their draft and research jobs exist. **Coach 4 (Story Bank) stays a conversation by decision** — the interview is the product there. A skippable
+  step (*I don't know yet*) leaves no mark (the schema prunes empty answers): it counts as answered once a later step is. Never add a free-text
+  composer to a scripted coach, never render the profile a second way in the panel, never let a step write a key its coach does not own.
 - **Share links** (decision 2026-11-07, `docs/UX_SHARE.md`): a JobHacking page — Narrative · True North · Target companies · Artefacts,
   one link each, never a section, never the Agents area — can be shared read-only at `/share/<token>` as a **document** (title, author
   line, a heading per section, blocks; no shell, no buttons, no red, `noindex`, prints clean). The control is one `Share` button in the
