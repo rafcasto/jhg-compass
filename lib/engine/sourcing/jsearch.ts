@@ -7,8 +7,14 @@
 
 import type { PipelineCountry, SourcedPosting } from "./keys";
 
-export const JSEARCH_BASE = "https://jsearch.p.rapidapi.com/search";
+// Two doors to the same API: RapidAPI's marketplace gateway (the key in x-rapidapi-key, the host header), or OpenWeb Ninja's own
+// platform — app.openwebninja.com — (the key in x-api-key). JSEARCH_PROVIDER picks the door; the data and the query are the same.
+export const JSEARCH_PROVIDERS = ["rapidapi", "openwebninja"] as const;
+export type JsearchProvider = (typeof JSEARCH_PROVIDERS)[number];
+// The listing renamed its search endpoint to /search-v2 (verified live 2026-11-18: /search answers 404 "does not exist", /search-v2 answers 200).
+export const JSEARCH_BASE = "https://jsearch.p.rapidapi.com/search-v2";
 export const JSEARCH_HOST = "jsearch.p.rapidapi.com";
+export const OPENWEBNINJA_BASE = "https://api.openwebninja.com/jsearch/search";
 /** Queries a run may spend on the top-up — titles first (queriesFor orders them so). */
 export const JSEARCH_MAX_QUERIES = 4;
 
@@ -16,11 +22,21 @@ type Env = Record<string, string | undefined>;
 
 export const jsearchConfigured = (env: Env = process.env): boolean => !!env.JSEARCH_API_KEY;
 
+/** Which door the key opens — JSEARCH_PROVIDER, default RapidAPI (the marketplace most keys come from). */
+export const jsearchProvider = (env: Env = process.env): JsearchProvider => (env.JSEARCH_PROVIDER === "openwebninja" ? "openwebninja" : "rapidapi");
+
 export interface JsearchQuery { country: PipelineCountry; q: string; location: string }
 
+/** The search endpoint: JSEARCH_BASE_URL when set (the exact URL RapidAPI's code snippet shows for the Search endpoint — listings move), else the provider's default. */
+export function jsearchBase(env: Env = process.env): string {
+  const own = env.JSEARCH_BASE_URL?.trim();
+  if (own && /^https:\/\//i.test(own)) return own.replace(/\?.*$/, "");
+  return jsearchProvider(env) === "openwebninja" ? OPENWEBNINJA_BASE : JSEARCH_BASE;
+}
+
 /** JSearch takes the place in the query ("Product Manager in Auckland"), the country as a code, and a freshness window. */
-export function jsearchUrl(q: JsearchQuery): string {
-  const u = new URL(JSEARCH_BASE);
+export function jsearchUrl(q: JsearchQuery, env: Env = process.env): string {
+  const u = new URL(jsearchBase(env));
   u.searchParams.set("query", q.location ? `${q.q} in ${q.location}` : q.q);
   u.searchParams.set("page", "1");
   u.searchParams.set("num_pages", "1");
@@ -29,27 +45,33 @@ export function jsearchUrl(q: JsearchQuery): string {
   return u.toString();
 }
 
-export const jsearchHeaders = (env: Env = process.env): Record<string, string> => ({ "x-rapidapi-key": env.JSEARCH_API_KEY ?? "", "x-rapidapi-host": JSEARCH_HOST });
+export const jsearchHeaders = (env: Env = process.env): Record<string, string> => jsearchProvider(env) === "openwebninja"
+  ? { "x-api-key": env.JSEARCH_API_KEY ?? "" }
+  : { "x-rapidapi-key": env.JSEARCH_API_KEY ?? "", "x-rapidapi-host": new URL(jsearchBase(env)).hostname };
 
 interface JsearchJob {
   job_id?: unknown; job_title?: unknown; employer_name?: unknown; employer_website?: unknown; job_publisher?: unknown; job_apply_link?: unknown;
-  job_description?: unknown; job_city?: unknown; job_state?: unknown; job_country?: unknown; job_posted_at_datetime_utc?: unknown;
+  job_description?: unknown; job_city?: unknown; job_state?: unknown; job_country?: unknown; job_location?: unknown; job_posted_at_datetime_utc?: unknown;
   apply_options?: { publisher?: unknown; apply_link?: unknown }[];
 }
 
 const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
-/** { status: "OK", data: [] } → postings; the apply link is the URL (the board's own page), the publisher's name rides the description. */
+/**
+ * Both shapes the API has had → postings: `data: [job]` (the original /search) and `data: { jobs: [job], cursor }` (/search-v2,
+ * verified live 2026-11-18). The apply link is the URL (the board's own page); the publisher's name rides the description.
+ */
 export function parseJsearch(json: unknown, country: PipelineCountry): SourcedPosting[] {
   const data = (json as { data?: unknown } | null)?.data;
-  if (!Array.isArray(data)) return [];
+  const jobs = Array.isArray(data) ? data : data && typeof data === "object" && Array.isArray((data as { jobs?: unknown }).jobs) ? (data as { jobs: unknown[] }).jobs : null;
+  if (!jobs) return [];
   const out: SourcedPosting[] = [];
-  for (const j of data as JsearchJob[]) {
+  for (const j of jobs as JsearchJob[]) {
     const title = str(j.job_title), company = str(j.employer_name);
     const apply = str(j.job_apply_link) || (j.apply_options ?? []).map((o) => str(o.apply_link)).find((l) => /^https?:\/\//i.test(l)) || "";
     const externalId = str(j.job_id) || apply;
     if (!title || !company || !/^https?:\/\//i.test(apply) || !externalId) continue;
-    const location = [str(j.job_city), str(j.job_state), str(j.job_country)].filter(Boolean).join(", ");
+    const location = str(j.job_location) || [str(j.job_city), str(j.job_state), str(j.job_country)].filter(Boolean).join(", ");
     const via = str(j.job_publisher);
     const website = str(j.employer_website);
     out.push({ source: "jsearch", externalId: externalId.slice(0, 120), title, company, location, country, url: apply, description: `${via ? `[${via}] ` : ""}${str(j.job_description)}`, postedAt: str(j.job_posted_at_datetime_utc).slice(0, 10), ...(website ? { companyWebsite: website } : {}) });

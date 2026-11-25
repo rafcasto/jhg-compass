@@ -24,9 +24,10 @@ export interface SourceAdapter {
 }
 
 export const ADAPTERS: Record<Source, SourceAdapter> = {
-  adzuna: { source: "adzuna", metered: false, maxQueries: 8, configured: adzunaConfigured, url: (q, country, env) => adzunaUrl({ country, what: q.what, where: q.where }, env), parse: (json, country) => parseAdzuna(json, country) },
+  // Adzuna's free plan is 25 hits a month (read 2026-11-18, UK products listed) — metered, and last in line so it is never the one spent.
+  adzuna: { source: "adzuna", metered: true, maxQueries: 4, configured: adzunaConfigured, url: (q, country, env) => adzunaUrl({ country, what: q.what, where: q.where }, env), parse: (json, country) => parseAdzuna(json, country) },
   careerjet: { source: "careerjet", metered: false, maxQueries: 8, configured: careerjetConfigured, url: (q, country, env) => careerjetUrl({ country, keywords: q.what, location: q.where }, env), parse: (json, country) => parseCareerjet(json, country) },
-  jsearch: { source: "jsearch", metered: true, maxQueries: JSEARCH_MAX_QUERIES, configured: jsearchConfigured, url: (q, country) => jsearchUrl({ country, q: q.what, location: q.where }), headers: jsearchHeaders, parse: (json, country) => parseJsearch(json, country) },
+  jsearch: { source: "jsearch", metered: true, maxQueries: JSEARCH_MAX_QUERIES, configured: jsearchConfigured, url: (q, country, env) => jsearchUrl({ country, q: q.what, location: q.where }, env), headers: jsearchHeaders, parse: (json, country) => parseJsearch(json, country) },
   serp: { source: "serp", metered: true, maxQueries: SERP_MAX_QUERIES, configured: serpConfigured, url: (q, country, env) => serpJobsUrl({ country, q: q.what, location: q.where }, env), parse: parseSerpJobs },
 };
 
@@ -38,6 +39,16 @@ export const configuredAdapters = (env: Env = process.env): SourceAdapter[] => {
 
 /** RapidAPI and SerpApi say "out" with a 429: the plan's monthly quota, or requests too close together. */
 export const isQuotaError = (message: string): boolean => /\b429\b|too many requests|quota|rate limit/i.test(message);
+
+/** A key that cannot be used — RapidAPI's 403 "You are not subscribed to this API", a 401 "Invalid API key" — is out for the whole run just as a quota is. */
+export const isAuthError = (message: string): boolean => /\b40[13]\b|not subscribed|invalid api key|unauthori[sz]ed|forbidden/i.test(message);
+/** Out for this run, either way: the plan is spent, or the key cannot be used. The next metered source takes over. */
+export const isSourceOut = (message: string): boolean => isQuotaError(message) || isAuthError(message);
+
+/** What a 401/403 means, by source — the fix is on the provider's site, not in the code. */
+export const authWords = (source: Source): string => source === "jsearch"
+  ? "the JSearch key was refused — a RapidAPI key must be subscribed to the JSearch API (Pricing → the free Basic plan); a key from app.openwebninja.com needs JSEARCH_PROVIDER=openwebninja so it is sent to OpenWeb Ninja's own host, not RapidAPI's"
+  : source === "serp" ? "the SerpApi key was refused — check it on serpapi.com → account" : source === "adzuna" ? "the Adzuna app id or key was refused — check developer.adzuna.com" : "the key was refused";
 
 /** What a 429 means to the member and the admin, by source. */
 export const quotaWords = (source: Source): string => source === "jsearch"
