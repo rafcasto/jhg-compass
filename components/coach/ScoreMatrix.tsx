@@ -13,7 +13,12 @@ import { readConnectionsFile, type ConnectionsAttachment } from "./document";
 // `Send scores` is the panel's one red while it waits (the composer's Send steps down to secondary).
 // Forty rows scroll; the axis header stays put at the top of the panel's scroll container.
 // Docked (392 px) a row is two lines — the name, then the four selects; expanded (§11) a row is one line —
-// name · four selects · total — so forty companies are half the scroll and every anchor reads in full.
+// name · four selects · total — so forty companies are half the scroll. Expanded, the scale is read once, not
+// 36 times: the legend sits open above the grid, the selects shrink to a digit's width (5 rem — the anchors
+// still ride inside every list), the name column takes the rest and is never cut. In either size an empty
+// select reads mute and a filled one ink, a complete row's total goes ink and semibold, and the row with the
+// focus sits on mist — the member sees what is done and where they are. Native selects take Tab and a typed
+// digit; the expanded intro says so.
 //
 // With evidence (docs/UX_COACH_COMPANY_SCORING.md §4): the portal pre-fills the cells it can read (Growth, Access)
 // and puts its reasons under each name as short mute lines — the axis word in label weight, the people's names and
@@ -92,11 +97,12 @@ export default function ScoreMatrix({ kind, items, meta, evidence, suggested, co
   const assisted = !!evidence?.length;
   // Every rubric has four axes — literal classes so Tailwind sees them. Wide: name · 4 × 7rem · total.
   const cols = "grid grid-cols-4 gap-2";
-  const wideCols = "grid grid-cols-[minmax(0,1fr)_repeat(4,minmax(0,7rem))_3.5rem] items-center gap-2";
+  const wideCols = "grid grid-cols-[minmax(0,1fr)_repeat(4,5rem)_3.5rem] items-center gap-2";
   const totalText = (total: number | null) => (total === null ? `— / ${max}` : `${total} / ${max}`);
+  const totalClass = (total: number | null) => `font-mono text-xs ${total === null ? "text-jh-mute" : "font-semibold text-jh-ink"}`;
   const selects = (item: string) => r.axes.map((a, i) => (
     <select key={a.key} aria-label={`${a.label} — ${item}`} value={row(item)[i] ?? ""} disabled={disabled} onChange={(e) => set(item, i, e.target.value)}
-      className="field h-11 px-2 py-0 text-sm">
+      className={`field h-11 py-0 text-sm ${wide ? "truncate !pl-2 !pr-7 !bg-[position:right_0.5rem_center]" : "px-2"} ${typeof row(item)[i] === "number" ? "text-jh-ink" : "text-jh-mute"}`}>
       <option value="">{a.short}</option>
       {a.anchors.map((anchor, n) => <option key={n} value={n + 1}>{n + 1} · {anchor}</option>)}
     </select>
@@ -118,6 +124,17 @@ export default function ScoreMatrix({ kind, items, meta, evidence, suggested, co
       ? <>All four are suggested from what is on file — the postings and growth sources, your True North, your scored skills, and your {connections.total.toLocaleString()} LinkedIn connections ({connections.matched} {connections.matched === 1 ? "company has" : "companies have"} one). Change any you know better.</>
       : <>All four are suggested from what is on file — the postings and growth sources, your True North and your scored skills; Access is a guess until you add your LinkedIn connections. Change any you know better.</>
     : <>Four numbers for each. What each number means is inside every list — the same scale for everyone.</>;
+  const legend = (
+    <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm text-jh-mute">
+      {r.axes.map((a) => (
+        <div key={a.key} className="contents">
+          <dt className="label mb-0">{a.label}</dt>
+          <dd className="text-jh-mute">{a.anchors.map((x, i) => `${i + 1} ${x}`).join(" · ")}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+  const suggestedLine = assisted && <p className="text-sm text-jh-mute">Suggested numbers come from your postings, each company&apos;s growth source and your connections — change any you disagree with; the changed ones are shown to your coach.</p>;
 
   return (
     <form className="space-y-4" aria-labelledby="score-matrix-title" onSubmit={(e) => { e.preventDefault(); submit(); }}>
@@ -125,6 +142,7 @@ export default function ScoreMatrix({ kind, items, meta, evidence, suggested, co
         <p id="score-matrix-title" className="section-label">{r.title} · 1–5</p>
         <p className="mt-1 text-sm text-jh-mute">
           {header}
+          {wide && <> Tab moves across; type 1–5 to score.</>}
           {!wide && onExpand && <> <button type="button" onClick={onExpand} className="hidden underline underline-offset-2 hover:text-jh-ink sm:inline">Expand for more room ›</button></>}
         </p>
         {assisted && !connections && onConnections && (
@@ -136,6 +154,7 @@ export default function ScoreMatrix({ kind, items, meta, evidence, suggested, co
         )}
         {fileError && <p role="alert" className="mt-2 text-sm text-jh-red">{fileError}</p>}
       </div>
+      {wide && <div className="space-y-2" data-legend>{legend}{suggestedLine}</div>}
       {wide ? (
         <div className={`${wideCols} sticky top-0 z-10 -mt-2 bg-white py-2`} aria-hidden>
           <span />
@@ -155,42 +174,36 @@ export default function ScoreMatrix({ kind, items, meta, evidence, suggested, co
           const block = ev ? <EvidenceBlock evidence={ev} suggested={suggestedFor(item)} axes={r.axes.map((a) => a.key)} /> : null;
           if (wide) {
             return (
-              <li key={item} className={`${wideCols} py-2`} data-wide-row>
-                <div className="min-w-0 max-w-prose">
-                  <p className="truncate text-[15px] text-jh-ink">{item}</p>
-                  {line && <p className="truncate text-xs text-jh-mute">{line}</p>}
+              <li key={item} className={`${wideCols} -mx-2 px-2 py-3 focus-within:bg-jh-mist`} data-wide-row>
+                <div className="min-w-0 max-w-prose pr-2">
+                  <p className="text-[15px] leading-snug text-jh-ink">{item}</p>
+                  {line && <p className="line-clamp-2 text-xs text-jh-mute">{line}</p>}
                   {block}
                 </div>
                 {selects(item)}
-                <span className="text-right font-mono text-xs text-jh-mute" aria-live="polite">{totalText(total)}</span>
+                <span className={`text-right ${totalClass(total)}`} aria-live="polite">{totalText(total)}</span>
               </li>
             );
           }
           return (
-            <li key={item} className="space-y-2 py-3">
+            <li key={item} className="-mx-2 space-y-2 px-2 py-3 focus-within:bg-jh-mist">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate text-[15px] text-jh-ink">{item}</span>
-                <span className="shrink-0 font-mono text-xs text-jh-mute" aria-live="polite">{totalText(total)}</span>
+                <span className="min-w-0 text-[15px] leading-snug text-jh-ink">{item}</span>
+                <span className={`shrink-0 ${totalClass(total)}`} aria-live="polite">{totalText(total)}</span>
               </div>
-              {line && <p className="truncate text-xs text-jh-mute">{line}</p>}
+              {line && <p className="line-clamp-2 text-xs text-jh-mute">{line}</p>}
               {block}
               <div className={cols}>{selects(item)}</div>
             </li>
           );
         })}
       </ol>
-      <details className="text-sm text-jh-mute">
-        <summary className="cursor-pointer">What the numbers mean</summary>
-        <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5">
-          {r.axes.map((a) => (
-            <div key={a.key} className="contents">
-              <dt className="label mb-0">{a.label}</dt>
-              <dd className="text-jh-mute">{a.anchors.map((x, i) => `${i + 1} ${x}`).join(" · ")}</dd>
-            </div>
-          ))}
-        </dl>
-        {assisted && <p className="mt-2">Suggested numbers come from your postings, each company&apos;s growth source and your connections — change any you disagree with; the changed ones are shown to your coach.</p>}
-      </details>
+      {!wide && (
+        <details className="text-sm text-jh-mute">
+          <summary className="cursor-pointer">What the numbers mean</summary>
+          <div className="mt-2 space-y-2">{legend}{suggestedLine}</div>
+        </details>
+      )}
       <div className="flex items-center justify-between gap-3">
         <span className="font-mono text-xs text-jh-mute" role="status">{done} of {items.length} scored</span>
         <button type="submit" disabled={!allDone || disabled} className="btn-primary h-11">Send scores</button>

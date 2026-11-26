@@ -277,10 +277,22 @@ scored table (`ScoredRows`) — never the generated prose.
 | **Hierarchy** | The skill name is the only ink in a row; the axis words, totals and the legend are `jh-mute`; the four numbers are `font-mono text-xs`. Once sent, the member's block shows ranked rows — rank mute, name ink, the four digits mono mute, the total `font-semibold` ink — and **one `jh-line-2` divider after rank 6: the cut**. No colour carries a judgement; the coach's words do |
 | **The scale** | The anchors ride **inside each `<select>`** (`3 · Solid, unsupervised`) so the number is never read alone, and a `<details>` lists them once. Same words for every member, from code |
 | **Spacing** | 8 between selects, 12 inside a row (`py-3`), 16 between the form's blocks; the form sits in the coach turn's 8 px rhythm with `pt-2` |
-| **Targets** | Native `<select>`, `.field h-11` — 44 px, and the OS picker on a phone. 392 px of body gives 92 px a select; the number is first so truncation costs nothing |
+| **Targets** | Native `<select>`, `.field h-11` — 44 px, and the OS picker on a phone. 392 px of body gives 92 px a select, the wide panel 80 px; the number is first so truncation costs nothing |
 | **Red budget** | While a matrix waits, *Send scores* is the panel's one red; the composer's Send becomes `.btn-secondary` (`Composer tone`) and its placeholder says what it is for — the member can still say "drop Excel". The matrix locks (`disabled`) while the coach writes |
 | **Depth** | None added: no card, no shadow. `divide-y` and `border-y` on `jh-line` make the rows |
 | **Decided against** | Five-dot ratings (five 44 px targets × four axes = 60 lines for 15 skills); a table with the name as a cell (120 px names truncate to nothing); a Sheet of its own (the matrix is the conversation's turn, not a dialog); a stepper (two taps a number) |
+
+**Revision 2026-11-26 — read the scale once (Refactoring UI audit, 5 → 8.5).** Nine skills × four selects felt like 36 chores: the
+anchors were only inside the lists and in a folded `<details>` *below* the rows, so the member re-read the scale per cell; an empty and a
+filled select looked the same; the name — the row's only ink — truncated while four digit-wide selects took 28 rem of the 42 rem column.
+Seven changes, same component, same selects, one Send: **(A)** expanded, the legend renders open *above* the grid (the dock keeps its
+`<details>`); **(B)** the wide grid is `minmax(0,1fr) · 4 × 5rem · 3.5rem` — the selects are a digit wide (the anchors still ride inside every
+list; chevron gutter `pr-7`), the name takes the rest; **(C)** an empty select reads `jh-mute`, a filled one ink, a complete row's total
+`font-semibold` ink — the sheet visibly fills; **(D)** the row with the focus sits on `jh-mist` (`focus-within`, bled 8 px past the dividers);
+**(E)** the expanded intro says *Tab moves across; type 1–5 to score* — the native select's fast path, named once; **(F)** wide rows `py-3`,
+a `pr-2` gutter between the name and the first select; **(G)** the name is never cut, in either size — `leading-snug`, wraps, the row grows
+to fit (items are capped at `MAX_ITEM_CHARS`); only a row's context line is `line-clamp-2`. Decided against, again: five-dot ratings (20 × 44 px
+targets don't fit 42 rem either); axis-at-a-time passes (kept as the next step if this still feels heavy — it changes "scored once").
 
 **Files.** `lib/engine/coach/rubrics.ts` · `skills.ts` · `companies.ts` (pure) · `tools.ts` (`SCORE_MATRIX`, `scoreMatrixTool`) ·
 `transcript.ts` (`MatrixNote {kind, items, meta}`, `ScoredNote {kind, rows}`, `matrix` event, `pendingMatrixOf`) · `checks.ts` (N7) ·
