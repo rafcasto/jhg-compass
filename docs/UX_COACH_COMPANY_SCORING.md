@@ -160,7 +160,7 @@ same three levers — size, weight, colour — and the same red budget.
 │ 12 of 40 scored                           [ Send scores ]     │ ← mono mute · .btn-primary (one red)
 └───────────────────────────────────────────────────────────────┘
 
-wide (§11): name + evidence block (max-w-prose) · four selects (7rem) · total — one row ≈ 3 lines
+wide (§11): name + evidence block (max-w-prose) · four selects (5rem since 2026-11-26, `UX_COACH_AGENTIC.md §9`) · total — one row ≈ 3 lines
 ```
 
 | Principle | Decision |

@@ -62,6 +62,39 @@ describe("ScoreMatrix", () => {
     expect(screen.queryByRole("button", { name: "Expand for more room ›" })).toBeNull();
   });
 
+  it("expanded, the scale is read once: the legend is open above the grid, the name is never cut, done reads at a glance", async () => {
+    const user = userEvent.setup();
+    const long = "Test strategy and planning for regulated multi-vendor programmes";
+    render(<ScoreMatrix kind="skills" items={[long, "SQL"]} onSubmit={() => undefined} wide />);
+    // The anchors are on the page, not only inside the lists — and the dock's fold is gone.
+    expect(screen.getByText(/1 Beginner · 2 Can do it with help/)).toBeInTheDocument();
+    expect(screen.queryByText("What the numbers mean")).toBeNull();
+    expect(screen.getByText(/Tab moves across; type 1–5 to score/)).toBeInTheDocument();
+    // The name wraps; nothing truncates it.
+    const name = screen.getByText(long);
+    expect(name).not.toHaveClass("truncate");
+    // Empty reads mute; filled reads ink; a complete row's total goes ink and semibold.
+    const rows = screen.getAllByRole("listitem");
+    const good = screen.getByRole("combobox", { name: `Good at it — ${long}` });
+    expect(good).toHaveClass("text-jh-mute");
+    expect(within(rows[0]).getByText("— / 20")).toHaveClass("text-jh-mute");
+    await user.selectOptions(good, "4");
+    expect(good).toHaveClass("text-jh-ink");
+    await user.selectOptions(screen.getByRole("combobox", { name: `Love it — ${long}` }), "5");
+    await user.selectOptions(screen.getByRole("combobox", { name: `Can prove it — ${long}` }), "3");
+    await user.selectOptions(screen.getByRole("combobox", { name: `Market pays — ${long}` }), "2");
+    expect(within(rows[0]).getByText("14 / 20")).toHaveClass("font-semibold", "text-jh-ink");
+    expect(within(rows[1]).getByText("— / 20")).toHaveClass("text-jh-mute");
+  });
+
+  it("docked, the name is never cut either and the legend stays folded", () => {
+    const long = "Test strategy and planning for regulated multi-vendor programmes";
+    render(<ScoreMatrix kind="skills" items={[long, "SQL", "Go"]} onSubmit={() => undefined} />);
+    expect(screen.getByText(long)).not.toHaveClass("truncate");
+    expect(screen.getByText("What the numbers mean")).toBeInTheDocument();
+    expect(screen.queryByText(/Tab moves across/)).toBeNull();
+  });
+
   it("docked, offers to expand — once, in the intro line, mute — and not when nothing can expand", async () => {
     const onExpand = vi.fn();
     const { rerender } = render(<ScoreMatrix kind="skills" items={["a", "b", "c"]} onSubmit={() => undefined} onExpand={onExpand} />);
